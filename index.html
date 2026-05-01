@@ -702,11 +702,11 @@
 
 <main style="max-width:1100px; margin:0 auto; padding:0 20px;">
 
-  <!-- API Key -->
-  <div class="api-banner" id="apiBanner">
+  <!-- API Key (hidden by default — keys are embedded) -->
+  <div class="api-banner" id="apiBanner" style="display:none">
     <span class="icon">🔑</span>
     <div class="text" style="flex:1">
-      <strong>Activate live movies</strong> — get a free key at
+      <strong>Update TMDb key</strong> — get a free key at
       <a href="https://www.themoviedb.org/settings/api" target="_blank">themoviedb.org</a>
       and paste it below.
     </div>
@@ -811,6 +811,12 @@
 
 <script>
   /* ════════════════════════════════════════
+     HARDCODED DEFAULT KEYS
+  ════════════════════════════════════════ */
+  const DEFAULT_TMDB_KEY = 'd04038fc4e0708bd069b323b220d5dc0';
+  const DEFAULT_YT_KEY   = 'AIzaSyDubh6LcvxTzsP52MW8-zg_I3kq-TT60CE';
+
+  /* ════════════════════════════════════════
      YOUTUBE + PMOVIES REVIEWS
   ════════════════════════════════════════ */
   const YT_HANDLE   = 'PMovies155';
@@ -820,7 +826,7 @@
 
   function getYtKey() {
     return (document.getElementById('ytKeyInput') || {}).value?.trim()
-      || localStorage.getItem('pmovies_yt_key') || '';
+      || localStorage.getItem('pmovies_yt_key') || DEFAULT_YT_KEY;
   }
 
   function saveYtKey() {
@@ -990,7 +996,7 @@
   /* ── API KEY ── */
   function getApiKey() {
     return document.getElementById('apiKeyInput').value.trim()
-      || localStorage.getItem('pmovies_tmdb_key') || '';
+      || localStorage.getItem('pmovies_tmdb_key') || DEFAULT_TMDB_KEY;
   }
   function saveApiKey() {
     const key = document.getElementById('apiKeyInput').value.trim();
@@ -1015,11 +1021,13 @@
 
   /* ── INIT ── */
   window.addEventListener('DOMContentLoaded', () => {
-    const key = localStorage.getItem('pmovies_tmdb_key');
-    if (key) { document.getElementById('apiKeyInput').value = key; document.getElementById('apiSaved').style.display = 'block'; }
+    // restore any locally saved key overrides
+    const savedTmdb = localStorage.getItem('pmovies_tmdb_key');
+    if (savedTmdb) document.getElementById('apiKeyInput').value = savedTmdb;
+    // restore logo
     const logo = localStorage.getItem('pmovies_logo');
     if (logo) applyLogo(logo);
-    // load YouTube reviews (shows setup card if no key yet)
+    // auto-load YouTube reviews immediately (keys are embedded)
     loadYtReviews();
   });
 
