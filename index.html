@@ -115,6 +115,10 @@
     .t-rating{position:absolute;bottom:28px;left:9px;font-family:'Montserrat',sans-serif;font-size:.7rem;font-weight:700;color:var(--gold)}
     .t-title{position:absolute;bottom:8px;left:9px;right:9px;font-family:'Montserrat',sans-serif;font-size:.68rem;font-weight:700;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
     .t-new-badge{position:absolute;top:8px;left:8px;background:var(--orange);color:#000;font-family:'Montserrat',sans-serif;font-size:.58rem;font-weight:800;letter-spacing:1px;padding:2px 6px;border-radius:4px;line-height:1.4}
+    /* Letterboxd reviewed badge on movie cards */
+    .lb-card-badge{position:absolute;bottom:44px;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:5px;background:rgba(0,100,230,.82);backdrop-filter:blur(4px);padding:5px 8px;font-family:'Montserrat',sans-serif;font-size:.62rem;font-weight:700;letter-spacing:.5px;color:#fff;cursor:pointer;transition:background .2s;text-decoration:none;z-index:3}
+    .lb-card-badge:hover{background:rgba(0,120,255,.95)}
+    .lb-card-badge .lb-badge-stars{color:#f5c518;letter-spacing:1px;font-size:.7rem}
 
     /* ── PMOVIES REVIEWS ── */
     .yt-section{max-width:1100px;margin:0 auto 52px;padding:0 20px}
@@ -614,7 +618,7 @@
         <a class="modal-cta" id="modalLink" href="#" target="_blank">View on TMDb →</a>
         <button class="modal-cta secondary" id="trailerBtn" onclick="loadTrailer()">▶ Trailer</button>
         <div class="wl-status-btns" id="wlStatusBtns">
-          <button class="wl-status-btn" data-status="want" onclick="setStatusFromModal('want')">🔖 Want</button>
+          <button class="wl-status-btn" data-status="want" onclick="setStatusFromModal('want')">🔖 Want to Watch</button>
           <button class="wl-status-btn" data-status="watched" onclick="setStatusFromModal('watched')">✓ Watched</button>
           <button class="wl-status-btn" data-status="fav" onclick="setStatusFromModal('fav')">★ Favourite</button>
         </div>
@@ -939,6 +943,7 @@
     const status = getMovieStatus(m.id);
     const statusIcon = { want: '🔖', watched: '✓', fav: '★' }[status] || '♡';
     const statusClass = status ? `status-${status}` : '';
+    const lbEntry = lbReviewMap.get(m.id);
     const card   = document.createElement('div');
     card.className = 'movie-card';
     card.style.animationDelay = (idx * 0.05) + 's';
@@ -952,6 +957,10 @@
           <button class="wl-picker-btn" data-status="watched" title="Watched">✓</button>
           <button class="wl-picker-btn" data-status="fav" title="Favourite">★</button>
         </div>
+        ${lbEntry ? `<a class="lb-card-badge" href="${lbEntry.link}" target="_blank" onclick="event.stopPropagation()" title="${esc(lbEntry.review)}">
+          <svg viewBox="0 0 24 24" width="11" height="11" fill="#fff"><circle cx="12" cy="12" r="11"/><path fill="#00c030" d="M12 1a11 11 0 110 22A11 11 0 0112 1z" opacity=".4"/></svg>
+          Ahmed's Review ${lbEntry.stars ? `<span class="lb-badge-stars">${lbEntry.stars}</span>` : ''}
+        </a>` : ''}
       </div>
       <div class="movie-info">
         <div class="movie-title">${esc(m.title)}</div>
@@ -1213,6 +1222,8 @@
 
   /* ══ LETTERBOXD ══ */
   const LB_USER = 'Pastoo';
+  // Map of TMDb movie ID → {stars, review, link} — populated by loadLetterboxd()
+  const lbReviewMap = new Map();
   const LB_RSS_API = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(`https://letterboxd.com/${LB_USER}/rss/`)}`;
 
   function parseLbStars(desc) {
@@ -1263,25 +1274,49 @@
       if (data.status !== 'ok') throw new Error('Feed unavailable');
       const raw = (data.items || []).slice(0, 10);
       if (!raw.length) throw new Error('No reviews yet');
-      // Enrich each item with a TMDb poster
+      // Enrich each item with a TMDb poster + ID, and populate lbReviewMap
       const tmdbKey = getKey();
+      lbReviewMap.clear();
       const enriched = await Promise.all(raw.map(async item => {
         const titleRaw = item.title || '';
         const year  = (titleRaw.match(/,\s*(\d{4})/) || [])[1] || '';
         const title = titleRaw.replace(/,\s*\d{4}.*$/, '').trim();
-        let poster = null;
+        let poster = null, tmdbId = null;
         try {
           const q   = encodeURIComponent(title);
           const yr  = year ? `&year=${year}` : '';
           const sr  = await fetch(`${TMDB}/search/movie?api_key=${tmdbKey}&query=${q}${yr}&language=en-US`);
           const sd  = await sr.json();
-          if (sd.results && sd.results.length && sd.results[0].poster_path) {
-            poster = IMG + sd.results[0].poster_path;
+          if (sd.results && sd.results.length) {
+            const hit = sd.results[0];
+            if (hit.poster_path) poster = IMG + hit.poster_path;
+            tmdbId = hit.id;
           }
         } catch(_) {}
-        return { ...item, tmdbPoster: poster };
+        if (tmdbId) {
+          lbReviewMap.set(tmdbId, {
+            stars:  parseLbStars(item.description),
+            review: parseLbReview(item.description),
+            link:   item.link
+          });
+        }
+        return { ...item, tmdbPoster: poster, tmdbId };
       }));
       renderLbCards(enriched);
+      // Inject badges into any already-rendered movie cards that match
+      lbReviewMap.forEach((entry, tmdbId) => {
+        document.querySelectorAll(`.movie-card .wl-btn[data-id="${tmdbId}"]`).forEach(btn => {
+          const posterWrap = btn.closest('.poster-wrap');
+          if (!posterWrap || posterWrap.querySelector('.lb-card-badge')) return;
+          const badge = document.createElement('a');
+          badge.className = 'lb-card-badge';
+          badge.href = entry.link; badge.target = '_blank';
+          badge.title = entry.review;
+          badge.onclick = e => e.stopPropagation();
+          badge.innerHTML = `<svg viewBox="0 0 24 24" width="11" height="11" fill="#fff"><circle cx="12" cy="12" r="11"/></svg>Ahmed's Review ${entry.stars ? `<span class="lb-badge-stars">${entry.stars}</span>` : ''}`;
+          posterWrap.appendChild(badge);
+        });
+      });
     } catch(e) {
       content.innerHTML = `<p style="color:#888;padding:20px;text-align:center">Could not load Letterboxd: ${esc(e.message)}</p>`;
     }
