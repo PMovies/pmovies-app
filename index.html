@@ -436,6 +436,22 @@
   .fan-review-date { color:#555; font-size:.72rem; }
   .fan-review-body { color:#bbb; font-size:.83rem; line-height:1.6; }
   .fan-empty { color:#555; text-align:center; padding:32px; font-size:.9rem; }
+  /* Fan Records */
+  .fan-records { margin-top:40px; }
+  .fan-records-title { font-size:1rem; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:.08em; margin-bottom:14px; }
+  .fan-records-title span { color:var(--orange); }
+  .fan-records-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px; }
+  .fan-record-card { background:var(--surface); border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:6px; position:relative; overflow:hidden; }
+  .fan-record-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--orange); opacity:.5; }
+  .fan-record-card.rank-1::before { background:#ffd700; opacity:1; }
+  .fan-record-card.rank-2::before { background:#c0c0c0; opacity:1; }
+  .fan-record-card.rank-3::before { background:#cd7f32; opacity:1; }
+  .fan-record-medal { font-size:1.3rem; line-height:1; }
+  .fan-record-name { font-weight:700; color:#fff; font-size:.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .fan-record-count { color:var(--orange); font-size:.78rem; font-weight:600; }
+  .fan-record-avg { color:#aaa; font-size:.75rem; }
+  .fan-record-movies { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
+  .fan-record-tag { background:#1e1e1e; color:#888; font-size:.65rem; padding:2px 7px; border-radius:20px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
 
   
   /* ── SHARE BUTTON ── */
@@ -687,6 +703,7 @@
       </div>
     </div>
     <div id="fanReviewsList"></div>
+    <div id="fanRecords" class="fan-records" style="display:none"></div>
   </div>
 
 </main>
@@ -1815,6 +1832,46 @@
       grid.appendChild(card);
     });
     list.appendChild(grid);
+    renderFanRecords(reviews);
+  }
+
+  function renderFanRecords(reviews) {
+    const wrap = document.getElementById('fanRecords');
+    if (!reviews.length) { wrap.style.display = 'none'; return; }
+
+    // Aggregate by name (case-insensitive)
+    const map = {};
+    reviews.forEach(r => {
+      const key = (r.name || 'Anonymous').trim().toLowerCase();
+      if (!map[key]) map[key] = { name: (r.name || 'Anonymous').trim(), count: 0, totalRating: 0, movies: new Set() };
+      map[key].count++;
+      map[key].totalRating += (r.rating || 0);
+      if (r.movie) map[key].movies.add(r.movie.trim());
+    });
+
+    const fans = Object.values(map).sort((a, b) => b.count - a.count || b.totalRating - a.totalRating);
+    const medals = ['🥇', '🥈', '🥉'];
+    const rankClass = ['rank-1', 'rank-2', 'rank-3'];
+
+    wrap.innerHTML = `
+      <div class="fan-records-title">🏆 Fan <span>Records</span></div>
+      <div class="fan-records-grid">
+        ${fans.map((f, i) => {
+          const avg   = (f.totalRating / f.count).toFixed(1);
+          const movies = [...f.movies].slice(0, 3).map(m => `<span class="fan-record-tag">🎬 ${esc(m)}</span>`).join('');
+          const medal  = medals[i] || '🎬';
+          const cls    = rankClass[i] || '';
+          return `
+            <div class="fan-record-card ${cls}">
+              <div class="fan-record-medal">${medal}</div>
+              <div class="fan-record-name">${esc(f.name)}</div>
+              <div class="fan-record-count">${f.count} review${f.count > 1 ? 's' : ''}</div>
+              <div class="fan-record-avg">★ ${avg} avg rating</div>
+              <div class="fan-record-movies">${movies}</div>
+            </div>`;
+        }).join('')}
+      </div>`;
+    wrap.style.display = 'block';
   }
 
   const RTDB = 'https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app';
