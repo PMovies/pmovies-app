@@ -943,7 +943,7 @@
     const status = getMovieStatus(m.id);
     const statusIcon = { want: '🔖', watched: '✓', fav: '★' }[status] || '♡';
     const statusClass = status ? `status-${status}` : '';
-    const lbEntry = lbReviewMap.get(m.id);
+    const lbEntry = lbReviewMap.get(m.id) || lbReviewTitleMap.get(normLbTitle(m.title));
     const card   = document.createElement('div');
     card.className = 'movie-card';
     card.style.animationDelay = (idx * 0.05) + 's';
@@ -957,10 +957,7 @@
           <button class="wl-picker-btn" data-status="watched" title="Watched">✓</button>
           <button class="wl-picker-btn" data-status="fav" title="Favourite">★</button>
         </div>
-        ${lbEntry ? `<a class="lb-card-badge" href="${lbEntry.link}" target="_blank" onclick="event.stopPropagation()" title="${esc(lbEntry.review)}">
-          <svg viewBox="0 0 24 24" width="11" height="11" fill="#fff"><circle cx="12" cy="12" r="11"/><path fill="#00c030" d="M12 1a11 11 0 110 22A11 11 0 0112 1z" opacity=".4"/></svg>
-          Ahmed's Review ${lbEntry.stars ? `<span class="lb-badge-stars">${lbEntry.stars}</span>` : ''}
-        </a>` : ''}
+        ${lbEntry ? `<a class="lb-card-badge" href="${lbEntry.link}" target="_blank" onclick="event.stopPropagation()" title="${esc(lbEntry.review)}"><svg viewBox="0 0 24 24" width="13" height="13" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="12" fill="#202830"/><circle cx="8" cy="12" r="4.5" fill="#fff"/><circle cx="16" cy="12" r="4.5" fill="#00C030"/><circle cx="12" cy="12" r="4.5" fill="#FF8000"/></svg> Ahmed's Review${lbEntry.stars ? ` <span class="lb-badge-stars">${lbEntry.stars}</span>` : ''}</a>` : ''}
       </div>
       <div class="movie-info">
         <div class="movie-title">${esc(m.title)}</div>
@@ -1224,8 +1221,11 @@
 
   /* ══ LETTERBOXD ══ */
   const LB_USER = 'Pastoo';
-  // Map of TMDb movie ID → {stars, review, link} — populated by loadLetterboxd()
+  // keyed by TMDb ID (number) → {stars, review, link}
   const lbReviewMap = new Map();
+  // keyed by normalised title string → same — fallback when ID lookup fails
+  const lbReviewTitleMap = new Map();
+  function normLbTitle(t){ return (t||'').toLowerCase().replace(/[^a-z0-9]/g,''); }
   const LB_RSS_API = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(`https://letterboxd.com/${LB_USER}/rss/`)}`;
 
   function parseLbStars(desc) {
@@ -1267,21 +1267,28 @@
     content.innerHTML = '';
     content.appendChild(row);
   }
+  function makeLbBadge(entry) {
+    const a = document.createElement('a');
+    a.className = 'lb-card-badge';
+    a.href = entry.link; a.target = '_blank'; a.title = entry.review || '';
+    a.onclick = e => e.stopPropagation();
+    a.innerHTML = `<svg viewBox="0 0 24 24" width="13" height="13" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="12" fill="#202830"/><circle cx="8" cy="12" r="4.5" fill="#fff"/><circle cx="16" cy="12" r="4.5" fill="#00C030"/><circle cx="12" cy="12" r="4.5" fill="#FF8000"/></svg> Ahmed's Review${entry.stars ? ` <span class="lb-badge-stars">${entry.stars}</span>` : ''}`;
+    return a;
+  }
+
   function injectLbBadges() {
-    lbReviewMap.forEach((entry, tmdbId) => {
-      // Target any poster-wrap whose sibling wl-btn carries the matching data-id
-      document.querySelectorAll(`.wl-btn[data-id="${tmdbId}"]`).forEach(btn => {
-        const wrap = btn.closest('.poster-wrap');
-        if (!wrap || wrap.querySelector('.lb-card-badge')) return;
-        const badge = document.createElement('a');
-        badge.className = 'lb-card-badge';
-        badge.href = entry.link;
-        badge.target = '_blank';
-        badge.title = entry.review;
-        badge.onclick = e => e.stopPropagation();
-        badge.innerHTML = `📽 Ahmed's Review${entry.stars ? ` <span class="lb-badge-stars">${entry.stars}</span>` : ''}`;
-        wrap.appendChild(badge);
-      });
+    // Scan every visible movie card that has a data-movie attribute
+    document.querySelectorAll('.wl-btn[data-movie]').forEach(btn => {
+      const wrap = btn.closest('.poster-wrap');
+      if (!wrap || wrap.querySelector('.lb-card-badge')) return;
+      try {
+        const movie = JSON.parse(decodeURIComponent(btn.dataset.movie));
+        const entry = lbReviewMap.get(movie.id) || lbReviewTitleMap.get(normLbTitle(movie.title));
+        if (entry) {
+          wrap.appendChild(makeLbBadge(entry));
+          console.log(`[LB] Badge injected on: ${movie.title}`);
+        }
+      } catch(_) {}
     });
   }
 
@@ -1296,32 +1303,40 @@
       if (!raw.length) throw new Error('No reviews yet');
       // Enrich each item with a TMDb poster + ID, and populate lbReviewMap
       const tmdbKey = getKey();
-      lbReviewMap.clear();
+      lbReviewMap.clear(); lbReviewTitleMap.clear();
       const enriched = await Promise.all(raw.map(async item => {
         const titleRaw = item.title || '';
         const year  = (titleRaw.match(/,\s*(\d{4})/) || [])[1] || '';
         const title = titleRaw.replace(/,\s*\d{4}.*$/, '').trim();
+        const entry = {
+          stars:  parseLbStars(item.description),
+          review: parseLbReview(item.description),
+          link:   item.link
+        };
+        // Always store by normalised title so we can match even without a TMDb ID
+        lbReviewTitleMap.set(normLbTitle(title), entry);
         let poster = null, tmdbId = null;
         try {
-          const q   = encodeURIComponent(title);
-          const yr  = year ? `&year=${year}` : '';
-          const sr  = await fetch(`${TMDB}/search/movie?api_key=${tmdbKey}&query=${q}${yr}&language=en-US`);
-          const sd  = await sr.json();
-          if (sd.results && sd.results.length) {
+          const q  = encodeURIComponent(title);
+          // Try with year first, fall back without if no results
+          let sd;
+          const r1 = await fetch(`${TMDB}/search/movie?api_key=${tmdbKey}&query=${q}${year?`&year=${year}`:''}&language=en-US`);
+          sd = await r1.json();
+          if (!sd.results?.length && year) {
+            const r2 = await fetch(`${TMDB}/search/movie?api_key=${tmdbKey}&query=${q}&language=en-US`);
+            sd = await r2.json();
+          }
+          if (sd.results?.length) {
             const hit = sd.results[0];
             if (hit.poster_path) poster = IMG + hit.poster_path;
             tmdbId = hit.id;
           }
         } catch(_) {}
-        if (tmdbId) {
-          lbReviewMap.set(tmdbId, {
-            stars:  parseLbStars(item.description),
-            review: parseLbReview(item.description),
-            link:   item.link
-          });
-        }
+        if (tmdbId) lbReviewMap.set(tmdbId, entry);
+        console.log(`[LB] "${title}" (${year}) → TMDb ID: ${tmdbId||'not found'}, stars: ${entry.stars||'none'}`);
         return { ...item, tmdbPoster: poster, tmdbId };
       }));
+      console.log(`[LB] Map ready: ${lbReviewMap.size} ID matches, ${lbReviewTitleMap.size} title entries`);
       renderLbCards(enriched);
       // Inject badges into any already-rendered movie cards that match
       injectLbBadges();
