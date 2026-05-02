@@ -428,7 +428,11 @@
   .fan-submit-btn { background:var(--orange); color:#000; border:none; padding:10px 28px; border-radius:8px; font-weight:700; font-size:.85rem; cursor:pointer; letter-spacing:.05em; }
   .fan-submit-btn:hover { background:#e0940f; }
   .fan-reviews-grid { display:grid; gap:14px; }
-  .fan-review-card { background:var(--surface); border-radius:12px; padding:18px 20px; }
+  .fan-review-card { background:var(--surface); border-radius:12px; overflow:hidden; display:flex; }
+  .fan-review-poster { width:72px; min-width:72px; background:#111; position:relative; }
+  .fan-review-poster img { width:100%; height:100%; object-fit:cover; display:block; }
+  .fan-review-poster-ph { width:100%; height:100%; min-height:110px; display:flex; align-items:center; justify-content:center; font-size:1.6rem; background:#1a1a1a; }
+  .fan-review-content { flex:1; padding:14px 16px; min-width:0; }
   .fan-review-top  { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; }
   .fan-reviewer    { font-weight:700; color:#fff; font-size:.9rem; }
   .fan-review-movie{ color:var(--orange); font-size:.8rem; font-weight:600; margin-top:2px; }
@@ -436,6 +440,11 @@
   .fan-review-date { color:#555; font-size:.72rem; }
   .fan-review-body { color:#bbb; font-size:.83rem; line-height:1.6; }
   .fan-empty { color:#555; text-align:center; padding:32px; font-size:.9rem; }
+  /* Fan Records toggle */
+  .fan-records-toggle { display:flex; gap:8px; margin-bottom:16px; }
+  .fan-records-tab { background:#1a1a1a; border:1px solid #2a2a2a; color:#888; font-size:.78rem; font-weight:600; padding:6px 16px; border-radius:20px; cursor:pointer; transition:.2s; letter-spacing:.04em; }
+  .fan-records-tab.active { background:var(--orange); color:#000; border-color:var(--orange); }
+  .fan-records-empty { color:#555; font-size:.85rem; padding:12px 0; }
   /* Fan Records */
   .fan-records { margin-top:40px; }
   .fan-records-title { font-size:1rem; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:.08em; margin-bottom:14px; }
@@ -1804,42 +1813,71 @@
     });
   }
 
+  const posterCache = {};
+  async function fetchPoster(movieTitle) {
+    const key = movieTitle.toLowerCase().trim();
+    if (posterCache[key] !== undefined) return posterCache[key];
+    posterCache[key] = null; // mark as fetching
+    try {
+      const res  = await fetch(`${TMDB}/search/movie?api_key=${getKey()}&query=${encodeURIComponent(movieTitle)}&language=en-US&page=1`);
+      const data = await res.json();
+      const hit  = (data.results || []).find(m => m.poster_path);
+      posterCache[key] = hit ? `https://image.tmdb.org/t/p/w92${hit.poster_path}` : null;
+    } catch(_) { posterCache[key] = null; }
+    return posterCache[key];
+  }
+
+  let allReviews = [];
+
   function renderFanReviews(reviews) {
+    allReviews = reviews;
     const list = document.getElementById('fanReviewsList');
     if (!reviews.length) {
       list.innerHTML = '<div class="fan-empty">Be the first to leave a review! 🎬</div>';
+      document.getElementById('fanRecords').style.display = 'none';
       return;
     }
     list.innerHTML = '';
     const grid = document.createElement('div'); grid.className = 'fan-reviews-grid';
-    reviews.forEach(r => {
+    reviews.forEach((r, idx) => {
       const stars = '★'.repeat(Math.max(0, Math.min(5, r.rating || 0)));
-      const date  = r.timestamp?.toDate ? r.timestamp.toDate().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
+      const ts    = r.timestamp?.toDate ? r.timestamp.toDate() : (r.timestamp ? new Date(r.timestamp) : null);
+      const date  = ts ? ts.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
       const card  = document.createElement('div'); card.className = 'fan-review-card';
+      const posterId = `fan-poster-${idx}`;
       card.innerHTML = `
-        <div class="fan-review-top">
-          <div>
-            <div class="fan-reviewer">${esc(r.name || 'Anonymous')}</div>
-            <div class="fan-review-movie">🎬 ${esc(r.movie || '')}</div>
-          </div>
-          <div style="text-align:right">
-            <div class="fan-review-stars">${stars}</div>
-            <div class="fan-review-date">${date}</div>
-          </div>
+        <div class="fan-review-poster" id="${posterId}">
+          <div class="fan-review-poster-ph">🎬</div>
         </div>
-        <div class="fan-review-body">${esc(r.text || '')}</div>
+        <div class="fan-review-content">
+          <div class="fan-review-top">
+            <div>
+              <div class="fan-reviewer">${esc(r.name || 'Anonymous')}</div>
+              <div class="fan-review-movie">🎬 ${esc(r.movie || '')}</div>
+            </div>
+            <div style="text-align:right">
+              <div class="fan-review-stars">${stars}</div>
+              <div class="fan-review-date">${date}</div>
+            </div>
+          </div>
+          <div class="fan-review-body">${esc(r.text || '')}</div>
+        </div>
       `;
       grid.appendChild(card);
+      // Fetch poster async and inject when ready
+      if (r.movie) {
+        fetchPoster(r.movie).then(url => {
+          const ph = document.getElementById(posterId);
+          if (ph && url) ph.innerHTML = `<img src="${url}" alt="${esc(r.movie)}" loading="lazy"/>`;
+        });
+      }
     });
     list.appendChild(grid);
-    renderFanRecords(reviews);
+    renderFanRecords(reviews, 'all');
   }
 
-  function renderFanRecords(reviews) {
-    const wrap = document.getElementById('fanRecords');
-    if (!reviews.length) { wrap.style.display = 'none'; return; }
-
-    // Aggregate by name (case-insensitive)
+  function buildRecordsGrid(reviews) {
+    if (!reviews.length) return '<div class="fan-records-empty">No reviews this month yet — be the first!</div>';
     const map = {};
     reviews.forEach(r => {
       const key = (r.name || 'Anonymous').trim().toLowerCase();
@@ -1848,29 +1886,46 @@
       map[key].totalRating += (r.rating || 0);
       if (r.movie) map[key].movies.add(r.movie.trim());
     });
-
     const fans = Object.values(map).sort((a, b) => b.count - a.count || b.totalRating - a.totalRating);
     const medals = ['🥇', '🥈', '🥉'];
     const rankClass = ['rank-1', 'rank-2', 'rank-3'];
+    return `<div class="fan-records-grid">${fans.map((f, i) => {
+      const avg    = (f.totalRating / f.count).toFixed(1);
+      const movies = [...f.movies].slice(0, 3).map(m => `<span class="fan-record-tag">🎬 ${esc(m)}</span>`).join('');
+      return `<div class="fan-record-card ${rankClass[i]||''}">
+        <div class="fan-record-medal">${medals[i]||'🎬'}</div>
+        <div class="fan-record-name">${esc(f.name)}</div>
+        <div class="fan-record-count">${f.count} review${f.count>1?'s':''}</div>
+        <div class="fan-record-avg">★ ${avg} avg rating</div>
+        <div class="fan-record-movies">${movies}</div>
+      </div>`;
+    }).join('')}</div>`;
+  }
+
+  function renderFanRecords(reviews, tab) {
+    const wrap = document.getElementById('fanRecords');
+    if (!reviews.length) { wrap.style.display = 'none'; return; }
+
+    const now   = new Date();
+    const month = now.getMonth();
+    const year  = now.getFullYear();
+    const monthName = now.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+
+    const monthly = reviews.filter(r => {
+      const ts = r.timestamp?.toDate ? r.timestamp.toDate() : (r.timestamp ? new Date(r.timestamp) : null);
+      return ts && ts.getMonth() === month && ts.getFullYear() === year;
+    });
+
+    const activeTab = tab || 'all';
+    const gridHTML  = activeTab === 'month' ? buildRecordsGrid(monthly) : buildRecordsGrid(reviews);
 
     wrap.innerHTML = `
       <div class="fan-records-title">🏆 Fan <span>Records</span></div>
-      <div class="fan-records-grid">
-        ${fans.map((f, i) => {
-          const avg   = (f.totalRating / f.count).toFixed(1);
-          const movies = [...f.movies].slice(0, 3).map(m => `<span class="fan-record-tag">🎬 ${esc(m)}</span>`).join('');
-          const medal  = medals[i] || '🎬';
-          const cls    = rankClass[i] || '';
-          return `
-            <div class="fan-record-card ${cls}">
-              <div class="fan-record-medal">${medal}</div>
-              <div class="fan-record-name">${esc(f.name)}</div>
-              <div class="fan-record-count">${f.count} review${f.count > 1 ? 's' : ''}</div>
-              <div class="fan-record-avg">★ ${avg} avg rating</div>
-              <div class="fan-record-movies">${movies}</div>
-            </div>`;
-        }).join('')}
-      </div>`;
+      <div class="fan-records-toggle">
+        <button class="fan-records-tab ${activeTab==='all'?'active':''}" onclick="renderFanRecords(allReviews,'all')">All Time</button>
+        <button class="fan-records-tab ${activeTab==='month'?'active':''}" onclick="renderFanRecords(allReviews,'month')">${monthName}</button>
+      </div>
+      ${gridHTML}`;
     wrap.style.display = 'block';
   }
 
