@@ -1794,7 +1794,7 @@
   // keyed by normalised title string → same — fallback when ID lookup fails
   const lbReviewTitleMap = new Map();
   function normLbTitle(t){ return (t||'').toLowerCase().replace(/^(the|a|an)\s+/,'').replace(/[^a-z0-9]/g,''); }
-  const LB_RSS_API = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(`https://letterboxd.com/${LB_USER}/rss/`)}`;
+  const LB_RSS_URL = `https://letterboxd.com/${LB_USER}/rss/`;
 
   function parseLbStars(desc) {
     const m = (desc || '').match(/[★☆]+½?|[★☆]+½?/);
@@ -1856,14 +1856,32 @@
     });
   }
 
+  async function fetchLbItems() {
+    // Use corsproxy.io — plain pass-through, no server-side cache
+    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(LB_RSS_URL)}`;
+    const res = await fetch(proxyUrl, { cache: 'no-store' });
+    if (!res.ok) throw new Error('Feed unavailable');
+    const text = await res.text();
+    const xml  = new DOMParser().parseFromString(text, 'text/xml');
+    const items = [...xml.querySelectorAll('item')].map(el => {
+      const get = tag => el.querySelector(tag)?.textContent?.trim() || '';
+      const enc = el.querySelector('enclosure');
+      return {
+        title:       get('title'),
+        link:        get('link'),
+        description: get('description'),
+        thumbnail:   enc?.getAttribute('url') || '',
+        pubDate:     get('pubDate')
+      };
+    });
+    return items;
+  }
+
   async function loadLetterboxd() {
     const content = document.getElementById('lbContent');
     content.innerHTML = '<div class="yt-loading">Loading Letterboxd reviews…</div>';
     try {
-      const res  = await fetch(LB_RSS_API);
-      const data = await res.json();
-      if (data.status !== 'ok') throw new Error('Feed unavailable');
-      const allItems = data.items || [];
+      const allItems = await fetchLbItems();
       if (!allItems.length) throw new Error('No reviews yet');
 
       // Populate title map from ALL items first (no TMDb call needed — title is enough)
@@ -2249,6 +2267,7 @@
     loadNowInCinemas();
     loadYtReviews();
     loadLetterboxd();
+    setInterval(loadLetterboxd, 20 * 60 * 1000); // refresh every 20 minutes
     loadFanReviews();
     renderWatchlist();
   });
