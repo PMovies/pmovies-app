@@ -687,7 +687,7 @@
     try {
       const res  = await fetch(`${TMDB}/movie/now_playing?api_key=${getKey()}&language=en-US&region=AE&page=1`);
       const data = await res.json();
-      const movies = (data.results || []).sort((a,b) => (b.popularity||0)-(a.popularity||0)).slice(0, 20);
+      const movies = (data.results || []).sort((a,b) => (b.release_date||'').localeCompare(a.release_date||'')).slice(0, 20);
       if (!movies.length) { content.innerHTML = '<div class="yt-loading">No cinema releases found.</div>'; return; }
       const row = document.createElement('div'); row.className = 'trending-scroll';
       movies.forEach((m, i) => {
