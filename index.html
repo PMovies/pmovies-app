@@ -862,10 +862,10 @@
 
   /* ══ MOOD & GENRE ══ */
   const MOOD_MAP = {
-    happy:  { label:'Happy & Feel-Good',   subtitle:'Comedies, animation & romance', genres:'35,16,10751', sort:'popularity.desc'   },
+    happy:  { label:'Happy & Feel-Good',   subtitle:'Comedies, animation & romance', genres:'35|16|10751', sort:'popularity.desc'   },
     sad:    { label:'Emotional & Moving',   subtitle:'Powerful dramas',              genres:'18',           sort:'vote_average.desc' },
-    thrill: { label:'Thrilled & Excited',   subtitle:'Action, thrillers & more',     genres:'28,53',        sort:'popularity.desc'   },
-    scared: { label:'Adventurous & Scared', subtitle:'Horror, sci-fi & adventure',   genres:'27,878,12',    sort:'popularity.desc'   },
+    thrill: { label:'Thrilled & Excited',   subtitle:'Action, thrillers & more',     genres:'28|53',        sort:'popularity.desc'   },
+    scared: { label:'Adventurous & Scared', subtitle:'Horror, sci-fi & adventure',   genres:'27|878|12',    sort:'popularity.desc'   },
   };
   const MOOD_GENRES = {
     happy:  [{id:'',label:'All'},{id:'35',label:'Comedy'},{id:'16',label:'Animation'},{id:'10749',label:'Romance'},{id:'10751',label:'Family'}],
@@ -1036,8 +1036,14 @@
     if (!movies.length) { showError('No movies found — try another mood!'); return; }
     movies.forEach((m, i) => grid.appendChild(buildMovieCard(m, i)));
     showResults();
-    // Stamp any Letterboxd badges if map is already populated
-    if (lbReviewMap.size || lbReviewTitleMap.size) injectLbBadges();
+    // Stamp Letterboxd badges — immediately if maps are ready, else retry once Letterboxd loads
+    if (lbReviewMap.size || lbReviewTitleMap.size) {
+      injectLbBadges();
+    } else {
+      // Letterboxd still loading — retry in 4s and again in 8s
+      setTimeout(injectLbBadges, 4000);
+      setTimeout(injectLbBadges, 8000);
+    }
   }
 
   /* ══ MODAL ══ */
@@ -1225,7 +1231,7 @@
   const lbReviewMap = new Map();
   // keyed by normalised title string → same — fallback when ID lookup fails
   const lbReviewTitleMap = new Map();
-  function normLbTitle(t){ return (t||'').toLowerCase().replace(/[^a-z0-9]/g,''); }
+  function normLbTitle(t){ return (t||'').toLowerCase().replace(/^(the|a|an)\s+/,'').replace(/[^a-z0-9]/g,''); }
   const LB_RSS_API = `https://api.rss2json.com/v1/api.json?count=100&rss_url=${encodeURIComponent(`https://letterboxd.com/${LB_USER}/rss/`)}`;
 
   function parseLbStars(desc) {
