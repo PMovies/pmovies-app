@@ -1,0 +1,16 @@
+{
+  "name": "PMovies",
+  "short_name": "PMovies",
+  "description": "Mood-based movie recommendations by the PMovies channel",
+  "start_url": "/pmovies-app/",
+  "scope": "/pmovies-app/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#f5a623",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
