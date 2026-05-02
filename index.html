@@ -1779,6 +1779,7 @@
 
   /* ══ HELPERS ══ */
   function esc(s) { const d=document.createElement('div'); d.appendChild(document.createTextNode(s)); return d.innerHTML; }
+  function escJs(s) { return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
   function showLoader(v)  { document.getElementById('loader').classList.toggle('visible', v); }
   function showError(msg) { const el=document.getElementById('errorBox'); el.textContent=msg; el.classList.add('visible'); }
   function hideError()    { document.getElementById('errorBox').classList.remove('visible'); }
@@ -2847,7 +2848,7 @@ function renderTop100(movies) {
     const genres = (m.genres||[]).slice(0,2).map(g=>`<span class="top100-genre-tag">${esc(g)}</span>`).join('');
     const voteBtn = hasVoted
       ? `<div class="top100-voted-badge">✓ Voted</div>`
-      : `<button class="top100-vote-btn" ${canVote?'':'disabled'} onclick="castVote('${m.id}','${esc(m.title)}','${m.poster||''}','${m.backdrop||''}',${m.year||0},'${(m.genres||[]).join('|')}')">Vote</button>`;
+      : `<button class="top100-vote-btn" ${canVote?'':'disabled'} onclick="castVote('${m.id}','${escJs(m.title)}','${escJs(m.poster||'')}','${escJs(m.backdrop||'')}',${m.year||0},'${escJs((m.genres||[]).join('|'))}')">Vote</button>`;
 
     return `
       <div class="top100-item" id="top100-item-${m.id}">
@@ -2964,7 +2965,7 @@ function top100Search(q) {
                 onclick="
                   document.getElementById('top100Dropdown').style.display='none';
                   document.getElementById('top100SearchInput').value='';
-                  castVote('${m.id}','${esc(m.title)}','${m.poster_path||''}','${m.backdrop_path||''}',${m.release_date?m.release_date.slice(0,4):0},'')
+                  castVote('${m.id}','${escJs(m.title)}','${escJs(m.poster_path||'')}','${escJs(m.backdrop_path||'')}',${m.release_date?m.release_date.slice(0,4):0},'')
                 ">${canVote?'Vote':'No votes left'}</button>`}
         </div>`;
     }).join('');
