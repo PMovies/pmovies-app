@@ -455,6 +455,12 @@
   .top100-title-block h2 { font-size:1.4rem; font-weight:900; color:#fff; text-transform:uppercase; letter-spacing:.06em; margin:0 0 4px; }
   .top100-title-block h2 span { color:var(--orange); }
   .top100-title-block p { color:#666; font-size:.82rem; margin:0; }
+  .top100-header-right { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  .top100-community-stats { display:flex; align-items:center; gap:14px; background:#111; border:1px solid #222; border-radius:20px; padding:8px 18px; }
+  .top100-stat { text-align:center; }
+  .top100-stat-num { display:block; font-size:1.15rem; font-weight:900; color:#fff; line-height:1; }
+  .top100-stat-lbl { display:block; font-size:.62rem; color:#666; text-transform:uppercase; letter-spacing:.05em; margin-top:2px; }
+  .top100-stat-divider { width:1px; height:28px; background:#2a2a2a; }
   .top100-votes-left { background:#1a1a1a; border:1px solid #2a2a2a; border-radius:20px; padding:8px 18px; text-align:center; }
   .top100-votes-num { font-size:1.3rem; font-weight:900; color:var(--orange); line-height:1; }
   .top100-votes-lbl { font-size:.65rem; color:#666; text-transform:uppercase; letter-spacing:.05em; }
@@ -806,9 +812,22 @@
         <h2><span>PMovies</span> Top 100 Films</h2>
         <p>Voted by PMovies fans — not critics, not algorithms</p>
       </div>
-      <div class="top100-votes-left" id="top100VotesLeft">
-        <div class="top100-votes-num" id="top100VotesNum">5</div>
-        <div class="top100-votes-lbl">votes remaining</div>
+      <div class="top100-header-right">
+        <div class="top100-community-stats" id="top100Stats" style="display:none">
+          <div class="top100-stat">
+            <span class="top100-stat-num" id="top100TotalVotes">0</span>
+            <span class="top100-stat-lbl">total votes</span>
+          </div>
+          <div class="top100-stat-divider"></div>
+          <div class="top100-stat">
+            <span class="top100-stat-num" id="top100TotalFilms">0</span>
+            <span class="top100-stat-lbl">films nominated</span>
+          </div>
+        </div>
+        <div class="top100-votes-left" id="top100VotesLeft">
+          <div class="top100-votes-num" id="top100VotesNum">5</div>
+          <div class="top100-votes-lbl">votes remaining</div>
+        </div>
       </div>
     </div>
     <div class="top100-search-wrap">
@@ -2904,8 +2923,19 @@ async function loadTop100() {
     const res  = await fetch(`${RTDB}/communityVotes.json`);
     const data = res.ok ? await res.json() : null;
     if (!data) { renderTop100([]); return; }
-    const movies = Object.entries(data)
-      .map(([id, m]) => ({ id, ...m }))
+    const all = Object.entries(data).map(([id, m]) => ({ id, ...m }));
+
+    // Update community stats from ALL votes (not just the displayed subset)
+    const totalVotes = all.reduce((sum, m) => sum + (m.votes || 0), 0);
+    const totalFilms = all.length;
+    const statsEl = document.getElementById('top100Stats');
+    if (statsEl) {
+      document.getElementById('top100TotalVotes').textContent = totalVotes.toLocaleString();
+      document.getElementById('top100TotalFilms').textContent = totalFilms.toLocaleString();
+      statsEl.style.display = 'flex';
+    }
+
+    const movies = all
       .filter(m => m.votes >= TOP100_MIN_VOTES)
       .sort((a, b) => b.votes - a.votes || a.firstVoted - b.firstVoted)
       .slice(0, TOP100_MAX_MOVIES);
