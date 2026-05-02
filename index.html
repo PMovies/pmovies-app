@@ -427,6 +427,87 @@
   .fan-star-label { font-size:.75rem; color:#666; margin-left:6px; }
   .fan-submit-btn { background:var(--orange); color:#000; border:none; padding:10px 28px; border-radius:8px; font-weight:700; font-size:.85rem; cursor:pointer; letter-spacing:.05em; }
   .fan-submit-btn:hover { background:#e0940f; }
+  /* ── Weekly Challenge ── */
+  .challenge-section { max-width:1100px; margin:0 auto 52px; padding:0 20px; }
+  .challenge-card { border-radius:16px; overflow:hidden; position:relative; background:#111; min-height:220px; display:flex; align-items:stretch; }
+  .challenge-bg { position:absolute; inset:0; background-size:cover; background-position:center; filter:brightness(.35); transition:opacity .5s; }
+  .challenge-bg::after { content:''; position:absolute; inset:0; background:linear-gradient(90deg,rgba(0,0,0,.85) 0%,rgba(0,0,0,.2) 100%); }
+  .challenge-poster { position:relative; z-index:1; width:130px; min-width:130px; }
+  .challenge-poster img { width:100%; height:100%; object-fit:cover; display:block; }
+  .challenge-body { position:relative; z-index:1; flex:1; padding:24px 28px; display:flex; flex-direction:column; justify-content:center; gap:10px; }
+  .challenge-eyebrow { display:flex; align-items:center; gap:8px; }
+  .challenge-badge-pill { background:var(--orange); color:#000; font-size:.68rem; font-weight:800; padding:3px 10px; border-radius:20px; letter-spacing:.06em; text-transform:uppercase; }
+  .challenge-deadline { color:#888; font-size:.75rem; }
+  .challenge-title { font-size:1.5rem; font-weight:800; color:#fff; line-height:1.2; }
+  .challenge-year { color:#888; font-size:.85rem; margin-top:-4px; }
+  .challenge-countdown { display:flex; gap:14px; margin-top:4px; }
+  .challenge-unit { text-align:center; }
+  .challenge-num { font-size:1.6rem; font-weight:800; color:var(--orange); line-height:1; }
+  .challenge-lbl { font-size:.6rem; color:#666; text-transform:uppercase; letter-spacing:.06em; }
+  .challenge-cta { margin-top:6px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .challenge-review-btn { background:var(--orange); color:#000; border:none; padding:8px 20px; border-radius:8px; font-weight:700; font-size:.8rem; cursor:pointer; letter-spacing:.04em; }
+  .challenge-review-btn:hover { background:#e0940f; }
+  .challenge-review-count { color:#888; font-size:.8rem; }
+  .challenge-closed { color:#f5a623; font-weight:700; font-size:.85rem; }
+  /* Challenge Results Card */
+  .challenge-results-wrap { border-radius:16px; overflow:hidden; position:relative; min-height:260px; }
+  .cr-backdrop { position:absolute; inset:0; background-size:cover; background-position:center; filter:brightness(.2); }
+  .cr-backdrop::after { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(0,0,0,.92) 0%,rgba(0,0,0,.6) 100%); }
+  .cr-inner { position:relative; z-index:1; display:flex; align-items:stretch; gap:0; }
+  .cr-left { width:120px; min-width:120px; }
+  .cr-poster-wrap { position:relative; height:100%; }
+  .cr-poster { width:100%; height:100%; object-fit:cover; display:block; }
+  .cr-poster-glow { position:absolute; inset:0; box-shadow:inset -20px 0 30px rgba(0,0,0,.8); }
+  .cr-center { flex:1; padding:28px 28px 24px; display:flex; flex-direction:column; gap:12px; min-width:0; }
+  .cr-eyebrow { display:flex; align-items:center; gap:8px; }
+  .cr-pill { background:#ffffff15; border:1px solid #ffffff20; color:#ccc; font-size:.68rem; font-weight:700; padding:3px 12px; border-radius:20px; letter-spacing:.06em; text-transform:uppercase; }
+  .cr-title { font-size:1.6rem; font-weight:800; color:#fff; line-height:1.15; }
+  .cr-year  { color:#666; font-size:.85rem; margin-top:-6px; }
+  .cr-score-row { display:flex; align-items:center; gap:16px; }
+  .cr-big-score { font-size:3.5rem; font-weight:900; color:var(--orange); line-height:1; letter-spacing:-2px; }
+  .cr-stars { color:#f5a623; font-size:1.1rem; letter-spacing:2px; }
+  .cr-participants { color:#666; font-size:.8rem; margin-top:4px; }
+  .cr-verdict-row { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .cr-verdict-pill { font-size:.8rem; font-weight:700; padding:5px 14px; border-radius:20px; letter-spacing:.04em; }
+  .cr-recommend { color:#888; font-size:.8rem; }
+  .cr-bar-wrap { margin-top:-4px; }
+  .cr-bar-track { background:#ffffff10; border-radius:20px; height:6px; overflow:hidden; }
+  .cr-bar-fill { height:100%; border-radius:20px; transition:width 1.2s cubic-bezier(.4,0,.2,1); }
+  .cr-cta-row { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-top:4px; }
+  .cr-next { color:#555; font-size:.75rem; }
+  .cr-right { width:220px; min-width:220px; padding:28px 22px 24px 0; display:flex; flex-direction:column; gap:10px; }
+  .cr-top-review-label { color:var(--orange); font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; }
+  .cr-top-review { background:#ffffff08; border:1px solid #ffffff10; border-radius:12px; padding:14px; flex:1; display:flex; flex-direction:column; gap:8px; }
+  .cr-tr-stars { color:#f5a623; font-size:.9rem; letter-spacing:1px; }
+  .cr-tr-name { color:#fff; font-weight:700; font-size:.85rem; }
+  .cr-tr-text { color:#999; font-size:.78rem; line-height:1.5; font-style:italic; }
+  @media(max-width:700px) { .cr-right { display:none; } .cr-left { width:90px; min-width:90px; } .cr-big-score { font-size:2.8rem; } }
+
+  /* Challenge badge on review cards */
+  .challenge-review-badge { display:inline-block; background:var(--orange); color:#000; font-size:.62rem; font-weight:800; padding:2px 7px; border-radius:10px; letter-spacing:.05em; margin-left:6px; vertical-align:middle; }
+  /* Admin Panel */
+  .admin-overlay { position:fixed; inset:0; background:rgba(0,0,0,.85); z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px; }
+  .admin-panel { background:#161616; border:1px solid #2a2a2a; border-radius:16px; padding:32px; width:100%; max-width:480px; }
+  .admin-title { font-size:1.1rem; font-weight:800; color:#fff; margin-bottom:20px; }
+  .admin-title span { color:var(--orange); }
+  .admin-field { margin-bottom:14px; }
+  .admin-field label { display:block; color:#888; font-size:.78rem; margin-bottom:6px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; }
+  .admin-field input { width:100%; background:#0d0d0d; border:1px solid #2a2a2a; border-radius:8px; color:#fff; padding:10px 14px; font-size:.9rem; box-sizing:border-box; }
+  .admin-field input:focus { outline:none; border-color:var(--orange); }
+  .admin-search-results { background:#0d0d0d; border:1px solid #2a2a2a; border-radius:8px; margin-top:4px; overflow:hidden; max-height:200px; overflow-y:auto; }
+  .admin-search-item { display:flex; align-items:center; gap:10px; padding:8px 12px; cursor:pointer; border-bottom:1px solid #1a1a1a; }
+  .admin-search-item:hover { background:#1a1a1a; }
+  .admin-search-item img { width:32px; height:48px; object-fit:cover; border-radius:4px; }
+  .admin-search-item-info { flex:1; }
+  .admin-search-item-title { color:#fff; font-size:.85rem; font-weight:600; }
+  .admin-search-item-year { color:#666; font-size:.75rem; }
+  .admin-selected { background:#0d0d0d; border:1px solid var(--orange); border-radius:8px; padding:10px 14px; color:var(--orange); font-size:.85rem; font-weight:600; margin-bottom:14px; display:none; }
+  .admin-btns { display:flex; gap:10px; margin-top:20px; }
+  .admin-save-btn { flex:1; background:var(--orange); color:#000; border:none; padding:11px; border-radius:8px; font-weight:800; font-size:.9rem; cursor:pointer; }
+  .admin-save-btn:disabled { opacity:.5; cursor:not-allowed; }
+  .admin-cancel-btn { background:#1a1a1a; color:#aaa; border:none; padding:11px 20px; border-radius:8px; font-weight:600; font-size:.9rem; cursor:pointer; }
+  .admin-pw-wrap { margin-bottom:20px; }
+
   .fan-reviews-grid { display:grid; gap:14px; }
   .fan-review-card { background:var(--surface); border-radius:12px; overflow:hidden; display:flex; }
   .fan-review-poster { width:72px; min-width:72px; background:#111; position:relative; }
@@ -660,6 +741,9 @@
     </div>
     <div id="lbContent"></div>
   </div>
+
+  <!-- WEEKLY CHALLENGE -->
+  <div class="challenge-section" id="challengeSection" style="display:none"></div>
 
   <!-- FAN REVIEWS -->
   <div class="section-wrap" id="fanSection">
@@ -1839,10 +1923,15 @@
     }
     list.innerHTML = '';
     const grid = document.createElement('div'); grid.className = 'fan-reviews-grid';
+    // Get current challenge title for badge matching
+    const challengeEl = document.getElementById('challengeSection');
+    const challengeTitle = challengeEl?.querySelector('.challenge-title')?.textContent?.toLowerCase().trim() || '';
+
     reviews.forEach((r, idx) => {
       const stars = '★'.repeat(Math.max(0, Math.min(5, r.rating || 0)));
       const ts    = r.timestamp?.toDate ? r.timestamp.toDate() : (r.timestamp ? new Date(r.timestamp) : null);
       const date  = ts ? ts.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
+      const isChallenge = challengeTitle && (r.movie||'').toLowerCase().trim() === challengeTitle;
       const card  = document.createElement('div'); card.className = 'fan-review-card';
       const posterId = `fan-poster-${idx}`;
       card.innerHTML = `
@@ -1852,7 +1941,7 @@
         <div class="fan-review-content">
           <div class="fan-review-top">
             <div>
-              <div class="fan-reviewer">${esc(r.name || 'Anonymous')}</div>
+              <div class="fan-reviewer">${esc(r.name || 'Anonymous')}${isChallenge ? '<span class="challenge-review-badge">⚡ Challenge</span>' : ''}</div>
               <div class="fan-review-movie">🎬 ${esc(r.movie || '')}</div>
             </div>
             <div style="text-align:right">
@@ -1874,6 +1963,7 @@
     });
     list.appendChild(grid);
     renderFanRecords(reviews, 'all');
+    refreshChallengeResults();
   }
 
   function buildRecordsGrid(reviews) {
@@ -2329,5 +2419,291 @@
     });
   })();
   </script>
+
+<!-- ADMIN PANEL -->
+<div class="admin-overlay" id="adminOverlay" style="display:none" onclick="if(event.target===this)closeAdmin()">
+  <div class="admin-panel">
+    <div class="admin-title">⚡ Weekly <span>Challenge</span> Admin</div>
+    <div class="admin-pw-wrap" id="adminPwWrap">
+      <div class="admin-field">
+        <label>Admin Password</label>
+        <input type="password" id="adminPwInput" placeholder="Enter password…" onkeydown="if(event.key==='Enter')checkAdminPw()"/>
+      </div>
+      <div class="admin-btns">
+        <button class="admin-save-btn" onclick="checkAdminPw()">Unlock</button>
+        <button class="admin-cancel-btn" onclick="closeAdmin()">Cancel</button>
+      </div>
+    </div>
+    <div id="adminForm" style="display:none">
+      <div class="admin-field">
+        <label>Search Movie</label>
+        <input type="text" id="adminSearch" placeholder="Type movie title…" oninput="adminSearchMovies(this.value)"/>
+        <div class="admin-search-results" id="adminSearchResults" style="display:none"></div>
+      </div>
+      <div class="admin-selected" id="adminSelected"></div>
+      <div class="admin-field">
+        <label>Deadline (Thursday end-of-day)</label>
+        <input type="datetime-local" id="adminDeadline"/>
+      </div>
+      <div class="admin-btns">
+        <button class="admin-save-btn" id="adminSaveBtn" onclick="saveChallenge()" disabled>Set Challenge</button>
+        <button class="admin-cancel-btn" onclick="closeAdmin()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ── WEEKLY CHALLENGE ── */
+  const CHALLENGE_PW = 'pmovies2026';
+  let selectedChallenge = null;
+  let challengeTimerInterval = null;
+
+  // Secret access: click logo 5 times
+  let logoClicks = 0, logoTimer = null;
+  document.querySelector('.logo-wrap')?.addEventListener('click', () => {
+    logoClicks++;
+    clearTimeout(logoTimer);
+    logoTimer = setTimeout(() => logoClicks = 0, 2000);
+    if (logoClicks >= 5) { logoClicks = 0; openAdmin(); }
+  });
+
+  // Also via URL ?admin
+  if (location.search.includes('admin')) openAdmin();
+
+  function openAdmin() {
+    document.getElementById('adminOverlay').style.display = 'flex';
+    document.getElementById('adminPwWrap').style.display = 'block';
+    document.getElementById('adminForm').style.display = 'none';
+    document.getElementById('adminPwInput').value = '';
+    // Pre-fill deadline to next Thursday 23:59
+    const d = new Date(); const day = d.getDay();
+    const daysToThurs = (4 - day + 7) % 7 || 7;
+    d.setDate(d.getDate() + daysToThurs);
+    d.setHours(23, 59, 0, 0);
+    const iso = d.toISOString().slice(0, 16);
+    document.getElementById('adminDeadline').value = iso;
+  }
+  function closeAdmin() {
+    document.getElementById('adminOverlay').style.display = 'none';
+    document.getElementById('adminSearchResults').style.display = 'none';
+    selectedChallenge = null;
+  }
+  function checkAdminPw() {
+    if (document.getElementById('adminPwInput').value === CHALLENGE_PW) {
+      document.getElementById('adminPwWrap').style.display = 'none';
+      document.getElementById('adminForm').style.display = 'block';
+    } else {
+      document.getElementById('adminPwInput').style.borderColor = '#f44';
+      setTimeout(() => document.getElementById('adminPwInput').style.borderColor = '', 1000);
+    }
+  }
+
+  let adminSearchTimer;
+  function adminSearchMovies(q) {
+    clearTimeout(adminSearchTimer);
+    const box = document.getElementById('adminSearchResults');
+    if (!q.trim()) { box.style.display = 'none'; return; }
+    adminSearchTimer = setTimeout(async () => {
+      const res  = await fetch(`${TMDB}/search/movie?api_key=${getKey()}&query=${encodeURIComponent(q)}&language=en-US&page=1`);
+      const data = await res.json();
+      const hits = (data.results || []).slice(0, 6);
+      if (!hits.length) { box.style.display = 'none'; return; }
+      box.innerHTML = hits.map(m => `
+        <div class="admin-search-item" onclick="selectChallengeMovie(${m.id},'${esc(m.title)}','${m.poster_path||''}','${m.backdrop_path||''}',${m.release_date ? m.release_date.slice(0,4) : 0})">
+          ${m.poster_path ? `<img src="https://image.tmdb.org/t/p/w92${m.poster_path}"/>` : '<div style="width:32px;height:48px;background:#222;border-radius:4px"></div>'}
+          <div class="admin-search-item-info">
+            <div class="admin-search-item-title">${esc(m.title)}</div>
+            <div class="admin-search-item-year">${m.release_date ? m.release_date.slice(0,4) : ''}</div>
+          </div>
+        </div>`).join('');
+      box.style.display = 'block';
+    }, 300);
+  }
+
+  function selectChallengeMovie(id, title, poster, backdrop, year) {
+    selectedChallenge = { id, title, poster, backdrop, year };
+    document.getElementById('adminSearchResults').style.display = 'none';
+    document.getElementById('adminSearch').value = title;
+    const sel = document.getElementById('adminSelected');
+    sel.textContent = `✓ Selected: ${title} (${year})`;
+    sel.style.display = 'block';
+    document.getElementById('adminSaveBtn').disabled = false;
+  }
+
+  async function saveChallenge() {
+    if (!selectedChallenge) return;
+    const deadline = new Date(document.getElementById('adminDeadline').value).getTime();
+    const btn = document.getElementById('adminSaveBtn');
+    btn.textContent = 'Saving…'; btn.disabled = true;
+    const payload = { ...selectedChallenge, deadline, setAt: Date.now() };
+    await fetch(`${RTDB}/weeklyChallenge.json`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    btn.textContent = '✓ Challenge Set!';
+    setTimeout(() => { closeAdmin(); loadWeeklyChallenge(); }, 1200);
+  }
+
+  async function loadWeeklyChallenge() {
+    try {
+      const res  = await fetch(`${RTDB}/weeklyChallenge.json`);
+      const data = res.ok ? await res.json() : null;
+      if (!data || !data.title) return;
+      renderChallenge(data);
+    } catch(_) {}
+  }
+
+  function renderChallenge(c) {
+    const sec      = document.getElementById('challengeSection');
+    const now      = Date.now();
+    const deadline = c.deadline || 0;
+    const closed   = now > deadline;
+    const posterUrl   = c.poster   ? `https://image.tmdb.org/t/p/w300${c.poster}`   : '';
+    const backdropUrl = c.backdrop ? `https://image.tmdb.org/t/p/w1280${c.backdrop}` : '';
+    const deadlineStr = new Date(deadline).toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
+
+    if (!closed) {
+      // ── ACTIVE CHALLENGE ──
+      sec.innerHTML = `
+        <div class="challenge-card">
+          <div class="challenge-bg" style="background-image:url(${backdropUrl})"></div>
+          ${posterUrl ? `<div class="challenge-poster"><img src="${posterUrl}" alt="${esc(c.title)}"/></div>` : ''}
+          <div class="challenge-body">
+            <div class="challenge-eyebrow">
+              <span class="challenge-badge-pill">⚡ Weekly Challenge</span>
+              <span class="challenge-deadline">Until ${deadlineStr}</span>
+            </div>
+            <div class="challenge-title">${esc(c.title)}</div>
+            ${c.year ? `<div class="challenge-year">${c.year}</div>` : ''}
+            <div class="challenge-countdown" id="challengeCountdown"></div>
+            <div class="challenge-cta">
+              <button class="challenge-review-btn" onclick="document.getElementById('fanSection').scrollIntoView({behavior:'smooth'})">Leave Your Review ↓</button>
+              <span class="challenge-review-count" id="challengeReviewCount"></span>
+            </div>
+          </div>
+        </div>`;
+      sec.style.display = 'block';
+      startChallengeTimer(deadline);
+      updateChallengeReviewCount(c.title);
+    } else {
+      // ── RESULTS CARD ── (rendered after reviews are loaded)
+      sec.dataset.challengeTitle    = c.title;
+      sec.dataset.challengePoster   = posterUrl;
+      sec.dataset.challengeBackdrop = backdropUrl;
+      sec.dataset.challengeYear     = c.year || '';
+      sec.style.display = 'block';
+      renderChallengeResults(c.title, posterUrl, backdropUrl, c.year);
+    }
+  }
+
+  function renderChallengeResults(title, posterUrl, backdropUrl, year) {
+    const sec = document.getElementById('challengeSection');
+    const challengeReviews = allReviews.filter(r =>
+      (r.movie||'').toLowerCase().trim() === (title||'').toLowerCase().trim()
+    );
+    const count    = challengeReviews.length;
+    const avgRaw   = count ? challengeReviews.reduce((s,r) => s + (r.rating||0), 0) / count : 0;
+    const avg      = avgRaw.toFixed(1);
+    const pct      = count ? Math.round(challengeReviews.filter(r => (r.rating||0) >= 3).length / count * 100) : 0;
+    const verdict  = pct >= 80 ? { label:'Must Watch', color:'#4caf50', icon:'🔥' }
+                   : pct >= 60 ? { label:'Worth It',   color:'#f5a623', icon:'👍' }
+                   : pct >= 40 ? { label:'Divisive',   color:'#ff9800', icon:'⚖️' }
+                   :             { label:'Skip It',    color:'#f44336', icon:'👎' };
+    const topReview = [...challengeReviews].sort((a,b) => (b.rating||0)-(a.rating||0))[0];
+    const starsHtml = n => '★'.repeat(Math.max(0,Math.min(5,n||0))) + '<span style="color:#333">★</span>'.repeat(5-Math.max(0,Math.min(5,n||0)));
+
+    sec.innerHTML = `
+      <div class="challenge-results-wrap">
+        <div class="cr-backdrop" style="background-image:url(${backdropUrl})"></div>
+        <div class="cr-inner">
+
+          <div class="cr-left">
+            ${posterUrl ? `<div class="cr-poster-wrap"><img class="cr-poster" src="${posterUrl}" alt="${esc(title)}"/><div class="cr-poster-glow"></div></div>` : ''}
+          </div>
+
+          <div class="cr-center">
+            <div class="cr-eyebrow">
+              <span class="cr-pill">🏁 Challenge Results</span>
+            </div>
+            <div class="cr-title">${esc(title)}</div>
+            ${year ? `<div class="cr-year">${year}</div>` : ''}
+
+            <div class="cr-score-row">
+              <div class="cr-big-score">${avg}</div>
+              <div class="cr-score-detail">
+                <div class="cr-stars">${starsHtml(Math.round(avgRaw))}</div>
+                <div class="cr-participants">${count} fan${count!==1?'s':''} reviewed</div>
+              </div>
+            </div>
+
+            <div class="cr-verdict-row">
+              <div class="cr-verdict-pill" style="background:${verdict.color}22;border:1px solid ${verdict.color};color:${verdict.color}">
+                ${verdict.icon} ${verdict.label}
+              </div>
+              <div class="cr-recommend">${pct}% recommend</div>
+            </div>
+
+            <div class="cr-bar-wrap">
+              <div class="cr-bar-track"><div class="cr-bar-fill" style="width:${pct}%;background:${verdict.color}"></div></div>
+            </div>
+
+            <div class="cr-cta-row">
+              <button class="challenge-review-btn" onclick="document.getElementById('fanSection').scrollIntoView({behavior:'smooth'})">Read All Reviews ↓</button>
+              <span class="cr-next">🗓 Next challenge announced Sunday</span>
+            </div>
+          </div>
+
+          ${topReview ? `
+          <div class="cr-right">
+            <div class="cr-top-review-label">⭐ Top Review</div>
+            <div class="cr-top-review">
+              <div class="cr-tr-stars">${starsHtml(topReview.rating)}</div>
+              <div class="cr-tr-name">${esc(topReview.name||'Anonymous')}</div>
+              <div class="cr-tr-text">"${esc((topReview.text||'').slice(0,120))}${(topReview.text||'').length>120?'…':''}"</div>
+            </div>
+          </div>` : ''}
+
+        </div>
+      </div>`;
+  }
+
+  function startChallengeTimer(deadline) {
+    clearInterval(challengeTimerInterval);
+    function tick() {
+      const diff = deadline - Date.now();
+      if (diff <= 0) { clearInterval(challengeTimerInterval); loadWeeklyChallenge(); return; }
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      const el = document.getElementById('challengeCountdown');
+      if (el) el.innerHTML = [['Days',d],['Hours',h],['Mins',m],['Secs',s]].map(([l,v]) =>
+        `<div class="challenge-unit"><div class="challenge-num">${String(v).padStart(2,'0')}</div><div class="challenge-lbl">${l}</div></div>`
+      ).join('');
+    }
+    tick();
+    challengeTimerInterval = setInterval(tick, 1000);
+  }
+
+  function updateChallengeReviewCount(movieTitle) {
+    const count = allReviews.filter(r => r.movie?.toLowerCase().trim() === movieTitle?.toLowerCase().trim()).length;
+    const el = document.getElementById('challengeReviewCount');
+    if (el && count > 0) el.textContent = `${count} community review${count > 1 ? 's' : ''} so far`;
+  }
+
+  // Re-render results once reviews are loaded (so stats are accurate)
+  function refreshChallengeResults() {
+    const sec = document.getElementById('challengeSection');
+    if (!sec || sec.style.display === 'none') return;
+    const t = sec.dataset.challengeTitle;
+    if (!t) return;
+    renderChallengeResults(t, sec.dataset.challengePoster, sec.dataset.challengeBackdrop, sec.dataset.challengeYear);
+  }
+
+  // Load challenge on startup
+  loadWeeklyChallenge();
+</script>
 </body>
 </html>
