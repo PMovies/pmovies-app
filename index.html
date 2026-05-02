@@ -1814,16 +1814,16 @@
   }
 
   const posterCache = {};
-  async function fetchPoster(movieTitle) {
+  function fetchPoster(movieTitle) {
     const key = movieTitle.toLowerCase().trim();
-    if (posterCache[key] !== undefined) return posterCache[key];
-    posterCache[key] = null; // mark as fetching
-    try {
-      const res  = await fetch(`${TMDB}/search/movie?api_key=${getKey()}&query=${encodeURIComponent(movieTitle)}&language=en-US&page=1`);
-      const data = await res.json();
-      const hit  = (data.results || []).find(m => m.poster_path);
-      posterCache[key] = hit ? `https://image.tmdb.org/t/p/w92${hit.poster_path}` : null;
-    } catch(_) { posterCache[key] = null; }
+    if (posterCache[key]) return posterCache[key]; // return existing promise
+    posterCache[key] = fetch(`${TMDB}/search/movie?api_key=${getKey()}&query=${encodeURIComponent(movieTitle)}&language=en-US&page=1`)
+      .then(r => r.json())
+      .then(data => {
+        const hit = (data.results || []).find(m => m.poster_path);
+        return hit ? `https://image.tmdb.org/t/p/w92${hit.poster_path}` : null;
+      })
+      .catch(() => null);
     return posterCache[key];
   }
 
