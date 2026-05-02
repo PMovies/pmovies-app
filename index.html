@@ -199,7 +199,34 @@
     /* ── WATCHLIST SECTION ── */
     .watchlist-section{max-width:1100px;margin:0 auto 52px;padding:0 20px;display:none}
     .watchlist-section.visible{display:block}
-    .wl-empty{text-align:center;padding:32px;color:var(--muted);font-size:.85rem}
+    .wl-empty{text-align:center;padding:40px 32px;color:var(--muted);font-size:.85rem}
+    .wl-empty-icon{font-size:2.5rem;margin-bottom:10px}
+    /* Tabs */
+    .wl-tabs{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
+    .wl-tab{flex:1;min-width:100px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--muted);font-family:'Montserrat',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.5px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap}
+    .wl-tab:hover{border-color:var(--orange);color:var(--text)}
+    .wl-tab.active{background:rgba(245,166,35,.12);border-color:var(--orange);color:var(--orange)}
+    .wl-tab-count{background:var(--orange);color:#000;font-size:.6rem;font-weight:800;border-radius:20px;padding:1px 6px;min-width:18px;text-align:center;line-height:1.6;display:none}
+    .wl-tab-count.has-items{display:inline-block}
+    /* Card status picker */
+    .wl-picker{position:absolute;top:6px;right:44px;display:flex;gap:4px;opacity:0;pointer-events:none;transform:translateX(6px);transform-origin:right top;transition:opacity .15s,transform .15s;z-index:5}
+    .wl-picker.open{opacity:1;pointer-events:all;transform:translateX(0)}
+    .wl-picker-btn{width:28px;height:28px;border-radius:50%;background:rgba(10,10,10,.9);border:1px solid rgba(255,255,255,.18);cursor:pointer;font-size:.8rem;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px);transition:background .15s,transform .15s;color:var(--text)}
+    .wl-picker-btn:hover{transform:scale(1.15)}
+    .wl-picker-btn[data-status="want"]:hover{background:rgba(245,166,35,.8)}
+    .wl-picker-btn[data-status="watched"]:hover{background:rgba(39,174,96,.8)}
+    .wl-picker-btn[data-status="fav"]:hover{background:rgba(229,9,20,.8)}
+    /* wl-btn status colours */
+    .wl-btn.status-want{background:rgba(245,166,35,.75);border-color:rgba(245,166,35,.5)}
+    .wl-btn.status-watched{background:rgba(39,174,96,.75);border-color:rgba(39,174,96,.5)}
+    .wl-btn.status-fav{background:rgba(229,9,20,.75);border-color:rgba(229,9,20,.5)}
+    /* Modal status buttons */
+    .wl-status-btns{display:flex;gap:6px;flex-wrap:wrap}
+    .wl-status-btn{flex:1;min-width:90px;padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-family:'Montserrat',sans-serif;font-size:.68rem;font-weight:700;letter-spacing:.3px;cursor:pointer;transition:all .2s;white-space:nowrap}
+    .wl-status-btn:hover{border-color:var(--orange);color:var(--text)}
+    .wl-status-btn.active[data-status="want"]{background:rgba(245,166,35,.18);border-color:var(--orange);color:var(--orange)}
+    .wl-status-btn.active[data-status="watched"]{background:rgba(39,174,96,.18);border-color:#27ae60;color:#27ae60}
+    .wl-status-btn.active[data-status="fav"]{background:rgba(229,9,20,.18);border-color:#e5091a;color:#e5091a}
 
     /* ── LOADER ── */
     .loader{display:none;padding:20px 20px 40px}
@@ -468,7 +495,18 @@
 
   <!-- WATCHLIST -->
   <div class="watchlist-section" id="watchlistSection">
-    <div class="section-label">❤️ My Watchlist</div>
+    <div class="section-label">🗂️ My Lists</div>
+    <div class="wl-tabs">
+      <button class="wl-tab active" data-tab="want" onclick="switchWlTab('want')">
+        🔖 Want to Watch <span class="wl-tab-count" id="wlCount_want"></span>
+      </button>
+      <button class="wl-tab" data-tab="watched" onclick="switchWlTab('watched')">
+        ✓ Watched <span class="wl-tab-count" id="wlCount_watched"></span>
+      </button>
+      <button class="wl-tab" data-tab="fav" onclick="switchWlTab('fav')">
+        ★ Favourites <span class="wl-tab-count" id="wlCount_fav"></span>
+      </button>
+    </div>
     <div id="watchlistContent"></div>
   </div>
 
@@ -575,7 +613,11 @@
       <div class="modal-actions">
         <a class="modal-cta" id="modalLink" href="#" target="_blank">View on TMDb →</a>
         <button class="modal-cta secondary" id="trailerBtn" onclick="loadTrailer()">▶ Trailer</button>
-        <button class="modal-cta wl-cta" id="wlModalBtn" onclick="toggleWatchlistFromModal()">♡ Watchlist</button>
+        <div class="wl-status-btns" id="wlStatusBtns">
+          <button class="wl-status-btn" data-status="want" onclick="setStatusFromModal('want')">🔖 Want</button>
+          <button class="wl-status-btn" data-status="watched" onclick="setStatusFromModal('watched')">✓ Watched</button>
+          <button class="wl-status-btn" data-status="fav" onclick="setStatusFromModal('fav')">★ Favourite</button>
+        </div>
         <div class="modal-share-wrap">
           <button class="modal-share-btn" id="modalShareBtn">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
@@ -630,37 +672,115 @@
   }
 
   /* ══ WATCHLIST ══ */
-  function getWatchlist() { try { return JSON.parse(localStorage.getItem('pmovies_wl') || '[]'); } catch { return []; } }
+  let activeWlTab = 'want';
+
+  function getWatchlist() {
+    try {
+      const raw = JSON.parse(localStorage.getItem('pmovies_wl') || '[]');
+      // Migrate legacy entries that have no status field
+      return raw.map(m => m.status ? m : { ...m, status: 'want' });
+    } catch { return []; }
+  }
   function saveWatchlist(wl) { localStorage.setItem('pmovies_wl', JSON.stringify(wl)); }
-  function isInWatchlist(id) { return getWatchlist().some(m => m.id === id); }
-  function toggleWatchlist(movie) {
+  function getMovieStatus(id) { const m = getWatchlist().find(m => m.id === id); return m ? m.status : null; }
+  function isInWatchlist(id) { return !!getMovieStatus(id); }
+
+  function setMovieStatus(movie, status) {
     let wl = getWatchlist();
-    if (isInWatchlist(movie.id)) { wl = wl.filter(m => m.id !== movie.id); }
-    else { wl.unshift({ id: movie.id, title: movie.title, poster_path: movie.poster_path, vote_average: movie.vote_average, release_date: movie.release_date, overview: movie.overview, genre_ids: movie.genre_ids }); }
+    const idx = wl.findIndex(m => m.id === movie.id);
+    if (idx >= 0) {
+      if (wl[idx].status === status) { wl.splice(idx, 1); } // tap same status → remove
+      else { wl[idx].status = status; }
+    } else {
+      wl.unshift({ id: movie.id, title: movie.title, poster_path: movie.poster_path,
+        vote_average: movie.vote_average, release_date: movie.release_date,
+        overview: movie.overview, genre_ids: movie.genre_ids, status });
+    }
     saveWatchlist(wl); renderWatchlist(); updateWlButtons(movie.id);
   }
-  function toggleWatchlistFromModal() {
-    if (!currentModalMovie) return;
-    toggleWatchlist(currentModalMovie);
-    const btn = document.getElementById('wlModalBtn');
-    btn.textContent = isInWatchlist(currentModalMovie.id) ? '♥ Saved' : '♡ Watchlist';
-    btn.classList.toggle('saved', isInWatchlist(currentModalMovie.id));
+
+  function removeFromWatchlist(id) {
+    saveWatchlist(getWatchlist().filter(m => m.id !== id));
+    renderWatchlist(); updateWlButtons(id);
   }
+
   function updateWlButtons(id) {
+    const status = getMovieStatus(id);
+    const icons  = { want: '🔖', watched: '✓', fav: '★', null: '♡' };
     document.querySelectorAll(`.wl-btn[data-id="${id}"]`).forEach(btn => {
-      btn.textContent = isInWatchlist(id) ? '♥' : '♡';
-      btn.classList.toggle('saved', isInWatchlist(id));
+      btn.textContent = icons[status] || '♡';
+      btn.classList.remove('status-want','status-watched','status-fav');
+      if (status) btn.classList.add(`status-${status}`);
     });
   }
+
+  function toggleWlPicker(event, movieJson) {
+    event.stopPropagation();
+    const movie  = JSON.parse(decodeURIComponent(movieJson));
+    const status = getMovieStatus(movie.id);
+    // If already saved, clicking the button removes it
+    if (status) { removeFromWatchlist(movie.id); return; }
+    // Otherwise show the picker
+    const btn    = event.currentTarget;
+    const picker = btn.nextElementSibling;
+    const isOpen = picker.classList.contains('open');
+    document.querySelectorAll('.wl-picker.open').forEach(p => p.classList.remove('open'));
+    if (!isOpen) {
+      picker.classList.add('open');
+      picker.querySelectorAll('.wl-picker-btn').forEach(b => {
+        b.onclick = (e) => {
+          e.stopPropagation();
+          setMovieStatus(movie, b.dataset.status);
+          picker.classList.remove('open');
+        };
+      });
+      setTimeout(() => { document.addEventListener('click', () => picker.classList.remove('open'), { once: true }); }, 0);
+    }
+  }
+
+  function setStatusFromModal(status) {
+    if (!currentModalMovie) return;
+    setMovieStatus(currentModalMovie, status);
+    updateModalWlButtons(currentModalMovie.id);
+  }
+
+  function updateModalWlButtons(id) {
+    const status = getMovieStatus(id);
+    document.querySelectorAll('#wlStatusBtns .wl-status-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.status === status);
+    });
+  }
+
+  function switchWlTab(tab) {
+    activeWlTab = tab;
+    document.querySelectorAll('.wl-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+    renderWatchlist();
+  }
+
   function renderWatchlist() {
-    const wl = getWatchlist();
-    const sec = document.getElementById('watchlistSection');
+    const wl      = getWatchlist();
+    const sec     = document.getElementById('watchlistSection');
     const content = document.getElementById('watchlistContent');
+    // Update tab counts
+    ['want','watched','fav'].forEach(s => {
+      const el = document.getElementById(`wlCount_${s}`);
+      if (!el) return;
+      const n = wl.filter(m => m.status === s).length;
+      el.textContent = n;
+      el.classList.toggle('has-items', n > 0);
+    });
     if (!wl.length) { sec.classList.remove('visible'); return; }
     sec.classList.add('visible');
+    const filtered = wl.filter(m => m.status === activeWlTab);
     content.innerHTML = '';
+    if (!filtered.length) {
+      const emptyLabels = { want: 'No movies yet — add something you want to watch!', watched: 'Mark movies as Watched from their detail card.', fav: 'Star your all-time favourites to see them here.' };
+      const emptyIcons  = { want: '🔖', watched: '✓', fav: '★' };
+      content.innerHTML = `<div class="wl-empty"><div class="wl-empty-icon">${emptyIcons[activeWlTab]}</div>${emptyLabels[activeWlTab]}</div>`;
+      return;
+    }
     const grid = document.createElement('div'); grid.className = 'movies-grid';
-    wl.forEach((m, i) => { grid.appendChild(buildMovieCard(m, i)); });
+    filtered.forEach((m, i) => grid.appendChild(buildMovieCard(m, i)));
     content.appendChild(grid);
   }
 
@@ -816,7 +936,9 @@
     const year   = m.release_date ? m.release_date.slice(0,4) : '—';
     const rating = m.vote_average ? m.vote_average.toFixed(1) : '—';
     const poster = m.poster_path ? IMG + m.poster_path : null;
-    const saved  = isInWatchlist(m.id);
+    const status = getMovieStatus(m.id);
+    const statusIcon = { want: '🔖', watched: '✓', fav: '★' }[status] || '♡';
+    const statusClass = status ? `status-${status}` : '';
     const card   = document.createElement('div');
     card.className = 'movie-card';
     card.style.animationDelay = (idx * 0.05) + 's';
@@ -824,7 +946,12 @@
       <div class="poster-wrap">
         ${poster ? `<img class="movie-poster" src="${poster}" alt="${esc(m.title)}" loading="lazy"/>` : `<div class="no-poster">🎬</div>`}
         <div class="rating-badge"><span>★</span>${rating}</div>
-        <button class="wl-btn ${saved?'saved':''}" data-id="${m.id}" onclick="event.stopPropagation();toggleWatchlist(JSON.parse(decodeURIComponent(this.dataset.movie)))" data-movie="${encodeURIComponent(JSON.stringify(m))}">${saved?'♥':'♡'}</button>
+        <button class="wl-btn ${statusClass}" data-id="${m.id}" onclick="toggleWlPicker(event,this.dataset.movie)" data-movie="${encodeURIComponent(JSON.stringify(m))}" title="${status ? 'Remove from list' : 'Add to list'}">${statusIcon}</button>
+        <div class="wl-picker">
+          <button class="wl-picker-btn" data-status="want" title="Want to Watch">🔖</button>
+          <button class="wl-picker-btn" data-status="watched" title="Watched">✓</button>
+          <button class="wl-picker-btn" data-status="fav" title="Favourite">★</button>
+        </div>
       </div>
       <div class="movie-info">
         <div class="movie-title">${esc(m.title)}</div>
@@ -935,10 +1062,8 @@
       };
     });
     document.getElementById('modalGenres').innerHTML = (m.genre_ids||[]).map(id => `<span class="genre-tag">${GENRE_NAMES[id]||id}</span>`).join('');
-    // watchlist button
-    const wlBtn = document.getElementById('wlModalBtn');
-    wlBtn.textContent = isInWatchlist(m.id) ? '♥ Saved' : '♡ Watchlist';
-    wlBtn.classList.toggle('saved', isInWatchlist(m.id));
+    // watchlist status buttons
+    updateModalWlButtons(m.id);
     // reset trailer
     document.getElementById('trailerWrap').classList.remove('visible');
     document.getElementById('trailerFrame').src = '';
