@@ -1832,8 +1832,23 @@
     setupFanStars();
     list.innerHTML = '<div class="yt-loading">Loading fan reviews…</div>';
     try {
-      const snap    = await fbDb.collection('fanReviews').orderBy('timestamp','desc').limit(30).get();
+      let snap;
+      try {
+        snap = await fbDb.collection('fanReviews').orderBy('timestamp','desc').limit(30).get();
+      } catch(_) {
+        snap = await fbDb.collection('fanReviews').limit(30).get();
+      }
+      // If orderBy returned 0 but collection might have docs, try without orderBy
+      if (snap.empty) {
+        snap = await fbDb.collection('fanReviews').limit(30).get();
+      }
       const reviews = snap.docs.map(d => d.data());
+      // Sort client-side: docs with a timestamp first (newest), nulls last
+      reviews.sort((a,b) => {
+        const ta = a.timestamp?.toMillis?.() ?? 0;
+        const tb = b.timestamp?.toMillis?.() ?? 0;
+        return tb - ta;
+      });
       renderFanReviews(reviews);
     } catch(e) {
       list.innerHTML = `<p style="color:#888;padding:20px;text-align:center">Could not load reviews: ${esc(e.message)}</p>`;
