@@ -1749,6 +1749,9 @@
   const DEFAULT_FB_API_KEY     = 'AIzaSyDiQAYe-25hqZJxH-2RQosDHyotUH_XuVM';
   const DEFAULT_FB_AUTH_DOMAIN = 'pmovies-f0ddc.firebaseapp.com';
   const DEFAULT_FB_PROJECT_ID  = 'pmovies-f0ddc';
+  const DEFAULT_FB_APP_ID      = '1:887168953314:web:87d5338a4907d12745a7bb';
+  const DEFAULT_FB_SENDER_ID   = '887168953314';
+  const DEFAULT_FB_BUCKET      = 'pmovies-f0ddc.firebasestorage.app';
 
   function initFb() {
     if (fbDb) return true;
@@ -1757,7 +1760,12 @@
     const projectId  = localStorage.getItem('fb_projectId')  || DEFAULT_FB_PROJECT_ID;
     if (!apiKey || !projectId) return false;
     try {
-      if (!firebase.apps.length) firebase.initializeApp({ apiKey, authDomain, projectId });
+      if (!firebase.apps.length) firebase.initializeApp({
+        apiKey, authDomain, projectId,
+        appId:             DEFAULT_FB_APP_ID,
+        messagingSenderId: DEFAULT_FB_SENDER_ID,
+        storageBucket:     DEFAULT_FB_BUCKET
+      });
       fbDb = firebase.firestore();
       return true;
     } catch(e) { return false; }
