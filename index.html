@@ -718,22 +718,39 @@
     const content = document.getElementById('streamingContent');
     content.innerHTML = '<div class="yt-loading">Loading…</div>';
     try {
+      // Build a blocklist of movies currently in cinemas (AE + global) so they don't
+      // pollute the streaming feed — their primary_release_date is recent but they're
+      // still in theatres, not yet on streaming.
+      const cinemaIds = new Set();
+      const [aeRes, globalRes] = await Promise.allSettled([
+        fetch(`${TMDB}/movie/now_playing?api_key=${getKey()}&language=en-US&region=AE&page=1`),
+        fetch(`${TMDB}/movie/now_playing?api_key=${getKey()}&language=en-US&page=1`)
+      ]);
+      for (const r of [aeRes, globalRes]) {
+        if (r.status === 'fulfilled' && r.value.ok) {
+          const d = await r.value.json();
+          (d.results || []).forEach(m => cinemaIds.add(m.id));
+        }
+      }
+
+      // Fetch movies with a digital/streaming release in the last 45 days
       const today = new Date();
-      const ago14 = new Date(today); ago14.setDate(today.getDate() - 14);
-      const gte = ago14.toISOString().slice(0,10);
+      const ago45 = new Date(today); ago45.setDate(today.getDate() - 45);
+      const gte = ago45.toISOString().slice(0,10);
       const lte = today.toISOString().slice(0,10);
       const url = `${TMDB}/discover/movie?api_key=${getKey()}&language=en-US` +
                   `&sort_by=primary_release_date.desc` +
-                  `&with_release_type=4|6` +
+                  `&with_release_type=4` +
                   `&primary_release_date.gte=${gte}` +
                   `&primary_release_date.lte=${lte}` +
-                  `&vote_count.gte=10&page=1`;
+                  `&vote_count.gte=5&page=1`;
       const res  = await fetch(url);
       const data = await res.json();
-      const movies = (data.results || []).slice(0, 20);
+      // Exclude anything still playing in cinemas
+      const movies = (data.results || []).filter(m => !cinemaIds.has(m.id)).slice(0, 20);
       if (!movies.length) { content.innerHTML = '<div class="yt-loading">No new streaming releases found.</div>'; return; }
       const row = document.createElement('div'); row.className = 'trending-scroll';
-      movies.forEach((m, i) => {
+      movies.forEach((m) => {
         const rating = m.vote_average ? m.vote_average.toFixed(1) : '';
         const poster = m.poster_path ? IMG + m.poster_path : null;
         const card   = document.createElement('div'); card.className = 't-card';
