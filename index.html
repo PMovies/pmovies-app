@@ -897,6 +897,7 @@
         const poster = m.poster_path ? IMG + m.poster_path : null;
         const card   = document.createElement('div'); card.className = 't-card';
         card.onclick = () => openModal(m);
+        if (m.backdrop_path) card.addEventListener('mouseenter', () => setHeroBackdrop(m));
         card.innerHTML = `
           ${poster ? `<img class="t-poster" src="${poster}" loading="lazy" alt="${esc(m.title)}"/>` : `<div class="t-poster" style="background:var(--surface);aspect-ratio:2/3;display:flex;align-items:center;justify-content:center;font-size:2rem">🎬</div>`}
           <div class="t-card-overlay"></div>
@@ -1420,6 +1421,7 @@
         const c = document.createElement('div'); c.className = 'sim-card';
         c.innerHTML = `<img class="sim-poster" src="${IMG+m.poster_path}" loading="lazy" alt="${esc(m.title)}"/><div class="sim-title">${esc(m.title)}</div>`;
         c.onclick = () => openModal(m);
+        if (m.backdrop_path) c.addEventListener('mouseenter', () => setHeroBackdrop(m));
         row.appendChild(c);
       });
       sec.style.display = 'block';
@@ -1510,7 +1512,11 @@
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1C24 15.9 24 12 24 12s0-3.9-.5-5.8zM9.7 15.5V8.5l6.3 3.5-6.3 3.5z"/></svg>
           WATCH REVIEW
         </a>`;
-      if (tmdbMovie) { card.querySelector('.yt-poster-wrap').onclick = () => openModal(tmdbMovie); card.querySelector('.yt-info').onclick = () => openModal(tmdbMovie); }
+      if (tmdbMovie) {
+        card.querySelector('.yt-poster-wrap').onclick = () => openModal(tmdbMovie);
+        card.querySelector('.yt-info').onclick = () => openModal(tmdbMovie);
+        if (tmdbMovie.backdrop_path) card.addEventListener('mouseenter', () => setHeroBackdrop(tmdbMovie));
+      }
       row.appendChild(card);
     });
     const content = document.getElementById('ytContent'); content.innerHTML = ''; content.appendChild(row);
