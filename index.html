@@ -46,7 +46,7 @@
 
     .wordmark{font-family:'Bebas Neue',sans-serif;font-size:4rem;letter-spacing:6px;line-height:1;color:var(--text)}
     .wordmark span{color:var(--orange)}
-    .tagline{font-family:'Montserrat',sans-serif;font-size:.68rem;font-weight:600;letter-spacing:4px;text-transform:uppercase;color:var(--muted);margin-top:6px}
+    .tagline{font-family:'Montserrat',sans-serif;font-size:clamp(.52rem,.68rem,1vw);font-weight:600;letter-spacing:clamp(1.5px,4px,1vw);text-transform:uppercase;color:var(--muted);margin-top:6px;white-space:nowrap}
     .hero-sub{margin-top:14px;font-size:.95rem;color:var(--muted2)}
 
     /* Subscribe button */
@@ -401,7 +401,6 @@
     <input type="file" id="logoFileInput" accept="image/*" onchange="handleLogoUpload(event)"/>
     <div class="wordmark">P<span>MOVIES</span></div>
     <div class="tagline">Your Cinema &nbsp;·&nbsp; Your Mood &nbsp;·&nbsp; Your Film</div>
-    <p class="hero-sub">How are you feeling tonight?</p>
     <a class="subscribe-btn" href="https://www.youtube.com/@PMovies155?sub_confirmation=1" target="_blank">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1C24 15.9 24 12 24 12s0-3.9-.5-5.8zM9.7 15.5V8.5l6.3 3.5-6.3 3.5z"/></svg>
       Subscribe to PMovies
