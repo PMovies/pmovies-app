@@ -277,6 +277,19 @@
     .sim-card:hover{border-color:var(--orange);transform:scale(1.04)}
     .sim-poster{width:100%;aspect-ratio:2/3;object-fit:cover;display:block}
     .sim-title{font-size:.62rem;padding:5px 6px;font-family:'Montserrat',sans-serif;font-weight:600;text-align:center;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    /* Cast */
+    .cast-scroll{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;margin-bottom:4px}
+    .cast-card{flex:0 0 72px;text-align:center;cursor:default}
+    .cast-photo{width:72px;height:72px;border-radius:50%;object-fit:cover;display:block;border:2px solid var(--border);background:var(--surface)}
+    .cast-photo-placeholder{width:72px;height:72px;border-radius:50%;background:var(--surface);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.6rem}
+    .cast-name{font-size:.6rem;font-family:'Montserrat',sans-serif;font-weight:700;margin-top:5px;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--text)}
+    .cast-char{font-size:.56rem;color:var(--muted2);font-family:'Montserrat',sans-serif;line-height:1.2;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+    /* Award badges */
+    .modal-awards{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 4px}
+    .award-badge{display:inline-flex;align-items:center;gap:5px;border-radius:20px;font-size:.65rem;font-family:'Montserrat',sans-serif;font-weight:700;letter-spacing:.5px;padding:4px 10px;white-space:nowrap}
+    .award-badge.oscar{background:linear-gradient(135deg,#b8860b,#ffd700);color:#1a1000}
+    .award-badge.palme{background:linear-gradient(135deg,#c8a800,#fff176);color:#1a1000}
+    .award-badge.bafta{background:linear-gradient(135deg,#1a3c6e,#4a90d9);color:#fff}
 
     /* ── FOOTER ── */
     footer{text-align:center;padding:20px;color:var(--muted);font-size:.72rem;border-top:1px solid var(--border);letter-spacing:1px;margin-top:40px}
@@ -605,10 +618,17 @@
       <div class="modal-divider"></div>
       <!-- Trailer -->
       <div class="trailer-wrap" id="trailerWrap"><iframe id="trailerFrame" allowfullscreen allow="autoplay"></iframe></div>
+      <!-- Awards -->
+      <div id="modalAwards" class="modal-awards"></div>
       <div class="modal-section-label">Overview</div>
       <div class="modal-overview" id="modalOverview"></div>
       <div class="modal-section-label">Genres</div>
       <div class="modal-genres" id="modalGenres"></div>
+      <!-- Cast -->
+      <div id="castSection" style="display:none">
+        <div class="modal-section-label" style="margin-top:14px">Cast</div>
+        <div class="cast-scroll" id="castScroll"></div>
+      </div>
       <!-- Similar -->
       <div id="similarSection" style="display:none">
         <div class="modal-section-label" style="margin-top:14px">Similar Movies</div>
@@ -1048,6 +1068,42 @@
 
   /* ══ MODAL ══ */
   const GENRE_NAMES = {28:'Action',18:'Drama',35:'Comedy',27:'Horror',878:'Sci-Fi',53:'Thriller',12:'Adventure',16:'Animation',10749:'Romance',10751:'Family',80:'Crime',99:'Documentary',14:'Fantasy',36:'History',10402:'Music',9648:'Mystery',37:'Western'};
+
+  // ── AWARDS DATA ──────────────────────────────────────────────────────────
+  // Oscar Best Picture winners (TMDb IDs)
+  const OSCAR_BP = new Set([
+    68718,  // Argo (2012)
+    76341,  // 12 Years a Slave (2013)
+    194662, // Birdman (2014)
+    314365, // Spotlight (2015)
+    376867, // Moonlight (2016)
+    399055, // The Shape of Water (2017)
+    490132, // Green Book (2018)
+    496243, // Parasite (2019)
+    590706, // Nomadland (2020)
+    776503, // CODA (2021)
+    545611, // Everything Everywhere All at Once (2022)
+    872585, // Oppenheimer (2023)
+    1084736,// Anora (2024)
+  ]);
+
+  // Cannes Palme d'Or winners (TMDb IDs)
+  const PALME_DOR = new Set([
+    77338,  // Amour (2012)
+    152601, // Blue Is the Warmest Colour (2013)
+    244786, // Winter Sleep (2014)
+    318846, // Son of Saul (2015)
+    376660, // I, Daniel Blake (2016)
+    429201, // The Square (2017)
+    521024, // Shoplifters (2018)
+    496243, // Parasite (2019)
+    756999, // Titane (2021)
+    803114, // Triangle of Sadness (2022)
+    820504, // Anatomy of a Fall (2023)
+    1084736,// Anora (2024)
+  ]);
+  // ─────────────────────────────────────────────────────────────────────────
+
   let currentModalMovie = null;
 
   async function openModal(m) {
@@ -1076,18 +1132,28 @@
       };
     });
     document.getElementById('modalGenres').innerHTML = (m.genre_ids||[]).map(id => `<span class="genre-tag">${GENRE_NAMES[id]||id}</span>`).join('');
+    // awards badges
+    const awardsEl = document.getElementById('modalAwards');
+    const badges = [];
+    if (OSCAR_BP.has(m.id))   badges.push(`<span class="award-badge oscar">🏆 Oscar Best Picture</span>`);
+    if (PALME_DOR.has(m.id))  badges.push(`<span class="award-badge palme">🌿 Cannes Palme d'Or</span>`);
+    awardsEl.innerHTML = badges.join('');
     // watchlist status buttons
     updateModalWlButtons(m.id);
     // reset trailer
     document.getElementById('trailerWrap').classList.remove('visible');
     document.getElementById('trailerFrame').src = '';
     document.getElementById('trailerBtn').style.display = '';
+    // reset cast
+    document.getElementById('castSection').style.display = 'none';
+    document.getElementById('castScroll').innerHTML = '';
     // reset similar
     document.getElementById('similarSection').style.display = 'none';
     document.getElementById('similarScroll').innerHTML = '';
     document.getElementById('modalOverlay').classList.add('visible');
     document.body.style.overflow = 'hidden';
-    // load similar async
+    // load cast + similar async
+    loadCast(m.id);
     loadSimilar(m.id);
   }
 
@@ -1105,6 +1171,27 @@
         btn.style.display = 'none';
       } else { btn.textContent = 'No trailer found'; btn.disabled = false; }
     } catch (e) { btn.textContent = '▶ Trailer'; btn.disabled = false; }
+  }
+
+  async function loadCast(id) {
+    try {
+      const res  = await fetch(`${TMDB}/movie/${id}/credits?api_key=${getKey()}&language=en-US`);
+      const data = await res.json();
+      const cast = (data.cast||[]).filter(p => p.known_for_department === 'Acting').slice(0, 5);
+      if (!cast.length) return;
+      const sec = document.getElementById('castSection');
+      const row = document.getElementById('castScroll');
+      row.innerHTML = '';
+      cast.forEach(p => {
+        const c = document.createElement('div'); c.className = 'cast-card';
+        const photo = p.profile_path
+          ? `<img class="cast-photo" src="https://image.tmdb.org/t/p/w185${p.profile_path}" loading="lazy" alt="${esc(p.name)}"/>`
+          : `<div class="cast-photo-placeholder">👤</div>`;
+        c.innerHTML = `${photo}<div class="cast-name">${esc(p.name)}</div><div class="cast-char">${esc(p.character||'')}</div>`;
+        row.appendChild(c);
+      });
+      sec.style.display = 'block';
+    } catch (_) {}
   }
 
   async function loadSimilar(id) {
