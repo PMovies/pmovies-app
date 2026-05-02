@@ -114,6 +114,7 @@
     .t-rank{position:absolute;top:8px;left:8px;font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--orange);text-shadow:0 2px 8px rgba(0,0,0,.8);line-height:1}
     .t-rating{position:absolute;bottom:28px;left:9px;font-family:'Montserrat',sans-serif;font-size:.7rem;font-weight:700;color:var(--gold)}
     .t-title{position:absolute;bottom:8px;left:9px;right:9px;font-family:'Montserrat',sans-serif;font-size:.68rem;font-weight:700;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .t-new-badge{position:absolute;top:8px;left:8px;background:var(--orange);color:#000;font-family:'Montserrat',sans-serif;font-size:.58rem;font-weight:800;letter-spacing:1px;padding:2px 6px;border-radius:4px;line-height:1.4}
 
     /* ── PMOVIES REVIEWS ── */
     .yt-section{max-width:1100px;margin:0 auto 52px;padding:0 20px}
@@ -459,10 +460,16 @@
     <div class="movies-grid" id="moviesGrid"></div>
   </div>
 
-  <!-- TRENDING -->
-  <div class="trending-section" id="trendingSection">
-    <div class="section-label">🔥 Trending This Week</div>
-    <div id="trendingContent"></div>
+  <!-- NOW IN CINEMAS -->
+  <div class="trending-section" id="cinemasSection">
+    <div class="section-label">🎬 Now in Cinemas</div>
+    <div id="cinemasContent"></div>
+  </div>
+
+  <!-- NEW THIS WEEK -->
+  <div class="trending-section" id="streamingSection">
+    <div class="section-label">🆕 New This Week on Streaming</div>
+    <div id="streamingContent"></div>
   </div>
 
   <!-- WATCHLIST -->
@@ -679,17 +686,17 @@
     } catch (_) {}
   }
 
-  /* ══ TRENDING ══ */
-  async function loadTrending() {
-    const content = document.getElementById('trendingContent');
+  /* ══ NOW IN CINEMAS (Middle East / AE region) ══ */
+  async function loadNowInCinemas() {
+    const content = document.getElementById('cinemasContent');
     content.innerHTML = '<div class="yt-loading">Loading…</div>';
     try {
-      const res  = await fetch(`${TMDB}/trending/movie/week?api_key=${getKey()}&language=en-US`);
+      const res  = await fetch(`${TMDB}/movie/now_playing?api_key=${getKey()}&language=en-US&region=AE&page=1`);
       const data = await res.json();
-      const movies = (data.results || []).slice(0, 15);
+      const movies = (data.results || []).sort((a,b) => (b.popularity||0)-(a.popularity||0)).slice(0, 20);
+      if (!movies.length) { content.innerHTML = '<div class="yt-loading">No cinema releases found.</div>'; return; }
       const row = document.createElement('div'); row.className = 'trending-scroll';
       movies.forEach((m, i) => {
-        const year   = m.release_date ? m.release_date.slice(0,4) : '';
         const rating = m.vote_average ? m.vote_average.toFixed(1) : '';
         const poster = m.poster_path ? IMG + m.poster_path : null;
         const card   = document.createElement('div'); card.className = 't-card';
@@ -698,12 +705,49 @@
           ${poster ? `<img class="t-poster" src="${poster}" loading="lazy" alt="${esc(m.title)}"/>` : `<div class="t-poster" style="background:var(--surface);aspect-ratio:2/3;display:flex;align-items:center;justify-content:center;font-size:2rem">🎬</div>`}
           <div class="t-card-overlay"></div>
           <div class="t-rank">${i+1}</div>
-          <div class="t-rating">★ ${rating}</div>
+          ${rating ? `<div class="t-rating">★ ${rating}</div>` : ''}
           <div class="t-title">${esc(m.title)}</div>`;
         row.appendChild(card);
       });
       content.innerHTML = ''; content.appendChild(row);
-    } catch (e) { content.innerHTML = '<div class="yt-loading">Could not load trending movies.</div>'; }
+    } catch (e) { content.innerHTML = '<div class="yt-loading">Could not load cinema releases.</div>'; }
+  }
+
+  /* ══ NEW THIS WEEK ON STREAMING ══ */
+  async function loadNewThisWeek() {
+    const content = document.getElementById('streamingContent');
+    content.innerHTML = '<div class="yt-loading">Loading…</div>';
+    try {
+      const today = new Date();
+      const ago14 = new Date(today); ago14.setDate(today.getDate() - 14);
+      const gte = ago14.toISOString().slice(0,10);
+      const lte = today.toISOString().slice(0,10);
+      const url = `${TMDB}/discover/movie?api_key=${getKey()}&language=en-US` +
+                  `&sort_by=primary_release_date.desc` +
+                  `&with_release_type=4|6` +
+                  `&primary_release_date.gte=${gte}` +
+                  `&primary_release_date.lte=${lte}` +
+                  `&vote_count.gte=10&page=1`;
+      const res  = await fetch(url);
+      const data = await res.json();
+      const movies = (data.results || []).slice(0, 20);
+      if (!movies.length) { content.innerHTML = '<div class="yt-loading">No new streaming releases found.</div>'; return; }
+      const row = document.createElement('div'); row.className = 'trending-scroll';
+      movies.forEach((m, i) => {
+        const rating = m.vote_average ? m.vote_average.toFixed(1) : '';
+        const poster = m.poster_path ? IMG + m.poster_path : null;
+        const card   = document.createElement('div'); card.className = 't-card';
+        card.onclick = () => openModal(m);
+        card.innerHTML = `
+          ${poster ? `<img class="t-poster" src="${poster}" loading="lazy" alt="${esc(m.title)}"/>` : `<div class="t-poster" style="background:var(--surface);aspect-ratio:2/3;display:flex;align-items:center;justify-content:center;font-size:2rem">🎬</div>`}
+          <div class="t-card-overlay"></div>
+          <div class="t-new-badge">NEW</div>
+          ${rating ? `<div class="t-rating">★ ${rating}</div>` : ''}
+          <div class="t-title">${esc(m.title)}</div>`;
+        row.appendChild(card);
+      });
+      content.innerHTML = ''; content.appendChild(row);
+    } catch (e) { content.innerHTML = '<div class="yt-loading">Could not load streaming releases.</div>'; }
   }
 
   /* ══ SEARCH ══ */
@@ -1339,7 +1383,8 @@
     const logo = localStorage.getItem('pmovies_logo') || EMBEDDED_LOGO;
     applyLogo(logo);
     loadHeroBackdrop();
-    loadTrending();
+    loadNowInCinemas();
+    loadNewThisWeek();
     loadYtReviews();
     loadLetterboxd();
     loadFanReviews();
