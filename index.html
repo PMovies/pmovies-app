@@ -64,6 +64,19 @@
     .search-btn:hover{color:var(--orange)}
     .search-results-label{font-family:'Montserrat',sans-serif;font-size:.7rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:16px;display:none}
     .search-results-label.visible{display:block}
+    /* Live search dropdown */
+    .search-dropdown{position:absolute;top:calc(100% - 6px);left:20px;right:20px;background:var(--card);border:1px solid var(--border);border-top:none;border-radius:0 0 18px 18px;overflow:hidden;z-index:200;box-shadow:0 12px 32px rgba(0,0,0,.55);display:none}
+    .search-dropdown.open{display:block}
+    .search-drop-item{display:flex;align-items:center;gap:12px;padding:9px 16px;cursor:pointer;transition:background .15s;border-bottom:1px solid var(--surface)}
+    .search-drop-item:last-child{border-bottom:none}
+    .search-drop-item:hover,.search-drop-item.active{background:var(--surface)}
+    .search-drop-thumb{width:34px;height:51px;object-fit:cover;border-radius:4px;flex-shrink:0;background:var(--surface)}
+    .search-drop-thumb-ph{width:34px;height:51px;border-radius:4px;flex-shrink:0;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:1rem}
+    .search-drop-info{flex:1;min-width:0}
+    .search-drop-title{font-family:'Montserrat',sans-serif;font-size:.82rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .search-drop-year{font-size:.72rem;color:var(--muted2);margin-top:2px}
+    .search-drop-rating{font-size:.72rem;color:var(--gold);font-weight:700;flex-shrink:0}
+    .search-drop-spinner{padding:14px;text-align:center;color:var(--muted);font-size:.8rem;font-family:'Montserrat',sans-serif}
 
     /* ── SECTION LABEL ── */
     .section-label{display:flex;align-items:center;gap:12px;font-family:'Montserrat',sans-serif;font-size:.68rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:20px}
@@ -457,8 +470,9 @@
 
   <!-- SEARCH -->
   <div class="search-wrap" style="margin-top:36px">
-    <input class="search-input" id="searchInput" type="text" placeholder="Search for any movie…" onkeydown="if(event.key==='Enter')doSearch()"/>
+    <input class="search-input" id="searchInput" type="text" placeholder="Search for any movie…" onkeydown="handleSearchKey(event)" autocomplete="off"/>
     <button class="search-btn" onclick="doSearch()">🔍</button>
+    <div class="search-dropdown" id="searchDropdown"></div>
   </div>
   <div class="section-label search-results-label" id="searchResultsLabel"></div>
 
@@ -852,9 +866,96 @@
   }
 
   /* ══ SEARCH ══ */
+  let searchDebounceTimer = null;
+  let dropActiveIndex = -1;
+  let dropItems = [];
+
+  function handleSearchKey(e) {
+    const dd = document.getElementById('searchDropdown');
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      dropActiveIndex = Math.min(dropActiveIndex + 1, dropItems.length - 1);
+      highlightDropItem();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      dropActiveIndex = Math.max(dropActiveIndex - 1, -1);
+      highlightDropItem();
+    } else if (e.key === 'Enter') {
+      if (dropActiveIndex >= 0 && dropItems[dropActiveIndex]) {
+        selectDropItem(dropItems[dropActiveIndex]);
+      } else {
+        closeDropdown();
+        doSearch();
+      }
+    } else if (e.key === 'Escape') {
+      closeDropdown();
+    }
+  }
+
+  function highlightDropItem() {
+    document.querySelectorAll('.search-drop-item').forEach((el, i) => {
+      el.classList.toggle('active', i === dropActiveIndex);
+    });
+  }
+
+  function closeDropdown() {
+    const dd = document.getElementById('searchDropdown');
+    dd.classList.remove('open');
+    dd.innerHTML = '';
+    dropActiveIndex = -1;
+    dropItems = [];
+    // restore rounded bottom on input when dropdown closes
+    document.getElementById('searchInput').style.borderRadius = '';
+  }
+
+  function selectDropItem(movie) {
+    document.getElementById('searchInput').value = movie.title;
+    closeDropdown();
+    openModal(movie);
+  }
+
+  async function liveSearch(q) {
+    const dd = document.getElementById('searchDropdown');
+    if (q.length < 2) { closeDropdown(); return; }
+    dd.innerHTML = '<div class="search-drop-spinner">🔍 Searching…</div>';
+    dd.classList.add('open');
+    document.getElementById('searchInput').style.borderRadius = '18px 18px 0 0';
+    try {
+      const res  = await fetch(`${TMDB}/search/movie?api_key=${getKey()}&query=${encodeURIComponent(q)}&language=en-US&page=1`);
+      const data = await res.json();
+      const results = (data.results || []).filter(m => m.title).slice(0, 7);
+      dropItems = results;
+      dropActiveIndex = -1;
+      if (!results.length) {
+        dd.innerHTML = '<div class="search-drop-spinner">No results found</div>';
+        return;
+      }
+      dd.innerHTML = results.map((m, i) => {
+        const year = m.release_date ? m.release_date.slice(0,4) : '—';
+        const rating = m.vote_average ? '★ ' + m.vote_average.toFixed(1) : '';
+        const thumb = m.poster_path
+          ? `<img class="search-drop-thumb" src="https://image.tmdb.org/t/p/w92${m.poster_path}" loading="lazy" alt="${esc(m.title)}"/>`
+          : `<div class="search-drop-thumb-ph">🎬</div>`;
+        return `<div class="search-drop-item" data-idx="${i}">
+          ${thumb}
+          <div class="search-drop-info">
+            <div class="search-drop-title">${esc(m.title)}</div>
+            <div class="search-drop-year">${year}</div>
+          </div>
+          ${rating ? `<div class="search-drop-rating">${rating}</div>` : ''}
+        </div>`;
+      }).join('');
+      dd.querySelectorAll('.search-drop-item').forEach((el, i) => {
+        el.addEventListener('mousedown', e => { e.preventDefault(); selectDropItem(results[i]); });
+        el.addEventListener('mouseover', () => { dropActiveIndex = i; highlightDropItem(); });
+      });
+    } catch (_) { dd.innerHTML = '<div class="search-drop-spinner">Search unavailable</div>'; }
+  }
+
   async function doSearch() {
     const q = document.getElementById('searchInput').value.trim();
     if (!q) { clearSearch(); return; }
+    closeDropdown();
     hideError(); showLoader(true); hideResults();
     document.getElementById('moodLabel').style.display = 'none';
     document.querySelectorAll('.mood-card').forEach(c => c.classList.remove('active'));
@@ -877,7 +978,17 @@
     activeDecade = '';
   }
   document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('searchInput').addEventListener('input', e => { if (!e.target.value) clearSearch(); });
+    const inp = document.getElementById('searchInput');
+    inp.addEventListener('input', e => {
+      const q = e.target.value.trim();
+      if (!q) { clearSearch(); closeDropdown(); return; }
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => liveSearch(q), 280);
+    });
+    // close dropdown when clicking outside the search wrap
+    document.addEventListener('mousedown', e => {
+      if (!e.target.closest('.search-wrap')) closeDropdown();
+    });
   });
 
   /* ══ MOOD & GENRE ══ */
