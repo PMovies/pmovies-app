@@ -449,6 +449,60 @@
   .challenge-review-btn:hover { background:#e0940f; }
   .challenge-review-count { color:#888; font-size:.8rem; }
   .challenge-closed { color:#f5a623; font-weight:700; font-size:.85rem; }
+  /* ── Community Top 100 ── */
+  .top100-section { max-width:1100px; margin:0 auto 60px; padding:0 20px; }
+  .top100-header { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:24px; flex-wrap:wrap; gap:12px; }
+  .top100-title-block h2 { font-size:1.4rem; font-weight:900; color:#fff; text-transform:uppercase; letter-spacing:.06em; margin:0 0 4px; }
+  .top100-title-block h2 span { color:var(--orange); }
+  .top100-title-block p { color:#666; font-size:.82rem; margin:0; }
+  .top100-votes-left { background:#1a1a1a; border:1px solid #2a2a2a; border-radius:20px; padding:8px 18px; text-align:center; }
+  .top100-votes-num { font-size:1.3rem; font-weight:900; color:var(--orange); line-height:1; }
+  .top100-votes-lbl { font-size:.65rem; color:#666; text-transform:uppercase; letter-spacing:.05em; }
+  /* Search to vote */
+  .top100-search-wrap { position:relative; margin-bottom:28px; }
+  .top100-search-input { width:100%; background:#111; border:1px solid #2a2a2a; border-radius:12px; color:#fff; padding:14px 18px 14px 44px; font-size:.95rem; box-sizing:border-box; transition:.2s; }
+  .top100-search-input:focus { outline:none; border-color:var(--orange); background:#161616; }
+  .top100-search-icon { position:absolute; left:15px; top:50%; transform:translateY(-50%); color:#555; font-size:1rem; pointer-events:none; }
+  .top100-search-hint { position:absolute; right:16px; top:50%; transform:translateY(-50%); color:#444; font-size:.75rem; pointer-events:none; }
+  .top100-dropdown { position:absolute; top:calc(100% + 6px); left:0; right:0; background:#161616; border:1px solid #2a2a2a; border-radius:12px; overflow:hidden; z-index:200; box-shadow:0 8px 32px rgba(0,0,0,.6); }
+  .top100-drop-item { display:flex; align-items:center; gap:12px; padding:10px 14px; cursor:pointer; border-bottom:1px solid #1e1e1e; transition:.15s; }
+  .top100-drop-item:last-child { border-bottom:none; }
+  .top100-drop-item:hover { background:#1e1e1e; }
+  .top100-drop-poster { width:36px; height:52px; object-fit:cover; border-radius:6px; background:#222; flex-shrink:0; }
+  .top100-drop-info { flex:1; min-width:0; }
+  .top100-drop-title { color:#fff; font-weight:600; font-size:.88rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .top100-drop-year { color:#666; font-size:.75rem; }
+  .top100-drop-vote { background:var(--orange); color:#000; border:none; padding:6px 14px; border-radius:20px; font-weight:700; font-size:.75rem; cursor:pointer; white-space:nowrap; flex-shrink:0; }
+  .top100-drop-vote:disabled { background:#2a2a2a; color:#555; cursor:not-allowed; }
+  .top100-drop-voted { background:transparent; border:1px solid #333; color:#555; border-radius:20px; padding:6px 14px; font-size:.75rem; white-space:nowrap; flex-shrink:0; }
+  /* The list */
+  .top100-list { display:flex; flex-direction:column; gap:8px; }
+  .top100-empty { text-align:center; padding:60px 20px; color:#444; font-size:.9rem; line-height:1.8; }
+  .top100-empty span { display:block; font-size:2.5rem; margin-bottom:12px; }
+  .top100-item { display:flex; align-items:center; gap:14px; background:#111; border-radius:12px; padding:10px 16px 10px 10px; transition:.2s; border:1px solid transparent; }
+  .top100-item:hover { background:#161616; border-color:#222; }
+  .top100-item.just-voted { border-color:var(--orange); background:#1a1400; }
+  .top100-rank { width:36px; text-align:center; flex-shrink:0; }
+  .top100-rank-num { font-size:1.1rem; font-weight:900; color:#444; line-height:1; }
+  .top100-rank-change { font-size:.6rem; margin-top:2px; }
+  .top100-rank-change.up { color:#4caf50; }
+  .top100-rank-change.down { color:#f44336; }
+  .top100-rank-change.new { color:var(--orange); font-weight:700; }
+  .top100-poster { width:44px; height:64px; object-fit:cover; border-radius:6px; background:#1a1a1a; flex-shrink:0; }
+  .top100-info { flex:1; min-width:0; }
+  .top100-movie-title { color:#fff; font-weight:700; font-size:.92rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .top100-movie-meta { color:#555; font-size:.75rem; margin-top:3px; }
+  .top100-genres { display:flex; gap:5px; flex-wrap:wrap; margin-top:5px; }
+  .top100-genre-tag { background:#1e1e1e; color:#666; font-size:.62rem; padding:2px 8px; border-radius:10px; }
+  .top100-right { display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex-shrink:0; }
+  .top100-vote-count { color:#fff; font-weight:800; font-size:.95rem; }
+  .top100-vote-word { color:#555; font-size:.65rem; text-transform:uppercase; letter-spacing:.04em; }
+  .top100-vote-btn { background:var(--orange); color:#000; border:none; padding:6px 16px; border-radius:20px; font-weight:700; font-size:.75rem; cursor:pointer; transition:.15s; }
+  .top100-vote-btn:hover { background:#e0940f; }
+  .top100-vote-btn:disabled { background:#1e1e1e; color:#444; cursor:not-allowed; }
+  .top100-voted-badge { background:transparent; border:1px solid #2a2a2a; color:#555; border-radius:20px; padding:5px 14px; font-size:.72rem; }
+  .top100-count-chip { background:#111; border:1px solid #2a2a2a; border-radius:20px; padding:6px 14px; color:#666; font-size:.78rem; margin-top:16px; text-align:center; }
+
   /* Challenge Results Card */
   .challenge-results-wrap { border-radius:16px; overflow:hidden; position:relative; min-height:260px; }
   .cr-backdrop { position:absolute; inset:0; background-size:cover; background-position:center; filter:brightness(.2); }
@@ -744,6 +798,31 @@
 
   <!-- WEEKLY CHALLENGE -->
   <div class="challenge-section" id="challengeSection" style="display:none"></div>
+
+  <!-- COMMUNITY TOP 100 -->
+  <div class="top100-section" id="top100Section">
+    <div class="top100-header">
+      <div class="top100-title-block">
+        <h2>Community <span>Top 100</span></h2>
+        <p>Voted by PMovies fans — not critics, not algorithms</p>
+      </div>
+      <div class="top100-votes-left" id="top100VotesLeft">
+        <div class="top100-votes-num" id="top100VotesNum">5</div>
+        <div class="top100-votes-lbl">votes remaining</div>
+      </div>
+    </div>
+    <div class="top100-search-wrap">
+      <span class="top100-search-icon">🔍</span>
+      <input class="top100-search-input" id="top100SearchInput" type="text"
+        placeholder="Search a movie to vote for it…"
+        oninput="top100Search(this.value)" autocomplete="off"/>
+      <span class="top100-search-hint" id="top100SearchHint"></span>
+      <div class="top100-dropdown" id="top100Dropdown" style="display:none"></div>
+    </div>
+    <div class="top100-list" id="top100List">
+      <div class="top100-empty"><span>🎬</span>No votes yet — be the first to nominate a film!</div>
+    </div>
+  </div>
 
   <!-- FAN REVIEWS -->
   <div class="section-wrap" id="fanSection">
@@ -2704,6 +2783,204 @@
 
   // Load challenge on startup
   loadWeeklyChallenge();
+</script>
+
+<script>
+/* ══════════════════════════════════════
+   COMMUNITY TOP 100
+══════════════════════════════════════ */
+const TOP100_MAX_VOTES  = 5;
+const TOP100_MIN_VOTES  = 2;   // min votes to appear on list
+const TOP100_MAX_MOVIES = 100;
+
+// Device fingerprint — one random ID per browser, persisted
+function getDeviceId() {
+  let id = localStorage.getItem('pmovies_device_id');
+  if (!id) { id = 'dev_' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('pmovies_device_id', id); }
+  return id;
+}
+
+// Votes this device has already cast (array of movieIds)
+function getMyVotes() { return JSON.parse(localStorage.getItem('pmovies_top100_votes') || '[]'); }
+function saveMyVotes(arr) { localStorage.setItem('pmovies_top100_votes', JSON.stringify(arr)); }
+function votesRemaining() { return Math.max(0, TOP100_MAX_VOTES - getMyVotes().length); }
+
+// Monthly rank snapshot (for ↑↓ indicators)
+function getRankSnapshot() { return JSON.parse(localStorage.getItem('pmovies_rank_snap') || '{}'); }
+function maybeSaveRankSnapshot(list) {
+  const key  = `${new Date().getFullYear()}-${new Date().getMonth()}`;
+  const snap = getRankSnapshot();
+  if (snap._month === key) return;
+  const newSnap = { _month: key };
+  list.forEach((m, i) => { newSnap[m.id] = i + 1; });
+  localStorage.setItem('pmovies_rank_snap', JSON.stringify(newSnap));
+}
+
+/* ── Render the list ── */
+function renderTop100(movies) {
+  const list    = document.getElementById('top100List');
+  const myVotes = getMyVotes();
+  const snap    = getRankSnapshot();
+  const rem     = votesRemaining();
+
+  // Update votes-remaining badge
+  document.getElementById('top100VotesNum').textContent = rem;
+  document.getElementById('top100SearchHint').textContent = rem > 0 ? `${rem} vote${rem>1?'s':''} left` : 'No votes left';
+
+  if (!movies.length) {
+    list.innerHTML = '<div class="top100-empty"><span>🎬</span>No votes yet — be the first to nominate a film!</div>';
+    return;
+  }
+
+  maybeSaveRankSnapshot(movies);
+
+  list.innerHTML = movies.map((m, i) => {
+    const rank      = i + 1;
+    const prevRank  = snap[m.id];
+    const hasVoted  = myVotes.includes(m.id);
+    const canVote   = rem > 0 && !hasVoted;
+    let changeHtml  = '';
+    if (!prevRank)               changeHtml = `<div class="top100-rank-change new">NEW</div>`;
+    else if (prevRank > rank)    changeHtml = `<div class="top100-rank-change up">▲${prevRank-rank}</div>`;
+    else if (prevRank < rank)    changeHtml = `<div class="top100-rank-change down">▼${rank-prevRank}</div>`;
+
+    const genres = (m.genres||[]).slice(0,2).map(g=>`<span class="top100-genre-tag">${esc(g)}</span>`).join('');
+    const voteBtn = hasVoted
+      ? `<div class="top100-voted-badge">✓ Voted</div>`
+      : `<button class="top100-vote-btn" ${canVote?'':'disabled'} onclick="castVote('${m.id}','${esc(m.title)}','${m.poster||''}','${m.backdrop||''}',${m.year||0},'${(m.genres||[]).join('|')}')">Vote</button>`;
+
+    return `
+      <div class="top100-item" id="top100-item-${m.id}">
+        <div class="top100-rank">
+          <div class="top100-rank-num">${rank}</div>
+          ${changeHtml}
+        </div>
+        ${m.poster
+          ? `<img class="top100-poster" src="https://image.tmdb.org/t/p/w92${m.poster}" loading="lazy" alt="${esc(m.title)}"/>`
+          : `<div class="top100-poster"></div>`}
+        <div class="top100-info">
+          <div class="top100-movie-title">${esc(m.title)}</div>
+          <div class="top100-movie-meta">${m.year||''}${m.year&&m.genres?.length?' · ':''}${(m.genres||[]).slice(0,2).join(', ')}</div>
+          ${genres ? `<div class="top100-genres">${genres}</div>` : ''}
+        </div>
+        <div class="top100-right">
+          <div>
+            <div class="top100-vote-count">${m.votes}</div>
+            <div class="top100-vote-word">vote${m.votes!==1?'s':''}</div>
+          </div>
+          ${voteBtn}
+        </div>
+      </div>`;
+  }).join('');
+
+  // Show total count chip
+  const showing = movies.length;
+  list.insertAdjacentHTML('beforeend', `<div class="top100-count-chip">Showing ${showing} movie${showing!==1?'s':''} · Minimum 2 votes to appear</div>`);
+}
+
+/* ── Load from RTDB ── */
+async function loadTop100() {
+  try {
+    const res  = await fetch(`${RTDB}/communityVotes.json`);
+    const data = res.ok ? await res.json() : null;
+    if (!data) { renderTop100([]); return; }
+    const movies = Object.entries(data)
+      .map(([id, m]) => ({ id, ...m }))
+      .filter(m => m.votes >= TOP100_MIN_VOTES)
+      .sort((a, b) => b.votes - a.votes || a.firstVoted - b.firstVoted)
+      .slice(0, TOP100_MAX_MOVIES);
+    renderTop100(movies);
+  } catch(e) { console.warn('Top100 load error', e); }
+}
+
+/* ── Cast a vote ── */
+async function castVote(id, title, poster, backdrop, year, genresStr) {
+  if (votesRemaining() <= 0) return;
+  const myVotes = getMyVotes();
+  if (myVotes.includes(id)) return;
+
+  // Optimistic UI
+  const item = document.getElementById(`top100-item-${id}`);
+  if (item) item.classList.add('just-voted');
+
+  // Save locally immediately
+  myVotes.push(id);
+  saveMyVotes(myVotes);
+
+  // Write to RTDB (transaction-style: read then write)
+  try {
+    const url  = `${RTDB}/communityVotes/${id}.json`;
+    const res  = await fetch(url);
+    const curr = res.ok ? await res.json() : null;
+    const genres = genresStr ? genresStr.split('|').filter(Boolean) : [];
+    const updated = {
+      title, poster, backdrop, year, genres,
+      votes:      (curr?.votes || 0) + 1,
+      firstVoted: curr?.firstVoted || Date.now(),
+      lastVoted:  Date.now()
+    };
+    await fetch(url, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updated)
+    });
+  } catch(e) {
+    console.warn('Vote write error', e);
+  }
+
+  // Reload list
+  await loadTop100();
+}
+
+/* ── Search dropdown ── */
+let top100SearchTimer;
+function top100Search(q) {
+  const dd = document.getElementById('top100Dropdown');
+  clearTimeout(top100SearchTimer);
+  if (!q.trim()) { dd.style.display = 'none'; return; }
+  top100SearchTimer = setTimeout(async () => {
+    const res  = await fetch(`${TMDB}/search/movie?api_key=${getKey()}&query=${encodeURIComponent(q)}&language=en-US&page=1`);
+    const data = await res.json();
+    const hits = (data.results || []).filter(m => m.title).slice(0, 7);
+    if (!hits.length) { dd.style.display = 'none'; return; }
+    const myVotes = getMyVotes();
+    const rem     = votesRemaining();
+    dd.innerHTML = hits.map(m => {
+      const voted   = myVotes.includes(String(m.id));
+      const canVote = rem > 0 && !voted;
+      const genres  = (m.genre_ids||[]).slice(0,2);
+      return `
+        <div class="top100-drop-item">
+          ${m.poster_path
+            ? `<img class="top100-drop-poster" src="https://image.tmdb.org/t/p/w92${m.poster_path}" loading="lazy"/>`
+            : `<div class="top100-drop-poster"></div>`}
+          <div class="top100-drop-info">
+            <div class="top100-drop-title">${esc(m.title)}</div>
+            <div class="top100-drop-year">${m.release_date?.slice(0,4)||''}</div>
+          </div>
+          ${voted
+            ? `<div class="top100-drop-voted">✓ Voted</div>`
+            : `<button class="top100-drop-vote" ${canVote?'':'disabled'}
+                onclick="
+                  document.getElementById('top100Dropdown').style.display='none';
+                  document.getElementById('top100SearchInput').value='';
+                  castVote('${m.id}','${esc(m.title)}','${m.poster_path||''}','${m.backdrop_path||''}',${m.release_date?m.release_date.slice(0,4):0},'')
+                ">${canVote?'Vote':'No votes left'}</button>`}
+        </div>`;
+    }).join('');
+    dd.style.display = 'block';
+  }, 280);
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', e => {
+  if (!e.target.closest('.top100-search-wrap')) {
+    document.getElementById('top100Dropdown').style.display = 'none';
+  }
+});
+
+// Boot
+loadTop100();
 </script>
 </body>
 </html>
