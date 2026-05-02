@@ -225,8 +225,8 @@
     .wl-btn.status-watched{background:rgba(39,174,96,.75);border-color:rgba(39,174,96,.5)}
     .wl-btn.status-fav{background:rgba(229,9,20,.75);border-color:rgba(229,9,20,.5)}
     /* Modal status buttons */
-    .wl-status-btns{display:flex;gap:6px;flex-wrap:wrap}
-    .wl-status-btn{flex:1;min-width:90px;padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-family:'Montserrat',sans-serif;font-size:.68rem;font-weight:700;letter-spacing:.3px;cursor:pointer;transition:all .2s;white-space:nowrap}
+    .wl-status-btns{display:flex;gap:6px;flex-wrap:nowrap;width:100%;flex-basis:100%;margin-top:2px}
+    .wl-status-btn{flex:1;padding:9px 6px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-family:'Montserrat',sans-serif;font-size:.68rem;font-weight:700;letter-spacing:.3px;cursor:pointer;transition:all .2s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .wl-status-btn:hover{border-color:var(--orange);color:var(--text)}
     .wl-status-btn.active[data-status="want"]{background:rgba(245,166,35,.18);border-color:var(--orange);color:var(--orange)}
     .wl-status-btn.active[data-status="watched"]{background:rgba(39,174,96,.18);border-color:#27ae60;color:#27ae60}
@@ -1039,6 +1039,8 @@
     if (!movies.length) { showError('No movies found — try another mood!'); return; }
     movies.forEach((m, i) => grid.appendChild(buildMovieCard(m, i)));
     showResults();
+    // Stamp any Letterboxd badges if map is already populated
+    if (lbReviewMap.size) injectLbBadges();
   }
 
   /* ══ MODAL ══ */
@@ -1265,6 +1267,24 @@
     content.innerHTML = '';
     content.appendChild(row);
   }
+  function injectLbBadges() {
+    lbReviewMap.forEach((entry, tmdbId) => {
+      // Target any poster-wrap whose sibling wl-btn carries the matching data-id
+      document.querySelectorAll(`.wl-btn[data-id="${tmdbId}"]`).forEach(btn => {
+        const wrap = btn.closest('.poster-wrap');
+        if (!wrap || wrap.querySelector('.lb-card-badge')) return;
+        const badge = document.createElement('a');
+        badge.className = 'lb-card-badge';
+        badge.href = entry.link;
+        badge.target = '_blank';
+        badge.title = entry.review;
+        badge.onclick = e => e.stopPropagation();
+        badge.innerHTML = `📽 Ahmed's Review${entry.stars ? ` <span class="lb-badge-stars">${entry.stars}</span>` : ''}`;
+        wrap.appendChild(badge);
+      });
+    });
+  }
+
   async function loadLetterboxd() {
     const content = document.getElementById('lbContent');
     content.innerHTML = '<div class="yt-loading">Loading Letterboxd reviews…</div>';
@@ -1304,19 +1324,7 @@
       }));
       renderLbCards(enriched);
       // Inject badges into any already-rendered movie cards that match
-      lbReviewMap.forEach((entry, tmdbId) => {
-        document.querySelectorAll(`.movie-card .wl-btn[data-id="${tmdbId}"]`).forEach(btn => {
-          const posterWrap = btn.closest('.poster-wrap');
-          if (!posterWrap || posterWrap.querySelector('.lb-card-badge')) return;
-          const badge = document.createElement('a');
-          badge.className = 'lb-card-badge';
-          badge.href = entry.link; badge.target = '_blank';
-          badge.title = entry.review;
-          badge.onclick = e => e.stopPropagation();
-          badge.innerHTML = `<svg viewBox="0 0 24 24" width="11" height="11" fill="#fff"><circle cx="12" cy="12" r="11"/></svg>Ahmed's Review ${entry.stars ? `<span class="lb-badge-stars">${entry.stars}</span>` : ''}`;
-          posterWrap.appendChild(badge);
-        });
-      });
+      injectLbBadges();
     } catch(e) {
       content.innerHTML = `<p style="color:#888;padding:20px;text-align:center">Could not load Letterboxd: ${esc(e.message)}</p>`;
     }
