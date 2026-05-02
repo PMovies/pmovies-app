@@ -363,6 +363,26 @@
   @keyframes spin { to { transform:rotate(360deg); } }
   .surprise-toast { position:fixed; top:24px; left:50%; transform:translateX(-50%) translateY(-80px); background:#1a1a1a; color:#fff; border:1px solid rgba(255,255,255,.15); border-radius:12px; padding:12px 24px; font-size:.85rem; font-weight:600; z-index:9999; transition:transform .35s cubic-bezier(.34,1.56,.64,1); pointer-events:none; }
   .surprise-toast.show { transform:translateX(-50%) translateY(0); }
+  /* ── INSTALL BANNER ── */
+  .install-banner{position:fixed;bottom:-120px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:520px;background:#1a1a1a;border:1px solid rgba(245,166,35,.35);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;z-index:9998;box-shadow:0 8px 32px rgba(0,0,0,.6);transition:bottom .4s cubic-bezier(.34,1.56,.64,1);}
+  .install-banner.show{bottom:20px;}
+  .install-banner-icon{width:48px;height:48px;border-radius:12px;flex-shrink:0;object-fit:cover;}
+  .install-banner-text{flex:1;min-width:0;}
+  .install-banner-text strong{display:block;font-size:.88rem;font-weight:700;color:var(--text);margin-bottom:2px;}
+  .install-banner-text span{font-size:.75rem;color:var(--muted);}
+  .install-banner-btn{flex-shrink:0;background:var(--orange);border:none;border-radius:20px;color:#000;font-weight:800;font-size:.78rem;letter-spacing:.05em;padding:8px 16px;cursor:pointer;transition:.2s;white-space:nowrap;}
+  .install-banner-btn:hover{background:#e8940f;transform:scale(1.04);}
+  .install-banner-dismiss{flex-shrink:0;background:transparent;border:none;color:var(--muted);font-size:1rem;cursor:pointer;padding:4px 6px;line-height:1;transition:color .2s;}
+  .install-banner-dismiss:hover{color:var(--text);}
+  /* iOS install tip */
+  .ios-tip{position:fixed;bottom:-200px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:360px;background:#1a1a1a;border:1px solid rgba(245,166,35,.35);border-radius:16px;padding:16px;z-index:9998;box-shadow:0 8px 32px rgba(0,0,0,.6);transition:bottom .4s cubic-bezier(.34,1.56,.64,1);text-align:center;}
+  .ios-tip.show{bottom:20px;}
+  .ios-tip-title{font-size:.9rem;font-weight:700;color:var(--orange);margin-bottom:8px;}
+  .ios-tip-steps{font-size:.78rem;color:var(--muted2);line-height:1.7;margin-bottom:12px;}
+  .ios-tip-steps em{color:var(--text);font-style:normal;font-weight:600;}
+  .ios-tip-arrow{width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-top:10px solid rgba(245,166,35,.5);margin:0 auto;}
+  .ios-tip-close{background:transparent;border:1px solid var(--border);border-radius:20px;color:var(--muted);font-size:.75rem;padding:5px 14px;cursor:pointer;transition:.2s;}
+  .ios-tip-close:hover{border-color:var(--orange);color:var(--text);}
 
   </style>
 </head>
@@ -1332,6 +1352,29 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
+  <!-- INSTALL BANNER (Android/Chrome) -->
+  <div class="install-banner" id="installBanner">
+    <img src="icons/icon-192.png" class="install-banner-icon" alt="PMovies">
+    <div class="install-banner-text">
+      <strong>Add PMovies to your home screen</strong>
+      <span>Install the app for a faster, fullscreen experience</span>
+    </div>
+    <button class="install-banner-btn" id="installBtn">Install</button>
+    <button class="install-banner-dismiss" id="installDismiss" aria-label="Dismiss">✕</button>
+  </div>
+
+  <!-- iOS INSTALL TIP -->
+  <div class="ios-tip" id="iosTip">
+    <div class="ios-tip-title">📲 Add PMovies to your Home Screen</div>
+    <div class="ios-tip-steps">
+      1. Tap the <em>Share</em> button at the bottom of Safari<br>
+      2. Scroll down and tap <em>Add to Home Screen</em><br>
+      3. Tap <em>Add</em> — done!
+    </div>
+    <button class="ios-tip-close" id="iosTipClose">Got it</button>
+    <div class="ios-tip-arrow"></div>
+  </div>
+
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
@@ -1340,6 +1383,69 @@
           .catch(e => console.warn('[PWA] SW failed', e));
       });
     }
+  </script>
+
+  <script>
+  (function() {
+    /* Don't show if already installed as standalone app */
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    if (isStandalone) return;
+
+    const DISMISS_KEY = 'pmovies_install_dismissed';
+    const DISMISS_DAYS = 7;
+
+    function wasDismissedRecently() {
+      const ts = localStorage.getItem(DISMISS_KEY);
+      if (!ts) return false;
+      return (Date.now() - parseInt(ts)) < DISMISS_DAYS * 864e5;
+    }
+    function dismiss(el) {
+      el.classList.remove('show');
+      localStorage.setItem(DISMISS_KEY, Date.now());
+    }
+
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+    /* ── iOS Safari: show tip after 3s ── */
+    if (isIOS && isSafari && !wasDismissedRecently()) {
+      const tip = document.getElementById('iosTip');
+      setTimeout(() => tip.classList.add('show'), 3000);
+      document.getElementById('iosTipClose').addEventListener('click', () => dismiss(tip));
+      return;
+    }
+
+    /* ── Android/Chrome: intercept beforeinstallprompt ── */
+    let deferredPrompt = null;
+    const banner = document.getElementById('installBanner');
+    const installBtn = document.getElementById('installBtn');
+    const dismissBtn = document.getElementById('installDismiss');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      if (!wasDismissedRecently()) {
+        setTimeout(() => banner.classList.add('show'), 2500);
+      }
+    });
+
+    installBtn.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      banner.classList.remove('show');
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log('[PWA] Install outcome:', outcome);
+      deferredPrompt = null;
+    });
+
+    dismissBtn.addEventListener('click', () => dismiss(banner));
+
+    /* Hide banner if user installs */
+    window.addEventListener('appinstalled', () => {
+      banner.classList.remove('show');
+      deferredPrompt = null;
+    });
+  })();
   </script>
 </body>
 </html>
