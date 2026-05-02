@@ -115,6 +115,29 @@
     .decade-chip:hover{border-color:var(--gold);color:var(--text)}
     .decade-chip.active{background:var(--gold);border-color:var(--gold);color:#000;font-weight:700}
 
+    /* ── TICKER ── */
+    .ticker-bar{background:rgba(245,166,35,.1);border-bottom:1px solid rgba(245,166,35,.18);padding:7px 0;overflow:hidden;position:relative;z-index:10}
+    .ticker-inner{display:flex;align-items:center;gap:0;white-space:nowrap;animation:tickerScroll 40s linear infinite}
+    .ticker-inner:hover{animation-play-state:paused}
+    @keyframes tickerScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+    .ticker-label{font-family:'Montserrat',sans-serif;font-size:.6rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--orange);background:var(--orange);color:#000;padding:3px 10px;margin-right:16px;border-radius:3px;flex-shrink:0;position:sticky;left:0;z-index:2}
+    .ticker-item{font-family:'Montserrat',sans-serif;font-size:.72rem;color:var(--muted2);padding:0 18px;cursor:pointer;transition:color .2s;flex-shrink:0}
+    .ticker-item:hover{color:var(--orange)}
+    .ticker-sep{color:var(--border);flex-shrink:0;user-select:none}
+    /* ── RECENTLY VIEWED ── */
+    .rv-section{max-width:1100px;margin:0 auto 44px;padding:0 20px}
+    .rv-scroll{display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+    .rv-card{flex:0 0 80px;cursor:pointer;border-radius:8px;overflow:hidden;border:1px solid var(--border);transition:border-color .2s,transform .2s;position:relative}
+    .rv-card:hover{border-color:var(--orange);transform:scale(1.05)}
+    .rv-poster{width:100%;aspect-ratio:2/3;object-fit:cover;display:block}
+    .rv-poster-ph{width:100%;aspect-ratio:2/3;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:1.4rem}
+    .rv-title{font-size:.58rem;padding:4px 5px;font-family:'Montserrat',sans-serif;font-weight:600;text-align:center;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    /* ── SCROLL REVEAL ── */
+    .movie-card.reveal-hidden{opacity:0;transform:translateY(28px)}
+    .movie-card.reveal-visible{transition:opacity .45s ease,transform .45s ease;opacity:1;transform:translateY(0)}
+    /* ── FAVOURITE BURST ── */
+    .fav-burst{position:fixed;pointer-events:none;z-index:9999;font-size:1.3rem;animation:burstFly .7s ease forwards}
+    @keyframes burstFly{0%{opacity:1;transform:translate(-50%,-50%) scale(.5)}60%{opacity:1;transform:translate(var(--tx),var(--ty)) scale(1.3)}100%{opacity:0;transform:translate(var(--tx2),var(--ty2)) scale(.8)}}
     /* ── TRENDING SECTION ── */
     .trending-section{max-width:1100px;margin:0 auto 52px;padding:0 20px}
     .trending-scroll{display:flex;gap:14px;overflow-x:auto;padding-bottom:10px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
@@ -446,6 +469,11 @@
 </head>
 <body>
 
+<!-- TRENDING TICKER -->
+<div class="ticker-bar" id="tickerBar" style="display:none">
+  <div class="ticker-inner" id="tickerInner"></div>
+</div>
+
 <!-- HERO -->
 <header class="hero">
   <div class="hero-backdrop" id="heroBackdrop"></div>
@@ -467,6 +495,12 @@
 </header>
 
 <main style="max-width:1100px;margin:0 auto;padding:0 20px">
+
+  <!-- RECENTLY VIEWED -->
+  <div class="rv-section" id="rvSection" style="display:none">
+    <div class="section-label">🕐 Recently Viewed</div>
+    <div class="rv-scroll" id="rvScroll"></div>
+  </div>
 
   <!-- SEARCH -->
   <div class="search-wrap" style="margin-top:36px">
@@ -735,6 +769,9 @@
         overview: movie.overview, genre_ids: movie.genre_ids, status });
     }
     saveWatchlist(wl); renderWatchlist(); updateWlButtons(movie.id);
+    // fav burst if newly favourited
+    const newStatus = getMovieStatus(movie.id);
+    if (newStatus === 'fav') spawnFavBurst();
   }
 
   function removeFromWatchlist(id) {
@@ -985,10 +1022,58 @@
       clearTimeout(searchDebounceTimer);
       searchDebounceTimer = setTimeout(() => liveSearch(q), 280);
     });
+    inp.addEventListener('focus', () => {
+      if (!inp.value.trim()) showSearchHistory();
+    });
     // close dropdown when clicking outside the search wrap
     document.addEventListener('mousedown', e => {
       if (!e.target.closest('.search-wrap')) closeDropdown();
     });
+    // Keyboard shortcuts
+    document.addEventListener('keydown', e => {
+      // '/' focuses search (unless already in input)
+      if (e.key === '/' && !['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) {
+        e.preventDefault();
+        inp.focus(); inp.select();
+        showSearchHistory();
+      }
+      // Escape closes modal
+      if (e.key === 'Escape') {
+        const overlay = document.getElementById('modalOverlay');
+        if (overlay.classList.contains('visible')) closeModal(null);
+      }
+      // Arrow keys browse similar movies in modal
+      const overlay = document.getElementById('modalOverlay');
+      if (overlay.classList.contains('visible')) {
+        if (e.key === 'ArrowRight' && modalNavMovies.length) {
+          openModal(modalNavMovies[0]);
+        } else if (e.key === 'ArrowLeft' && currentModalMovie) {
+          // go back to previously opened (from recently viewed)
+          const rv = getRecentlyViewed();
+          if (rv.length > 1) openModal(rv[1]);
+        }
+      }
+    });
+    // Scroll reveal observer
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.remove('reveal-hidden');
+          entry.target.classList.add('reveal-visible');
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    // Observe newly added cards (MutationObserver on grid)
+    const grid = document.getElementById('moviesGrid');
+    new MutationObserver(muts => {
+      muts.forEach(m => m.addedNodes.forEach(node => {
+        if (node.classList?.contains('movie-card')) revealObserver.observe(node);
+      }));
+    }).observe(grid, { childList: true });
+    // init
+    renderRecentlyViewed();
+    loadTrendingTicker();
   });
 
   /* ══ MOOD & GENRE ══ */
@@ -1076,7 +1161,7 @@
     const statusClass = status ? `status-${status}` : '';
     const lbEntry = lbReviewMap.get(m.id) || lbReviewTitleMap.get(normLbTitle(m.title));
     const card   = document.createElement('div');
-    card.className = 'movie-card';
+    card.className = 'movie-card reveal-hidden';
     card.style.animationDelay = (idx * 0.05) + 's';
     card.innerHTML = `
       <div class="poster-wrap">
@@ -1119,6 +1204,10 @@
     card.addEventListener('click', e => {
       if (!e.target.closest('.wl-btn') && !e.target.closest('.card-actions')) openModal(m);
     });
+    // Hero backdrop on hover
+    if (m.backdrop_path) {
+      card.addEventListener('mouseenter', () => setHeroBackdrop(m));
+    }
 
     const shareBtn = card.querySelector('.card-share-btn');
     shareBtn.addEventListener('click', e => {
@@ -1264,6 +1353,8 @@
     document.getElementById('similarScroll').innerHTML = '';
     document.getElementById('modalOverlay').classList.add('visible');
     document.body.style.overflow = 'hidden';
+    // track recently viewed
+    addToRecentlyViewed(m);
     // load cast + similar async
     loadCast(m.id);
     loadSimilar(m.id);
@@ -1306,16 +1397,19 @@
     } catch (_) {}
   }
 
+  let modalNavMovies = []; // for ← → keyboard nav
+
   async function loadSimilar(id) {
     try {
       const res  = await fetch(`${TMDB}/movie/${id}/recommendations?api_key=${getKey()}&language=en-US&page=1`);
       const data = await res.json();
       const movies = (data.results||[]).filter(m => m.poster_path).slice(0,10);
       if (!movies.length) return;
+      modalNavMovies = movies;
       const sec = document.getElementById('similarSection');
       const row = document.getElementById('similarScroll');
       row.innerHTML = '';
-      movies.forEach(m => {
+      movies.forEach((m, i) => {
         const c = document.createElement('div'); c.className = 'sim-card';
         c.innerHTML = `<img class="sim-poster" src="${IMG+m.poster_path}" loading="lazy" alt="${esc(m.title)}"/><div class="sim-title">${esc(m.title)}</div>`;
         c.onclick = () => openModal(m);
@@ -1742,6 +1836,148 @@
     loadFanReviews();
     renderWatchlist();
   });
+
+  /* ══════════════════════════════════════════════════════
+     INTERACTIVE FEATURES
+  ══════════════════════════════════════════════════════ */
+
+  // ── 1. HERO BACKDROP ON CARD HOVER ──────────────────
+  let heroHoverTimer = null;
+  function setHeroBackdrop(m) {
+    if (!m.backdrop_path) return;
+    clearTimeout(heroHoverTimer);
+    heroHoverTimer = setTimeout(() => {
+      const el  = document.getElementById('heroBackdrop');
+      const img = new Image();
+      img.onload = () => {
+        el.style.transition = 'opacity 0.6s ease';
+        el.style.opacity = '0';
+        setTimeout(() => {
+          el.style.backgroundImage = `url(${IMGB}${m.backdrop_path})`;
+          el.classList.add('loaded');
+          el.style.opacity = '';
+          el.style.transition = '';
+        }, 300);
+      };
+      img.src = IMGB + m.backdrop_path;
+      document.getElementById('heroNowPlaying').textContent = '▶ ' + m.title;
+    }, 180);
+  }
+
+  // ── 2. RECENTLY VIEWED ───────────────────────────────
+  function getRecentlyViewed() {
+    try { return JSON.parse(localStorage.getItem('pmovies_rv') || '[]'); } catch { return []; }
+  }
+  function addToRecentlyViewed(m) {
+    let rv = getRecentlyViewed().filter(x => x.id !== m.id);
+    rv.unshift({ id: m.id, title: m.title, poster_path: m.poster_path, release_date: m.release_date,
+      vote_average: m.vote_average, overview: m.overview, genre_ids: m.genre_ids, backdrop_path: m.backdrop_path });
+    rv = rv.slice(0, 12);
+    localStorage.setItem('pmovies_rv', JSON.stringify(rv));
+    renderRecentlyViewed();
+  }
+  function renderRecentlyViewed() {
+    const rv  = getRecentlyViewed();
+    const sec = document.getElementById('rvSection');
+    const row = document.getElementById('rvScroll');
+    if (!rv.length) { sec.style.display = 'none'; return; }
+    sec.style.display = 'block';
+    row.innerHTML = rv.map(m => {
+      const thumb = m.poster_path
+        ? `<img class="rv-poster" src="${IMG}${m.poster_path}" loading="lazy" alt="${esc(m.title)}"/>`
+        : `<div class="rv-poster-ph">🎬</div>`;
+      return `<div class="rv-card" onclick="openModal(${encodeModal(m)})" title="${esc(m.title)}">${thumb}<div class="rv-title">${esc(m.title)}</div></div>`;
+    }).join('');
+  }
+  function encodeModal(m) {
+    return "JSON.parse(decodeURIComponent('" + encodeURIComponent(JSON.stringify(m)) + "'))";
+  }
+
+  // ── 3. SEARCH HISTORY ────────────────────────────────
+  function getSearchHistory() {
+    try { return JSON.parse(localStorage.getItem('pmovies_sh') || '[]'); } catch { return []; }
+  }
+  function addSearchHistory(q) {
+    if (!q) return;
+    let sh = getSearchHistory().filter(x => x !== q);
+    sh.unshift(q); sh = sh.slice(0, 6);
+    localStorage.setItem('pmovies_sh', JSON.stringify(sh));
+  }
+  function showSearchHistory() {
+    const sh = getSearchHistory();
+    const dd = document.getElementById('searchDropdown');
+    if (!sh.length) return;
+    dd.innerHTML = `
+      <div style="padding:8px 14px 4px;font-family:'Montserrat',sans-serif;font-size:.6rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted)">Recent Searches</div>
+      ${sh.map(q => `<div class="search-drop-item" style="gap:10px" onmousedown="event.preventDefault();document.getElementById('searchInput').value=q;doSearchQuery('${encodeURIComponent(q)}')">
+        <span style="color:var(--muted);font-size:.9rem">🕐</span>
+        <div class="search-drop-info"><div class="search-drop-title">${esc(q)}</div></div>
+      </div>`).join('')}`;
+    dd.classList.add('open');
+    document.getElementById('searchInput').style.borderRadius = '18px 18px 0 0';
+    // re-bind clicks properly
+    dd.querySelectorAll('.search-drop-item').forEach((el, i) => {
+      el.addEventListener('mousedown', e => { e.preventDefault(); runHistorySearch(sh[i]); });
+    });
+  }
+  function runHistorySearch(q) {
+    document.getElementById('searchInput').value = q;
+    closeDropdown();
+    doSearch();
+  }
+
+  // Save search history when doSearch runs (called from keydown & button)
+  const _origDoSearch = doSearch;
+  doSearch = async function() {
+    const q = document.getElementById('searchInput').value.trim();
+    if (q) addSearchHistory(q);
+    return _origDoSearch.call(this);
+  };
+
+  // ── 4. FAVOURITE BURST ───────────────────────────────
+  function spawnFavBurst() {
+    const emojis = ['⭐','★','💛','✨','🌟'];
+    const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+    for (let i = 0; i < 8; i++) {
+      const el = document.createElement('div');
+      el.className = 'fav-burst';
+      el.textContent = emojis[i % emojis.length];
+      const angle = (i / 8) * 360;
+      const dist  = 60 + Math.random() * 60;
+      const tx  = Math.cos(angle * Math.PI/180) * dist + 'px';
+      const ty  = Math.sin(angle * Math.PI/180) * dist + 'px';
+      const tx2 = Math.cos(angle * Math.PI/180) * (dist+30) + 'px';
+      const ty2 = Math.sin(angle * Math.PI/180) * (dist+30) + 'px';
+      el.style.cssText += `left:${cx}px;top:${cy}px;--tx:${tx};--ty:${ty};--tx2:${tx2};--ty2:${ty2};animation-delay:${i*0.04}s`;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 900);
+    }
+  }
+
+  // ── 5. TRENDING TICKER ───────────────────────────────
+  async function loadTrendingTicker() {
+    try {
+      const res  = await fetch(`${TMDB}/trending/movie/day?api_key=${getKey()}&language=en-US`);
+      const data = await res.json();
+      const movies = (data.results || []).slice(0, 15);
+      if (!movies.length) return;
+      const bar   = document.getElementById('tickerBar');
+      const inner = document.getElementById('tickerInner');
+      // Build two copies for seamless loop
+      const buildItems = () => movies.map((m, i) => {
+        const yr = m.release_date ? ` <span style="opacity:.5">(${m.release_date.slice(0,4)})</span>` : '';
+        return `<span class="ticker-item" title="${esc(m.title)}">${i+1}. ${esc(m.title)}${yr}</span><span class="ticker-sep">·</span>`;
+      }).join('');
+      inner.innerHTML = buildItems() + buildItems();
+      bar.style.display = 'block';
+      // Wire ticker items after render
+      inner.querySelectorAll('.ticker-item').forEach((el, i) => {
+        const movie = movies[i % movies.length];
+        el.onclick = () => openModal(movie);
+      });
+    } catch (_) {}
+  }
+
 </script>
 
 <!-- Firebase SDK (compat v9) -->
