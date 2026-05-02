@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta http-equiv="Cache-Control" content="no-cache, must-revalidate"/>
+  <meta http-equiv="Pragma" content="no-cache"/>
   <!-- Google Analytics GA4 -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-0J43XBFSN7"></script>
   <script>
@@ -732,11 +734,24 @@
 
 <footer>
   Powered by <a href="https://www.themoviedb.org" target="_blank">TMDb</a> &nbsp;·&nbsp; PMovies © 2025
-  <div style="margin-top:10px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:.68rem;color:var(--muted);font-family:'Montserrat',sans-serif;letter-spacing:1px">
-    <span>👁</span>
-    <img src="https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fpmovies.github.io%2Fpmovies-app&count_bg=%23F5A623&title_bg=%23222&icon=eye&icon_color=%23F5A623&title=VISITORS&edge_flat=true" alt="visitor count" style="height:20px;border-radius:3px;vertical-align:middle"/>
+  <div style="margin-top:10px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:.68rem;font-family:'Montserrat',sans-serif;letter-spacing:1px;color:var(--muted)">
+    <span style="color:var(--orange)">👁</span>
+    <span id="visitCountLabel" style="color:var(--muted)">TOTAL VISITS:</span>
+    <span id="visitCount" style="color:var(--orange);font-weight:700">—</span>
   </div>
 </footer>
+<script>
+  // Visitor counter via CountAPI
+  (function(){
+    fetch('https://api.counterapi.dev/v1/pmovies-app/visits/up')
+      .then(r => r.json())
+      .then(d => {
+        const el = document.getElementById('visitCount');
+        if (el && d && d.count) el.textContent = Number(d.count).toLocaleString();
+      })
+      .catch(() => {});
+  })();
+</script>
 
 <script>
   /* ══ KEYS ══ */
