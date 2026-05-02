@@ -1232,7 +1232,7 @@
   // keyed by normalised title string → same — fallback when ID lookup fails
   const lbReviewTitleMap = new Map();
   function normLbTitle(t){ return (t||'').toLowerCase().replace(/^(the|a|an)\s+/,'').replace(/[^a-z0-9]/g,''); }
-  const LB_RSS_API = `https://api.rss2json.com/v1/api.json?count=100&rss_url=${encodeURIComponent(`https://letterboxd.com/${LB_USER}/rss/`)}`;
+  const LB_RSS_API = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(`https://letterboxd.com/${LB_USER}/rss/`)}`;
 
   function parseLbStars(desc) {
     const m = (desc || '').match(/[★☆]+½?|[★☆]+½?/);
@@ -1283,17 +1283,13 @@
   }
 
   function injectLbBadges() {
-    // Scan every visible movie card that has a data-movie attribute
     document.querySelectorAll('.wl-btn[data-movie]').forEach(btn => {
       const wrap = btn.closest('.poster-wrap');
       if (!wrap || wrap.querySelector('.lb-card-badge')) return;
       try {
         const movie = JSON.parse(decodeURIComponent(btn.dataset.movie));
         const entry = lbReviewMap.get(movie.id) || lbReviewTitleMap.get(normLbTitle(movie.title));
-        if (entry) {
-          wrap.appendChild(makeLbBadge(entry));
-          console.log(`[LB] Badge injected on: ${movie.title}`);
-        }
+        if (entry) wrap.appendChild(makeLbBadge(entry));
       } catch(_) {}
     });
   }
@@ -1319,7 +1315,6 @@
           link:   item.link
         });
       });
-      console.log(`[LB] Title map: ${lbReviewTitleMap.size} entries`);
       injectLbBadges(); // stamp any already-visible cards immediately
 
       // Enrich only the first 10 items with TMDb posters for the UI cards
@@ -1354,10 +1349,8 @@
           }
         } catch(_) {}
         if (tmdbId) lbReviewMap.set(tmdbId, entry);
-        console.log(`[LB] "${title}" (${year}) → TMDb ID: ${tmdbId||'not found'}, stars: ${entry.stars||'none'}`);
         return { ...item, tmdbPoster: poster, tmdbId };
       }));
-      console.log(`[LB] Map ready: ${lbReviewMap.size} ID matches, ${lbReviewTitleMap.size} title entries`);
       renderLbCards(enriched);
       // Inject badges into any already-rendered movie cards that match
       injectLbBadges();
