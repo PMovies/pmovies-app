@@ -2461,7 +2461,7 @@
 
   // Secret access: click logo 5 times
   let logoClicks = 0, logoTimer = null;
-  document.querySelector('.logo-wrap')?.addEventListener('click', () => {
+  document.querySelector('.channel-logo-wrap')?.addEventListener('click', () => {
     logoClicks++;
     clearTimeout(logoTimer);
     logoTimer = setTimeout(() => logoClicks = 0, 2000);
