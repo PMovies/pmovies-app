@@ -1939,39 +1939,49 @@
     form.style.display  = 'block';
     setupFanStars();
     list.innerHTML = '<div class="yt-loading">Loading fan reviews…</div>';
-    // Try RTDB first, fall back to Firestore REST API
+
+    let rtdbReviews = [];
+    let fsReviews   = [];
+
+    // 1. Load from RTDB
     try {
-      // 1. Try RTDB
-      const rtdbRes = await fetch(`${RTDB}/fanReviews.json`);
+      const rtdbRes  = await fetch(`${RTDB}/fanReviews.json`);
       const rtdbData = rtdbRes.ok ? await rtdbRes.json() : null;
-      if (rtdbData) {
-        const reviews = Object.values(rtdbData);
-        reviews.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-        renderFanReviews(reviews);
-        return;
+      if (rtdbData) rtdbReviews = Object.values(rtdbData);
+    } catch(_) {}
+
+    // 2. Load from Firestore REST API
+    try {
+      const url = `https://firestore.googleapis.com/v1/projects/${DEFAULT_FB_PROJECT_ID}/databases/(default)/documents/fanReviews?pageSize=50&key=${DEFAULT_FB_API_KEY}`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        fsReviews = (data.documents || []).map(doc => {
+          const f = doc.fields || {};
+          return {
+            name:      f.name?.stringValue  || 'Anonymous',
+            movie:     f.movie?.stringValue || '',
+            rating:    +(f.rating?.integerValue ?? f.rating?.doubleValue ?? 0),
+            text:      f.text?.stringValue  || '',
+            timestamp: f.timestamp?.timestampValue ? new Date(f.timestamp.timestampValue).getTime() : 0
+          };
+        });
       }
     } catch(_) {}
-    // 2. Fall back to Firestore REST API
+
+    // 3. Merge — deduplicate by name+movie+text fingerprint
+    const seen = new Set();
+    const merged = [...rtdbReviews, ...fsReviews].filter(r => {
+      const key = `${(r.name||'').toLowerCase()}|${(r.movie||'').toLowerCase()}|${(r.text||'').slice(0,40).toLowerCase()}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    merged.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
     try {
-      const projectId = DEFAULT_FB_PROJECT_ID;
-      const apiKey    = DEFAULT_FB_API_KEY;
-      const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/fanReviews?pageSize=30&key=${apiKey}`;
-      const res = await fetch(url);
-      if (!res.ok) { renderFanReviews([]); return; }
-      const data = await res.json();
-      const docs = data.documents || [];
-      const reviews = docs.map(doc => {
-        const f = doc.fields || {};
-        return {
-          name:      f.name?.stringValue  || 'Anonymous',
-          movie:     f.movie?.stringValue || '',
-          rating:    +(f.rating?.integerValue ?? f.rating?.doubleValue ?? 0),
-          text:      f.text?.stringValue  || '',
-          timestamp: f.timestamp?.timestampValue ? new Date(f.timestamp.timestampValue).getTime() : 0
-        };
-      });
-      reviews.sort((a, b) => b.timestamp - a.timestamp);
-      renderFanReviews(reviews);
+      renderFanReviews(merged);
     } catch(e) {
       list.innerHTML = `<p style="color:#888;padding:20px;text-align:center">Could not load reviews: ${esc(e.message)}</p>`;
     }
