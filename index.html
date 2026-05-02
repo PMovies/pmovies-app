@@ -1779,7 +1779,7 @@
 
   /* ══ HELPERS ══ */
   function esc(s) { const d=document.createElement('div'); d.appendChild(document.createTextNode(s)); return d.innerHTML; }
-  function escJs(s) { return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+  function escJs(s) { return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
   function showLoader(v)  { document.getElementById('loader').classList.toggle('visible', v); }
   function showError(msg) { const el=document.getElementById('errorBox'); el.textContent=msg; el.classList.add('visible'); }
   function hideError()    { document.getElementById('errorBox').classList.remove('visible'); }
@@ -2590,7 +2590,7 @@
       const hits = (data.results || []).slice(0, 6);
       if (!hits.length) { box.style.display = 'none'; return; }
       box.innerHTML = hits.map(m => `
-        <div class="admin-search-item" onclick="selectChallengeMovie(${m.id},'${esc(m.title)}','${m.poster_path||''}','${m.backdrop_path||''}',${m.release_date ? m.release_date.slice(0,4) : 0})">
+        <div class="admin-search-item" onclick="selectChallengeMovie(${m.id},'${escJs(m.title)}','${escJs(m.poster_path||'')}','${escJs(m.backdrop_path||'')}',${m.release_date ? m.release_date.slice(0,4) : 0})">
           ${m.poster_path ? `<img src="https://image.tmdb.org/t/p/w92${m.poster_path}"/>` : '<div style="width:32px;height:48px;background:#222;border-radius:4px"></div>'}
           <div class="admin-search-item-info">
             <div class="admin-search-item-title">${esc(m.title)}</div>
