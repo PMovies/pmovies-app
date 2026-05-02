@@ -1827,15 +1827,38 @@
     form.style.display  = 'block';
     setupFanStars();
     list.innerHTML = '<div class="yt-loading">Loading fan reviews…</div>';
+    // Try RTDB first, fall back to Firestore REST API
     try {
-      const res = await fetch(`${RTDB}/fanReviews.json`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      // 1. Try RTDB
+      const rtdbRes = await fetch(`${RTDB}/fanReviews.json`);
+      const rtdbData = rtdbRes.ok ? await rtdbRes.json() : null;
+      if (rtdbData) {
+        const reviews = Object.values(rtdbData);
+        reviews.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        renderFanReviews(reviews);
+        return;
+      }
+    } catch(_) {}
+    // 2. Fall back to Firestore REST API
+    try {
+      const projectId = DEFAULT_FB_PROJECT_ID;
+      const apiKey    = DEFAULT_FB_API_KEY;
+      const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/fanReviews?pageSize=30&key=${apiKey}`;
+      const res = await fetch(url);
+      if (!res.ok) { renderFanReviews([]); return; }
       const data = await res.json();
-      if (!data) { renderFanReviews([]); return; }
-      // RTDB returns an object keyed by push ID — convert to array
-      const reviews = Object.values(data);
-      // Sort newest first
-      reviews.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      const docs = data.documents || [];
+      const reviews = docs.map(doc => {
+        const f = doc.fields || {};
+        return {
+          name:      f.name?.stringValue  || 'Anonymous',
+          movie:     f.movie?.stringValue || '',
+          rating:    +(f.rating?.integerValue ?? f.rating?.doubleValue ?? 0),
+          text:      f.text?.stringValue  || '',
+          timestamp: f.timestamp?.timestampValue ? new Date(f.timestamp.timestampValue).getTime() : 0
+        };
+      });
+      reviews.sort((a, b) => b.timestamp - a.timestamp);
       renderFanReviews(reviews);
     } catch(e) {
       list.innerHTML = `<p style="color:#888;padding:20px;text-align:center">Could not load reviews: ${esc(e.message)}</p>`;
@@ -1852,12 +1875,22 @@
     try {
       const btn = document.querySelector('.fan-submit-btn');
       btn.textContent = 'Posting…'; btn.disabled = true;
-      const res = await fetch(`${RTDB}/fanReviews.json`, {
+      const reviewData = { name, movie, rating, text, timestamp: Date.now() };
+      // Write to RTDB (new path)
+      await fetch(`${RTDB}/fanReviews.json`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, movie, rating, text, timestamp: Date.now() })
+        body: JSON.stringify(reviewData)
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      // Also write to Firestore via SDK if available (for users on cached version)
+      if (fbDb) {
+        try {
+          await fbDb.collection('fanReviews').add({
+            ...reviewData,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        } catch(_) {}
+      }
       document.getElementById('fanName').value  = '';
       document.getElementById('fanMovie').value = '';
       document.getElementById('fanText').value  = '';
