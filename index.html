@@ -1037,7 +1037,7 @@
     movies.forEach((m, i) => grid.appendChild(buildMovieCard(m, i)));
     showResults();
     // Stamp any Letterboxd badges if map is already populated
-    if (lbReviewMap.size) injectLbBadges();
+    if (lbReviewMap.size || lbReviewTitleMap.size) injectLbBadges();
   }
 
   /* ══ MODAL ══ */
