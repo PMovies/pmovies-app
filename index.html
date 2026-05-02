@@ -1821,34 +1821,35 @@
     const setup = document.getElementById('fanSetup');
     const form  = document.getElementById('fanReviewForm');
     const list  = document.getElementById('fanReviewsList');
-    if (!initFb()) {
-      setup.style.display = 'block';
-      form.style.display  = 'none';
-      list.innerHTML = '';
-      return;
-    }
+    // Always show form — reviews use REST API so no SDK init needed for reading
     setup.style.display = 'none';
     form.style.display  = 'block';
     setupFanStars();
     list.innerHTML = '<div class="yt-loading">Loading fan reviews…</div>';
     try {
-      let snap;
-      try {
-        snap = await fbDb.collection('fanReviews').orderBy('timestamp','desc').limit(30).get();
-      } catch(_) {
-        snap = await fbDb.collection('fanReviews').limit(30).get();
+      // Use Firestore REST API directly — avoids SDK offline-mode caching issues
+      const projectId = localStorage.getItem('fb_projectId') || DEFAULT_FB_PROJECT_ID;
+      const apiKey    = localStorage.getItem('fb_apiKey')    || DEFAULT_FB_API_KEY;
+      const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/fanReviews?pageSize=30&key=${apiKey}`;
+      const res = await fetch(url);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error?.message || `HTTP ${res.status}`);
       }
-      // If orderBy returned 0 but collection might have docs, try without orderBy
-      if (snap.empty) {
-        snap = await fbDb.collection('fanReviews').limit(30).get();
-      }
-      const reviews = snap.docs.map(d => d.data());
-      // Sort client-side: docs with a timestamp first (newest), nulls last
-      reviews.sort((a,b) => {
-        const ta = a.timestamp?.toMillis?.() ?? 0;
-        const tb = b.timestamp?.toMillis?.() ?? 0;
-        return tb - ta;
+      const data = await res.json();
+      const docs  = data.documents || [];
+      const reviews = docs.map(doc => {
+        const f = doc.fields || {};
+        return {
+          name:      f.name?.stringValue  || 'Anonymous',
+          movie:     f.movie?.stringValue || '',
+          rating:    +(f.rating?.integerValue ?? f.rating?.doubleValue ?? 0),
+          text:      f.text?.stringValue  || '',
+          timestamp: f.timestamp?.timestampValue ? new Date(f.timestamp.timestampValue).getTime() : 0
+        };
       });
+      // Sort newest first
+      reviews.sort((a,b) => b.timestamp - a.timestamp);
       renderFanReviews(reviews);
     } catch(e) {
       list.innerHTML = `<p style="color:#888;padding:20px;text-align:center">Could not load reviews: ${esc(e.message)}</p>`;
