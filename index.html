@@ -1525,7 +1525,8 @@
   let currentTvMood = null;
   let tvPage = 1;
   let nowAiringLoaded = false;
-  let lastTvHero = null; // cached TV hero object for instant restore
+  let nowAiringHeroes = []; // backdrop-capable shows for random hero picks
+  let lastTvHero = null;
 
   function selectTvMood(el, mood) {
     document.querySelectorAll('#tvMoodGrid .mood-card').forEach(c => c.classList.remove('active'));
@@ -1892,10 +1893,12 @@
       const res  = await fetch(`${TMDB}/tv/on_the_air?api_key=${getKey()}&language=en-US&page=1`);
       const data = await res.json();
       const shows = (data.results || []).sort((a,b) => (b.popularity||0) - (a.popularity||0)).slice(0, 20);
-      // Set hero to a top TV show backdrop when Series tab first opens
-      const heroShow = shows.find(s => s.backdrop_path);
-      if (heroShow) {
-        const tvHero = { backdrop_path: heroShow.backdrop_path, title: heroShow.name || heroShow.original_name || '' };
+      // Cache backdrop-capable shows for random hero picks on tab switch
+      nowAiringHeroes = shows.filter(s => s.backdrop_path).slice(0, 8);
+      // Set hero to a random top TV show on first load
+      if (nowAiringHeroes.length) {
+        const pick   = nowAiringHeroes[Math.floor(Math.random() * nowAiringHeroes.length)];
+        const tvHero = { backdrop_path: pick.backdrop_path, title: pick.name || pick.original_name || '', media_type: 'tv' };
         lastTvHero = tvHero;
         setHeroBackdrop(tvHero);
       }
@@ -3060,11 +3063,18 @@
       document.getElementById('tab-btn-' + t).classList.toggle('active', t === name);
     });
     if (name === 'series') {
-      // Restore cached TV hero immediately (no flicker)
-      if (lastTvHero) setHeroBackdrop(lastTvHero);
+      if (nowAiringHeroes.length) {
+        // Pick a fresh random TV show hero every time — mirrors loadHeroBackdrop variety
+        const pick   = nowAiringHeroes[Math.floor(Math.random() * nowAiringHeroes.length)];
+        const tvHero = { backdrop_path: pick.backdrop_path, title: pick.name || pick.original_name || '', media_type: 'tv' };
+        lastTvHero = tvHero;
+        setHeroBackdrop(tvHero);
+      } else if (lastTvHero) {
+        setHeroBackdrop(lastTvHero); // fallback before Now Airing loads
+      }
       if (!nowAiringLoaded) { loadNowAiring(); nowAiringLoaded = true; }
     } else {
-      loadHeroBackdrop(); // restore movie hero when leaving Series tab
+      loadHeroBackdrop(); // fresh random movie hero on every non-series tab
     }
     // Switch tagline
     const tagEl = document.querySelector('.tagline');
