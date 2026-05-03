@@ -1168,16 +1168,40 @@
 <!-- ═══ SERIES TAB ═══ -->
 <div class="tab-panel" id="tab-panel-series">
 
+  <!-- TV RECENTLY VIEWED -->
+  <div class="rv-section" id="tvRvSection" style="display:none">
+    <div class="section-label">🕐 Recently Viewed</div>
+    <div class="rv-scroll" id="tvRvScroll"></div>
+  </div>
+
+  <!-- TV SEARCH -->
+  <div class="search-wrap" style="margin-top:36px">
+    <input class="search-input" id="tvSearchInput" type="text" placeholder="Search for any series…" onkeydown="handleTvSearchKey(event)" oninput="tvSearchDebounce()" onfocus="tvShowSearchHistory()" onblur="setTimeout(tvCloseDropdown,200)" autocomplete="off"/>
+    <button class="search-btn" onclick="doTvSearch()">🔍</button>
+    <div class="search-dropdown" id="tvSearchDropdown"></div>
+  </div>
+
   <!-- MOOD PICKER -->
-  <div class="mood-intro" id="seriesMoodLabel">
+  <div class="mood-intro" id="seriesMoodLabel" style="margin-top:40px">
     <p class="mood-question">What kind of series tonight?</p>
     <p class="mood-pick-label">Choose Your Vibe</p>
   </div>
-  <div class="mood-grid">
+  <div class="mood-grid" id="tvMoodGrid">
     <div class="mood-card mood-happy"  onclick="selectTvMood(this,'funny')"><span class="mood-icon">😄</span><div class="mood-name">Light &amp; Fun</div><div class="mood-sub">Comedies &amp; sitcoms</div></div>
     <div class="mood-card mood-sad"    onclick="selectTvMood(this,'drama')"><span class="mood-icon">😢</span><div class="mood-name">Emotional</div><div class="mood-sub">Powerful dramas</div></div>
     <div class="mood-card mood-thrill" onclick="selectTvMood(this,'action')"><span class="mood-icon">🔥</span><div class="mood-name">Action</div><div class="mood-sub">Thrillers &amp; crime</div></div>
     <div class="mood-card mood-scared" onclick="selectTvMood(this,'scifi')"><span class="mood-icon">🚀</span><div class="mood-name">Sci-Fi &amp; Fantasy</div><div class="mood-sub">Other worlds</div></div>
+  </div>
+  <div class="mood-or-wrap">
+    <div class="mood-or-line"></div>
+    <span class="mood-or-text">OR</span>
+    <div class="mood-or-line"></div>
+  </div>
+  <div class="surprise-wrap">
+    <button class="surprise-btn" id="tvSurpriseBtn" onclick="tvSurpriseMe()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      Let me Surprise You
+    </button>
   </div>
 
   <!-- TV RESULTS -->
@@ -1188,7 +1212,7 @@
     </div>
     <div class="movies-grid" id="tvSeriesGrid"></div>
   </div>
-  <div id="tvLoader" class="loader-wrap" style="display:none"><div class="loader"></div></div>
+  <div id="tvLoader" style="display:none"><div class="yt-loading">Loading series…</div></div>
   <div id="tvError" class="error-msg" style="display:none"></div>
 
   <!-- NOW AIRING -->
@@ -1500,14 +1524,16 @@
   let currentTvMood = null;
   let tvPage = 1;
   let nowAiringLoaded = false;
+  let lastTvHero = null; // cached TV hero object for instant restore
 
   function selectTvMood(el, mood) {
-    document.querySelectorAll('.mood-grid .mood-card').forEach(c => {
-      if (c.closest('#tab-panel-series')) c.classList.remove('active');
-    });
+    document.querySelectorAll('#tvMoodGrid .mood-card').forEach(c => c.classList.remove('active'));
     el.classList.add('active');
     currentTvMood = mood;
     tvPage = Math.ceil(Math.random() * 5);
+    // Clear search when a mood is selected
+    const inp = document.getElementById('tvSearchInput');
+    if (inp) inp.value = '';
     fetchTvSeries(mood);
   }
 
@@ -1522,7 +1548,7 @@
     const loader = document.getElementById('tvLoader');
     const errEl  = document.getElementById('tvError');
     const results= document.getElementById('tvResults');
-    loader.style.display = 'flex';
+    loader.style.display = 'block';
     errEl.style.display  = 'none';
     results.style.display= 'none';
     const m = TV_MOOD_MAP[mood];
@@ -1542,6 +1568,14 @@
     }
   }
 
+  function normaliseTv(s) {
+    return Object.assign({}, s, {
+      title:        s.name || s.original_name || '',
+      release_date: s.first_air_date || '',
+      media_type:   'tv'
+    });
+  }
+
   function renderTvSeries(mood, shows) {
     const { label, subtitle } = TV_MOOD_MAP[mood];
     const grid    = document.getElementById('tvSeriesGrid');
@@ -1554,49 +1588,188 @@
       document.getElementById('tvError').textContent   = 'No series found — try another vibe!';
       return;
     }
-    shows.forEach((s, i) => grid.appendChild(buildTvCard(s, i)));
+    shows.forEach((s, i) => grid.appendChild(buildMovieCard(normaliseTv(s), i)));
     results.style.display = 'block';
   }
 
-  function buildTvCard(s, i) {
-    const title  = s.name || s.original_name || '';
-    const year   = (s.first_air_date || '').slice(0, 4);
-    const rating = s.vote_average ? s.vote_average.toFixed(1) : '';
-    const poster = s.poster_path ? IMG + s.poster_path : null;
-    const card   = document.createElement('div');
-    card.className = 'movie-card';
-    card.style.animationDelay = (i * 0.06) + 's';
-    card.onclick = () => openTvModal(s);
-    if (s.backdrop_path) card.addEventListener('mouseenter', () => setHeroBackdrop({ backdrop_path: s.backdrop_path, title: s.name || s.original_name || '' }));
-    card.innerHTML = `
-      <div class="movie-poster-wrap">
-        ${poster
-          ? `<img class="movie-poster" src="${poster}" loading="lazy" alt="${esc(title)}"/>`
-          : `<div class="movie-poster" style="background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:2.5rem">📺</div>`}
-        <div class="movie-card-overlay">
-          <div class="movie-card-overlay-inner">
-            ${rating ? `<span class="movie-rating-badge">★ ${rating}</span>` : ''}
-            <div class="movie-overlay-title">${esc(title)}</div>
-            ${year ? `<div class="movie-overlay-year">${year}</div>` : ''}
-          </div>
-        </div>
-        <div class="movie-rank">${i + 1}</div>
-      </div>
-      <div class="movie-info">
-        <div class="movie-title">${esc(title)}</div>
-        <div class="movie-meta">${year}${rating ? ` · ★ ${rating}` : ''}</div>
-      </div>`;
-    return card;
+  function openTvModal(s) { openModal(normaliseTv(s)); }
+
+  /* ══ TV RECENTLY VIEWED ══ */
+  function getTvRv() { try { return JSON.parse(localStorage.getItem('pmovies_tv_rv') || '[]'); } catch { return []; } }
+  function addToTvRv(m) {
+    let rv = getTvRv().filter(x => x.id !== m.id);
+    rv.unshift({ id: m.id, title: m.title, poster_path: m.poster_path, release_date: m.release_date,
+      vote_average: m.vote_average, overview: m.overview, genre_ids: m.genre_ids,
+      backdrop_path: m.backdrop_path, media_type: 'tv' });
+    rv = rv.slice(0, 12);
+    localStorage.setItem('pmovies_tv_rv', JSON.stringify(rv));
+    renderTvRv();
+  }
+  function renderTvRv() {
+    const rv  = getTvRv();
+    const sec = document.getElementById('tvRvSection');
+    const row = document.getElementById('tvRvScroll');
+    if (!sec || !row) return;
+    if (!rv.length) { sec.style.display = 'none'; return; }
+    sec.style.display = 'block';
+    row.innerHTML = rv.map(m => {
+      const thumb = m.poster_path
+        ? `<img class="rv-poster" src="${IMG}${m.poster_path}" loading="lazy" alt="${esc(m.title)}"/>`
+        : `<div class="rv-poster-ph">📺</div>`;
+      return `<div class="rv-card" onclick="openModal(${encodeModal(m)})" title="${esc(m.title)}">${thumb}<div class="rv-title">${esc(m.title)}</div></div>`;
+    }).join('');
   }
 
-  function openTvModal(s) {
-    // Normalise TV show fields to match movie modal expectations
-    const m = Object.assign({}, s, {
-      title: s.name || s.original_name || '',
-      release_date: s.first_air_date || '',
-      media_type: 'tv'
-    });
-    openModal(m);
+  /* ══ TV SEARCH ══ */
+  let tvSearchDebounceTimer = null;
+  let tvDropItems = [];
+  let tvDropActiveIndex = -1;
+
+  function tvSearchDebounce() {
+    clearTimeout(tvSearchDebounceTimer);
+    tvSearchDebounceTimer = setTimeout(() => {
+      const q = document.getElementById('tvSearchInput').value.trim();
+      if (q.length >= 2) tvFetchDropdown(q);
+      else tvCloseDropdown();
+    }, 280);
+  }
+
+  async function tvFetchDropdown(q) {
+    try {
+      const res  = await fetch(`${TMDB}/search/tv?api_key=${getKey()}&query=${encodeURIComponent(q)}&language=en-US&page=1`);
+      const data = await res.json();
+      const results = (data.results || []).filter(s => s.name).slice(0, 7);
+      tvDropItems = results;
+      tvDropActiveIndex = -1;
+      const dd = document.getElementById('tvSearchDropdown');
+      if (!results.length) { tvCloseDropdown(); return; }
+      dd.innerHTML = results.map((s, i) => {
+        const year  = s.first_air_date ? s.first_air_date.slice(0,4) : '—';
+        const rating = s.vote_average ? '★ ' + s.vote_average.toFixed(1) : '';
+        const thumb = s.poster_path
+          ? `<img class="search-drop-thumb" src="https://image.tmdb.org/t/p/w92${s.poster_path}" loading="lazy" alt="${esc(s.name)}"/>`
+          : `<div class="search-drop-thumb-ph">📺</div>`;
+        return `<div class="search-drop-item" data-idx="${i}">
+          ${thumb}
+          <div class="search-drop-info">
+            <div class="search-drop-title">${esc(s.name)}</div>
+            <div class="search-drop-year">${year}${rating ? ' · ' + rating : ''}</div>
+          </div>
+        </div>`;
+      }).join('');
+      dd.style.display = 'block';
+      document.getElementById('tvSearchInput').style.borderBottomLeftRadius = '0';
+      document.getElementById('tvSearchInput').style.borderBottomRightRadius = '0';
+      dd.querySelectorAll('.search-drop-item').forEach((el, i) => {
+        el.addEventListener('mousedown', e => { e.preventDefault(); tvSelectDropItem(tvDropItems[i]); });
+      });
+    } catch(_) {}
+  }
+
+  function tvCloseDropdown() {
+    const dd = document.getElementById('tvSearchDropdown');
+    if (dd) { dd.style.display = 'none'; dd.innerHTML = ''; }
+    const inp = document.getElementById('tvSearchInput');
+    if (inp) { inp.style.borderBottomLeftRadius = ''; inp.style.borderBottomRightRadius = ''; }
+    tvDropActiveIndex = -1;
+  }
+
+  function tvSelectDropItem(s) {
+    document.getElementById('tvSearchInput').value = s.name || '';
+    tvCloseDropdown();
+    openTvModal(s);
+  }
+
+  function tvShowSearchHistory() {
+    const q = document.getElementById('tvSearchInput').value.trim();
+    if (q) return;
+    try {
+      const sh = JSON.parse(localStorage.getItem('pmovies_tv_sh') || '[]');
+      if (!sh.length) return;
+      const dd = document.getElementById('tvSearchDropdown');
+      dd.innerHTML = `<div style="padding:8px 14px 4px;font-family:'Montserrat',sans-serif;font-size:.6rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted)">Recent Searches</div>
+        ${sh.map(q => `<div class="search-drop-item" style="gap:10px" onmousedown="event.preventDefault();document.getElementById('tvSearchInput').value='${esc(q)}';doTvSearch()">
+          <span style="color:var(--muted);font-size:.9rem">🕐</span>
+          <div class="search-drop-info"><div class="search-drop-title">${esc(q)}</div></div>
+        </div>`).join('')}`;
+      dd.style.display = 'block';
+    } catch(_) {}
+  }
+
+  function handleTvSearchKey(e) {
+    const dd = document.getElementById('tvSearchDropdown');
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      tvDropActiveIndex = Math.min(tvDropActiveIndex + 1, tvDropItems.length - 1);
+      dd.querySelectorAll('.search-drop-item').forEach((el, i) => el.classList.toggle('active', i === tvDropActiveIndex));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      tvDropActiveIndex = Math.max(tvDropActiveIndex - 1, -1);
+      dd.querySelectorAll('.search-drop-item').forEach((el, i) => el.classList.toggle('active', i === tvDropActiveIndex));
+    } else if (e.key === 'Enter') {
+      if (tvDropActiveIndex >= 0 && tvDropItems[tvDropActiveIndex]) {
+        tvSelectDropItem(tvDropItems[tvDropActiveIndex]);
+      } else { tvCloseDropdown(); doTvSearch(); }
+    } else if (e.key === 'Escape') { tvCloseDropdown(); }
+  }
+
+  async function doTvSearch() {
+    const q = document.getElementById('tvSearchInput').value.trim();
+    if (!q) return;
+    tvCloseDropdown();
+    // save history
+    try {
+      let sh = JSON.parse(localStorage.getItem('pmovies_tv_sh') || '[]');
+      sh = [q, ...sh.filter(x => x !== q)].slice(0, 6);
+      localStorage.setItem('pmovies_tv_sh', JSON.stringify(sh));
+    } catch(_) {}
+    const loader = document.getElementById('tvLoader');
+    const errEl  = document.getElementById('tvError');
+    const results= document.getElementById('tvResults');
+    loader.style.display = 'block';
+    errEl.style.display  = 'none';
+    results.style.display= 'none';
+    // Clear mood selection
+    document.querySelectorAll('#tvMoodGrid .mood-card').forEach(c => c.classList.remove('active'));
+    try {
+      const res  = await fetch(`${TMDB}/search/tv?api_key=${getKey()}&query=${encodeURIComponent(q)}&language=en-US&page=1`);
+      const data = await res.json();
+      const shows = (data.results || []).slice(0, 12);
+      const grid = document.getElementById('tvSeriesGrid');
+      document.getElementById('tvResultsTitle').innerHTML   = `<em>Results for "${esc(q)}"</em>`;
+      document.getElementById('tvResultsSubtitle').textContent = '';
+      grid.innerHTML = '';
+      if (!shows.length) {
+        errEl.style.display = 'block'; errEl.textContent = `No series found for "${q}"`;
+        return;
+      }
+      shows.forEach((s, i) => grid.appendChild(buildMovieCard(normaliseTv(s), i)));
+      results.style.display = 'block';
+    } catch(e) {
+      errEl.style.display = 'block'; errEl.textContent = 'Search failed — try again.';
+    } finally { loader.style.display = 'none'; }
+  }
+
+  /* ══ TV SURPRISE ME ══ */
+  async function tvSurpriseMe() {
+    const btn = document.getElementById('tvSurpriseBtn');
+    btn.classList.add('loading');
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Finding…`;
+    try {
+      const page = Math.floor(Math.random() * 15) + 1;
+      const res  = await fetch(`${TMDB}/tv/top_rated?api_key=${getKey()}&language=en-US&page=${page}`);
+      const data = await res.json();
+      const shows = (data.results || []).filter(s => s.poster_path && s.vote_count > 100);
+      if (!shows.length) throw new Error('No series found');
+      const pick = shows[Math.floor(Math.random() * shows.length)];
+      showToast('📺  ' + (pick.name || pick.original_name));
+      openTvModal(pick);
+    } catch(e) {
+      showToast('Could not load a series. Try again!');
+    } finally {
+      btn.classList.remove('loading');
+      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Let me Surprise You`;
+    }
   }
 
   /* ══ NOW AIRING ══ */
@@ -1609,7 +1782,11 @@
       const shows = (data.results || []).sort((a,b) => (b.popularity||0) - (a.popularity||0)).slice(0, 20);
       // Set hero to a top TV show backdrop when Series tab first opens
       const heroShow = shows.find(s => s.backdrop_path);
-      if (heroShow) setHeroBackdrop({ backdrop_path: heroShow.backdrop_path, title: heroShow.name || heroShow.original_name || '' });
+      if (heroShow) {
+        const tvHero = { backdrop_path: heroShow.backdrop_path, title: heroShow.name || heroShow.original_name || '' };
+        lastTvHero = tvHero;
+        setHeroBackdrop(tvHero);
+      }
       if (!shows.length) { content.innerHTML = '<div class="yt-loading">No series found.</div>'; return; }
       const row = document.createElement('div'); row.className = 'trending-scroll';
       shows.forEach((s, i) => {
@@ -2085,7 +2262,8 @@
     document.getElementById('modalOverlay').classList.add('visible');
     document.body.style.overflow = 'hidden';
     // track recently viewed
-    addToRecentlyViewed(m);
+    if (m.media_type === 'tv') { if (typeof addToTvRv === 'function') addToTvRv(m); }
+    else addToRecentlyViewed(m);
     // load cast + similar async
     loadCast(m.id);
     loadSimilar(m.id);
@@ -2769,8 +2947,18 @@
       document.getElementById('tab-panel-' + t).classList.toggle('active', t === name);
       document.getElementById('tab-btn-' + t).classList.toggle('active', t === name);
     });
-    if (name === 'series' && !nowAiringLoaded) { loadNowAiring(); nowAiringLoaded = true; }
-    if (name !== 'series') loadHeroBackdrop(); // restore movie hero when leaving Series tab
+    if (name === 'series') {
+      // Restore cached TV hero immediately (no flicker)
+      if (lastTvHero) setHeroBackdrop(lastTvHero);
+      if (!nowAiringLoaded) { loadNowAiring(); nowAiringLoaded = true; }
+    } else {
+      loadHeroBackdrop(); // restore movie hero when leaving Series tab
+    }
+    // Switch tagline
+    const tagEl = document.querySelector('.tagline');
+    if (tagEl) tagEl.innerHTML = name === 'series'
+      ? 'Your TV &nbsp;·&nbsp; Your Mood &nbsp;·&nbsp; Your Series'
+      : 'Your Cinema &nbsp;·&nbsp; Your Mood &nbsp;·&nbsp; Your Film';
     window.scrollTo({ top: 0, behavior: 'smooth' });
     history.replaceState(null, '', '#' + name);
   }
@@ -3267,6 +3455,7 @@
     loadFriendsReviews();
     setInterval(loadFriendsReviews, 60 * 60 * 1000); // rotate every hour
     renderWatchlist();
+    renderTvRv();
   });
 
   /* ══════════════════════════════════════════════════════
@@ -3278,6 +3467,10 @@
   let pageBackdropTimeout = null;
   function setHeroBackdrop(m) {
     if (!m.backdrop_path) return;
+    // Cache TV heroes so tab-switch restores them instantly
+    if (m.media_type === 'tv' || document.getElementById('tab-btn-series')?.classList.contains('active')) {
+      lastTvHero = m;
+    }
     clearTimeout(heroHoverTimer);
     heroHoverTimer = setTimeout(() => {
       const url = `${IMGB}${m.backdrop_path}`;
@@ -3287,7 +3480,7 @@
         const hero = document.getElementById('heroBackdrop');
         hero.style.backgroundImage = `url(${url})`;
         hero.classList.add('loaded');
-        document.getElementById('heroNowPlaying').textContent = '▶ ' + m.title;
+        document.getElementById('heroNowPlaying').textContent = '▶ Featuring: ' + (m.title || m.name || '');
         // Update full-page cinematic backdrop (visible wherever you scroll)
         const pb = document.getElementById('pageBackdrop');
         pb.style.backgroundImage = `url(${url})`;
