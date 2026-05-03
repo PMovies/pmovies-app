@@ -518,6 +518,12 @@
   .top100-vote-btn:disabled { background:#1e1e1e; color:#444; cursor:not-allowed; }
   .top100-voted-badge { background:transparent; border:1px solid #2a2a2a; color:#555; border-radius:20px; padding:5px 14px; font-size:.72rem; }
   .top100-count-chip { background:#111; border:1px solid #2a2a2a; border-radius:20px; padding:6px 14px; color:#666; font-size:.78rem; margin-top:16px; text-align:center; }
+  .top100-item-hidden { display:none; }
+  .top100-show-more-wrap { position:relative; text-align:center; margin-top:4px; }
+  .top100-show-more-fade { position:absolute; bottom:100%; left:0; right:0; height:80px; background:linear-gradient(transparent, #0a0a0a); pointer-events:none; }
+  .top100-show-more-btn { background:#111; border:1px solid var(--orange); border-radius:14px; color:var(--orange); cursor:pointer; font-family:'Montserrat',sans-serif; font-size:.8rem; font-weight:700; letter-spacing:.06em; padding:14px 28px; text-transform:uppercase; transition:all .2s; display:inline-flex; flex-direction:column; align-items:center; gap:4px; margin-top:12px; }
+  .top100-show-more-btn:hover { background:var(--orange); color:#000; }
+  .top100-show-more-count { font-size:.68rem; font-weight:600; opacity:.8; letter-spacing:.04em; }
 
   /* Challenge Results Card */
   .challenge-results-wrap { border-radius:16px; overflow:hidden; position:relative; min-height:260px; }
@@ -3634,6 +3640,9 @@ function renderTop100(movies) {
 
   maybeSaveRankSnapshot(movies);
 
+  const TOP_PREVIEW = 10;
+  const hasMore = movies.length > TOP_PREVIEW;
+
   list.innerHTML = movies.map((m, i) => {
     const rank      = i + 1;
     const prevRank  = snap[m.id];
@@ -3649,8 +3658,10 @@ function renderTop100(movies) {
       ? `<div class="top100-voted-badge">✓ Voted</div>`
       : `<button class="top100-vote-btn" ${canVote?'':'disabled'} onclick="castVote('${m.id}','${escJs(m.title)}','${escJs(m.poster||'')}','${escJs(m.backdrop||'')}',${m.year||0},'${escJs((m.genres||[]).join('|'))}')">Vote</button>`;
 
+    const hidden = i >= TOP_PREVIEW ? ' top100-item-hidden' : '';
+
     return `
-      <div class="top100-item" id="top100-item-${m.id}">
+      <div class="top100-item${hidden}" id="top100-item-${m.id}">
         <div class="top100-rank">
           <div class="top100-rank-num">${rank}</div>
           ${changeHtml}
@@ -3673,9 +3684,26 @@ function renderTop100(movies) {
       </div>`;
   }).join('');
 
-  // Show total count chip
-  const showing = movies.length;
-  list.insertAdjacentHTML('beforeend', `<div class="top100-count-chip">Showing ${showing} movie${showing!==1?'s':''} · Minimum 2 votes to appear</div>`);
+  // "Show Full List" button or count chip
+  if (hasMore) {
+    const remaining = movies.length - TOP_PREVIEW;
+    list.insertAdjacentHTML('beforeend', `
+      <div class="top100-show-more-wrap" id="top100ShowMoreWrap">
+        <div class="top100-show-more-fade"></div>
+        <button class="top100-show-more-btn" onclick="showFullTop100()">
+          Show Full List
+          <span class="top100-show-more-count">+${remaining} more film${remaining!==1?'s':''}</span>
+        </button>
+      </div>`);
+  } else {
+    list.insertAdjacentHTML('beforeend', `<div class="top100-count-chip">${movies.length} film${movies.length!==1?'s':''} · Minimum 2 votes to appear</div>`);
+  }
+}
+
+function showFullTop100() {
+  document.querySelectorAll('.top100-item-hidden').forEach(el => el.classList.remove('top100-item-hidden'));
+  const wrap = document.getElementById('top100ShowMoreWrap');
+  if (wrap) wrap.outerHTML = `<div class="top100-count-chip" id="top100CountChip">${document.querySelectorAll('.top100-item').length} films · Minimum 2 votes to appear</div>`;
 }
 
 /* ── Load from RTDB ── */
