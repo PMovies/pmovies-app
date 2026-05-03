@@ -420,6 +420,16 @@
   .fan-form-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
   .fan-form-row input, #fanText { background:#111; border:1px solid #333; border-radius:8px; padding:10px 14px; color:#fff; font-size:.83rem; width:100%; box-sizing:border-box; font-family:inherit; }
   .fan-form-row input:focus, #fanText:focus { outline:none; border-color:var(--orange); }
+  .fan-movie-wrap { position:relative; }
+  .fan-movie-wrap input { width:100%; box-sizing:border-box; }
+  .fan-movie-dropdown { position:absolute; top:calc(100% + 4px); left:0; right:0; background:#1a1a1a; border:1px solid #333; border-radius:10px; z-index:200; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,.6); }
+  .fan-movie-opt { display:flex; align-items:center; gap:10px; padding:8px 12px; cursor:pointer; transition:background .15s; }
+  .fan-movie-opt:hover { background:#252525; }
+  .fan-movie-opt img { width:30px; height:44px; object-fit:cover; border-radius:4px; flex-shrink:0; background:#111; }
+  .fan-movie-opt-no-img { width:30px; height:44px; background:#111; border-radius:4px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:.9rem; }
+  .fan-movie-opt-info { min-width:0; }
+  .fan-movie-opt-title { color:#fff; font-size:.83rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .fan-movie-opt-year  { color:#666; font-size:.72rem; margin-top:1px; }
   #fanText { resize:vertical; min-height:70px; margin-bottom:10px; }
   .fan-star-row { display:flex; align-items:center; gap:4px; margin-bottom:10px; }
   .fan-star { font-size:1.5rem; color:#444; cursor:pointer; transition:.15s; }
@@ -877,8 +887,13 @@
       <div class="fan-form-wrap">
         <h3 class="fan-form-title">Leave a review</h3>
         <div class="fan-form-row">
-          <input id="fanName"  type="text" placeholder="Your name" maxlength="40" autocomplete="off"/>
-          <input id="fanMovie" type="text" placeholder="Movie title" maxlength="80" autocomplete="off"/>
+          <input id="fanName" type="text" placeholder="Your name" maxlength="40" autocomplete="off"/>
+          <div class="fan-movie-wrap">
+            <input id="fanMovie" type="text" placeholder="Search movie title…" maxlength="80" autocomplete="off"
+              oninput="fanMovieSearch(this.value)"
+              onblur="setTimeout(hideFanMovieDropdown, 200)"/>
+            <div class="fan-movie-dropdown" id="fanMovieDropdown" style="display:none"></div>
+          </div>
         </div>
         <div class="fan-star-row" id="fanStarPicker">
           <span class="fan-star" data-v="1">★</span>
@@ -2196,7 +2211,8 @@
 
   async function submitFanReview() {
     const name   = (document.getElementById('fanName') ||{}).value?.trim();
-    const movie  = (document.getElementById('fanMovie')||{}).value?.trim();
+    const fanMovieEl = document.getElementById('fanMovie');
+    const movie  = (fanMovieEl.dataset.cleanTitle || fanMovieEl.value || '').trim();
     const rating = +(document.getElementById('fanRating')||{}).value || 0;
     const text   = (document.getElementById('fanText') ||{}).value?.trim();
     if (!name || !movie || !text) { alert('Please fill in your name, movie, and review.'); return; }
@@ -2221,7 +2237,8 @@
         } catch(_) {}
       }
       document.getElementById('fanName').value  = '';
-      document.getElementById('fanMovie').value = '';
+      const _fm = document.getElementById('fanMovie');
+      _fm.value = ''; _fm.dataset.cleanTitle = '';
       document.getElementById('fanText').value  = '';
       fanRating = 0;
       document.getElementById('fanRating').value = 0;
@@ -2236,6 +2253,46 @@
     }
   }
 
+
+  /* ══ FAN MOVIE SEARCH ══ */
+  let fanMovieTimer = null;
+  function hideFanMovieDropdown() {
+    const dd = document.getElementById('fanMovieDropdown');
+    if (dd) dd.style.display = 'none';
+  }
+  function selectFanMovie(title, year) {
+    const input = document.getElementById('fanMovie');
+    input.value = title + (year ? ` (${year})` : '');
+    // Store clean title without year for submission
+    input.dataset.cleanTitle = title;
+    hideFanMovieDropdown();
+  }
+  function fanMovieSearch(q) {
+    clearTimeout(fanMovieTimer);
+    const dd = document.getElementById('fanMovieDropdown');
+    q = q.trim();
+    if (q.length < 2) { hideFanMovieDropdown(); return; }
+    fanMovieTimer = setTimeout(async () => {
+      try {
+        const res  = await fetch(`${TMDB}/search/movie?api_key=${getKey()}&query=${encodeURIComponent(q)}&language=en-US&page=1`);
+        const data = await res.json();
+        const hits = (data.results || []).slice(0, 6);
+        if (!hits.length) { hideFanMovieDropdown(); return; }
+        dd.innerHTML = hits.map(m => {
+          const year  = m.release_date ? m.release_date.slice(0,4) : '';
+          const thumb = m.poster_path ? `https://image.tmdb.org/t/p/w92${m.poster_path}` : null;
+          return `<div class="fan-movie-opt" onmousedown="selectFanMovie('${escJs(m.title)}','${year}')">
+            ${thumb ? `<img src="${thumb}" alt="" loading="lazy"/>` : '<div class="fan-movie-opt-no-img">🎬</div>'}
+            <div class="fan-movie-opt-info">
+              <div class="fan-movie-opt-title">${esc(m.title)}</div>
+              ${year ? `<div class="fan-movie-opt-year">${year}</div>` : ''}
+            </div>
+          </div>`;
+        }).join('');
+        dd.style.display = 'block';
+      } catch(_) { hideFanMovieDropdown(); }
+    }, 300);
+  }
 
   /* ══ SHARE ══ */
   document.addEventListener('click', () => {
