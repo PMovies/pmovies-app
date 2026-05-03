@@ -3042,8 +3042,15 @@
 
     /* ── iOS Safari: show tip after 3s ── */
     if (isIOS && isSafari && !wasDismissedRecently()) {
+      // Only show once per browser session (handles private browsing)
+      if (sessionStorage.getItem('ios_tip_shown')) return;
       const tip = document.getElementById('iosTip');
-      setTimeout(() => tip.classList.add('show'), 3000);
+      setTimeout(() => {
+        tip.classList.add('show');
+        sessionStorage.setItem('ios_tip_shown', '1');
+        // Auto-dismiss after 8s if user doesn't interact
+        setTimeout(() => { if (tip.classList.contains('show')) dismiss(tip); }, 8000);
+      }, 3000);
       document.getElementById('iosTipClose').addEventListener('click', () => dismiss(tip));
       return;
     }
@@ -3057,8 +3064,13 @@
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
-      if (!wasDismissedRecently()) {
-        setTimeout(() => banner.classList.add('show'), 2500);
+      if (!wasDismissedRecently() && !sessionStorage.getItem('install_banner_shown')) {
+        setTimeout(() => {
+          banner.classList.add('show');
+          sessionStorage.setItem('install_banner_shown', '1');
+          // Auto-dismiss after 8s if ignored
+          setTimeout(() => { if (banner.classList.contains('show')) dismiss(banner); }, 8000);
+        }, 2500);
       }
     });
 
