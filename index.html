@@ -679,6 +679,7 @@
   @keyframes spin { to { transform:rotate(360deg); } }
   .surprise-toast { position:fixed; top:24px; left:50%; transform:translateX(-50%) translateY(-80px); background:#1a1a1a; color:#fff; border:1px solid rgba(255,255,255,.15); border-radius:12px; padding:12px 24px; font-size:.85rem; font-weight:600; z-index:9999; transition:transform .35s cubic-bezier(.34,1.56,.64,1); pointer-events:none; }
   .surprise-toast.show { transform:translateX(-50%) translateY(0); }
+  .error-msg { text-align:center; padding:32px 20px; color:var(--muted); font-size:.9rem; }
   /* ── INSTALL BANNER ── */
   .install-banner{position:fixed;bottom:-120px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:520px;background:#1a1a1a;border:1px solid rgba(245,166,35,.35);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;z-index:9998;box-shadow:0 8px 32px rgba(0,0,0,.6);transition:bottom .4s cubic-bezier(.34,1.56,.64,1);}
   .install-banner.show{bottom:20px;}
@@ -1580,7 +1581,7 @@
     const { label, subtitle } = TV_MOOD_MAP[mood];
     const grid    = document.getElementById('tvSeriesGrid');
     const results = document.getElementById('tvResults');
-    document.getElementById('tvResultsTitle').innerHTML   = `<em>${label}</em>`;
+    document.getElementById('tvResultsTitle').innerHTML      = `<em>${label}</em>`;
     document.getElementById('tvResultsSubtitle').textContent = subtitle;
     grid.innerHTML = '';
     if (!shows.length) {
@@ -1588,8 +1589,120 @@
       document.getElementById('tvError').textContent   = 'No series found — try another vibe!';
       return;
     }
-    shows.forEach((s, i) => grid.appendChild(buildMovieCard(normaliseTv(s), i)));
+    shows.forEach((s, i) => {
+      try { grid.appendChild(buildSeriesCard(s, i)); } catch(err) { console.warn('Series card error', err); }
+    });
     results.style.display = 'block';
+  }
+
+  function buildSeriesCard(s, idx) {
+    const m      = normaliseTv(s);
+    const year   = m.release_date ? m.release_date.slice(0,4) : '—';
+    const rating = m.vote_average ? m.vote_average.toFixed(1) : '—';
+    const poster = m.poster_path ? IMG + m.poster_path : null;
+    const status = getMovieStatus(m.id);
+    const statusIcon  = { want:'🔖', watched:'✓', fav:'★' }[status] || '♡';
+    const statusClass = status ? 'status-' + status : '';
+    const card = document.createElement('div');
+    card.className = 'movie-card reveal-hidden';
+    card.style.animationDelay = (idx * 0.05) + 's';
+    card.innerHTML = `
+      <div class="poster-wrap">
+        ${poster
+          ? `<img class="movie-poster" src="${poster}" alt="${esc(m.title)}" loading="lazy"/>`
+          : `<div class="no-poster">📺</div>`}
+        <div class="rating-badge"><span>★</span>${rating}</div>
+        <button class="wl-btn ${statusClass}" data-id="${m.id}" title="${status ? 'Remove from list' : 'Add to list'}">${statusIcon}</button>
+        <div class="wl-picker">
+          <button class="wl-picker-btn" data-status="want"    title="Want to Watch">🔖</button>
+          <button class="wl-picker-btn" data-status="watched" title="Watched">✓</button>
+          <button class="wl-picker-btn" data-status="fav"     title="Favourite">★</button>
+        </div>
+      </div>
+      <div class="movie-info">
+        <div class="movie-title">${esc(m.title)}</div>
+        <div class="movie-year">${year}</div>
+        <div class="movie-overview">${esc(m.overview || 'No description available.')}</div>
+        <div class="card-actions">
+          <button class="card-share-btn" title="Share this series">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            Share
+          </button>
+          <div class="card-share-menu">
+            <button class="card-share-opt" data-platform="whatsapp">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.862L.054 23.625a.75.75 0 00.92.92l5.733-1.487A11.955 11.955 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/></svg>
+              WhatsApp
+            </button>
+            <button class="card-share-opt" data-platform="twitter">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="#fff"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.259 5.631 5.905-5.631zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+              X / Twitter
+            </button>
+            <button class="card-share-opt" data-platform="copy">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="#aaa"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+              Copy link
+            </button>
+          </div>
+        </div>
+      </div>`;
+
+    // Watchlist button
+    const wlBtn = card.querySelector('.wl-btn');
+    wlBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      const picker = card.querySelector('.wl-picker');
+      document.querySelectorAll('.wl-picker.open').forEach(p => { if (p !== picker) p.classList.remove('open'); });
+      picker.classList.toggle('open');
+    });
+    card.querySelectorAll('.wl-picker-btn').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        setMovieStatus(m, btn.dataset.status);
+        card.querySelector('.wl-picker').classList.remove('open');
+        const newStatus = getMovieStatus(m.id);
+        wlBtn.textContent = { want:'🔖', watched:'✓', fav:'★' }[newStatus] || '♡';
+        wlBtn.className = 'wl-btn' + (newStatus ? ' status-' + newStatus : '');
+      });
+    });
+
+    // Share button
+    const shareBtn = card.querySelector('.card-share-btn');
+    shareBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      document.querySelectorAll('.card-share-menu.open').forEach(mn => mn.classList.remove('open'));
+      card.querySelector('.card-share-menu').classList.toggle('open');
+    });
+    card.querySelectorAll('.card-share-opt').forEach(opt => {
+      opt.addEventListener('click', e => {
+        e.stopPropagation();
+        const url = 'https://pmovies.github.io/pmovies-app/#series';
+        const msg = m.title + ' (' + year + ') — check it out on PMovies 📺';
+        if (opt.dataset.platform === 'whatsapp') {
+          window.open('https://wa.me/?text=' + encodeURIComponent(msg + ' ' + url), '_blank');
+        } else if (opt.dataset.platform === 'twitter') {
+          window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(msg) + '&url=' + encodeURIComponent(url) + '&via=PMovies155', '_blank');
+        } else if (opt.dataset.platform === 'copy') {
+          navigator.clipboard.writeText(msg + ' ' + url).then(() => {
+            const prev = opt.innerHTML; opt.innerHTML = '✓ Copied!';
+            setTimeout(() => opt.innerHTML = prev, 1500);
+          });
+        }
+        card.querySelector('.card-share-menu').classList.remove('open');
+      });
+    });
+
+    // Card click → modal
+    card.addEventListener('click', e => {
+      if (!e.target.closest('.wl-btn') && !e.target.closest('.card-actions') && !e.target.closest('.wl-picker')) {
+        openTvModal(s);
+      }
+    });
+
+    // Hero on hover
+    if (m.backdrop_path) {
+      card.addEventListener('mouseenter', () => setHeroBackdrop({ backdrop_path: m.backdrop_path, title: m.title, media_type: 'tv' }));
+    }
+
+    return card;
   }
 
   function openTvModal(s) { openModal(normaliseTv(s)); }
@@ -1743,7 +1856,7 @@
         errEl.style.display = 'block'; errEl.textContent = `No series found for "${q}"`;
         return;
       }
-      shows.forEach((s, i) => grid.appendChild(buildMovieCard(normaliseTv(s), i)));
+      shows.forEach((s, i) => grid.appendChild(buildSeriesCard(s, i)));
       results.style.display = 'block';
     } catch(e) {
       errEl.style.display = 'block'; errEl.textContent = 'Search failed — try again.';
