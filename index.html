@@ -688,6 +688,34 @@
   @keyframes tabFadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
   @media(max-width:600px){ .pmovies-tab .tab-icon { font-size:1rem; } .pmovies-tab { font-size:.65rem; padding:10px 4px 8px; } }
 
+  /* ── FRIENDS REVIEWS ── */
+  #friendsSection { margin:48px 0 64px; }
+  .friends-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px; }
+  .friend-card { background:#111; border:1px solid #222; border-radius:16px; overflow:hidden; transition:transform .2s,border-color .2s; }
+  .friend-card:hover { transform:translateY(-3px); border-color:#444; }
+  .friend-card-poster { width:100%; aspect-ratio:1.6; overflow:hidden; background:#1a1a1a; position:relative; }
+  .friend-card-poster img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .3s; }
+  .friend-card:hover .friend-card-poster img { transform:scale(1.04); }
+  .friend-card-poster-ph { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:2.5rem; }
+  .friend-card-body { padding:14px; }
+  .friend-card-user { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+  .friend-card-avatar { width:28px; height:28px; border-radius:50%; background:var(--orange); display:flex; align-items:center; justify-content:center; font-size:.75rem; font-weight:800; color:#000; flex-shrink:0; font-family:'Montserrat',sans-serif; }
+  .friend-card-username { font-size:.75rem; font-weight:700; color:var(--orange); font-family:'Montserrat',sans-serif; letter-spacing:.03em; }
+  .friend-card-movie { font-size:.88rem; font-weight:700; color:#fff; font-family:'Montserrat',sans-serif; margin-bottom:3px; line-height:1.3; }
+  .friend-card-year { font-size:.72rem; color:#666; }
+  .friend-card-stars { color:var(--orange); font-size:.82rem; letter-spacing:1px; margin:6px 0; }
+  .friend-card-text { font-size:.76rem; color:#888; line-height:1.6; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; margin-bottom:10px; }
+  .friend-card-footer { display:flex; align-items:center; justify-content:space-between; }
+  .friend-card-date { font-size:.68rem; color:#555; }
+  .friend-card-link { font-size:.68rem; color:#555; text-decoration:none; font-family:'Montserrat',sans-serif; font-weight:700; letter-spacing:.04em; transition:color .2s; }
+  .friend-card-link:hover { color:var(--orange); }
+  .friends-refresh-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:10px; }
+  .friends-refresh-btn { background:none; border:1px solid #333; color:#666; border-radius:10px; padding:7px 14px; cursor:pointer; font-family:'Montserrat',sans-serif; font-size:.7rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; transition:all .2s; display:flex; align-items:center; gap:6px; }
+  .friends-refresh-btn:hover { border-color:#666; color:#fff; }
+  .friends-refresh-btn.spinning svg { animation:spin .8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .friends-count-label { font-size:.72rem; color:#555; font-family:'Montserrat',sans-serif; }
+
   /* ── LISTS TAB ── */
   .lists-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:18px; }
   .list-card { background:#111; border:1px solid #222; border-radius:18px; overflow:hidden; cursor:pointer; transition:transform .2s,border-color .2s; }
@@ -1002,6 +1030,26 @@
     </div>
     <div id="fanReviewsList"></div>
     <div id="fanRecords" class="fan-records" style="display:none"></div>
+  </div>
+
+  <!-- FRIENDS LETTERBOXD REVIEWS -->
+  <div class="section-wrap" id="friendsSection">
+    <div class="lb-header">
+      <div class="lb-title-block">
+        <h2>FRIENDS <em>REVIEWS</em></h2>
+        <p>What the community is watching on Letterboxd</p>
+      </div>
+    </div>
+    <div class="friends-refresh-row">
+      <span class="friends-count-label" id="friendsCountLabel">Loading…</span>
+      <button class="friends-refresh-btn" id="friendsRefreshBtn" onclick="loadFriendsReviews(true)">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+        Refresh
+      </button>
+    </div>
+    <div id="friendsGrid" class="friends-grid">
+      <div class="yt-loading">Fetching friends' reviews…</div>
+    </div>
   </div>
 
 </div><!-- /tab-panel-community -->
@@ -2483,6 +2531,155 @@
     if (['discover','reviews','community','lists'].includes(hash)) switchTab(hash);
   })();
 
+  /* ══ FRIENDS LETTERBOXD REVIEWS ══ */
+  const LB_FRIENDS = [
+    'hamodeomer','ismailtaher','m3yoon','nadeenashraf','daddyben','el3ameed','madzarc',
+    'apody69','mosama','fatmahaysam22','zyadyasser','yahiabelal03','dex7y','lena_shakaki',
+    'noone15','14a','boravic','yuraatarekk','at22_aflamiii','mr_ahmedrabie','basem10',
+    'mike_mansour','samub3','nuz1i_','a7med2007_','john1412','ma404','hebajad',
+    'tahermefarrh','amrgado19','tottialroqi','minah21','rawanhassan','sir_mazen',
+    'ashousha','ezzmography','mohamedsalah321','nj666d','ashrof10','am173','nourehabm',
+    'hegazii','msalah9','mokhtar','callmeziko','sr4','hager3','amirelbesher','so_weirdo',
+    'orjwanisk','yousseffernand','a_abu_elwafa','abujumuah','muhannad_araby','busamra',
+    'puremosha','ibrahim0_1','mtayfoun','samaamagdy','muhammadkhouly','nasserss','fares1992',
+    'redan1','jivan1oc','shahd_essam','abdelazizwalid','osaed710','jaamy','modeifallah',
+    'mahmoudaladin','ahmed_alaa','amanyawad','ragaey','naim18','nadasubhy','karimfouaad',
+    'abdallahsobhi','mohamedgbeshir','fouad99','mahmoudwaleed','mahmoud_eissa','mouad_lakta',
+    'thesamali','_rossonero94','islamthewolf','sherbinii13','rashakamal','hamza108',
+    'assimmirza','kariim7','omartareq4','sarah_ali','3more','jigsawpolice','karimmhmd',
+    'omnia1984','willie369'
+  ];
+
+  const FRIENDS_BATCH = 20;   // how many friends to sample per refresh
+  const FRIENDS_CARDS = 12;   // how many cards to show
+
+  function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function starsFromRating(r) {
+    const n = parseFloat(r) || 0;
+    if (!n) return '';
+    const full  = Math.floor(n);
+    const half  = (n % 1) >= 0.5 ? 1 : 0;
+    const empty = 5 - full - half;
+    return '★'.repeat(full) + (half ? '½' : '') + '☆'.repeat(empty);
+  }
+
+  function stripHtml(html) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || '';
+  }
+
+  async function fetchFriendFeed(username) {
+    try {
+      const url = `https://corsproxy.io/?${encodeURIComponent('https://letterboxd.com/' + username + '/rss/')}`;
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) return [];
+      const text = await res.text();
+      const xml  = new DOMParser().parseFromString(text, 'text/xml');
+      const items = [...xml.querySelectorAll('item')];
+      return items.slice(0, 5).map(el => {
+        const get    = tag => el.querySelector(tag)?.textContent?.trim() || '';
+        const getLB  = tag => el.getElementsByTagNameNS('https://letterboxd.com', tag)[0]?.textContent?.trim()
+                           || el.querySelector(tag.replace(':','-'))?.textContent?.trim()
+                           || '';
+        const enc    = el.querySelector('enclosure');
+        const link   = get('link');
+        // parse rating from title e.g. "The Godfather, 1972 - ★★★★½"
+        const titleRaw = get('title');
+        const ratingMatch = titleRaw.match(/★+(½)?/);
+        const starsRaw = ratingMatch ? ratingMatch[0] : '';
+        const filmTitle = getLB('filmTitle') || titleRaw.replace(/,.*/, '').trim();
+        const filmYear  = getLB('filmYear')  || '';
+        const rating    = getLB('rating')    || '';
+        const desc      = get('description');
+        const reviewText = stripHtml(desc).replace(/^[\s\S]*?\n/, '').trim(); // strip first line (image)
+        return {
+          username,
+          filmTitle,
+          filmYear,
+          rating,
+          starsRaw,
+          reviewText,
+          poster: enc?.getAttribute('url') || '',
+          link,
+          pubDate: get('pubDate')
+        };
+      }).filter(r => r.filmTitle);
+    } catch(_) { return []; }
+  }
+
+  async function loadFriendsReviews(manual = false) {
+    const grid   = document.getElementById('friendsGrid');
+    const label  = document.getElementById('friendsCountLabel');
+    const btn    = document.getElementById('friendsRefreshBtn');
+    if (!grid) return;
+
+    // Spin the button
+    btn.classList.add('spinning');
+    grid.innerHTML = '<div class="yt-loading">Fetching friends\' reviews…</div>';
+    label.textContent = 'Loading…';
+
+    // Pick random subset
+    const sample = shuffle(LB_FRIENDS).slice(0, FRIENDS_BATCH);
+
+    // Fetch all in parallel
+    const results = await Promise.all(sample.map(u => fetchFriendFeed(u)));
+    const pool    = shuffle(results.flat());
+
+    btn.classList.remove('spinning');
+
+    if (!pool.length) {
+      grid.innerHTML = '<p style="color:#666;text-align:center;padding:48px 20px">Could not load reviews right now — try again shortly.</p>';
+      label.textContent = '';
+      return;
+    }
+
+    const cards = pool.slice(0, FRIENDS_CARDS);
+    label.textContent = `Showing ${cards.length} reviews from ${sample.length} friends · auto-refreshes hourly`;
+    renderFriendCards(cards);
+  }
+
+  function renderFriendCards(reviews) {
+    const grid = document.getElementById('friendsGrid');
+    grid.innerHTML = '';
+    reviews.forEach(r => {
+      const initial = (r.username[0] || '?').toUpperCase();
+      const stars   = r.rating ? starsFromRating(r.rating) : r.starsRaw;
+      const date    = r.pubDate ? new Date(r.pubDate).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
+      const card    = document.createElement('div');
+      card.className = 'friend-card';
+      card.innerHTML = `
+        <div class="friend-card-poster">
+          ${r.poster
+            ? `<img src="${r.poster}" alt="${esc(r.filmTitle)}" loading="lazy"/>`
+            : `<div class="friend-card-poster-ph">🎬</div>`}
+        </div>
+        <div class="friend-card-body">
+          <div class="friend-card-user">
+            <div class="friend-card-avatar">${esc(initial)}</div>
+            <a class="friend-card-username" href="https://letterboxd.com/${esc(r.username)}/" target="_blank">@${esc(r.username)}</a>
+          </div>
+          <div class="friend-card-movie">${esc(r.filmTitle)}</div>
+          <div class="friend-card-year">${esc(r.filmYear)}</div>
+          ${stars ? `<div class="friend-card-stars">${esc(stars)}</div>` : ''}
+          ${r.reviewText ? `<div class="friend-card-text">${esc(r.reviewText)}</div>` : ''}
+          <div class="friend-card-footer">
+            <span class="friend-card-date">${date}</span>
+            ${r.link ? `<a class="friend-card-link" href="${r.link}" target="_blank">Read on Letterboxd ↗</a>` : ''}
+          </div>
+        </div>`;
+      grid.appendChild(card);
+    });
+  }
+
   /* ══ LISTS ══ */
   const ADMIN_PW = 'pmovies2025';
   let adminMovies = [];
@@ -2811,6 +3008,8 @@
     setInterval(loadLetterboxd, 20 * 60 * 1000); // refresh every 20 minutes
     loadFanReviews();
     loadLists();
+    loadFriendsReviews();
+    setInterval(loadFriendsReviews, 60 * 60 * 1000); // rotate every hour
     renderWatchlist();
   });
 
