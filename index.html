@@ -2648,6 +2648,7 @@
   }
 
   let adminMovieSearchTimer = null;
+  let adminSearchResults = []; // store results by index — avoids encoding issues with Arabic/special chars
   function adminMovieSearchFn(q) {
     clearTimeout(adminMovieSearchTimer);
     const dd = document.getElementById('adminMovieDd');
@@ -2657,18 +2658,24 @@
       try {
         const res = await fetch(`${TMDB}/search/movie?api_key=${getKey()}&query=${encodeURIComponent(q)}&language=en-US&page=1`);
         const data = await res.json();
-        const results = (data.results || []).slice(0, 6);
-        if (!results.length) { dd.style.display = 'none'; return; }
-        dd.innerHTML = results.map(m => {
+        adminSearchResults = (data.results || []).slice(0, 6);
+        if (!adminSearchResults.length) { dd.style.display = 'none'; return; }
+        dd.innerHTML = adminSearchResults.map((m, i) => {
           const year = m.release_date ? m.release_date.slice(0,4) : '';
           const img = m.poster_path
             ? `<img src="https://image.tmdb.org/t/p/w45${m.poster_path}" alt=""/>`
             : `<div style="width:28px;height:42px;background:#333;border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.7rem">🎬</div>`;
-          return `<div class="admin-movie-dd-item" onmousedown="event.preventDefault();adminSelectMovie(${encodeModal(m)})">${img}<span>${esc(m.title)}${year ? ` (${year})` : ''}</span></div>`;
+          return `<div class="admin-movie-dd-item" onmousedown="event.preventDefault();adminSelectMovieByIdx(${i})">${img}<span>${esc(m.title)}${year ? ` (${year})` : ''}</span></div>`;
         }).join('');
         dd.style.display = 'block';
       } catch(_) { dd.style.display = 'none'; }
     }, 350);
+  }
+
+  function adminSelectMovieByIdx(i) {
+    const m = adminSearchResults[i];
+    if (!m) return;
+    adminSelectMovie(m);
   }
 
   function adminSelectMovie(m) {
