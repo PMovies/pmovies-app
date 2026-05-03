@@ -693,8 +693,8 @@
   .friends-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px; }
   .friend-card { background:#111; border:1px solid #222; border-radius:16px; overflow:hidden; transition:transform .2s,border-color .2s; }
   .friend-card:hover { transform:translateY(-3px); border-color:#444; }
-  .friend-card-poster { width:100%; aspect-ratio:1.6; overflow:hidden; background:#1a1a1a; position:relative; }
-  .friend-card-poster img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .3s; }
+  .friend-card-poster { width:100%; height:200px; overflow:hidden; background:#1a1a1a; position:relative; }
+  .friend-card-poster img { width:100%; height:100%; object-fit:cover; object-position:center top; display:block; transition:transform .3s; }
   .friend-card:hover .friend-card-poster img { transform:scale(1.04); }
   .friend-card-poster-ph { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:2.5rem; }
   .friend-card-body { padding:14px; }
@@ -2551,7 +2551,7 @@
   ];
 
   const FRIENDS_BATCH = 20;   // how many friends to sample per refresh
-  const FRIENDS_CARDS = 5;    // how many cards to show
+  const FRIENDS_CARDS = 6;    // how many cards to show
 
   function shuffle(arr) {
     const a = [...arr];
@@ -2643,7 +2643,7 @@
     }
 
     const cards = pool.slice(0, FRIENDS_CARDS);
-    label.textContent = `Showing ${cards.length} reviews from ${sample.length} friends · auto-refreshes hourly`;
+    label.textContent = `Random reviews from friends · auto-refreshes hourly`;
     renderFriendCards(cards);
   }
 
