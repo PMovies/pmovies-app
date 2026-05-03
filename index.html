@@ -1532,7 +1532,6 @@
     el.classList.add('active');
     currentTvMood = mood;
     tvPage = Math.ceil(Math.random() * 5);
-    // Clear search when a mood is selected
     const inp = document.getElementById('tvSearchInput');
     if (inp) inp.value = '';
     fetchTvSeries(mood);
@@ -1545,7 +1544,6 @@
   }
 
   async function fetchTvSeries(mood) {
-    const key    = getKey();
     const loader = document.getElementById('tvLoader');
     const errEl  = document.getElementById('tvError');
     const results= document.getElementById('tvResults');
@@ -1553,11 +1551,10 @@
     errEl.style.display  = 'none';
     results.style.display= 'none';
     const m = TV_MOOD_MAP[mood];
-    const genres = encodeURIComponent(m.genres);
-    const url = `${TMDB}/discover/tv?api_key=${key}&with_genres=${genres}&sort_by=${m.sort}&vote_count.gte=100&page=${tvPage}&language=en-US`;
+    const url = `${TMDB}/discover/tv?api_key=${getKey()}&with_genres=${encodeURIComponent(m.genres)}&sort_by=${m.sort}&vote_count.gte=100&page=${tvPage}&language=en-US`;
     try {
       const res = await fetch(url);
-      if (!res.ok) throw new Error(`TMDb ${res.status}`);
+      if (!res.ok) throw new Error('TMDb ' + res.status);
       const data = await res.json();
       const shows = (data.results || []).slice(0, 12);
       renderTvSeries(mood, shows);
@@ -1593,6 +1590,8 @@
       try { grid.appendChild(buildSeriesCard(s, i)); } catch(err) { console.warn('Series card error', err); }
     });
     results.style.display = 'block';
+    // Scroll to results so user can see them
+    results.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function buildSeriesCard(s, idx) {
@@ -1604,7 +1603,7 @@
     const statusIcon  = { want:'🔖', watched:'✓', fav:'★' }[status] || '♡';
     const statusClass = status ? 'status-' + status : '';
     const card = document.createElement('div');
-    card.className = 'movie-card reveal-hidden';
+    card.className = 'movie-card';
     card.style.animationDelay = (idx * 0.05) + 's';
     card.innerHTML = `
       <div class="poster-wrap">
