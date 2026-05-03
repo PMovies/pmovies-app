@@ -519,6 +519,20 @@
   .top100-voted-badge { background:transparent; border:1px solid #2a2a2a; color:#555; border-radius:20px; padding:5px 14px; font-size:.72rem; }
   .top100-count-chip { background:#111; border:1px solid #2a2a2a; border-radius:20px; padding:6px 14px; color:#666; font-size:.78rem; margin-top:16px; text-align:center; }
   .top100-item-hidden { display:none; }
+  /* Knocking on the Door */
+  .knocking-header { display:flex; align-items:baseline; gap:12px; margin:28px 0 14px; flex-wrap:wrap; }
+  .knocking-title { font-family:'Montserrat',sans-serif; font-weight:700; font-size:.88rem; color:#888; letter-spacing:.06em; text-transform:uppercase; }
+  .knocking-sub { font-size:.72rem; color:#555; }
+  .knocking-item { display:flex; align-items:center; gap:12px; padding:10px 14px; background:#0f0f0f; border:1px solid #1e1e1e; border-radius:12px; margin-bottom:7px; transition:border-color .2s; }
+  .knocking-item:hover { border-color:#2a2a2a; }
+  .knocking-rank { font-family:'Montserrat',sans-serif; font-weight:700; font-size:.8rem; color:#444; width:28px; text-align:center; flex-shrink:0; }
+  .knocking-poster { width:32px; height:48px; object-fit:cover; border-radius:5px; background:#1a1a1a; flex-shrink:0; }
+  .knocking-info { flex:1; min-width:0; }
+  .knocking-movie { font-size:.82rem; font-weight:700; color:#777; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .knocking-year { font-size:.7rem; color:#444; }
+  .knocking-votes { font-family:'Montserrat',sans-serif; font-size:.72rem; color:#555; flex-shrink:0; text-align:right; }
+  .knocking-votes strong { display:block; font-size:.88rem; color:#666; }
+  .knocking-gap { font-size:.65rem; color:#e8940f; font-weight:700; margin-top:2px; }
   .top100-show-more-wrap { position:relative; text-align:center; margin-top:4px; }
   .top100-show-more-fade { position:absolute; bottom:100%; left:0; right:0; height:80px; background:linear-gradient(transparent, #0a0a0a); pointer-events:none; }
   .top100-show-more-btn { background:#111; border:1px solid var(--orange); border-radius:14px; color:var(--orange); cursor:pointer; font-family:'Montserrat',sans-serif; font-size:.8rem; font-weight:700; letter-spacing:.06em; padding:14px 28px; text-transform:uppercase; transition:all .2s; display:inline-flex; flex-direction:column; align-items:center; gap:4px; margin-top:12px; }
@@ -996,6 +1010,15 @@
     </div>
     <div class="top100-list" id="top100List">
       <div class="top100-empty"><span>🎬</span>No votes yet — be the first to nominate a film!</div>
+    </div>
+
+    <!-- Knocking on the Door -->
+    <div id="knockingSection" style="display:none">
+      <div class="knocking-header">
+        <span class="knocking-title">🚪 Knocking on the Door</span>
+        <span class="knocking-sub">Films one push away from the Top 100</span>
+      </div>
+      <div id="knockingList"></div>
     </div>
   </div>
 
@@ -3706,6 +3729,43 @@ function showFullTop100() {
   if (wrap) wrap.outerHTML = `<div class="top100-count-chip" id="top100CountChip">${document.querySelectorAll('.top100-item').length} films · Minimum 2 votes to appear</div>`;
 }
 
+function renderKnocking(films, lastInList) {
+  const section = document.getElementById('knockingSection');
+  const list    = document.getElementById('knockingList');
+  if (!section || !list) return;
+
+  // Only show once we actually have a full 100 AND there are films waiting outside
+  if (!films.length || !lastInList) { section.style.display = 'none'; return; }
+
+  // Only show knocking section when list is at capacity (100 films)
+  const listFull = document.querySelectorAll('.top100-item').length >= TOP100_MAX_MOVIES
+                || lastInList; // proxy: if there's a #100 film, list is full
+  if (!listFull) { section.style.display = 'none'; return; }
+
+  const borderVotes = lastInList.votes || 0;
+
+  list.innerHTML = films.map((m, i) => {
+    const gap = borderVotes - m.votes + 1; // votes needed to overtake #100
+    return `
+      <div class="knocking-item">
+        <div class="knocking-rank">#${TOP100_MAX_MOVIES + i + 1}</div>
+        ${m.poster
+          ? `<img class="knocking-poster" src="https://image.tmdb.org/t/p/w92${m.poster}" alt="${esc(m.title)}" loading="lazy"/>`
+          : `<div class="knocking-poster"></div>`}
+        <div class="knocking-info">
+          <div class="knocking-movie">${esc(m.title)}</div>
+          <div class="knocking-year">${m.year || ''}</div>
+        </div>
+        <div class="knocking-votes">
+          <strong>${m.votes}</strong> votes
+          <div class="knocking-gap">needs ${gap} more</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  section.style.display = 'block';
+}
+
 /* ── Load from RTDB ── */
 async function loadTop100() {
   try {
@@ -3724,11 +3784,15 @@ async function loadTop100() {
       statsEl.style.display = 'flex';
     }
 
-    const movies = all
+    const eligible = all
       .filter(m => m.votes >= TOP100_MIN_VOTES)
-      .sort((a, b) => b.votes - a.votes || a.firstVoted - b.firstVoted)
-      .slice(0, TOP100_MAX_MOVIES);
+      .sort((a, b) => b.votes - a.votes || a.firstVoted - b.firstVoted);
+
+    const movies   = eligible.slice(0, TOP100_MAX_MOVIES);
+    const knocking = eligible.slice(TOP100_MAX_MOVIES, TOP100_MAX_MOVIES + 5);
+
     renderTop100(movies);
+    renderKnocking(knocking, movies[movies.length - 1]);
   } catch(e) { console.warn('Top100 load error', e); }
 }
 
