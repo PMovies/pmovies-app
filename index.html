@@ -58,7 +58,7 @@
 
     /* ── HERO ── */
     .hero{position:relative;text-align:center;padding:80px 20px 56px;overflow:hidden;min-height:380px;display:flex;flex-direction:column;align-items:center;justify-content:center}
-    .hero-backdrop{position:absolute;inset:0;background-size:cover;background-position:center;transition:opacity 1.2s ease;opacity:0;z-index:0}
+    .hero-backdrop{position:absolute;inset:0;background-size:cover;background-position:center;transition:opacity 0.7s ease;opacity:0;z-index:0}
     .hero-backdrop.loaded{opacity:1}
     .hero-backdrop::after{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,rgba(8,8,8,0.55) 0%,rgba(8,8,8,0.75) 60%,rgba(8,8,8,1) 100%)}
     .hero::before{content:'';position:absolute;top:0;left:0;right:0;height:5px;background:repeating-linear-gradient(90deg,var(--orange) 0,var(--orange) 18px,transparent 18px,transparent 26px);opacity:.9;z-index:2}
@@ -812,7 +812,8 @@
 
 <!-- HERO -->
 <header class="hero">
-  <div class="hero-backdrop" id="heroBackdrop"></div>
+  <div class="hero-backdrop" id="heroBackdropA"></div>
+  <div class="hero-backdrop" id="heroBackdropB"></div>
   <div class="hero-content">
     <div class="hero-now-playing" id="heroNowPlaying"></div>
     <div class="channel-logo-wrap">
@@ -1474,16 +1475,15 @@
   /* ══ HERO BACKDROP ══ */
   async function loadHeroBackdrop() {
     try {
-      const res  = await fetch(`${TMDB}/trending/movie/week?api_key=${getKey()}&language=en-US`);
-      const data = await res.json();
+      const res    = await fetch(`${TMDB}/trending/movie/week?api_key=${getKey()}&language=en-US`);
+      const data   = await res.json();
       const movies = (data.results || []).filter(m => m.backdrop_path);
       if (!movies.length) return;
       const pick = movies[Math.floor(Math.random() * Math.min(5, movies.length))];
-      const el   = document.getElementById('heroBackdrop');
+      const url  = `${IMGB}${pick.backdrop_path}`;
       const img  = new Image();
-      img.onload = () => { el.style.backgroundImage = `url(${IMGB}${pick.backdrop_path})`; el.classList.add('loaded'); };
-      img.src = IMGB + pick.backdrop_path;
-      document.getElementById('heroNowPlaying').textContent = '▶ Featuring: ' + pick.title;
+      img.onload = () => _swapHero(url, pick.title);
+      img.src    = url;
     } catch (_) {}
   }
 
@@ -3575,33 +3575,43 @@
   ══════════════════════════════════════════════════════ */
 
   // ── 1. HERO BACKDROP + PAGE BACKDROP ON CARD HOVER ──
-  let heroHoverTimer = null;
+  let heroHoverTimer     = null;
   let pageBackdropTimeout = null;
+  let heroActiveId        = 'heroBackdropA'; // dual-buffer crossfade state
+
+  function _swapHero(url, label) {
+    const nextId = heroActiveId === 'heroBackdropA' ? 'heroBackdropB' : 'heroBackdropA';
+    const next   = document.getElementById(nextId);
+    const prev   = document.getElementById(heroActiveId);
+    if (!next || !prev) return;
+    // Stage new image on the element below, then bring it to front
+    next.style.backgroundImage = `url(${url})`;
+    next.style.zIndex = '1';
+    prev.style.zIndex = '0';
+    next.classList.add('loaded');    // fades IN
+    prev.classList.remove('loaded'); // fades OUT
+    heroActiveId = nextId;
+    document.getElementById('heroNowPlaying').textContent = '▶ Featuring: ' + label;
+    // Page-level cinematic backdrop
+    const pb = document.getElementById('pageBackdrop');
+    pb.style.backgroundImage = `url(${url})`;
+    pb.classList.add('active');
+    clearTimeout(pageBackdropTimeout);
+    pageBackdropTimeout = setTimeout(() => pb.classList.remove('active'), 3000);
+  }
+
   function setHeroBackdrop(m) {
     if (!m.backdrop_path) return;
-    // Cache TV heroes so tab-switch restores them instantly
     if (m.media_type === 'tv' || document.getElementById('tab-btn-series')?.classList.contains('active')) {
       lastTvHero = m;
     }
     clearTimeout(heroHoverTimer);
     heroHoverTimer = setTimeout(() => {
-      const url = `${IMGB}${m.backdrop_path}`;
-      const img = new Image();
-      img.onload = () => {
-        // Update the hero at top
-        const hero = document.getElementById('heroBackdrop');
-        hero.style.backgroundImage = `url(${url})`;
-        hero.classList.add('loaded');
-        document.getElementById('heroNowPlaying').textContent = '▶ Featuring: ' + (m.title || m.name || '');
-        // Update full-page cinematic backdrop (visible wherever you scroll)
-        const pb = document.getElementById('pageBackdrop');
-        pb.style.backgroundImage = `url(${url})`;
-        pb.classList.add('active');
-        // Fade the page backdrop out after 3s
-        clearTimeout(pageBackdropTimeout);
-        pageBackdropTimeout = setTimeout(() => pb.classList.remove('active'), 3000);
-      };
-      img.src = url;
+      const url   = `${IMGB}${m.backdrop_path}`;
+      const label = m.title || m.name || '';
+      const img   = new Image();
+      img.onload  = () => _swapHero(url, label);
+      img.src     = url;
     }, 200);
   }
 
