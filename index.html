@@ -1181,7 +1181,7 @@
   </div>
 
   <!-- TV RESULTS -->
-  <div class="results-section" id="tvResults" style="display:none">
+  <div class="results-section" id="tvResults">
     <div class="results-header">
       <div><h2 id="tvResultsTitle">Series Picks</h2><p id="tvResultsSubtitle">Matched to your vibe</p></div>
       <button class="refresh-btn" onclick="refreshTvSeries()">⟳ &nbsp;Shuffle</button>
@@ -1518,11 +1518,13 @@
   }
 
   async function fetchTvSeries(mood) {
-    const key = getKey();
+    const key    = getKey();
     const loader = document.getElementById('tvLoader');
     const errEl  = document.getElementById('tvError');
     const results= document.getElementById('tvResults');
-    loader.style.display = ''; errEl.style.display = 'none'; results.style.display = 'none';
+    loader.style.display = 'flex';
+    errEl.style.display  = 'none';
+    results.style.display= 'none';
     const m = TV_MOOD_MAP[mood];
     const genres = encodeURIComponent(m.genres);
     const url = `${TMDB}/discover/tv?api_key=${key}&with_genres=${genres}&sort_by=${m.sort}&vote_count.gte=100&page=${tvPage}&language=en-US`;
@@ -1533,9 +1535,8 @@
       const shows = (data.results || []).slice(0, 12);
       renderTvSeries(mood, shows);
     } catch(e) {
-      loader.style.display = 'none';
-      errEl.style.display = '';
-      errEl.textContent = 'Could not load series — try again.';
+      errEl.style.display = 'block';
+      errEl.textContent   = 'Could not load series — try again.';
     } finally {
       loader.style.display = 'none';
     }
@@ -1545,16 +1546,16 @@
     const { label, subtitle } = TV_MOOD_MAP[mood];
     const grid    = document.getElementById('tvSeriesGrid');
     const results = document.getElementById('tvResults');
-    document.getElementById('tvResultsTitle').innerHTML = `<em>${label}</em>`;
+    document.getElementById('tvResultsTitle').innerHTML   = `<em>${label}</em>`;
     document.getElementById('tvResultsSubtitle').textContent = subtitle;
     grid.innerHTML = '';
     if (!shows.length) {
-      document.getElementById('tvError').style.display = '';
-      document.getElementById('tvError').textContent = 'No series found — try another vibe!';
+      document.getElementById('tvError').style.display = 'block';
+      document.getElementById('tvError').textContent   = 'No series found — try another vibe!';
       return;
     }
     shows.forEach((s, i) => grid.appendChild(buildTvCard(s, i)));
-    results.style.display = '';
+    results.style.display = 'block';
   }
 
   function buildTvCard(s, i) {
@@ -1566,7 +1567,7 @@
     card.className = 'movie-card';
     card.style.animationDelay = (i * 0.06) + 's';
     card.onclick = () => openTvModal(s);
-    if (s.backdrop_path) card.addEventListener('mouseenter', () => setHeroBackdrop({ backdrop_path: s.backdrop_path }));
+    if (s.backdrop_path) card.addEventListener('mouseenter', () => setHeroBackdrop({ backdrop_path: s.backdrop_path, title: s.name || s.original_name || '' }));
     card.innerHTML = `
       <div class="movie-poster-wrap">
         ${poster
@@ -1606,6 +1607,9 @@
       const res  = await fetch(`${TMDB}/tv/on_the_air?api_key=${getKey()}&language=en-US&page=1`);
       const data = await res.json();
       const shows = (data.results || []).sort((a,b) => (b.popularity||0) - (a.popularity||0)).slice(0, 20);
+      // Set hero to a top TV show backdrop when Series tab first opens
+      const heroShow = shows.find(s => s.backdrop_path);
+      if (heroShow) setHeroBackdrop({ backdrop_path: heroShow.backdrop_path, title: heroShow.name || heroShow.original_name || '' });
       if (!shows.length) { content.innerHTML = '<div class="yt-loading">No series found.</div>'; return; }
       const row = document.createElement('div'); row.className = 'trending-scroll';
       shows.forEach((s, i) => {
@@ -1614,7 +1618,7 @@
         const poster = s.poster_path ? IMG + s.poster_path : null;
         const card   = document.createElement('div'); card.className = 't-card';
         card.onclick = () => openTvModal(s);
-        if (s.backdrop_path) card.addEventListener('mouseenter', () => setHeroBackdrop({ backdrop_path: s.backdrop_path }));
+        if (s.backdrop_path) card.addEventListener('mouseenter', () => setHeroBackdrop({ backdrop_path: s.backdrop_path, title: s.name || s.original_name || '' }));
         card.innerHTML = `
           ${poster
             ? `<img class="t-poster" src="${poster}" loading="lazy" alt="${esc(title)}"/>`
@@ -2766,6 +2770,7 @@
       document.getElementById('tab-btn-' + t).classList.toggle('active', t === name);
     });
     if (name === 'series' && !nowAiringLoaded) { loadNowAiring(); nowAiringLoaded = true; }
+    if (name !== 'series') loadHeroBackdrop(); // restore movie hero when leaving Series tab
     window.scrollTo({ top: 0, behavior: 'smooth' });
     history.replaceState(null, '', '#' + name);
   }
