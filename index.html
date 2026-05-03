@@ -687,6 +687,64 @@
   .tab-panel.active { display:block; animation:tabFadeIn .25s ease; }
   @keyframes tabFadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
   @media(max-width:600px){ .pmovies-tab .tab-icon { font-size:1rem; } .pmovies-tab { font-size:.65rem; padding:10px 4px 8px; } }
+
+  /* ── LISTS TAB ── */
+  .lists-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:18px; }
+  .list-card { background:#111; border:1px solid #222; border-radius:18px; overflow:hidden; cursor:pointer; transition:transform .2s,border-color .2s; }
+  .list-card:hover { transform:translateY(-4px); border-color:#444; }
+  .list-card-posters { display:grid; grid-template-columns:repeat(4,1fr); height:96px; overflow:hidden; }
+  .list-card-poster { overflow:hidden; }
+  .list-card-poster img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .3s; }
+  .list-card:hover .list-card-poster img { transform:scale(1.06); }
+  .list-card-poster-ph { width:100%; height:100%; background:#1a1a1a; display:flex; align-items:center; justify-content:center; font-size:1.2rem; }
+  .list-card-body { padding:16px; }
+  .list-card-title { font-family:'Montserrat',sans-serif; font-weight:700; font-size:.92rem; color:#fff; margin-bottom:5px; }
+  .list-card-desc { font-size:.77rem; color:#777; line-height:1.5; margin-bottom:12px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .list-card-footer { display:flex; align-items:center; justify-content:space-between; }
+  .list-card-count { font-size:.7rem; color:#555; font-family:'Montserrat',sans-serif; letter-spacing:.04em; }
+  .list-like-btn { display:flex; align-items:center; gap:5px; font-size:.75rem; color:#555; cursor:pointer; border:none; background:none; padding:0; transition:color .2s; font-family:'Montserrat',sans-serif; font-weight:700; }
+  .list-like-btn:hover,.list-like-btn.liked { color:var(--orange); }
+  .list-detail { display:none; }
+  .list-detail.active { display:block; animation:tabFadeIn .25s ease; }
+  .list-detail-back { display:flex; align-items:center; gap:14px; margin-bottom:20px; }
+  .list-back-btn { background:none; border:1px solid #333; color:#888; border-radius:10px; padding:8px 16px; cursor:pointer; font-family:'Montserrat',sans-serif; font-size:.72rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; transition:all .2s; flex-shrink:0; }
+  .list-back-btn:hover { border-color:#666; color:#fff; }
+  .list-detail-title { font-family:'Montserrat',sans-serif; font-weight:700; font-size:1.2rem; color:#fff; }
+  .list-detail-subtitle { font-size:.78rem; color:#666; margin-bottom:18px; }
+  .list-detail-actions { display:flex; gap:10px; margin-bottom:28px; flex-wrap:wrap; }
+  .list-action-btn { display:flex; align-items:center; gap:6px; background:#111; border:1px solid #222; color:#777; border-radius:10px; padding:9px 16px; cursor:pointer; font-family:'Montserrat',sans-serif; font-size:.72rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; transition:all .2s; }
+  .list-action-btn:hover { border-color:#444; color:#fff; }
+  .list-action-btn.liked { color:var(--orange); border-color:var(--orange); }
+  .list-posters-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:10px; }
+  .list-poster-item { position:relative; cursor:pointer; border-radius:10px; overflow:hidden; aspect-ratio:.67; background:#1a1a1a; transition:transform .2s; }
+  .list-poster-item:hover { transform:scale(1.04); }
+  .list-poster-item img { width:100%; height:100%; object-fit:cover; display:block; }
+  .list-poster-ph { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:2rem; }
+  .list-poster-label { position:absolute; bottom:0; left:0; right:0; background:linear-gradient(transparent,rgba(0,0,0,.88)); padding:22px 7px 7px; font-size:.64rem; font-weight:700; color:#fff; font-family:'Montserrat',sans-serif; line-height:1.3; }
+  .lists-admin-tap { font-size:.7rem; color:transparent; user-select:none; text-align:center; margin-top:40px; cursor:default; }
+  .lists-admin-panel { background:#111; border:1px solid #333; border-radius:18px; padding:24px; margin-top:16px; animation:tabFadeIn .2s ease; }
+  .admin-panel-title { font-family:'Montserrat',sans-serif; font-weight:700; font-size:.82rem; color:var(--orange); letter-spacing:.1em; text-transform:uppercase; margin-bottom:16px; }
+  .admin-pw-row { display:flex; gap:10px; margin-bottom:8px; }
+  .admin-pw-row input { flex:1; background:#0e0e0e; border:1px solid #333; border-radius:10px; color:#fff; padding:10px 14px; font-size:.8rem; font-family:inherit; }
+  .admin-form-row { display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+  .admin-form-row input,.admin-form-row textarea { flex:1; min-width:180px; background:#0e0e0e; border:1px solid #333; border-radius:10px; color:#fff; padding:10px 14px; font-size:.8rem; font-family:inherit; }
+  .admin-form-row textarea { resize:vertical; min-height:60px; }
+  .admin-movie-search-wrap { position:relative; flex:1; min-width:180px; }
+  .admin-movie-dd { position:absolute; top:100%; left:0; right:0; background:#181818; border:1px solid #333; border-radius:10px; z-index:200; max-height:220px; overflow-y:auto; display:none; margin-top:4px; }
+  .admin-movie-dd-item { padding:10px 14px; cursor:pointer; font-size:.78rem; color:#ccc; display:flex; align-items:center; gap:10px; border-bottom:1px solid #222; }
+  .admin-movie-dd-item:last-child { border-bottom:none; }
+  .admin-movie-dd-item:hover { background:#222; }
+  .admin-movie-dd-item img { width:28px; height:42px; object-fit:cover; border-radius:4px; background:#333; flex-shrink:0; }
+  .admin-movie-tags { display:flex; flex-wrap:wrap; gap:7px; margin:10px 0; min-height:20px; }
+  .admin-movie-tag { display:flex; align-items:center; gap:6px; background:#1a1a1a; border:1px solid #2a2a2a; border-radius:8px; padding:5px 10px; font-size:.73rem; color:#ccc; }
+  .admin-movie-tag-del { background:none; border:none; color:#555; cursor:pointer; font-size:.9rem; padding:0; line-height:1; }
+  .admin-movie-tag-del:hover { color:#ff4444; }
+  .admin-existing-lists { margin-top:24px; border-top:1px solid #222; padding-top:18px; }
+  .admin-list-row { display:flex; align-items:center; justify-content:space-between; padding:11px 14px; background:#151515; border-radius:10px; margin-bottom:7px; gap:12px; }
+  .admin-list-row-title { font-family:'Montserrat',sans-serif; font-weight:700; font-size:.8rem; color:#fff; }
+  .admin-list-row-meta { font-size:.7rem; color:#555; margin-top:2px; }
+  .admin-del-btn { background:none; border:1px solid #2a2a2a; color:#555; border-radius:8px; padding:5px 12px; cursor:pointer; font-size:.7rem; font-family:'Montserrat',sans-serif; font-weight:700; transition:all .2s; flex-shrink:0; }
+  .admin-del-btn:hover { border-color:#ff4444; color:#ff4444; }
 </style>
 </head>
 <body>
@@ -727,6 +785,9 @@
   </button>
   <button class="pmovies-tab" id="tab-btn-community" onclick="switchTab('community')" role="tab">
     <span class="tab-icon">👥</span>Community
+  </button>
+  <button class="pmovies-tab" id="tab-btn-lists" onclick="switchTab('lists')" role="tab">
+    <span class="tab-icon">📋</span>Lists
   </button>
 </nav>
 <div class="tab-panel active" id="tab-panel-discover">
@@ -944,6 +1005,81 @@
   </div>
 
 </div><!-- /tab-panel-community -->
+
+<div class="tab-panel" id="tab-panel-lists">
+
+  <!-- All lists view -->
+  <div id="lists-all-view">
+    <div class="lb-header">
+      <div class="lb-title-block">
+        <h2 id="listsSectionTitle" onclick="listsAdminTap()" style="cursor:default;user-select:none">MOVIE <em>LISTS</em></h2>
+        <p>Curated collections for every taste</p>
+      </div>
+    </div>
+    <div id="listsGrid" class="lists-grid">
+      <div class="yt-loading">Loading lists…</div>
+    </div>
+    <div class="lists-admin-tap" id="listsAdminTapArea" aria-hidden="true">·</div>
+  </div>
+
+  <!-- Single list detail view -->
+  <div id="list-detail-view" class="list-detail">
+    <div class="list-detail-back">
+      <button class="list-back-btn" onclick="closeListDetail()">← All Lists</button>
+      <div class="list-detail-title" id="listDetailTitle"></div>
+    </div>
+    <div class="list-detail-subtitle" id="listDetailSubtitle"></div>
+    <div class="list-detail-actions">
+      <button class="list-action-btn" id="listDetailLikeBtn" onclick="likeListDetail()">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        <span id="listDetailLikeCount">0</span> Likes
+      </button>
+      <button class="list-action-btn" onclick="shareListDetail()">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
+        Share
+      </button>
+    </div>
+    <div id="listDetailGrid" class="list-posters-grid"></div>
+  </div>
+
+  <!-- Admin panel (hidden, unlocked by 5 taps on title) -->
+  <div id="listsAdminPanel" style="display:none">
+    <div class="lists-admin-panel">
+      <div class="admin-panel-title">🔐 Admin — Manage Lists</div>
+      <div id="adminPwSection">
+        <div class="admin-pw-row">
+          <input type="password" id="adminPwInput" placeholder="Admin password…" onkeydown="if(event.key==='Enter')unlockAdmin()"/>
+          <button class="fan-connect-btn" onclick="unlockAdmin()" style="flex-shrink:0">UNLOCK</button>
+        </div>
+      </div>
+      <div id="adminCreateSection" style="display:none">
+        <div class="admin-panel-title" style="margin-top:0">Create New List</div>
+        <div class="admin-form-row">
+          <input type="text" id="adminListTitle" placeholder="List title (e.g. Best Sci-Fi of the 90s)" maxlength="60"/>
+        </div>
+        <div class="admin-form-row">
+          <textarea id="adminListDesc" placeholder="Short description…" maxlength="120"></textarea>
+        </div>
+        <div class="admin-panel-title" style="margin-top:4px">Add Movies</div>
+        <div class="admin-form-row">
+          <div class="admin-movie-search-wrap">
+            <input type="text" id="adminMovieSearch" placeholder="Search movie title…" autocomplete="off"
+              oninput="adminMovieSearchFn(this.value)"
+              onblur="setTimeout(()=>{const d=document.getElementById('adminMovieDd');if(d)d.style.display='none'},200)"/>
+            <div class="admin-movie-dd" id="adminMovieDd"></div>
+          </div>
+        </div>
+        <div class="admin-movie-tags" id="adminMovieTags"></div>
+        <button class="fan-submit-btn" onclick="adminCreateList()">SAVE LIST</button>
+        <div class="admin-existing-lists">
+          <div class="admin-panel-title" style="margin-top:16px">Existing Lists</div>
+          <div id="adminExistingLists"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /tab-panel-lists -->
 
 </main>
 
@@ -2334,7 +2470,7 @@
 
   /* ══ TAB NAVIGATION ══ */
   function switchTab(name) {
-    ['discover','reviews','community'].forEach(t => {
+    ['discover','reviews','community','lists'].forEach(t => {
       document.getElementById('tab-panel-' + t).classList.toggle('active', t === name);
       document.getElementById('tab-btn-' + t).classList.toggle('active', t === name);
     });
@@ -2344,8 +2480,277 @@
   // Restore tab from URL hash on load
   (function() {
     const hash = location.hash.replace('#', '');
-    if (['discover','reviews','community'].includes(hash)) switchTab(hash);
+    if (['discover','reviews','community','lists'].includes(hash)) switchTab(hash);
   })();
+
+  /* ══ LISTS ══ */
+  const ADMIN_PW = 'pmovies2025';
+  let adminMovies = [];
+  let currentListId = null;
+  let currentListData = null;
+  let allListsData = {};
+
+  async function loadLists() {
+    const grid = document.getElementById('listsGrid');
+    if (!grid) return;
+    grid.innerHTML = '<div class="yt-loading">Loading lists…</div>';
+    try {
+      const res = await fetch(`${RTDB}/lists.json`);
+      const data = res.ok ? await res.json() : null;
+      allListsData = data || {};
+      const lists = Object.entries(allListsData).map(([id, l]) => ({ id, ...l }));
+      lists.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      if (!lists.length) {
+        grid.innerHTML = '<p style="color:#666;text-align:center;padding:48px 20px">No lists yet — check back soon! 🎬</p>';
+        return;
+      }
+      renderListCards(lists);
+    } catch(e) {
+      grid.innerHTML = '<p style="color:#888;text-align:center;padding:48px 20px">Could not load lists.</p>';
+    }
+  }
+
+  function renderListCards(lists) {
+    const grid = document.getElementById('listsGrid');
+    grid.innerHTML = '';
+    const likedLists = JSON.parse(localStorage.getItem('pmovies_liked_lists') || '[]');
+    lists.forEach(list => {
+      const movies = list.movies || [];
+      const liked = likedLists.includes(list.id);
+      const strip = [...movies.slice(0,4), ...Array(Math.max(0, 4-Math.min(movies.length,4))).fill(null)]
+        .map(m => m && m.poster_path
+          ? `<div class="list-card-poster"><img src="https://image.tmdb.org/t/p/w92${m.poster_path}" alt="${esc(m.title)}" loading="lazy"/></div>`
+          : `<div class="list-card-poster"><div class="list-card-poster-ph">🎬</div></div>`
+        ).join('');
+      const card = document.createElement('div');
+      card.className = 'list-card';
+      card.innerHTML = `
+        <div class="list-card-posters">${strip}</div>
+        <div class="list-card-body">
+          <div class="list-card-title">${esc(list.title || 'Untitled')}</div>
+          <div class="list-card-desc">${esc(list.desc || '')}</div>
+          <div class="list-card-footer">
+            <span class="list-card-count">${movies.length} film${movies.length !== 1 ? 's' : ''}</span>
+            <button class="list-like-btn ${liked ? 'liked' : ''}" onclick="event.stopPropagation();likeList('${list.id}',this)" aria-label="Like">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+              ${list.likes || 0}
+            </button>
+          </div>
+        </div>`;
+      card.onclick = () => openListDetail(list.id);
+      grid.appendChild(card);
+    });
+  }
+
+  function openListDetail(listId) {
+    const list = allListsData[listId];
+    if (!list) return;
+    currentListId = listId;
+    currentListData = list;
+    const movies = list.movies || [];
+    const likedLists = JSON.parse(localStorage.getItem('pmovies_liked_lists') || '[]');
+    const liked = likedLists.includes(listId);
+    document.getElementById('listDetailTitle').textContent = list.title || 'Untitled';
+    document.getElementById('listDetailSubtitle').textContent = (list.desc ? list.desc + '  ·  ' : '') + movies.length + ' film' + (movies.length !== 1 ? 's' : '');
+    document.getElementById('listDetailLikeCount').textContent = list.likes || 0;
+    document.getElementById('listDetailLikeBtn').classList.toggle('liked', liked);
+    const detailGrid = document.getElementById('listDetailGrid');
+    detailGrid.innerHTML = '';
+    movies.forEach(m => {
+      const item = document.createElement('div');
+      item.className = 'list-poster-item';
+      item.title = m.title || '';
+      item.innerHTML = (m.poster_path
+        ? `<img src="https://image.tmdb.org/t/p/w185${m.poster_path}" alt="${esc(m.title)}" loading="lazy"/>`
+        : `<div class="list-poster-ph">🎬</div>`)
+        + `<div class="list-poster-label">${esc(m.title || '')}</div>`;
+      item.onclick = () => openModal(m);
+      detailGrid.appendChild(item);
+    });
+    document.getElementById('lists-all-view').style.display = 'none';
+    document.getElementById('listsAdminPanel').style.display = 'none';
+    document.getElementById('list-detail-view').classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function closeListDetail() {
+    document.getElementById('list-detail-view').classList.remove('active');
+    document.getElementById('lists-all-view').style.display = 'block';
+    currentListId = null;
+    currentListData = null;
+  }
+
+  async function likeList(listId, btn) {
+    const likedLists = JSON.parse(localStorage.getItem('pmovies_liked_lists') || '[]');
+    const isLiked = likedLists.includes(listId);
+    let newLikes;
+    if (isLiked) { likedLists.splice(likedLists.indexOf(listId), 1); newLikes = Math.max(0, (allListsData[listId]?.likes || 0) - 1); }
+    else          { likedLists.push(listId); newLikes = (allListsData[listId]?.likes || 0) + 1; }
+    localStorage.setItem('pmovies_liked_lists', JSON.stringify(likedLists));
+    try {
+      await fetch(`${RTDB}/lists/${listId}/likes.json`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(newLikes) });
+      if (allListsData[listId]) allListsData[listId].likes = newLikes;
+    } catch(_) {}
+    btn.classList.toggle('liked', !isLiked);
+    btn.innerHTML = `<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg> ${newLikes}`;
+  }
+
+  async function likeListDetail() {
+    if (!currentListId) return;
+    const likedLists = JSON.parse(localStorage.getItem('pmovies_liked_lists') || '[]');
+    const isLiked = likedLists.includes(currentListId);
+    let newLikes;
+    if (isLiked) { likedLists.splice(likedLists.indexOf(currentListId), 1); newLikes = Math.max(0, (currentListData.likes || 0) - 1); }
+    else         { likedLists.push(currentListId); newLikes = (currentListData.likes || 0) + 1; }
+    localStorage.setItem('pmovies_liked_lists', JSON.stringify(likedLists));
+    try {
+      await fetch(`${RTDB}/lists/${currentListId}/likes.json`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(newLikes) });
+      if (currentListData) currentListData.likes = newLikes;
+      if (allListsData[currentListId]) allListsData[currentListId].likes = newLikes;
+    } catch(_) {}
+    document.getElementById('listDetailLikeCount').textContent = newLikes;
+    document.getElementById('listDetailLikeBtn').classList.toggle('liked', !isLiked);
+  }
+
+  function shareListDetail() {
+    if (!currentListData) return;
+    const url = window.location.origin + window.location.pathname + '#lists';
+    const text = `Check out this movie list on PMovies: "${currentListData.title}"`;
+    if (navigator.share) { navigator.share({ title: currentListData.title, text, url }).catch(()=>{}); }
+    else { window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(url) + '&via=PMovies155', '_blank'); }
+  }
+
+  /* Admin */
+  let listsAdminTapCount = 0;
+  let listsAdminTapTimer = null;
+  function listsAdminTap() {
+    listsAdminTapCount++;
+    clearTimeout(listsAdminTapTimer);
+    listsAdminTapTimer = setTimeout(() => { listsAdminTapCount = 0; }, 2000);
+    if (listsAdminTapCount >= 5) {
+      listsAdminTapCount = 0;
+      const panel = document.getElementById('listsAdminPanel');
+      const isHidden = panel.style.display === 'none';
+      panel.style.display = isHidden ? 'block' : 'none';
+      if (isHidden) { renderAdminExistingLists(); panel.scrollIntoView({ behavior:'smooth', block:'start' }); }
+    }
+  }
+
+  function unlockAdmin() {
+    const pw = (document.getElementById('adminPwInput') || {}).value || '';
+    if (pw === ADMIN_PW) {
+      document.getElementById('adminPwSection').style.display = 'none';
+      document.getElementById('adminCreateSection').style.display = 'block';
+      renderAdminExistingLists();
+    } else {
+      alert('Incorrect password');
+    }
+  }
+
+  let adminMovieSearchTimer = null;
+  function adminMovieSearchFn(q) {
+    clearTimeout(adminMovieSearchTimer);
+    const dd = document.getElementById('adminMovieDd');
+    q = q.trim();
+    if (q.length < 2) { dd.style.display = 'none'; return; }
+    adminMovieSearchTimer = setTimeout(async () => {
+      try {
+        const res = await fetch(`${TMDB}/search/movie?api_key=${getKey()}&query=${encodeURIComponent(q)}&language=en-US&page=1`);
+        const data = await res.json();
+        const results = (data.results || []).slice(0, 6);
+        if (!results.length) { dd.style.display = 'none'; return; }
+        dd.innerHTML = results.map(m => {
+          const year = m.release_date ? m.release_date.slice(0,4) : '';
+          const img = m.poster_path
+            ? `<img src="https://image.tmdb.org/t/p/w45${m.poster_path}" alt=""/>`
+            : `<div style="width:28px;height:42px;background:#333;border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.7rem">🎬</div>`;
+          return `<div class="admin-movie-dd-item" onmousedown="event.preventDefault();adminSelectMovie(${encodeModal(m)})">${img}<span>${esc(m.title)}${year ? ` (${year})` : ''}</span></div>`;
+        }).join('');
+        dd.style.display = 'block';
+      } catch(_) { dd.style.display = 'none'; }
+    }, 350);
+  }
+
+  function adminSelectMovie(m) {
+    if (adminMovies.find(x => x.id === m.id)) return;
+    adminMovies.push(m);
+    renderAdminMovieTags();
+    document.getElementById('adminMovieSearch').value = '';
+    document.getElementById('adminMovieDd').style.display = 'none';
+  }
+
+  function adminRemoveMovie(idx) {
+    adminMovies.splice(idx, 1);
+    renderAdminMovieTags();
+  }
+
+  function renderAdminMovieTags() {
+    document.getElementById('adminMovieTags').innerHTML = adminMovies.map((m, i) =>
+      `<div class="admin-movie-tag">${esc(m.title)}<button class="admin-movie-tag-del" onclick="adminRemoveMovie(${i})">✕</button></div>`
+    ).join('');
+  }
+
+  async function adminCreateList() {
+    const title = (document.getElementById('adminListTitle') || {}).value?.trim();
+    const desc  = (document.getElementById('adminListDesc')  || {}).value?.trim();
+    if (!title) { alert('Please enter a list title.'); return; }
+    if (!adminMovies.length) { alert('Please add at least one movie.'); return; }
+    const btn = document.querySelector('[onclick="adminCreateList()"]');
+    btn.textContent = 'Saving…'; btn.disabled = true;
+    const listData = {
+      title, desc,
+      movies: adminMovies.map(m => ({
+        id: m.id, title: m.title,
+        poster_path: m.poster_path || null,
+        release_date: m.release_date || '',
+        overview: m.overview || '',
+        vote_average: m.vote_average || 0,
+        vote_count: m.vote_count || 0
+      })),
+      likes: 0,
+      createdAt: Date.now()
+    };
+    try {
+      await fetch(`${RTDB}/lists.json`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(listData) });
+      document.getElementById('adminListTitle').value = '';
+      document.getElementById('adminListDesc').value = '';
+      adminMovies = [];
+      renderAdminMovieTags();
+      btn.textContent = 'SAVE LIST'; btn.disabled = false;
+      await loadLists();
+      renderAdminExistingLists();
+      alert('List saved! ✅');
+    } catch(e) {
+      alert('Could not save: ' + e.message);
+      btn.textContent = 'SAVE LIST'; btn.disabled = false;
+    }
+  }
+
+  async function adminDeleteList(listId) {
+    if (!confirm('Delete this list? This cannot be undone.')) return;
+    try {
+      await fetch(`${RTDB}/lists/${listId}.json`, { method:'DELETE' });
+      delete allListsData[listId];
+      await loadLists();
+      renderAdminExistingLists();
+    } catch(e) { alert('Could not delete: ' + e.message); }
+  }
+
+  function renderAdminExistingLists() {
+    const wrap = document.getElementById('adminExistingLists');
+    if (!wrap) return;
+    const lists = Object.entries(allListsData).map(([id, l]) => ({ id, ...l }));
+    lists.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    if (!lists.length) { wrap.innerHTML = '<p style="color:#555;font-size:.78rem;padding:8px 0">No lists yet.</p>'; return; }
+    wrap.innerHTML = lists.map(l => `
+      <div class="admin-list-row">
+        <div>
+          <div class="admin-list-row-title">${esc(l.title || 'Untitled')}</div>
+          <div class="admin-list-row-meta">${(l.movies||[]).length} films · ❤️ ${l.likes||0}</div>
+        </div>
+        <button class="admin-del-btn" onclick="adminDeleteList('${l.id}')">Delete</button>
+      </div>`).join('');
+  }
 
   /* ══ SHARE ══ */
   document.addEventListener('click', () => {
@@ -2398,6 +2803,7 @@
     loadLetterboxd();
     setInterval(loadLetterboxd, 20 * 60 * 1000); // refresh every 20 minutes
     loadFanReviews();
+    loadLists();
     renderWatchlist();
   });
 
