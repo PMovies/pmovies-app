@@ -437,6 +437,10 @@
   .fan-star-label { font-size:.75rem; color:#666; margin-left:6px; }
   .fan-submit-btn { background:var(--orange); color:#000; border:none; padding:10px 28px; border-radius:8px; font-weight:700; font-size:.85rem; cursor:pointer; letter-spacing:.05em; }
   .fan-submit-btn:hover { background:#e0940f; }
+  .fan-load-more-wrap { text-align:center; margin-top:24px; }
+  .fan-load-more-btn { background:#111; border:1px solid #333; border-radius:14px; color:#888; cursor:pointer; font-family:'Montserrat',sans-serif; font-size:.78rem; font-weight:700; letter-spacing:.06em; padding:13px 28px; text-transform:uppercase; transition:all .2s; display:inline-flex; flex-direction:column; align-items:center; gap:4px; }
+  .fan-load-more-btn:hover { border-color:var(--orange); color:var(--orange); }
+  .fan-load-more-count { font-size:.68rem; font-weight:600; opacity:.7; letter-spacing:.04em; }
   /* ── Weekly Challenge ── */
   .challenge-section { max-width:1100px; margin:0 auto 52px; padding:0 20px; }
   .challenge-card { border-radius:16px; overflow:hidden; position:relative; background:#111; min-height:220px; display:flex; align-items:stretch; }
@@ -2294,9 +2298,12 @@
   }
 
   let allReviews = [];
+  const FAN_PAGE_SIZE = 6;
+  let fanReviewsShown = FAN_PAGE_SIZE;
 
-  function renderFanReviews(reviews) {
+  function renderFanReviews(reviews, limit) {
     allReviews = reviews;
+    if (limit !== undefined) fanReviewsShown = limit;
     const list = document.getElementById('fanReviewsList');
     if (!reviews.length) {
       list.innerHTML = '<div class="fan-empty">Be the first to leave a review! 🎬</div>';
@@ -2304,12 +2311,13 @@
       return;
     }
     list.innerHTML = '';
+    const visible = reviews.slice(0, fanReviewsShown);
     const grid = document.createElement('div'); grid.className = 'fan-reviews-grid';
     // Get current challenge title for badge matching
     const challengeEl = document.getElementById('challengeSection');
     const challengeTitle = challengeEl?.querySelector('.challenge-title')?.textContent?.toLowerCase().trim() || '';
 
-    reviews.forEach((r, idx) => {
+    visible.forEach((r, idx) => {
       const stars = '★'.repeat(Math.max(0, Math.min(5, r.rating || 0)));
       const ts    = r.timestamp?.toDate ? r.timestamp.toDate() : (r.timestamp ? new Date(r.timestamp) : null);
       const date  = ts ? ts.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
@@ -2335,7 +2343,6 @@
         </div>
       `;
       grid.appendChild(card);
-      // Fetch poster async and inject when ready
       if (r.movie) {
         fetchPoster(r.movie).then(url => {
           const ph = document.getElementById(posterId);
@@ -2344,8 +2351,33 @@
       }
     });
     list.appendChild(grid);
+
+    // Load More button
+    if (reviews.length > fanReviewsShown) {
+      const remaining = reviews.length - fanReviewsShown;
+      const btn = document.createElement('div');
+      btn.className = 'fan-load-more-wrap';
+      btn.innerHTML = `
+        <button class="fan-load-more-btn" onclick="loadMoreFanReviews()">
+          Load More Reviews
+          <span class="fan-load-more-count">${remaining} more</span>
+        </button>`;
+      list.appendChild(btn);
+    } else if (reviews.length > FAN_PAGE_SIZE) {
+      // All loaded — show total count
+      const chip = document.createElement('div');
+      chip.className = 'top100-count-chip';
+      chip.textContent = `All ${reviews.length} reviews loaded`;
+      list.appendChild(chip);
+    }
+
     renderFanRecords(reviews, 'all');
     refreshChallengeResults();
+  }
+
+  function loadMoreFanReviews() {
+    fanReviewsShown += FAN_PAGE_SIZE;
+    renderFanReviews(allReviews);
   }
 
   function buildRecordsGrid(reviews) {
@@ -2404,6 +2436,7 @@
   const RTDB = 'https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app';
 
   async function loadFanReviews() {
+    fanReviewsShown = FAN_PAGE_SIZE; // reset to first page on every fresh load
     const setup = document.getElementById('fanSetup');
     const form  = document.getElementById('fanReviewForm');
     const list  = document.getElementById('fanReviewsList');
