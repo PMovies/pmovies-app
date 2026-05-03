@@ -676,7 +676,18 @@
   .ios-tip-close{background:transparent;border:1px solid var(--border);border-radius:20px;color:var(--muted);font-size:.75rem;padding:5px 14px;cursor:pointer;transition:.2s;}
   .ios-tip-close:hover{border-color:var(--orange);color:var(--text);}
 
-  </style>
+  
+  /* ═══ TAB NAVIGATION ═══ */
+  .pmovies-tabs { display:flex; gap:8px; margin-bottom:32px; position:sticky; top:0; z-index:100; background:linear-gradient(to bottom,#0a0a0a 82%,transparent); padding:14px 0 10px; }
+  .pmovies-tab { flex:1; background:#111; border:1px solid #222; border-radius:14px; color:#666; cursor:pointer; font-family:'Montserrat',sans-serif; font-size:.72rem; font-weight:700; letter-spacing:.07em; padding:13px 8px 10px; text-transform:uppercase; transition:all .2s; display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .pmovies-tab:hover { color:#ccc; border-color:#444; background:#161616; }
+  .pmovies-tab.active { background:var(--orange); border-color:var(--orange); color:#000; }
+  .pmovies-tab .tab-icon { font-size:1.25rem; line-height:1; }
+  .tab-panel { display:none; }
+  .tab-panel.active { display:block; animation:tabFadeIn .25s ease; }
+  @keyframes tabFadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+  @media(max-width:600px){ .pmovies-tab .tab-icon { font-size:1rem; } .pmovies-tab { font-size:.65rem; padding:10px 4px 8px; } }
+</style>
 </head>
 <body>
 
@@ -707,6 +718,19 @@
 </header>
 
 <main style="max-width:1100px;margin:0 auto;padding:0 20px">
+<nav class="pmovies-tabs" role="tablist" aria-label="PMovies sections">
+  <button class="pmovies-tab active" id="tab-btn-discover" onclick="switchTab('discover')" role="tab">
+    <span class="tab-icon">🎬</span>Discover
+  </button>
+  <button class="pmovies-tab" id="tab-btn-reviews" onclick="switchTab('reviews')" role="tab">
+    <span class="tab-icon">▶️</span>Reviews
+  </button>
+  <button class="pmovies-tab" id="tab-btn-community" onclick="switchTab('community')" role="tab">
+    <span class="tab-icon">👥</span>Community
+  </button>
+</nav>
+<div class="tab-panel active" id="tab-panel-discover">
+
 
   <!-- RECENTLY VIEWED -->
   <div class="rv-section" id="rvSection" style="display:none">
@@ -787,6 +811,10 @@
     <div id="watchlistContent"></div>
   </div>
 
+</div><!-- /tab-panel-discover -->
+
+<div class="tab-panel" id="tab-panel-reviews">
+
   <!-- PMOVIES REVIEWS -->
   <div class="yt-section" id="ytSection">
     <div class="yt-header">
@@ -811,6 +839,10 @@
     </div>
     <div id="lbContent"></div>
   </div>
+
+</div><!-- /tab-panel-reviews -->
+
+<div class="tab-panel" id="tab-panel-community">
 
   <!-- WEEKLY CHALLENGE -->
   <div class="challenge-section" id="challengeSection" style="display:none"></div>
@@ -911,6 +943,8 @@
     <div id="fanReviewsList"></div>
     <div id="fanRecords" class="fan-records" style="display:none"></div>
   </div>
+
+</div><!-- /tab-panel-community -->
 
 </main>
 
@@ -2293,6 +2327,22 @@
       } catch(_) { hideFanMovieDropdown(); }
     }, 300);
   }
+
+
+  /* ══ TAB NAVIGATION ══ */
+  function switchTab(name) {
+    ['discover','reviews','community'].forEach(t => {
+      document.getElementById('tab-panel-' + t).classList.toggle('active', t === name);
+      document.getElementById('tab-btn-' + t).classList.toggle('active', t === name);
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    history.replaceState(null, '', '#' + name);
+  }
+  // Restore tab from URL hash on load
+  (function() {
+    const hash = location.hash.replace('#', '');
+    if (['discover','reviews','community'].includes(hash)) switchTab(hash);
+  })();
 
   /* ══ SHARE ══ */
   document.addEventListener('click', () => {
