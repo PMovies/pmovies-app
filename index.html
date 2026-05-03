@@ -2868,7 +2868,16 @@
       map[key].totalRating += (r.rating || 0);
       if (r.movie) map[key].movies.add(r.movie.trim());
     });
-    const fans = Object.values(map).sort((a, b) => b.count - a.count || b.totalRating - a.totalRating);
+    const fans = Object.values(map).sort((a, b) =>
+      // 1. Most reviews
+      (b.count - a.count) ||
+      // 2. Higher average rating
+      ((b.totalRating / b.count) - (a.totalRating / a.count)) ||
+      // 3. More unique movies reviewed (rewards variety)
+      (b.movies.size - a.movies.size) ||
+      // 4. Alphabetical name (deterministic fallback)
+      a.name.localeCompare(b.name)
+    );
     const medals = ['🥇', '🥈', '🥉'];
     const rankClass = ['rank-1', 'rank-2', 'rank-3'];
     return `<div class="fan-records-grid">${fans.map((f, i) => {
