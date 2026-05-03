@@ -841,6 +841,9 @@
   <button class="pmovies-tab" id="tab-btn-lists" onclick="switchTab('lists')" role="tab">
     <span class="tab-icon">📋</span>Lists
   </button>
+  <button class="pmovies-tab" id="tab-btn-series" onclick="switchTab('series')" role="tab">
+    <span class="tab-icon">📺</span>Series
+  </button>
 </nav>
 <div class="tab-panel active" id="tab-panel-discover">
 
@@ -1162,6 +1165,40 @@
 
 </div><!-- /tab-panel-lists -->
 
+<!-- ═══ SERIES TAB ═══ -->
+<div class="tab-panel" id="tab-panel-series">
+
+  <!-- MOOD PICKER -->
+  <div class="mood-intro" id="seriesMoodLabel">
+    <p class="mood-question">What kind of series tonight?</p>
+    <p class="mood-pick-label">Choose Your Vibe</p>
+  </div>
+  <div class="mood-grid">
+    <div class="mood-card mood-happy"  onclick="selectTvMood(this,'funny')"><span class="mood-icon">😄</span><div class="mood-name">Light &amp; Fun</div><div class="mood-sub">Comedies &amp; sitcoms</div></div>
+    <div class="mood-card mood-sad"    onclick="selectTvMood(this,'drama')"><span class="mood-icon">😢</span><div class="mood-name">Emotional</div><div class="mood-sub">Powerful dramas</div></div>
+    <div class="mood-card mood-thrill" onclick="selectTvMood(this,'action')"><span class="mood-icon">🔥</span><div class="mood-name">Action</div><div class="mood-sub">Thrillers &amp; crime</div></div>
+    <div class="mood-card mood-scared" onclick="selectTvMood(this,'scifi')"><span class="mood-icon">🚀</span><div class="mood-name">Sci-Fi &amp; Fantasy</div><div class="mood-sub">Other worlds</div></div>
+  </div>
+
+  <!-- TV RESULTS -->
+  <div class="results-section" id="tvResults" style="display:none">
+    <div class="results-header">
+      <div><h2 id="tvResultsTitle">Series Picks</h2><p id="tvResultsSubtitle">Matched to your vibe</p></div>
+      <button class="refresh-btn" onclick="refreshTvSeries()">⟳ &nbsp;Shuffle</button>
+    </div>
+    <div class="movies-grid" id="tvSeriesGrid"></div>
+  </div>
+  <div id="tvLoader" class="loader-wrap" style="display:none"><div class="loader"></div></div>
+  <div id="tvError" class="error-msg" style="display:none"></div>
+
+  <!-- NOW AIRING -->
+  <div class="trending-section" id="nowAiringSection" style="margin-top:32px">
+    <div class="section-label">📺 Now Airing</div>
+    <div id="nowAiringContent"></div>
+  </div>
+
+</div><!-- /tab-panel-series -->
+
 </main>
 
 <!-- MODAL -->
@@ -1451,6 +1488,145 @@
       });
       content.innerHTML = ''; content.appendChild(row);
     } catch (e) { content.innerHTML = '<div class="yt-loading">Could not load cinema releases.</div>'; }
+  }
+
+  /* ══ TV SERIES ══ */
+  const TV_MOOD_MAP = {
+    funny:  { label:'Light & Fun',         subtitle:'Comedies & feel-good shows',    genres:'35',            sort:'popularity.desc'   },
+    drama:  { label:'Emotional & Moving',  subtitle:'Gripping dramas',               genres:'18',            sort:'vote_average.desc' },
+    action: { label:'Action & Crime',      subtitle:'Thrillers, crime & suspense',   genres:'10759',         sort:'popularity.desc'   },
+    scifi:  { label:'Sci-Fi & Fantasy',    subtitle:'Other worlds & epic adventures', genres:'10765',         sort:'popularity.desc'   },
+  };
+  let currentTvMood = null;
+  let tvPage = 1;
+  let nowAiringLoaded = false;
+
+  function selectTvMood(el, mood) {
+    document.querySelectorAll('.mood-grid .mood-card').forEach(c => {
+      if (c.closest('#tab-panel-series')) c.classList.remove('active');
+    });
+    el.classList.add('active');
+    currentTvMood = mood;
+    tvPage = Math.ceil(Math.random() * 5);
+    fetchTvSeries(mood);
+  }
+
+  function refreshTvSeries() {
+    if (!currentTvMood) return;
+    tvPage = Math.ceil(Math.random() * 8);
+    fetchTvSeries(currentTvMood);
+  }
+
+  async function fetchTvSeries(mood) {
+    const key = getKey();
+    const loader = document.getElementById('tvLoader');
+    const errEl  = document.getElementById('tvError');
+    const results= document.getElementById('tvResults');
+    loader.style.display = ''; errEl.style.display = 'none'; results.style.display = 'none';
+    const m = TV_MOOD_MAP[mood];
+    const genres = encodeURIComponent(m.genres);
+    const url = `${TMDB}/discover/tv?api_key=${key}&with_genres=${genres}&sort_by=${m.sort}&vote_count.gte=100&page=${tvPage}&language=en-US`;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`TMDb ${res.status}`);
+      const data = await res.json();
+      const shows = (data.results || []).slice(0, 12);
+      renderTvSeries(mood, shows);
+    } catch(e) {
+      loader.style.display = 'none';
+      errEl.style.display = '';
+      errEl.textContent = 'Could not load series — try again.';
+    } finally {
+      loader.style.display = 'none';
+    }
+  }
+
+  function renderTvSeries(mood, shows) {
+    const { label, subtitle } = TV_MOOD_MAP[mood];
+    const grid    = document.getElementById('tvSeriesGrid');
+    const results = document.getElementById('tvResults');
+    document.getElementById('tvResultsTitle').innerHTML = `<em>${label}</em>`;
+    document.getElementById('tvResultsSubtitle').textContent = subtitle;
+    grid.innerHTML = '';
+    if (!shows.length) {
+      document.getElementById('tvError').style.display = '';
+      document.getElementById('tvError').textContent = 'No series found — try another vibe!';
+      return;
+    }
+    shows.forEach((s, i) => grid.appendChild(buildTvCard(s, i)));
+    results.style.display = '';
+  }
+
+  function buildTvCard(s, i) {
+    const title  = s.name || s.original_name || '';
+    const year   = (s.first_air_date || '').slice(0, 4);
+    const rating = s.vote_average ? s.vote_average.toFixed(1) : '';
+    const poster = s.poster_path ? IMG + s.poster_path : null;
+    const card   = document.createElement('div');
+    card.className = 'movie-card';
+    card.style.animationDelay = (i * 0.06) + 's';
+    card.onclick = () => openTvModal(s);
+    if (s.backdrop_path) card.addEventListener('mouseenter', () => setHeroBackdrop({ backdrop_path: s.backdrop_path }));
+    card.innerHTML = `
+      <div class="movie-poster-wrap">
+        ${poster
+          ? `<img class="movie-poster" src="${poster}" loading="lazy" alt="${esc(title)}"/>`
+          : `<div class="movie-poster" style="background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:2.5rem">📺</div>`}
+        <div class="movie-card-overlay">
+          <div class="movie-card-overlay-inner">
+            ${rating ? `<span class="movie-rating-badge">★ ${rating}</span>` : ''}
+            <div class="movie-overlay-title">${esc(title)}</div>
+            ${year ? `<div class="movie-overlay-year">${year}</div>` : ''}
+          </div>
+        </div>
+        <div class="movie-rank">${i + 1}</div>
+      </div>
+      <div class="movie-info">
+        <div class="movie-title">${esc(title)}</div>
+        <div class="movie-meta">${year}${rating ? ` · ★ ${rating}` : ''}</div>
+      </div>`;
+    return card;
+  }
+
+  function openTvModal(s) {
+    // Normalise TV show fields to match movie modal expectations
+    const m = Object.assign({}, s, {
+      title: s.name || s.original_name || '',
+      release_date: s.first_air_date || '',
+      media_type: 'tv'
+    });
+    openModal(m);
+  }
+
+  /* ══ NOW AIRING ══ */
+  async function loadNowAiring() {
+    const content = document.getElementById('nowAiringContent');
+    content.innerHTML = '<div class="yt-loading">Loading…</div>';
+    try {
+      const res  = await fetch(`${TMDB}/tv/on_the_air?api_key=${getKey()}&language=en-US&page=1`);
+      const data = await res.json();
+      const shows = (data.results || []).sort((a,b) => (b.popularity||0) - (a.popularity||0)).slice(0, 20);
+      if (!shows.length) { content.innerHTML = '<div class="yt-loading">No series found.</div>'; return; }
+      const row = document.createElement('div'); row.className = 'trending-scroll';
+      shows.forEach((s, i) => {
+        const title  = s.name || s.original_name || '';
+        const rating = s.vote_average ? s.vote_average.toFixed(1) : '';
+        const poster = s.poster_path ? IMG + s.poster_path : null;
+        const card   = document.createElement('div'); card.className = 't-card';
+        card.onclick = () => openTvModal(s);
+        if (s.backdrop_path) card.addEventListener('mouseenter', () => setHeroBackdrop({ backdrop_path: s.backdrop_path }));
+        card.innerHTML = `
+          ${poster
+            ? `<img class="t-poster" src="${poster}" loading="lazy" alt="${esc(title)}"/>`
+            : `<div class="t-poster" style="background:var(--surface);aspect-ratio:2/3;display:flex;align-items:center;justify-content:center;font-size:2rem">📺</div>`}
+          <div class="t-card-overlay"></div>
+          <div class="t-rank">${i + 1}</div>
+          ${rating ? `<div class="t-rating">★ ${rating}</div>` : ''}
+          <div class="t-title">${esc(title)}</div>`;
+        row.appendChild(card);
+      });
+      content.innerHTML = ''; content.appendChild(row);
+    } catch(e) { content.innerHTML = '<div class="yt-loading">Could not load now airing.</div>'; }
   }
 
   /* ══ SEARCH ══ */
@@ -1818,7 +1994,7 @@
   }
 
   /* ══ MODAL ══ */
-  const GENRE_NAMES = {28:'Action',18:'Drama',35:'Comedy',27:'Horror',878:'Sci-Fi',53:'Thriller',12:'Adventure',16:'Animation',10749:'Romance',10751:'Family',80:'Crime',99:'Documentary',14:'Fantasy',36:'History',10402:'Music',9648:'Mystery',37:'Western'};
+  const GENRE_NAMES = {28:'Action',18:'Drama',35:'Comedy',27:'Horror',878:'Sci-Fi',53:'Thriller',12:'Adventure',16:'Animation',10749:'Romance',10751:'Family',80:'Crime',99:'Documentary',14:'Fantasy',36:'History',10402:'Music',9648:'Mystery',37:'Western',10759:'Action & Adventure',10762:'Kids',10763:'News',10764:'Reality',10765:'Sci-Fi & Fantasy',10766:'Soap',10767:'Talk',10768:'War & Politics',37:'Western'};
 
   // ── AWARDS DATA ──────────────────────────────────────────────────────────
   // Oscar Best Picture winners (TMDb IDs)
@@ -1868,7 +2044,7 @@
     document.getElementById('modalTitle').textContent = m.title;
     document.getElementById('modalMeta').innerHTML = `<span>${year}</span><span class="modal-rating">★ ${rating}</span><span>${votes} votes</span>`;
     document.getElementById('modalOverview').textContent = m.overview || 'No description available.';
-    document.getElementById('modalLink').href = `https://www.themoviedb.org/movie/${m.id}`;
+    document.getElementById('modalLink').href = `https://www.themoviedb.org/${m.media_type === 'tv' ? 'tv' : 'movie'}/${m.id}`;
     const shareBtn  = document.getElementById('modalShareBtn');
     const shareMenu = document.getElementById('modalShareMenu');
     shareBtn.onclick = (e) => { e.stopPropagation(); shareMenu.classList.toggle('open'); };
@@ -1916,7 +2092,8 @@
     const btn = document.getElementById('trailerBtn');
     btn.textContent = '⏳ Loading…'; btn.disabled = true;
     try {
-      const res  = await fetch(`${TMDB}/movie/${currentModalMovie.id}/videos?api_key=${getKey()}&language=en-US`);
+      const mediaType = currentModalMovie.media_type === 'tv' ? 'tv' : 'movie';
+      const res  = await fetch(`${TMDB}/${mediaType}/${currentModalMovie.id}/videos?api_key=${getKey()}&language=en-US`);
       const data = await res.json();
       const trailer = (data.results||[]).find(v => v.site==='YouTube' && v.type==='Trailer') || (data.results||[])[0];
       if (trailer) {
@@ -1929,7 +2106,8 @@
 
   async function loadCast(id) {
     try {
-      const res  = await fetch(`${TMDB}/movie/${id}/credits?api_key=${getKey()}&language=en-US`);
+      const mediaType = currentModalMovie && currentModalMovie.media_type === 'tv' ? 'tv' : 'movie';
+      const res  = await fetch(`${TMDB}/${mediaType}/${id}/credits?api_key=${getKey()}&language=en-US`);
       const data = await res.json();
       const cast = (data.cast||[]).filter(p => p.known_for_department === 'Acting').slice(0, 5);
       if (!cast.length) return;
@@ -1952,7 +2130,8 @@
 
   async function loadSimilar(id) {
     try {
-      const res  = await fetch(`${TMDB}/movie/${id}/recommendations?api_key=${getKey()}&language=en-US&page=1`);
+      const mediaType = currentModalMovie && currentModalMovie.media_type === 'tv' ? 'tv' : 'movie';
+      const res  = await fetch(`${TMDB}/${mediaType}/${id}/recommendations?api_key=${getKey()}&language=en-US&page=1`);
       const data = await res.json();
       const movies = (data.results||[]).filter(m => m.poster_path).slice(0,10);
       if (!movies.length) return;
@@ -1961,9 +2140,11 @@
       const row = document.getElementById('similarScroll');
       row.innerHTML = '';
       movies.forEach((m, i) => {
+        const displayTitle = m.title || m.name || '';
+        const normalised = m.title ? m : Object.assign({}, m, { title: m.name || m.original_name || '', release_date: m.first_air_date || '', media_type: 'tv' });
         const c = document.createElement('div'); c.className = 'sim-card';
-        c.innerHTML = `<img class="sim-poster" src="${IMG+m.poster_path}" loading="lazy" alt="${esc(m.title)}"/><div class="sim-title">${esc(m.title)}</div>`;
-        c.onclick = () => openModal(m);
+        c.innerHTML = `<img class="sim-poster" src="${IMG+m.poster_path}" loading="lazy" alt="${esc(displayTitle)}"/><div class="sim-title">${esc(displayTitle)}</div>`;
+        c.onclick = () => openModal(normalised);
         if (m.backdrop_path) c.addEventListener('mouseenter', () => setHeroBackdrop(m));
         row.appendChild(c);
       });
@@ -2580,17 +2761,18 @@
 
   /* ══ TAB NAVIGATION ══ */
   function switchTab(name) {
-    ['discover','reviews','community','lists'].forEach(t => {
+    ['discover','reviews','community','lists','series'].forEach(t => {
       document.getElementById('tab-panel-' + t).classList.toggle('active', t === name);
       document.getElementById('tab-btn-' + t).classList.toggle('active', t === name);
     });
+    if (name === 'series' && !nowAiringLoaded) { loadNowAiring(); nowAiringLoaded = true; }
     window.scrollTo({ top: 0, behavior: 'smooth' });
     history.replaceState(null, '', '#' + name);
   }
   // Restore tab from URL hash on load
   (function() {
     const hash = location.hash.replace('#', '');
-    if (['discover','reviews','community','lists'].includes(hash)) switchTab(hash);
+    if (['discover','reviews','community','lists','series'].includes(hash)) switchTab(hash);
   })();
 
   /* ══ FRIENDS LETTERBOXD REVIEWS ══ */
