@@ -2578,9 +2578,29 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/pmovies-app/sw.js')
-          .then(r => console.log('[PWA] SW registered', r.scope))
-          .catch(e => console.warn('[PWA] SW failed', e));
+        navigator.serviceWorker.register('/pmovies-app/sw.js').then(reg => {
+          console.log('[PWA] SW registered', reg.scope);
+
+          // Force-check for a new SW version every time the page loads
+          reg.update();
+
+          // When a new SW is found, wait for it to install then reload
+          reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing;
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                // New version ready — reload so users always get fresh content
+                console.log('[PWA] New version detected, reloading…');
+                window.location.reload();
+              }
+            });
+          });
+        }).catch(e => console.warn('[PWA] SW failed', e));
+
+        // Also reload if the SW takes control mid-session (after skipWaiting in sw.js)
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          window.location.reload();
+        });
       });
     }
   </script>
