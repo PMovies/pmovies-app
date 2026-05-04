@@ -740,13 +740,22 @@
   .platform-badge-podcast{background:rgba(155,89,182,.15);color:#9b59b6;}
   .platform-badge-other{background:rgba(245,166,35,.1);color:var(--orange);}
   .creator-bio{font-size:.8rem;color:#888;line-height:1.6;margin-bottom:16px;}
-  .creator-footer{display:flex;align-items:center;gap:10px;}
+  .creator-footer{display:flex;align-items:center;gap:10px;} /* kept for legacy, now unused */
   .creator-visit-btn{background:var(--orange);color:#000;border:none;border-radius:20px;padding:8px 20px;font-weight:800;font-size:.75rem;letter-spacing:.05em;cursor:pointer;text-decoration:none;display:inline-block;transition:.15s;flex-shrink:0;}
   .creator-visit-btn:hover{background:#e8940f;transform:scale(1.04);}
-  .creator-pick-wrap{flex:1;min-width:0;background:#0d0d0d;border:1px solid #1e1e1e;border-radius:12px;padding:10px 14px;}
-  .creator-pick-label{font-size:.58rem;color:#555;font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px;}
-  .creator-pick-link{font-size:.76rem;color:#ccc;text-decoration:none;font-weight:600;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;transition:color .15s;}
-  .creator-pick-link:hover{color:var(--orange);}
+  .creator-picks-row{margin-top:14px;}
+  .creator-picks-label{font-size:.58rem;color:#555;font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-bottom:8px;}
+  .creator-thumbs{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x mandatory;}
+  .creator-thumbs::-webkit-scrollbar{height:3px;}
+  .creator-thumbs::-webkit-scrollbar-thumb{background:var(--orange);border-radius:2px;}
+  .creator-thumb{position:relative;flex:0 0 140px;height:79px;border-radius:10px;overflow:hidden;background:#1a1a1a;scroll-snap-align:start;cursor:pointer;transition:.15s;}
+  .creator-thumb:hover{transform:scale(1.03);box-shadow:0 4px 16px rgba(0,0,0,.6);}
+  .creator-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .creator-thumb-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35);transition:background .15s;}
+  .creator-thumb:hover .creator-thumb-play{background:rgba(0,0,0,.55);}
+  .creator-thumb-play svg{width:32px;height:32px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.8));}
+  .creator-thumb.featured-pick{flex:0 0 180px;height:101px;}
+  .creator-thumb.featured-pick::after{content:'★ Featured';position:absolute;top:6px;left:6px;background:var(--orange);color:#000;font-size:.55rem;font-weight:800;letter-spacing:.05em;padding:2px 7px;border-radius:8px;}
   .backed-suggest-section{margin-top:36px;background:#0d0d0d;border:1px dashed #2a2a2a;border-radius:18px;padding:28px;text-align:center;}
   .backed-suggest-icon{font-size:2rem;margin-bottom:10px;}
   .backed-suggest-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:#fff;letter-spacing:.08em;margin:0 0 6px;}
@@ -1289,7 +1298,7 @@
 
 <div class="tab-panel" id="tab-panel-backed">
   <div class="backed-hero">
-    <div class="backed-hero-title">Creators We <span>Back</span></div>
+    <div class="backed-hero-title">Creators We <span>Love</span></div>
     <p class="backed-hero-sub">3 community creators spotlighted every week — discover, follow &amp; support them</p>
     <div class="backed-cycle-strip">
       <span class="backed-week-label" id="backedWeekLabel">This Week</span>
@@ -3281,11 +3290,19 @@
     return `${hours}h left`;
   }
 
+  function ytVideoId(url) {
+    const m = url.match(/(?:youtu\.be\/|[?&]v=)([A-Za-z0-9_-]{11})/);
+    return m ? m[1] : null;
+  }
+  function ytThumb(url) {
+    const id = ytVideoId(url);
+    return id ? `https://img.youtube.com/vi/${id}/mqdefault.jpg` : null;
+  }
+
   function renderBackedTab() {
     const grid = document.getElementById('backedCreatorsGrid');
     if (!grid) return;
 
-    // Countdown
     const cdEl = document.getElementById('backedCountdown');
     const wkEl = document.getElementById('backedWeekLabel');
     if (cdEl) cdEl.textContent = backedCountdownText();
@@ -3302,10 +3319,35 @@
       return;
     }
 
+    const playIcon = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="11" fill="rgba(0,0,0,0.5)" stroke="rgba(255,255,255,0.6)" stroke-width="1.2"/>
+      <polygon points="10,8 17,12 10,16" fill="#fff"/>
+    </svg>`;
+
     cycle.creators.forEach(c => {
-      const pm      = PLATFORM_META[c.platform] || PLATFORM_META.other;
-      const pick    = c.picks && c.picks.length ? c.picks[Math.floor(Math.random() * c.picks.length)] : null;
-      const initials = (c.realName || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+      const pm        = PLATFORM_META[c.platform] || PLATFORM_META.other;
+      const picks     = c.picks || [];
+      const featIdx   = picks.length ? Math.floor(Math.random() * picks.length) : -1;
+
+      // Build thumbnails HTML
+      let thumbsHtml = '';
+      if (picks.length) {
+        const thumbItems = picks.map((p, i) => {
+          const thumb = ytThumb(p.url);
+          const isFeat = i === featIdx;
+          return thumb
+            ? `<a href="${p.url}" target="_blank" rel="noopener" class="creator-thumb${isFeat ? ' featured-pick' : ''}">
+                 <img src="${thumb}" alt="video" loading="lazy"/>
+                 <div class="creator-thumb-play">${playIcon}</div>
+               </a>`
+            : '';
+        }).join('');
+        thumbsHtml = `
+          <div class="creator-picks-row">
+            <div class="creator-picks-label">Videos from this creator</div>
+            <div class="creator-thumbs">${thumbItems}</div>
+          </div>`;
+      }
 
       const card = document.createElement('div');
       card.className = `creator-card ${pm.cardClass}`;
@@ -3319,14 +3361,8 @@
           </div>
         </div>
         <div class="creator-bio">${esc(c.bio)}</div>
-        <div class="creator-footer">
-          <a href="${c.profileUrl}" target="_blank" rel="noopener" class="creator-visit-btn">Visit ${pm.label}</a>
-          ${pick ? `
-          <div class="creator-pick-wrap">
-            <div class="creator-pick-label">Featured pick</div>
-            <a href="${pick.url}" target="_blank" rel="noopener" class="creator-pick-link">${esc(pick.title)}</a>
-          </div>` : ''}
-        </div>`;
+        <a href="${c.profileUrl}" target="_blank" rel="noopener" class="creator-visit-btn">Visit ${pm.label}</a>
+        ${thumbsHtml}`;
       grid.appendChild(card);
     });
   }
