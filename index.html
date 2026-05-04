@@ -687,6 +687,7 @@
   .card-share-btn:hover svg { stroke:var(--orange); }
   .card-share-menu { position:absolute; bottom:calc(100% + 6px); left:0; background:rgba(18,18,18,.98); border-radius:10px; padding:6px; display:none; flex-direction:column; gap:3px; z-index:50; min-width:150px; border:1px solid rgba(255,255,255,.12); box-shadow:0 8px 24px rgba(0,0,0,.6); }
   .card-share-menu.open { display:flex; }
+  .card-share-menu.down { bottom:auto; top:calc(100% + 6px); }
   .card-share-opt { display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:7px; cursor:pointer; transition:.15s; border:none; background:none; width:100%; text-align:left; color:#fff; font-size:.78rem; font-weight:500; }
   .card-share-opt:hover { background:rgba(255,255,255,.1); }
 
@@ -3914,8 +3915,19 @@
     const menu = document.getElementById(menuId);
     if (!menu) return;
     const wasOpen = menu.classList.contains('open');
-    document.querySelectorAll('.card-share-menu.open, .modal-share-menu.open').forEach(m => m.classList.remove('open'));
-    if (!wasOpen) menu.classList.add('open');
+    document.querySelectorAll('.card-share-menu.open, .modal-share-menu.open').forEach(m => {
+      m.classList.remove('open', 'down');
+    });
+    if (!wasOpen) {
+      // Decide direction: open downward if not enough space above
+      const trigger = e?.currentTarget || e?.target;
+      const rect = trigger ? trigger.getBoundingClientRect() : null;
+      const menuHeight = 160; // approx height of 4-item menu
+      if (rect && rect.top < menuHeight + 10) {
+        menu.classList.add('down');
+      }
+      menu.classList.add('open');
+    }
   }
 
   // Central share dispatcher used by every share menu on the site
