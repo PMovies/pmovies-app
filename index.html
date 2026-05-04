@@ -4527,11 +4527,46 @@ const TOP100_MAX_VOTES  = 5;
 const TOP100_MIN_VOTES  = 2;   // min votes to appear on list
 const TOP100_MAX_MOVIES = 100;
 
-// Device fingerprint — one random ID per browser, persisted
-function getDeviceId() {
-  let id = localStorage.getItem('pmovies_device_id');
-  if (!id) { id = 'dev_' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('pmovies_device_id', id); }
-  return id;
+// ── Browser fingerprint (survives incognito — based on hardware signals) ──
+let _cachedFp = null;
+async function getBrowserFingerprint() {
+  if (_cachedFp) return _cachedFp;
+  const signals = [];
+  signals.push(`${screen.width}x${screen.height}x${screen.colorDepth}`);
+  signals.push(Intl.DateTimeFormat().resolvedOptions().timeZone || '');
+  signals.push(navigator.language || '');
+  signals.push(String(navigator.hardwareConcurrency || 0));
+  signals.push(String(navigator.deviceMemory || 0));
+  signals.push(navigator.platform || '');
+  try {
+    const c = document.createElement('canvas'); c.width = 240; c.height = 60;
+    const x = c.getContext('2d');
+    x.textBaseline = 'top'; x.font = '15px Arial';
+    x.fillStyle = '#f36523'; x.fillRect(10, 1, 60, 20);
+    x.fillStyle = '#069'; x.fillText('PMovies🎬', 2, 18);
+    x.fillStyle = 'rgba(80,200,0,.7)'; x.fillText('fp2025', 4, 36);
+    signals.push(c.toDataURL().slice(-60));
+  } catch(_) {}
+  const raw  = signals.join('||');
+  const buf  = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
+  const fp   = 'fp_' + Array.from(new Uint8Array(buf)).slice(0,10).map(b=>b.toString(16).padStart(2,'0')).join('');
+  _cachedFp  = fp;
+  return fp;
+}
+
+// Sync RTDB fingerprint votes → localStorage (restores votes even in incognito)
+async function syncFpVotes() {
+  try {
+    const fp  = await getBrowserFingerprint();
+    const res = await fetch(`${RTDB}/votesByFp/${fp}.json`);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data) return;
+    const serverIds = Object.keys(data);
+    const local     = getMyVotes();
+    const merged    = [...new Set([...local, ...serverIds])];
+    if (merged.length > local.length) saveMyVotes(merged);
+  } catch(_) {}
 }
 
 // Votes this device has already cast (array of movieIds)
@@ -4673,6 +4708,8 @@ function renderKnocking(films, lastInList) {
 
 /* ── Load from RTDB ── */
 async function loadTop100() {
+  // Sync fingerprint votes first — restores votes even after incognito/cleared storage
+  await syncFpVotes();
   try {
     const res  = await fetch(`${RTDB}/communityVotes.json`);
     const data = res.ok ? await res.json() : null;
@@ -4707,6 +4744,20 @@ async function castVote(id, title, poster, backdrop, year, genresStr) {
   const myVotes = getMyVotes();
   if (myVotes.includes(id)) return;
 
+  // Get fingerprint & do server-side duplicate check
+  let fp = null;
+  try {
+    fp = await getBrowserFingerprint();
+    const fpCheck = await fetch(`${RTDB}/votesByFp/${fp}/${id}.json`);
+    const already = fpCheck.ok ? await fpCheck.json() : null;
+    if (already) {
+      // Server says already voted — sync local state and bail
+      if (!myVotes.includes(id)) { myVotes.push(id); saveMyVotes(myVotes); }
+      await loadTop100();
+      return;
+    }
+  } catch(_) {}
+
   // Optimistic UI
   const item = document.getElementById(`top100-item-${id}`);
   if (item) item.classList.add('just-voted');
@@ -4715,7 +4766,7 @@ async function castVote(id, title, poster, backdrop, year, genresStr) {
   myVotes.push(id);
   saveMyVotes(myVotes);
 
-  // Write to RTDB (transaction-style: read then write)
+  // Write to RTDB — vote count + fingerprint record (parallel)
   try {
     const url  = `${RTDB}/communityVotes/${id}.json`;
     const res  = await fetch(url);
@@ -4727,11 +4778,18 @@ async function castVote(id, title, poster, backdrop, year, genresStr) {
       firstVoted: curr?.firstVoted || Date.now(),
       lastVoted:  Date.now()
     };
-    await fetch(url, {
+    const writeVote = fetch(url, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updated)
     });
+    // Record fingerprint vote (prevents incognito bypass)
+    const writeFp = fp ? fetch(`${RTDB}/votesByFp/${fp}/${id}.json`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ t: Date.now(), title })
+    }) : Promise.resolve();
+    await Promise.all([writeVote, writeFp]);
   } catch(e) {
     console.warn('Vote write error', e);
   }
