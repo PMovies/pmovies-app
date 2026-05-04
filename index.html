@@ -4707,6 +4707,114 @@ function _bfpEntropy() {
 }
 
 /* ══════════════════════════════════════════════════════
+   SESSION LINKING
+   Persistent clientId survives clears / incognito shifts.
+   sessionId is fresh per page-load so we can detect
+   same device submitting multiple times in one session.
+═══════════════════════════════════════════════════════ */
+let _clientId = localStorage.getItem('pmovies_cid');
+if (!_clientId) {
+  _clientId = 'cid_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+  localStorage.setItem('pmovies_cid', _clientId);
+}
+const _sessionId = 'sid_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+const _pageLoadMs = Date.now();
+
+/* ══════════════════════════════════════════════════════
+   READING BEHAVIOR
+   IntersectionObserver tracks which movie cards the user
+   actually saw (≥50% visible) and for how long.
+   Voting on films never scrolled to = red flag.
+═══════════════════════════════════════════════════════ */
+const _seenMovies = {};   // { movieId: totalMsVisible }
+const _readObs = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    const id = entry.target.dataset.mid;
+    if (!id) return;
+    if (entry.isIntersecting) {
+      entry.target._vs = Date.now();
+    } else if (entry.target._vs) {
+      _seenMovies[id] = (_seenMovies[id] || 0) + (Date.now() - entry.target._vs);
+      entry.target._vs = null;
+    }
+  });
+}, { threshold: 0.5 });
+
+function _observeTop100Cards() {
+  document.querySelectorAll('.top100-item[data-mid]').forEach(el => _readObs.observe(el));
+}
+
+/* ══════════════════════════════════════════════════════
+   LATENCY REALITY CHECK
+   Timestamps for critical moments so we can flag
+   humanly-impossible timing patterns.
+═══════════════════════════════════════════════════════ */
+const _latency = {
+  firstPickAt   : null,   // ms since epoch of first addPending call
+  pickTimes     : [],     // [ms since epoch] per pick, in order
+  popupOpenAt   : null,   // when email popup was shown
+  submitAt      : null    // when evpConfirm was called
+};
+
+/* ══════════════════════════════════════════════════════
+   INCONSISTENCY DETECTION
+   Combines session, reading, latency & behavior signals
+   to produce a list of anomaly flags and a block decision.
+═══════════════════════════════════════════════════════ */
+function _detectAnomalies(pendingVotes) {
+  const flags = [];
+  const now   = Date.now();
+
+  // — Latency: page load → first pick (< 2s = bot speed)
+  if (_latency.firstPickAt) {
+    const loadToFirst = _latency.firstPickAt - _pageLoadMs;
+    if (loadToFirst < 2000) flags.push(`fast_start:${loadToFirst}ms`);
+  }
+
+  // — Latency: total span of all picks (5 picks in < 1s = scripted)
+  if (_latency.pickTimes.length >= 2) {
+    const span = _latency.pickTimes.at(-1) - _latency.pickTimes[0];
+    if (span < 1000) flags.push(`instant_picks:${span}ms`);
+  }
+
+  // — Latency: pick-interval variance (uniform timing = scripted)
+  if (_latency.pickTimes.length >= 3) {
+    const intervals = [];
+    for (let i = 1; i < _latency.pickTimes.length; i++)
+      intervals.push(_latency.pickTimes[i] - _latency.pickTimes[i - 1]);
+    const mean = intervals.reduce((s, v) => s + v, 0) / intervals.length;
+    const variance = intervals.reduce((s, v) => s + (v - mean) ** 2, 0) / intervals.length;
+    if (variance < 50 && mean < 800) flags.push(`uniform_timing:var${Math.floor(variance)}`);
+  }
+
+  // — Latency: email popup open → submit (< 1.5s = email was pre-filled / scripted)
+  if (_latency.popupOpenAt && _latency.submitAt) {
+    const typeTime = _latency.submitAt - _latency.popupOpenAt;
+    if (typeTime < 1500) flags.push(`instant_email:${typeTime}ms`);
+  }
+
+  // — Reading: voted on movies never actually viewed
+  const unseenVotes = pendingVotes.filter(v => !_seenMovies[v.id] || _seenMovies[v.id] < 300);
+  if (unseenVotes.length > 0) flags.push(`unseen_votes:${unseenVotes.length}`);
+
+  // — Reading: zero reading time for ALL picks (never scrolled the list)
+  if (unseenVotes.length === pendingVotes.length) flags.push('no_reading');
+
+  // — Session: same session already voted (double-submit attempt)
+  const sessionUsed = sessionStorage.getItem('pmovies_session_voted');
+  if (sessionUsed) flags.push('session_reuse');
+
+  // Decide: hard block if 2+ strong signals, or any single critical one
+  const critical = flags.some(f =>
+    f.startsWith('instant_picks') || f.startsWith('fast_start') ||
+    f === 'no_reading' || f.startsWith('instant_email') || f === 'session_reuse'
+  );
+  const hardBlock = critical && flags.length >= 2;
+
+  return { flags, hardBlock };
+}
+
+/* ══════════════════════════════════════════════════════
    HARDWARE / CANVAS FINGERPRINT (device identity)
 ═══════════════════════════════════════════════════════ */
 let _cachedFp = null;
@@ -4785,6 +4893,7 @@ function updateVoteBar() {
 function showEmailPopup() {
   const pending = getPendingVotes();
   if (!pending.length) return;
+  _latency.popupOpenAt = Date.now();              // start email-typing timer
   const chips = document.getElementById('evpChips');
   if (chips) chips.innerHTML = pending.map(v => `<span class="evp-vote-chip">🎬 ${esc(v.title)}</span>`).join('');
   const inp = document.getElementById('evpEmailInput');
@@ -4826,10 +4935,20 @@ async function evpConfirm() {
     return;
   }
 
-  // Behavioral check — reject if session looks bot-like
+  // Record submit timestamp for latency check
+  _latency.submitAt = Date.now();
+
+  // Behavioral score — reject obvious bots
   const bScore = getBehavioralScore();
   if (bScore < 15) {
     if (err) err.textContent = 'Unusual activity detected. Please browse the site a bit more before voting.';
+    return;
+  }
+
+  // Inconsistency & latency checks
+  const { flags, hardBlock } = _detectAnomalies(getPendingVotes());
+  if (hardBlock) {
+    if (err) err.textContent = 'Suspicious activity detected. Please browse and interact with the site naturally before voting.';
     return;
   }
 
@@ -4879,11 +4998,25 @@ async function submitAllVotes(email, hash) {
       return Promise.all([writeVote, writeFp]);
     }));
 
-    // Record email hash with behavioral score (for auditing)
+    // Record email hash with full audit trail
+    const { flags } = _detectAnomalies(pending);
     await fetch(`${RTDB}/voterEmails/${hash}.json`, {
       method: 'PUT', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ t: Date.now(), bScore: getBehavioralScore() })
+      body: JSON.stringify({
+        t        : Date.now(),
+        bScore   : getBehavioralScore(),
+        flags    : flags.length ? flags : null,
+        clientId : _clientId,
+        sessionId: _sessionId,
+        readMs   : Object.fromEntries(pending.map(v => [v.id, _seenMovies[v.id] || 0])),
+        pickSpan : _latency.pickTimes.length >= 2
+                   ? _latency.pickTimes.at(-1) - _latency.pickTimes[0]
+                   : null
+      })
     });
+
+    // Mark this session as voted (blocks double-submit in same tab)
+    sessionStorage.setItem('pmovies_session_voted', '1');
 
     // Move pending → submitted
     const myVotes = getMyVotes();
@@ -4918,10 +5051,14 @@ function addPending(id, title, poster, backdrop, year, genresStr) {
   const idx   = pending.findIndex(v => v.id === id);
 
   if (idx >= 0) {
-    pending.splice(idx, 1);                       // deselect
+    pending.splice(idx, 1);                       // deselect — also remove its timestamp
+    _latency.pickTimes = _latency.pickTimes.filter((_, i) => i !== idx);
   } else {
     if (pending.length + myVotes.length >= TOP100_MAX_VOTES) return;
-    pending.push({ id, title, poster, backdrop, year, genresStr });
+    const now = Date.now();
+    if (!_latency.firstPickAt) _latency.firstPickAt = now;
+    _latency.pickTimes.push(now);
+    pending.push({ id, title, poster, backdrop, year, genresStr, pickedAt: now });
   }
   savePendingVotes(pending);
   updateVoteBar();
@@ -5007,7 +5144,7 @@ function renderTop100(movies) {
     const hidden = i >= TOP_PREVIEW ? ' top100-item-hidden' : '';
 
     return `
-      <div class="top100-item${hidden}" id="top100-item-${m.id}">
+      <div class="top100-item${hidden}" id="top100-item-${m.id}" data-mid="${m.id}">
         <div class="top100-rank">
           <div class="top100-rank-num">${rank}</div>
           ${changeHtml}
@@ -5044,6 +5181,9 @@ function renderTop100(movies) {
   } else {
     list.insertAdjacentHTML('beforeend', `<div class="top100-count-chip">${movies.length} film${movies.length!==1?'s':''} · Minimum 2 votes to appear</div>`);
   }
+
+  // Start reading-behavior tracking on newly rendered cards
+  _observeTop100Cards();
 }
 
 function showFullTop100() {
