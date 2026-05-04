@@ -689,6 +689,7 @@
   /* ── INSTALL BANNER ── */
   .install-banner{position:fixed;bottom:-120px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:520px;background:#1a1a1a;border:1px solid rgba(245,166,35,.35);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;z-index:9998;box-shadow:0 8px 32px rgba(0,0,0,.6);transition:bottom .4s cubic-bezier(.34,1.56,.64,1);}
   .install-banner.show{bottom:calc(20px + env(safe-area-inset-bottom, 0px));}
+  #swUpdateToast.show{bottom:calc(20px + env(safe-area-inset-bottom, 0px));}
   .install-banner-icon{width:48px;height:48px;border-radius:12px;flex-shrink:0;object-fit:cover;}
   .install-banner-text{flex:1;min-width:0;}
   .install-banner-text strong{display:block;font-size:.88rem;font-weight:700;color:var(--text);margin-bottom:2px;}
@@ -4020,6 +4021,26 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <!-- INSTALL BANNER (Android/Chrome) -->
+  <!-- SW UPDATE TOAST -->
+  <div id="swUpdateToast" style="
+    position:fixed;bottom:-80px;left:50%;transform:translateX(-50%);
+    width:calc(100% - 32px);max-width:420px;
+    background:#1a1a1a;border:1px solid rgba(245,166,35,.4);border-radius:14px;
+    padding:12px 16px;display:flex;align-items:center;gap:12px;
+    z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.7);
+    transition:bottom .4s cubic-bezier(.34,1.56,.64,1);
+  ">
+    <span style="font-size:1.1rem">✨</span>
+    <span style="flex:1;font-size:.8rem;color:#ccc;">New version of PMovies is ready!</span>
+    <button onclick="window.location.reload()" style="
+      background:var(--orange);color:#000;border:none;border-radius:20px;
+      padding:6px 16px;font-weight:800;font-size:.75rem;cursor:pointer;white-space:nowrap;
+    ">Refresh</button>
+    <button onclick="this.closest('#swUpdateToast').style.bottom='-80px'" style="
+      background:transparent;border:none;color:#666;font-size:.9rem;cursor:pointer;padding:2px 4px;
+    ">✕</button>
+  </div>
+
   <div class="install-banner" id="installBanner">
     <img src="icons/icon-192.png" class="install-banner-icon" alt="PMovies">
     <div class="install-banner-text">
@@ -4056,17 +4077,20 @@
             const newWorker = reg.installing;
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                // New version ready — reload so users always get fresh content
-                console.log('[PWA] New version detected, reloading…');
-                window.location.reload();
+                console.log('[PWA] New version ready — waiting for controllerchange');
+                // Toast will show via controllerchange event above
               }
             });
           });
         }).catch(e => console.warn('[PWA] SW failed', e));
 
-        // Also reload if the SW takes control mid-session (after skipWaiting in sw.js)
+        // When SW takes control, show a gentle toast instead of force-reloading
+        let reloading = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-          window.location.reload();
+          if (reloading) return;
+          reloading = true;
+          const toast = document.getElementById('swUpdateToast');
+          if (toast) toast.classList.add('show');
         });
       });
     }
