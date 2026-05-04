@@ -1820,12 +1820,7 @@
     shareMenu.dataset.title = m.title;
     shareMenu.dataset.text  = m.title + ' (' + year + ') — check it out on PMovies 📺';
     shareMenu.dataset.url   = 'https://pmovies.github.io/pmovies-app/#series';
-    shareBtn.addEventListener('click', e => {
-      e.stopPropagation();
-      const wasOpen = shareMenu.classList.contains('open');
-      document.querySelectorAll('.card-share-menu.open, .modal-share-menu.open').forEach(el => el.classList.remove('open'));
-      if (!wasOpen) shareMenu.classList.add('open');
-    });
+    shareBtn.addEventListener('click', e => toggleShareMenuEl(shareMenu, e));
 
     // Card click → modal
     card.addEventListener('click', e => {
@@ -2380,12 +2375,7 @@
     shareMenu.dataset.title = m.title;
     shareMenu.dataset.text  = shareMsg;
     shareMenu.dataset.url   = shareUrl;
-    shareBtn.addEventListener('click', e => {
-      e.stopPropagation();
-      const wasOpen = shareMenu.classList.contains('open');
-      document.querySelectorAll('.card-share-menu.open, .modal-share-menu.open').forEach(m => m.classList.remove('open'));
-      if (!wasOpen) shareMenu.classList.add('open');
-    });
+    shareBtn.addEventListener('click', e => toggleShareMenuEl(shareMenu, e));
 
     return card;
   }
@@ -3904,30 +3894,49 @@
 
   /* ══ SHARE UTILITIES ══ */
 
-  // Close every open share menu on any outside click
-  document.addEventListener('click', () => {
-    document.querySelectorAll('.card-share-menu.open, .modal-share-menu.open').forEach(m => m.classList.remove('open'));
-  });
-
-  // Toggle a specific share menu by element ID
-  function toggleShareMenu(menuId, e) {
-    if (e) e.stopPropagation();
-    const menu = document.getElementById(menuId);
-    if (!menu) return;
-    const wasOpen = menu.classList.contains('open');
+  function _closeAllShareMenus() {
     document.querySelectorAll('.card-share-menu.open, .modal-share-menu.open').forEach(m => {
       m.classList.remove('open', 'down');
+      m.style.position = '';
+      m.style.top      = '';
+      m.style.left     = '';
+      m.style.bottom   = '';
+      m.style.zIndex   = '';
     });
+  }
+
+  // Close every open share menu on any outside click
+  document.addEventListener('click', _closeAllShareMenus);
+
+  // Core: toggle a share menu element using position:fixed to escape overflow:hidden
+  function toggleShareMenuEl(menu, e) {
+    if (e) e.stopPropagation();
+    if (!menu) return;
+    const wasOpen = menu.classList.contains('open');
+    _closeAllShareMenus();
     if (!wasOpen) {
-      // Decide direction: open downward if not enough space above
-      const trigger = e?.currentTarget || e?.target;
-      const rect = trigger ? trigger.getBoundingClientRect() : null;
-      const menuHeight = 160; // approx height of 4-item menu
-      if (rect && rect.top < menuHeight + 10) {
-        menu.classList.add('down');
+      const trigger = e?.currentTarget instanceof Element ? e.currentTarget
+                    : e?.target   instanceof Element ? e.target
+                    : null;
+      if (trigger) {
+        const rect     = trigger.getBoundingClientRect();
+        const menuH    = 172;
+        const menuW    = 162;
+        const openDown = rect.top < menuH + 16;
+        menu.style.position = 'fixed';
+        menu.style.zIndex   = '9999';
+        menu.style.bottom   = 'auto';
+        menu.style.top  = openDown ? (rect.bottom + 6) + 'px' : (rect.top - menuH - 6) + 'px';
+        const leftPx = Math.min(rect.left, window.innerWidth - menuW - 10);
+        menu.style.left = Math.max(8, leftPx) + 'px';
       }
       menu.classList.add('open');
     }
+  }
+
+  // Toggle a specific share menu by element ID
+  function toggleShareMenu(menuId, e) {
+    toggleShareMenuEl(document.getElementById(menuId), e);
   }
 
   // Central share dispatcher used by every share menu on the site
