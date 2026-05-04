@@ -621,10 +621,9 @@
   .fan-review-date { color:#555; font-size:.72rem; }
   .fan-review-body { color:#bbb; font-size:.83rem; line-height:1.6; }
   .fan-review-actions { display:flex; gap:8px; margin-top:10px; padding-top:10px; border-top:1px solid #1e1e1e; }
-  .fan-action-btn { display:flex; align-items:center; gap:5px; background:transparent; border:1px solid #252525; border-radius:20px; color:#666; font-size:.72rem; font-weight:600; padding:5px 12px; cursor:pointer; transition:all .2s; }
-  .fan-action-btn:hover { border-color:#444; color:#ccc; }
-  .fan-action-btn.liked { border-color:rgba(255,80,80,.4); color:#ff5555; background:rgba(255,80,80,.07); }
-  .fan-action-btn .fa-icon { font-size:.85rem; line-height:1; }
+  .fan-action-btn { display:flex; align-items:center; gap:6px; background:#111; border:1px solid #222; color:#777; border-radius:10px; padding:7px 14px; cursor:pointer; font-family:'Montserrat',sans-serif; font-size:.7rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; transition:all .2s; }
+  .fan-action-btn:hover { border-color:#444; color:#fff; }
+  .fan-action-btn.liked { color:var(--orange); border-color:var(--orange); }
   .fan-empty { color:#555; text-align:center; padding:32px; font-size:.9rem; }
   /* Fan Records toggle */
   .fan-records-toggle { display:flex; gap:8px; margin-bottom:16px; }
@@ -2896,7 +2895,7 @@
     btn.classList.toggle('liked', nowLiked);
     btn.querySelector('.fa-icon').textContent = nowLiked ? '♥' : '♡';
     const countEl = btn.querySelector('.like-count');
-    countEl.textContent = counts[fp] > 0 ? counts[fp] : '';
+    countEl.textContent = counts[fp] > 0 ? counts[fp] + ' Likes' : 'Like';
   }
   function shareFanReview(name, movie, text, stars) {
     const shareText = `${stars} — ${name} on "${movie}":\n"${text}"\n\nvia PMovies pmovies.github.io/pmovies-app`;
@@ -2958,11 +2957,12 @@
           <div class="fan-review-body">${esc(r.text || '')}</div>
           <div class="fan-review-actions">
             <button class="fan-action-btn${liked ? ' liked' : ''}" data-fp="${fp}" onclick="toggleFanLike(this)">
-              <span class="fa-icon">${liked ? '♥' : '♡'}</span>
-              <span class="like-count">${likes > 0 ? likes : ''}</span>
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+              <span class="like-count">${likes > 0 ? likes + ' Likes' : 'Like'}</span>
             </button>
             <button class="fan-action-btn" onclick="shareFanReview('${esc(r.name||'Anonymous')}','${esc(r.movie||'')}','${esc((r.text||'').replace(/'/g,"\\'"))}','${stars}')">
-              <span class="fa-icon">↗</span> Share
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
+              Share
             </button>
           </div>
         </div>
