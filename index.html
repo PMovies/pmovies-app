@@ -526,7 +526,37 @@
   .top100-vote-btn { background:var(--orange); color:#000; border:none; padding:6px 16px; border-radius:20px; font-weight:700; font-size:.75rem; cursor:pointer; transition:.15s; }
   .top100-vote-btn:hover { background:#e0940f; }
   .top100-vote-btn:disabled { background:#1e1e1e; color:#444; cursor:not-allowed; }
+  .top100-vote-btn.picked { background:transparent; border:2px solid #4caf50; color:#4caf50; }
+  .top100-vote-btn.picked:hover { background:rgba(76,175,80,.1); }
   .top100-voted-badge { background:transparent; border:1px solid #2a2a2a; color:#555; border-radius:20px; padding:5px 14px; font-size:.72rem; }
+  /* Sticky vote bar */
+  #voteSubmitBar { position:fixed; bottom:-100px; left:50%; transform:translateX(-50%); width:calc(100% - 32px); max-width:520px; background:#1a1a1a; border:1px solid rgba(245,166,35,.4); border-radius:16px; padding:14px 18px; display:flex; align-items:center; gap:14px; z-index:9000; box-shadow:0 8px 32px rgba(0,0,0,.7); transition:bottom .4s cubic-bezier(.34,1.56,.64,1); }
+  #voteSubmitBar.show { bottom:calc(24px + env(safe-area-inset-bottom,0px)); }
+  .vsb-slots { display:flex; gap:6px; }
+  .vsb-dot { width:10px; height:10px; border-radius:50%; background:#2a2a2a; transition:.2s; }
+  .vsb-dot.filled { background:var(--orange); }
+  .vsb-label { flex:1; font-size:.78rem; color:#aaa; font-weight:600; }
+  .vsb-submit { background:var(--orange); color:#000; border:none; border-radius:20px; padding:8px 20px; font-weight:800; font-size:.78rem; cursor:pointer; white-space:nowrap; transition:.15s; }
+  .vsb-submit:hover { background:#e0940f; transform:scale(1.04); }
+  .vsb-submit:disabled { background:#2a2a2a; color:#555; cursor:not-allowed; transform:none; }
+  /* Email verification popup */
+  #emailVerifyOverlay { position:fixed; inset:0; background:rgba(0,0,0,.8); z-index:10000; display:none; align-items:center; justify-content:center; padding:20px; }
+  #emailVerifyOverlay.open { display:flex; }
+  .evp-card { background:#161616; border:1px solid #2a2a2a; border-radius:20px; padding:32px 28px; width:100%; max-width:420px; text-align:center; }
+  .evp-icon { font-size:2.2rem; margin-bottom:12px; }
+  .evp-title { font-family:'Bebas Neue',sans-serif; font-size:1.5rem; color:#fff; letter-spacing:.08em; margin:0 0 6px; }
+  .evp-sub { color:#666; font-size:.82rem; margin:0 0 22px; line-height:1.6; }
+  .evp-input { width:100%; background:#111; border:1px solid #333; border-radius:10px; padding:12px 16px; color:#fff; font-size:.9rem; box-sizing:border-box; margin-bottom:10px; font-family:'Montserrat',sans-serif; outline:none; transition:border-color .2s; }
+  .evp-input:focus { border-color:var(--orange); }
+  .evp-input.error { border-color:#f44336; }
+  .evp-error { color:#f44336; font-size:.76rem; margin-bottom:12px; min-height:18px; }
+  .evp-btn { width:100%; background:var(--orange); color:#000; border:none; border-radius:10px; padding:13px; font-weight:800; font-size:.88rem; cursor:pointer; letter-spacing:.04em; transition:.2s; margin-bottom:10px; }
+  .evp-btn:hover { background:#e0940f; }
+  .evp-btn:disabled { background:#2a2a2a; color:#555; cursor:not-allowed; }
+  .evp-cancel { background:transparent; border:none; color:#555; font-size:.78rem; cursor:pointer; padding:4px; }
+  .evp-cancel:hover { color:#aaa; }
+  .evp-votes-preview { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-bottom:20px; }
+  .evp-vote-chip { background:#1e1e1e; border:1px solid #2a2a2a; border-radius:20px; padding:4px 12px; font-size:.72rem; color:#ccc; }
   .top100-count-chip { background:#111; border:1px solid #2a2a2a; border-radius:20px; padding:6px 14px; color:#666; font-size:.78rem; margin-top:16px; text-align:center; }
   .top100-item-hidden { display:none; }
   /* Knocking on the Door */
@@ -4103,6 +4133,28 @@
     ">✕</button>
   </div>
 
+  <!-- VOTE SUBMIT BAR -->
+  <div id="voteSubmitBar">
+    <div class="vsb-slots" id="vsbDots"></div>
+    <span class="vsb-label" id="vsbLabel">0/5 selected</span>
+    <button class="vsb-submit" id="vsbSubmitBtn" onclick="showEmailPopup()" disabled>Submit Votes</button>
+  </div>
+
+  <!-- EMAIL VERIFY OVERLAY -->
+  <div id="emailVerifyOverlay">
+    <div class="evp-card">
+      <div class="evp-icon">🎬</div>
+      <h2 class="evp-title">Confirm Your Votes</h2>
+      <p class="evp-sub">Enter your email to lock in your picks.<br>Each email can only vote once.</p>
+      <div class="evp-votes-preview" id="evpChips"></div>
+      <input type="email" id="evpEmailInput" class="evp-input" placeholder="your@email.com"
+             oninput="evpClearError()" onkeydown="if(event.key==='Enter')evpConfirm()"/>
+      <div class="evp-error" id="evpError"></div>
+      <button class="evp-btn" id="evpConfirmBtn" onclick="evpConfirm()">Confirm &amp; Submit</button>
+      <button class="evp-cancel" onclick="closeEmailPopup()">Cancel — go back to editing</button>
+    </div>
+  </div>
+
   <div class="install-banner" id="installBanner">
     <img src="icons/icon-192.png" class="install-banner-icon" alt="PMovies">
     <div class="install-banner-text">
@@ -4572,7 +4624,193 @@ async function syncFpVotes() {
 // Votes this device has already cast (array of movieIds)
 function getMyVotes() { return JSON.parse(localStorage.getItem('pmovies_top100_votes') || '[]'); }
 function saveMyVotes(arr) { localStorage.setItem('pmovies_top100_votes', JSON.stringify(arr)); }
-function votesRemaining() { return Math.max(0, TOP100_MAX_VOTES - getMyVotes().length); }
+
+// Pending votes — selected but not yet confirmed/submitted
+function getPendingVotes() { return JSON.parse(localStorage.getItem('pmovies_pending_votes') || '[]'); }
+function savePendingVotes(arr) { localStorage.setItem('pmovies_pending_votes', JSON.stringify(arr)); }
+function pendingCount() { return getPendingVotes().length; }
+
+// Votes remaining = max − (submitted + pending)
+function votesRemaining() { return Math.max(0, TOP100_MAX_VOTES - getMyVotes().length - pendingCount()); }
+
+/* ── Vote submit bar ── */
+function updateVoteBar() {
+  const pending = getPendingVotes();
+  const n       = pending.length;
+  const bar     = document.getElementById('voteSubmitBar');
+  const dots    = document.getElementById('vsbDots');
+  const label   = document.getElementById('vsbLabel');
+  const btn     = document.getElementById('vsbSubmitBtn');
+  if (!bar) return;
+  dots.innerHTML = Array.from({length: TOP100_MAX_VOTES}, (_, i) =>
+    `<div class="vsb-dot${i < n ? ' filled' : ''}"></div>`
+  ).join('');
+  label.textContent = `${n}/5 selected`;
+  btn.disabled = n === 0;
+  bar.classList.toggle('show', n > 0);
+}
+
+/* ── Email popup ── */
+function showEmailPopup() {
+  const pending = getPendingVotes();
+  if (!pending.length) return;
+  const chips = document.getElementById('evpChips');
+  if (chips) chips.innerHTML = pending.map(v => `<span class="evp-vote-chip">🎬 ${esc(v.title)}</span>`).join('');
+  const inp = document.getElementById('evpEmailInput');
+  if (inp) inp.value = '';
+  evpClearError();
+  document.getElementById('emailVerifyOverlay').classList.add('open');
+  if (inp) setTimeout(() => inp.focus(), 120);
+}
+
+function closeEmailPopup() {
+  document.getElementById('emailVerifyOverlay').classList.remove('open');
+  const btn = document.getElementById('evpConfirmBtn');
+  if (btn) { btn.disabled = false; btn.textContent = 'Confirm & Submit'; }
+}
+
+function evpClearError() {
+  const err = document.getElementById('evpError');
+  const inp = document.getElementById('evpEmailInput');
+  if (err) err.textContent = '';
+  if (inp) inp.classList.remove('error');
+}
+
+async function hashEmail(email) {
+  const norm = email.toLowerCase().trim();
+  const buf  = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(norm));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('').slice(0, 40);
+}
+
+async function evpConfirm() {
+  const inp   = document.getElementById('evpEmailInput');
+  const err   = document.getElementById('evpError');
+  const btn   = document.getElementById('evpConfirmBtn');
+  const email = inp ? inp.value.trim() : '';
+
+  // Format check
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (inp) inp.classList.add('error');
+    if (err) err.textContent = 'Please enter a valid email address.';
+    return;
+  }
+
+  if (btn) { btn.disabled = true; btn.textContent = 'Checking…'; }
+  try {
+    const hash  = await hashEmail(email);
+    const check = await fetch(`${RTDB}/voterEmails/${hash}.json`);
+    const used  = check.ok ? await check.json() : null;
+    if (used) {
+      if (inp) inp.classList.add('error');
+      if (err) err.textContent = 'This email has already been used to vote. Each email can vote once.';
+      if (btn) { btn.disabled = false; btn.textContent = 'Confirm & Submit'; }
+      return;
+    }
+    await submitAllVotes(email, hash);
+  } catch(e) {
+    if (err) err.textContent = 'Network error — please try again.';
+    if (btn) { btn.disabled = false; btn.textContent = 'Confirm & Submit'; }
+  }
+}
+
+async function submitAllVotes(email, hash) {
+  const btn     = document.getElementById('evpConfirmBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Submitting…'; }
+  const pending = getPendingVotes();
+  const fp      = await getBrowserFingerprint().catch(() => null);
+
+  try {
+    await Promise.all(pending.map(async v => {
+      const url  = `${RTDB}/communityVotes/${v.id}.json`;
+      const res  = await fetch(url);
+      const curr = res.ok ? await res.json() : null;
+      const genres = v.genresStr ? v.genresStr.split('|').filter(Boolean) : [];
+      const updated = {
+        title: v.title, poster: v.poster, backdrop: v.backdrop, year: v.year, genres,
+        votes:      (curr?.votes || 0) + 1,
+        firstVoted: curr?.firstVoted || Date.now(),
+        lastVoted:  Date.now()
+      };
+      const writeVote = fetch(url, {
+        method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(updated)
+      });
+      const writeFp = fp ? fetch(`${RTDB}/votesByFp/${fp}/${v.id}.json`, {
+        method: 'PUT', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ t: Date.now(), title: v.title })
+      }) : Promise.resolve();
+      return Promise.all([writeVote, writeFp]);
+    }));
+
+    // Record email hash so it can't be reused
+    await fetch(`${RTDB}/voterEmails/${hash}.json`, {
+      method: 'PUT', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ t: Date.now() })
+    });
+
+    // Move pending → submitted
+    const myVotes = getMyVotes();
+    pending.forEach(v => { if (!myVotes.includes(v.id)) myVotes.push(v.id); });
+    saveMyVotes(myVotes);
+    savePendingVotes([]);
+
+    closeEmailPopup();
+    updateVoteBar();
+
+    // Success toast
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;top:24px;left:50%;transform:translateX(-50%);background:#1a1a1a;border:1px solid #4caf50;border-radius:12px;padding:12px 22px;color:#4caf50;font-weight:800;font-size:.85rem;z-index:99999;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,.6);';
+    toast.textContent = `✓ ${pending.length} vote${pending.length > 1 ? 's' : ''} submitted!`;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3200);
+
+    await loadTop100();
+  } catch(e) {
+    const err = document.getElementById('evpError');
+    if (err) err.textContent = 'Submit failed — please try again.';
+    if (btn) { btn.disabled = false; btn.textContent = 'Confirm & Submit'; }
+  }
+}
+
+/* ── Add / toggle a pending vote (replaces immediate castVote) ── */
+function addPending(id, title, poster, backdrop, year, genresStr) {
+  const myVotes = getMyVotes();
+  if (myVotes.includes(id)) return;               // already submitted
+
+  let pending = getPendingVotes();
+  const idx   = pending.findIndex(v => v.id === id);
+
+  if (idx >= 0) {
+    pending.splice(idx, 1);                       // deselect
+  } else {
+    if (pending.length + myVotes.length >= TOP100_MAX_VOTES) return;
+    pending.push({ id, title, poster, backdrop, year, genresStr });
+  }
+  savePendingVotes(pending);
+  updateVoteBar();
+
+  // Patch only the affected card button (no full re-render)
+  const item = document.getElementById(`top100-item-${id}`);
+  if (item) {
+    const right      = item.querySelector('.top100-right');
+    if (right) {
+      const hasPending = pending.some(v => v.id === id);
+      const newRem     = Math.max(0, TOP100_MAX_VOTES - myVotes.length - pending.length);
+      let btnHtml;
+      if (hasPending) {
+        btnHtml = `<button class="top100-vote-btn picked" onclick="addPending('${id}','${escJs(title)}','${escJs(poster)}','${escJs(backdrop)}',${year},'${escJs(genresStr)}')">✓ Picked</button>`;
+      } else if (newRem > 0) {
+        btnHtml = `<button class="top100-vote-btn" onclick="addPending('${id}','${escJs(title)}','${escJs(poster)}','${escJs(backdrop)}',${year},'${escJs(genresStr)}')">Vote</button>`;
+      } else {
+        btnHtml = `<button class="top100-vote-btn" disabled>Vote</button>`;
+      }
+      const existing = right.querySelector('.top100-vote-btn, .top100-voted-badge');
+      if (existing) existing.outerHTML = btnHtml;
+    }
+  }
+  // Disable/re-enable all unselected Vote buttons when limit reached / freed
+  const atLimit = pending.length + myVotes.length >= TOP100_MAX_VOTES;
+  document.querySelectorAll('.top100-vote-btn:not(.picked)').forEach(b => { b.disabled = atLimit; });
+}
 
 // Monthly rank snapshot (for ↑↓ indicators)
 function getRankSnapshot() { return JSON.parse(localStorage.getItem('pmovies_rank_snap') || '{}'); }
@@ -4587,14 +4825,18 @@ function maybeSaveRankSnapshot(list) {
 
 /* ── Render the list ── */
 function renderTop100(movies) {
-  const list    = document.getElementById('top100List');
-  const myVotes = getMyVotes();
-  const snap    = getRankSnapshot();
-  const rem     = votesRemaining();
+  const list       = document.getElementById('top100List');
+  const myVotes    = getMyVotes();
+  const pendingIds = getPendingVotes().map(v => v.id);
+  const snap       = getRankSnapshot();
+  const rem        = votesRemaining();
 
   // Update votes-remaining badge
   document.getElementById('top100VotesNum').textContent = rem;
   document.getElementById('top100SearchHint').textContent = rem > 0 ? `${rem} vote${rem>1?'s':''} left` : 'No votes left';
+
+  // Sync vote bar dots
+  updateVoteBar();
 
   if (!movies.length) {
     list.innerHTML = '<div class="top100-empty"><span>🎬</span>No votes yet — be the first to nominate a film!</div>';
@@ -4607,11 +4849,12 @@ function renderTop100(movies) {
   const hasMore = movies.length > TOP_PREVIEW;
 
   list.innerHTML = movies.map((m, i) => {
-    const rank      = i + 1;
-    const prevRank  = snap[m.id];
-    const hasVoted  = myVotes.includes(m.id);
-    const canVote   = rem > 0 && !hasVoted;
-    let changeHtml  = '';
+    const rank       = i + 1;
+    const prevRank   = snap[m.id];
+    const hasVoted   = myVotes.includes(m.id);
+    const isPending  = pendingIds.includes(m.id);
+    const canVote    = rem > 0 && !hasVoted && !isPending;
+    let changeHtml   = '';
     if (!prevRank)               changeHtml = `<div class="top100-rank-change new">NEW</div>`;
     else if (prevRank > rank)    changeHtml = `<div class="top100-rank-change up">▲${prevRank-rank}</div>`;
     else if (prevRank < rank)    changeHtml = `<div class="top100-rank-change down">▼${rank-prevRank}</div>`;
@@ -4619,7 +4862,9 @@ function renderTop100(movies) {
     const genres = (m.genres||[]).slice(0,2).map(g=>`<span class="top100-genre-tag">${esc(g)}</span>`).join('');
     const voteBtn = hasVoted
       ? `<div class="top100-voted-badge">✓ Voted</div>`
-      : `<button class="top100-vote-btn" ${canVote?'':'disabled'} onclick="castVote('${m.id}','${escJs(m.title)}','${escJs(m.poster||'')}','${escJs(m.backdrop||'')}',${m.year||0},'${escJs((m.genres||[]).join('|'))}')">Vote</button>`;
+      : isPending
+        ? `<button class="top100-vote-btn picked" onclick="addPending('${m.id}','${escJs(m.title)}','${escJs(m.poster||'')}','${escJs(m.backdrop||'')}',${m.year||0},'${escJs((m.genres||[]).join('|'))}')">✓ Picked</button>`
+        : `<button class="top100-vote-btn" ${canVote?'':'disabled'} onclick="addPending('${m.id}','${escJs(m.title)}','${escJs(m.poster||'')}','${escJs(m.backdrop||'')}',${m.year||0},'${escJs((m.genres||[]).join('|'))}')">Vote</button>`;
 
     const hidden = i >= TOP_PREVIEW ? ' top100-item-hidden' : '';
 
@@ -4809,11 +5054,14 @@ function top100Search(q) {
     const data = await res.json();
     const hits = (data.results || []).filter(m => m.title).slice(0, 7);
     if (!hits.length) { dd.style.display = 'none'; return; }
-    const myVotes = getMyVotes();
-    const rem     = votesRemaining();
+    const myVotes    = getMyVotes();
+    const pendingIds = getPendingVotes().map(v => v.id);
+    const rem        = votesRemaining();
     dd.innerHTML = hits.map(m => {
-      const voted   = myVotes.includes(String(m.id));
-      const canVote = rem > 0 && !voted;
+      const id      = String(m.id);
+      const voted   = myVotes.includes(id);
+      const pending = pendingIds.includes(id);
+      const canVote = rem > 0 && !voted && !pending;
       const genres  = (m.genre_ids||[]).slice(0,2);
       return `
         <div class="top100-drop-item">
@@ -4826,12 +5074,14 @@ function top100Search(q) {
           </div>
           ${voted
             ? `<div class="top100-drop-voted">✓ Voted</div>`
-            : `<button class="top100-drop-vote" ${canVote?'':'disabled'}
-                onclick="
-                  document.getElementById('top100Dropdown').style.display='none';
-                  document.getElementById('top100SearchInput').value='';
-                  castVote('${m.id}','${escJs(m.title)}','${escJs(m.poster_path||'')}','${escJs(m.backdrop_path||'')}',${m.release_date?m.release_date.slice(0,4):0},'')
-                ">${canVote?'Vote':'No votes left'}</button>`}
+            : pending
+              ? `<div class="top100-drop-voted" style="color:#4caf50;border-color:#4caf50;">✓ Picked</div>`
+              : `<button class="top100-drop-vote" ${canVote?'':'disabled'}
+                  onclick="
+                    document.getElementById('top100Dropdown').style.display='none';
+                    document.getElementById('top100SearchInput').value='';
+                    addPending('${m.id}','${escJs(m.title)}','${escJs(m.poster_path||'')}','${escJs(m.backdrop_path||'')}',${m.release_date?m.release_date.slice(0,4):0},'')
+                  ">${canVote?'+ Pick':'No votes left'}</button>`}
         </div>`;
     }).join('');
     dd.style.display = 'block';
