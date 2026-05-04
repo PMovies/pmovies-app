@@ -1,4 +1,4 @@
-const CACHE = 'pmovies-v23';
+const CACHE = 'pmovies-v24';
 const SHELL = [
   '/pmovies-app/',
   '/pmovies-app/index.html',
