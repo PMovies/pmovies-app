@@ -727,7 +727,8 @@
   .creator-card.platform-other::before{background:var(--orange);}
   .creator-card:hover{border-color:#333;transform:translateY(-2px);}
   .creator-top{display:flex;align-items:flex-start;gap:14px;margin-bottom:14px;}
-  .creator-avatar{width:54px;height:54px;border-radius:14px;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;border:1px solid #2a2a2a;}
+  .creator-avatar{width:54px;height:54px;border-radius:14px;background:#ff0000;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 14px rgba(255,0,0,.35);}
+  .creator-avatar svg{width:28px;height:28px;}
   .creator-meta{flex:1;min-width:0;}
   .creator-real-name{font-weight:800;font-size:1rem;color:#fff;margin-bottom:2px;}
   .creator-handle{font-size:.82rem;color:var(--orange);font-weight:700;margin-bottom:4px;}
@@ -745,17 +746,12 @@
   .creator-visit-btn:hover{background:#e8940f;transform:scale(1.04);}
   .creator-picks-row{margin-top:14px;}
   .creator-picks-label{font-size:.58rem;color:#555;font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-bottom:8px;}
-  .creator-thumbs{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x mandatory;}
-  .creator-thumbs::-webkit-scrollbar{height:3px;}
-  .creator-thumbs::-webkit-scrollbar-thumb{background:var(--orange);border-radius:2px;}
-  .creator-thumb{position:relative;flex:0 0 140px;height:79px;border-radius:10px;overflow:hidden;background:#1a1a1a;scroll-snap-align:start;cursor:pointer;transition:.15s;}
-  .creator-thumb:hover{transform:scale(1.03);box-shadow:0 4px 16px rgba(0,0,0,.6);}
+  .creator-thumb{position:relative;width:100%;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#1a1a1a;cursor:pointer;display:block;transition:.15s;}
+  .creator-thumb:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.7);}
   .creator-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
-  .creator-thumb-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35);transition:background .15s;}
-  .creator-thumb:hover .creator-thumb-play{background:rgba(0,0,0,.55);}
-  .creator-thumb-play svg{width:32px;height:32px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.8));}
-  .creator-thumb.featured-pick{flex:0 0 180px;height:101px;}
-  .creator-thumb.featured-pick::after{content:'★ Featured';position:absolute;top:6px;left:6px;background:var(--orange);color:#000;font-size:.55rem;font-weight:800;letter-spacing:.05em;padding:2px 7px;border-radius:8px;}
+  .creator-thumb-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.25);transition:background .15s;}
+  .creator-thumb:hover .creator-thumb-play{background:rgba(0,0,0,.5);}
+  .creator-thumb-play svg{width:52px;height:52px;filter:drop-shadow(0 2px 8px rgba(0,0,0,.9));}
   .backed-suggest-section{margin-top:36px;background:#0d0d0d;border:1px dashed #2a2a2a;border-radius:18px;padding:28px;text-align:center;}
   .backed-suggest-icon{font-size:2rem;margin-bottom:10px;}
   .backed-suggest-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:#fff;letter-spacing:.08em;margin:0 0 6px;}
@@ -3319,41 +3315,41 @@
       return;
     }
 
-    const playIcon = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="12" cy="12" r="11" fill="rgba(0,0,0,0.5)" stroke="rgba(255,255,255,0.6)" stroke-width="1.2"/>
-      <polygon points="10,8 17,12 10,16" fill="#fff"/>
+    // YouTube logo SVG for avatar
+    const ytLogo = `<svg viewBox="0 0 24 24" fill="#fff" xmlns="http://www.w3.org/2000/svg">
+      <path d="M23.5 6.19a3.02 3.02 0 0 0-2.12-2.14C19.54 3.5 12 3.5 12 3.5s-7.54 0-9.38.55A3.02 3.02 0 0 0 .5 6.19C0 8.04 0 12 0 12s0 3.96.5 5.81a3.02 3.02 0 0 0 2.12 2.14C4.46 20.5 12 20.5 12 20.5s7.54 0 9.38-.55a3.02 3.02 0 0 0 2.12-2.14C24 15.96 24 12 24 12s0-3.96-.5-5.81zM9.75 15.5v-7l6.5 3.5-6.5 3.5z"/>
+    </svg>`;
+
+    // Play overlay for thumbnails
+    const playOverlay = `<svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="30" cy="30" r="29" fill="rgba(0,0,0,0.55)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+      <polygon points="24,19 44,30 24,41" fill="#fff"/>
     </svg>`;
 
     cycle.creators.forEach(c => {
-      const pm        = PLATFORM_META[c.platform] || PLATFORM_META.other;
-      const picks     = c.picks || [];
-      const featIdx   = picks.length ? Math.floor(Math.random() * picks.length) : -1;
+      const pm    = PLATFORM_META[c.platform] || PLATFORM_META.other;
+      const picks = c.picks || [];
+      const pick  = picks.length ? picks[Math.floor(Math.random() * picks.length)] : null;
+      const thumb = pick ? ytThumb(pick.url) : null;
 
-      // Build thumbnails HTML
-      let thumbsHtml = '';
-      if (picks.length) {
-        const thumbItems = picks.map((p, i) => {
-          const thumb = ytThumb(p.url);
-          const isFeat = i === featIdx;
-          return thumb
-            ? `<a href="${p.url}" target="_blank" rel="noopener" class="creator-thumb${isFeat ? ' featured-pick' : ''}">
-                 <img src="${thumb}" alt="video" loading="lazy"/>
-                 <div class="creator-thumb-play">${playIcon}</div>
-               </a>`
-            : '';
-        }).join('');
-        thumbsHtml = `
-          <div class="creator-picks-row">
-            <div class="creator-picks-label">Videos from this creator</div>
-            <div class="creator-thumbs">${thumbItems}</div>
-          </div>`;
-      }
+      const thumbHtml = (pick && thumb) ? `
+        <div class="creator-picks-row">
+          <div class="creator-picks-label">Featured pick this visit</div>
+          <a href="${pick.url}" target="_blank" rel="noopener" class="creator-thumb">
+            <img src="${thumb}" alt="Featured video" loading="lazy"/>
+            <div class="creator-thumb-play">${playOverlay}</div>
+          </a>
+        </div>` : '';
+
+      const avatarHtml = c.platform === 'youtube'
+        ? `<div class="creator-avatar">${ytLogo}</div>`
+        : `<div class="creator-avatar" style="background:#1a1a1a;font-size:1.4rem">${pm.icon}</div>`;
 
       const card = document.createElement('div');
       card.className = `creator-card ${pm.cardClass}`;
       card.innerHTML = `
         <div class="creator-top">
-          <div class="creator-avatar">${pm.icon}</div>
+          ${avatarHtml}
           <div class="creator-meta">
             <div class="creator-real-name">${esc(c.realName)}</div>
             <div class="creator-handle">${esc(c.handle)}</div>
@@ -3362,7 +3358,7 @@
         </div>
         <div class="creator-bio">${esc(c.bio)}</div>
         <a href="${c.profileUrl}" target="_blank" rel="noopener" class="creator-visit-btn">Visit ${pm.label}</a>
-        ${thumbsHtml}`;
+        ${thumbHtml}`;
       grid.appendChild(card);
     });
   }
