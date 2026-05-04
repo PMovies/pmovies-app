@@ -708,6 +708,59 @@
   .ios-tip-close:hover{border-color:var(--orange);color:var(--text);}
 
   
+  /* ── BACKED TAB ── */
+  .backed-hero{text-align:center;padding:8px 0 28px;}
+  .backed-hero-title{font-family:'Bebas Neue',sans-serif;font-size:2.6rem;letter-spacing:.12em;color:#fff;line-height:1;}
+  .backed-hero-title span{color:var(--orange);}
+  .backed-hero-sub{color:#666;font-size:.82rem;margin:6px 0 20px;letter-spacing:.04em;}
+  .backed-cycle-strip{display:inline-flex;align-items:center;gap:14px;background:#111;border:1px solid #222;border-radius:30px;padding:7px 18px;}
+  .backed-week-label{font-size:.75rem;font-weight:700;color:#fff;letter-spacing:.04em;}
+  .backed-countdown{font-size:.7rem;color:var(--orange);font-weight:700;background:rgba(245,166,35,.1);padding:3px 10px;border-radius:12px;}
+  .creator-card{background:#111;border:1px solid #1e1e1e;border-radius:18px;padding:22px;margin-bottom:18px;transition:.2s;position:relative;overflow:hidden;}
+  .creator-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:18px 18px 0 0;}
+  .creator-card.platform-youtube::before{background:#ff0000;}
+  .creator-card.platform-tiktok::before{background:linear-gradient(90deg,#ff0050,#00f2ea);}
+  .creator-card.platform-instagram::before{background:linear-gradient(90deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);}
+  .creator-card.platform-x::before{background:#e7e7e7;}
+  .creator-card.platform-letterboxd::before{background:#00b020;}
+  .creator-card.platform-podcast::before{background:#9b59b6;}
+  .creator-card.platform-other::before{background:var(--orange);}
+  .creator-card:hover{border-color:#333;transform:translateY(-2px);}
+  .creator-top{display:flex;align-items:flex-start;gap:14px;margin-bottom:14px;}
+  .creator-avatar{width:54px;height:54px;border-radius:14px;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;border:1px solid #2a2a2a;}
+  .creator-meta{flex:1;min-width:0;}
+  .creator-real-name{font-weight:800;font-size:1rem;color:#fff;margin-bottom:2px;}
+  .creator-handle{font-size:.82rem;color:var(--orange);font-weight:700;margin-bottom:4px;}
+  .creator-platform-badge{display:inline-flex;align-items:center;gap:4px;font-size:.62rem;font-weight:700;letter-spacing:.05em;padding:2px 9px;border-radius:10px;text-transform:uppercase;}
+  .platform-badge-youtube{background:rgba(255,0,0,.15);color:#ff4444;}
+  .platform-badge-tiktok{background:rgba(255,0,80,.1);color:#ff0050;}
+  .platform-badge-instagram{background:rgba(220,39,67,.15);color:#e1306c;}
+  .platform-badge-x{background:#1a1a1a;color:#aaa;}
+  .platform-badge-letterboxd{background:rgba(0,176,32,.15);color:#00b020;}
+  .platform-badge-podcast{background:rgba(155,89,182,.15);color:#9b59b6;}
+  .platform-badge-other{background:rgba(245,166,35,.1);color:var(--orange);}
+  .creator-bio{font-size:.8rem;color:#888;line-height:1.6;margin-bottom:16px;}
+  .creator-footer{display:flex;align-items:center;gap:10px;}
+  .creator-visit-btn{background:var(--orange);color:#000;border:none;border-radius:20px;padding:8px 20px;font-weight:800;font-size:.75rem;letter-spacing:.05em;cursor:pointer;text-decoration:none;display:inline-block;transition:.15s;flex-shrink:0;}
+  .creator-visit-btn:hover{background:#e8940f;transform:scale(1.04);}
+  .creator-pick-wrap{flex:1;min-width:0;background:#0d0d0d;border:1px solid #1e1e1e;border-radius:12px;padding:10px 14px;}
+  .creator-pick-label{font-size:.58rem;color:#555;font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px;}
+  .creator-pick-link{font-size:.76rem;color:#ccc;text-decoration:none;font-weight:600;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;transition:color .15s;}
+  .creator-pick-link:hover{color:var(--orange);}
+  .backed-suggest-section{margin-top:36px;background:#0d0d0d;border:1px dashed #2a2a2a;border-radius:18px;padding:28px;text-align:center;}
+  .backed-suggest-icon{font-size:2rem;margin-bottom:10px;}
+  .backed-suggest-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:#fff;letter-spacing:.08em;margin:0 0 6px;}
+  .backed-suggest-sub{color:#666;font-size:.8rem;margin:0 0 20px;line-height:1.6;}
+  .backed-suggest-btn{display:inline-block;background:transparent;border:1px solid var(--orange);color:var(--orange);border-radius:20px;padding:9px 26px;font-weight:700;font-size:.78rem;letter-spacing:.06em;text-decoration:none;transition:.2s;}
+  .backed-suggest-btn:hover{background:var(--orange);color:#000;}
+  .backed-empty{text-align:center;padding:48px 16px;color:#444;font-size:.85rem;}
+  .backed-empty-icon{font-size:2.5rem;display:block;margin-bottom:12px;}
+  @media(max-width:640px){
+    .backed-hero-title{font-size:2rem;}
+    .creator-footer{flex-direction:column;align-items:stretch;}
+    .creator-pick-wrap{width:100%;}
+  }
+
   /* ═══ TAB NAVIGATION ═══ */
   .pmovies-tabs { display:flex; gap:8px; margin-bottom:32px; position:sticky; top:0; z-index:100; background:linear-gradient(to bottom,#0a0a0a 82%,transparent); padding:14px 0 10px; }
   .pmovies-tab { flex:1; background:#111; border:1px solid #222; border-radius:14px; color:#666; cursor:pointer; font-family:'Montserrat',sans-serif; font-size:.72rem; font-weight:700; letter-spacing:.07em; padding:13px 8px 10px; text-transform:uppercase; transition:all .2s; display:flex; flex-direction:column; align-items:center; gap:4px; }
@@ -717,7 +770,7 @@
   .tab-panel { display:none; }
   .tab-panel.active { display:block; animation:tabFadeIn .25s ease; }
   @keyframes tabFadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
-  @media(max-width:600px){ .pmovies-tab .tab-icon { font-size:1rem; } .pmovies-tab { font-size:.65rem; padding:10px 4px 8px; } }
+  @media(max-width:600px){ .pmovies-tab .tab-icon { font-size:1rem; } .pmovies-tab { font-size:.6rem; padding:10px 3px 8px; letter-spacing:.03em; } .pmovies-tabs { gap:4px; } }
 
   /* ── FRIENDS REVIEWS ── */
   #friendsSection { margin:48px 0 64px; }
@@ -851,6 +904,9 @@
   </button>
   <button class="pmovies-tab" id="tab-btn-series" onclick="switchTab('series')" role="tab">
     <span class="tab-icon">📺</span>Series
+  </button>
+  <button class="pmovies-tab" id="tab-btn-backed" onclick="switchTab('backed')" role="tab">
+    <span class="tab-icon">🤝</span>Backed
   </button>
 </nav>
 <div class="tab-panel active" id="tab-panel-discover">
@@ -1230,6 +1286,24 @@
   </div>
 
 </div><!-- /tab-panel-series -->
+
+<div class="tab-panel" id="tab-panel-backed">
+  <div class="backed-hero">
+    <div class="backed-hero-title">Creators We <span>Back</span></div>
+    <p class="backed-hero-sub">3 community creators spotlighted every week — discover, follow &amp; support them</p>
+    <div class="backed-cycle-strip">
+      <span class="backed-week-label" id="backedWeekLabel">This Week</span>
+      <span class="backed-countdown" id="backedCountdown">–</span>
+    </div>
+  </div>
+  <div id="backedCreatorsGrid"></div>
+  <div class="backed-suggest-section">
+    <div class="backed-suggest-icon">💡</div>
+    <div class="backed-suggest-title">Who Should We Back Next?</div>
+    <p class="backed-suggest-sub">Know a creator from our community worth the spotlight?<br>Suggest them for next week's feature — any platform welcome.</p>
+    <a href="https://docs.google.com/forms/d/1_qge6a5gjBamL8S9xF8x1vgVHszqoOS2FlUdYRRK0oQ/viewform" target="_blank" rel="noopener" class="backed-suggest-btn">Suggest a Creator →</a>
+  </div>
+</div><!-- /tab-panel-backed -->
 
 </main>
 
@@ -3073,10 +3147,11 @@
 
   /* ══ TAB NAVIGATION ══ */
   function switchTab(name) {
-    ['discover','reviews','community','lists','series'].forEach(t => {
+    ['discover','reviews','community','lists','series','backed'].forEach(t => {
       document.getElementById('tab-panel-' + t).classList.toggle('active', t === name);
       document.getElementById('tab-btn-' + t).classList.toggle('active', t === name);
     });
+    if (name === 'backed') { renderBackedTab(); }
     if (name === 'series') {
       if (nowAiringHeroes.length) {
         // Pick a fresh random TV show hero every time — mirrors loadHeroBackdrop variety
@@ -3102,8 +3177,159 @@
   // Restore tab from URL hash on load
   (function() {
     const hash = location.hash.replace('#', '');
-    if (['discover','reviews','community','lists','series'].includes(hash)) switchTab(hash);
+    if (['discover','reviews','community','lists','series','backed'].includes(hash)) switchTab(hash);
   })();
+
+  /* ══ BACKED — CREATOR SPOTLIGHT ══ */
+  // Base Monday: 2026-05-04. Each entry = one week's 3 creators.
+  // To update: add a new object to BACKED_CYCLES each Monday.
+  const BACKED_BASE_MS = new Date('2026-05-04T00:00:00Z').getTime();
+  const MS_PER_WEEK    = 7 * 24 * 60 * 60 * 1000;
+
+  const PLATFORM_META = {
+    youtube:     { label:'YouTube',     icon:'▶', badgeClass:'platform-badge-youtube',     cardClass:'platform-youtube'     },
+    tiktok:      { label:'TikTok',      icon:'♪', badgeClass:'platform-badge-tiktok',      cardClass:'platform-tiktok'      },
+    instagram:   { label:'Instagram',   icon:'◉', badgeClass:'platform-badge-instagram',   cardClass:'platform-instagram'   },
+    x:           { label:'X',           icon:'✕', badgeClass:'platform-badge-x',           cardClass:'platform-x'           },
+    letterboxd:  { label:'Letterboxd',  icon:'🎬', badgeClass:'platform-badge-letterboxd', cardClass:'platform-letterboxd'  },
+    podcast:     { label:'Podcast',     icon:'🎙', badgeClass:'platform-badge-podcast',     cardClass:'platform-podcast'     },
+    other:       { label:'Creator',     icon:'★', badgeClass:'platform-badge-other',       cardClass:'platform-other'       },
+  };
+
+  // ── CREATOR DATA ─────────────────────────────────────────────
+  // Each cycle: { startDate (YYYY-MM-DD Monday), creators: [...] }
+  // creators fields:
+  //   realName   – person's name
+  //   handle     – account/channel name (with @ if applicable)
+  //   platform   – one of the PLATFORM_META keys above
+  //   profileUrl – link to their account/channel
+  //   bio        – one-liner about what they cover
+  //   picks      – array of { title, url } — one is shown at random each visit
+  const BACKED_CYCLES = [
+    {
+      startDate: '2026-05-04',
+      creators: [
+        {
+          realName:   'Doaa Salah — دعاء صلاح',
+          handle:     '@Arcade-Dou | أركيد دو',
+          platform:   'youtube',
+          profileUrl: 'https://www.youtube.com/@Arcade-Dou',
+          bio:        'أركيد، قناة مختصه لشرح و تفصيص كل ما هو مختص بالفيديو جيمز — اعتبرها انك قاعد مع حد من صحابك و هو بيشرحلك حاجات عن الفيديو جيمز، قعدة لذيذه خفيفه كما اللب و السودانى 🎮',
+          picks: [
+            { title: 'شاهد على أركيد دو ▶', url: 'https://youtu.be/2zFXr3a-61w?si=QUxESUOvckEAMuW5' },
+            { title: 'شاهد على أركيد دو ▶', url: 'https://youtu.be/YpsrrpLJ3sQ?si=ml6rR0aiFC5RwHJA' },
+            { title: 'شاهد على أركيد دو ▶', url: 'https://youtu.be/pl4dwqLu-rs?si=OqKRIZK5LPYvQxbV' },
+            { title: 'شاهد على أركيد دو ▶', url: 'https://youtu.be/-ow8H2tUGlc?si=I2JeGD29E4-6DQ0O' },
+            { title: 'شاهد على أركيد دو ▶', url: 'https://youtu.be/o9tDZQsQYu8?si=DqBow18bW8USBiSg' },
+          ]
+        },
+        {
+          realName:   'Mahmoud Waleed — محمود وليد',
+          handle:     "@Mahmoud's Reviews",
+          platform:   'youtube',
+          profileUrl: 'https://www.youtube.com/@mahmoudreviews',
+          bio:        'محمود شاطر قوي ودايماً عنده منظور مختلف لأي حاجة بيتفرج عليها — سماع كلامه عن الأفلام ممتع جداً 🎬',
+          picks: [
+            { title: 'شاهد مع محمود وليد ▶', url: 'https://youtu.be/TD5mC_Lk9Yc?si=IpysQCgfioAxQBhR' },
+            { title: 'شاهد مع محمود وليد ▶', url: 'https://youtu.be/5H1wKqls25Q?si=MIIQ0QPt5MS3LvmM' },
+            { title: 'شاهد مع محمود وليد ▶', url: 'https://youtu.be/vfFzxLYpRcQ?si=Pm3-iYqt2Q47CCVH' },
+            { title: 'شاهد مع محمود وليد ▶', url: 'https://youtu.be/MgWGm2twZ3c?si=LfbqwNhEcK747G6J' },
+            { title: 'شاهد مع محمود وليد ▶', url: 'https://youtu.be/2AoiZEfWOWs?si=J25LYl3GRsx-5Rdl' },
+          ]
+        },
+        {
+          realName:   'Fouad — فؤاد',
+          handle:     '@Cinemastationn | Cinema Station',
+          platform:   'youtube',
+          profileUrl: 'https://www.youtube.com/@Cinemastationn',
+          bio:        'فؤاد عنده كتير قوي لسة — عنده أكتر من ما هو نفسه متخيل حتى 🎥',
+          picks: [
+            { title: 'شاهد مع Cinema Station ▶', url: 'https://youtu.be/bj5XEN1-aUM?si=ciRtLH5qmBmjAMnQ' },
+            { title: 'شاهد مع Cinema Station ▶', url: 'https://youtu.be/dWU7LXIaHNg?si=_yo7tDtbPVmEVL69' },
+            { title: 'شاهد مع Cinema Station ▶', url: 'https://youtu.be/rSJQLTkfuQA?si=RJ25Xr9lHSprQMS4' },
+            { title: 'شاهد مع Cinema Station ▶', url: 'https://youtu.be/atVyfXLd2-U?si=rEhmd4fOoAbYW4TI' },
+            { title: 'شاهد مع Cinema Station ▶', url: 'https://youtu.be/9oKDJ2VoJvI?si=XIrilyj5QAjVNNEb' },
+          ]
+        }
+      ]
+    }
+    // Add more cycles below — just copy the block above ↑
+  ];
+
+  function getBackedCycle() {
+    const weekIndex = Math.max(0, Math.floor((Date.now() - BACKED_BASE_MS) / MS_PER_WEEK));
+    // Walk backwards from current week to find the most recent cycle with data
+    for (let i = weekIndex; i >= 0; i--) {
+      const target = new Date(BACKED_BASE_MS + i * MS_PER_WEEK).toISOString().slice(0, 10);
+      const cycle  = BACKED_CYCLES.find(c => c.startDate === target);
+      if (cycle) return { cycle, weekIndex: i };
+    }
+    return { cycle: BACKED_CYCLES[0], weekIndex: 0 };
+  }
+
+  function backedCountdownText() {
+    const now        = new Date();
+    const dayOfWeek  = now.getDay(); // 0=Sun … 1=Mon … 6=Sat
+    const daysUntilMon = dayOfWeek === 1 ? 7 : (8 - dayOfWeek) % 7 || 7;
+    const nextMonday = new Date(now);
+    nextMonday.setDate(now.getDate() + daysUntilMon);
+    nextMonday.setHours(0, 0, 0, 0);
+    const diff  = nextMonday - now;
+    const days  = Math.floor(diff / 86400000);
+    const hours = Math.floor((diff % 86400000) / 3600000);
+    if (days > 0) return `${days}d ${hours}h left`;
+    return `${hours}h left`;
+  }
+
+  function renderBackedTab() {
+    const grid = document.getElementById('backedCreatorsGrid');
+    if (!grid) return;
+
+    // Countdown
+    const cdEl = document.getElementById('backedCountdown');
+    const wkEl = document.getElementById('backedWeekLabel');
+    if (cdEl) cdEl.textContent = backedCountdownText();
+
+    const { cycle } = getBackedCycle();
+    if (wkEl) {
+      const d = new Date(cycle.startDate + 'T00:00:00Z');
+      wkEl.textContent = 'Week of ' + d.toLocaleDateString('en-US', { month:'short', day:'numeric', timeZone:'UTC' });
+    }
+
+    grid.innerHTML = '';
+    if (!cycle || !cycle.creators || !cycle.creators.length) {
+      grid.innerHTML = '<div class="backed-empty"><span class="backed-empty-icon">🤝</span>New creators being lined up — check back Monday!</div>';
+      return;
+    }
+
+    cycle.creators.forEach(c => {
+      const pm      = PLATFORM_META[c.platform] || PLATFORM_META.other;
+      const pick    = c.picks && c.picks.length ? c.picks[Math.floor(Math.random() * c.picks.length)] : null;
+      const initials = (c.realName || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+
+      const card = document.createElement('div');
+      card.className = `creator-card ${pm.cardClass}`;
+      card.innerHTML = `
+        <div class="creator-top">
+          <div class="creator-avatar">${pm.icon}</div>
+          <div class="creator-meta">
+            <div class="creator-real-name">${esc(c.realName)}</div>
+            <div class="creator-handle">${esc(c.handle)}</div>
+            <span class="creator-platform-badge ${pm.badgeClass}">${pm.label}</span>
+          </div>
+        </div>
+        <div class="creator-bio">${esc(c.bio)}</div>
+        <div class="creator-footer">
+          <a href="${c.profileUrl}" target="_blank" rel="noopener" class="creator-visit-btn">Visit ${pm.label}</a>
+          ${pick ? `
+          <div class="creator-pick-wrap">
+            <div class="creator-pick-label">Featured pick</div>
+            <a href="${pick.url}" target="_blank" rel="noopener" class="creator-pick-link">${esc(pick.title)}</a>
+          </div>` : ''}
+        </div>`;
+      grid.appendChild(card);
+    });
+  }
 
   /* ══ FRIENDS LETTERBOXD REVIEWS ══ */
   const LB_FRIENDS = [
