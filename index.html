@@ -746,7 +746,7 @@
   .creator-visit-btn:hover{background:#e8940f;transform:scale(1.04);}
   .creator-picks-row{margin-top:14px;}
   .creator-picks-label{font-size:.58rem;color:#555;font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-bottom:8px;}
-  .creator-thumb{position:relative;width:100%;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#1a1a1a;cursor:pointer;display:block;transition:.15s;}
+  .creator-thumb{position:relative;width:100%;height:190px;border-radius:12px;overflow:hidden;background:#1a1a1a;cursor:pointer;display:block;transition:.15s;}
   .creator-thumb:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.7);}
   .creator-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
   .creator-thumb-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.25);transition:background .15s;}
@@ -3159,22 +3159,23 @@
     if (name === 'backed') { renderBackedTab(); }
     if (name === 'series') {
       if (nowAiringHeroes.length) {
-        // Pick a fresh random TV show hero every time — mirrors loadHeroBackdrop variety
         const pick   = nowAiringHeroes[Math.floor(Math.random() * nowAiringHeroes.length)];
         const tvHero = { backdrop_path: pick.backdrop_path, title: pick.name || pick.original_name || '', media_type: 'tv' };
         lastTvHero = tvHero;
         setHeroBackdrop(tvHero);
       } else if (lastTvHero) {
-        setHeroBackdrop(lastTvHero); // fallback before Now Airing loads
+        setHeroBackdrop(lastTvHero);
       }
       if (!nowAiringLoaded) { loadNowAiring(); nowAiringLoaded = true; }
-    } else {
-      loadHeroBackdrop(); // fresh random movie hero on every non-series tab
+    } else if (name !== 'backed') {
+      loadHeroBackdrop(); // fresh random movie hero — skip on Backed tab
     }
     // Switch tagline
     const tagEl = document.querySelector('.tagline');
     if (tagEl) tagEl.innerHTML = name === 'series'
       ? 'Your TV &nbsp;·&nbsp; Your Mood &nbsp;·&nbsp; Your Series'
+      : name === 'backed'
+      ? 'Discover &nbsp;·&nbsp; Support &nbsp;·&nbsp; Share the Love'
       : 'Your Cinema &nbsp;·&nbsp; Your Mood &nbsp;·&nbsp; Your Film';
     window.scrollTo({ top: 0, behavior: 'smooth' });
     history.replaceState(null, '', '#' + name);
