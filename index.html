@@ -1223,10 +1223,30 @@
         <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
         <span id="listDetailLikeCount">0</span> Likes
       </button>
-      <button class="list-action-btn" onclick="shareListDetail()">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
-        Share
-      </button>
+      <div style="position:relative">
+        <button class="list-action-btn" onclick="toggleShareMenu('listShareMenu',event)">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
+          Share
+        </button>
+        <div class="card-share-menu" id="listShareMenu">
+          <button class="card-share-opt" onclick="pmShareFromMenu(this,'whatsapp')">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.862L.054 23.625a.75.75 0 00.92.92l5.733-1.487A11.955 11.955 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/></svg>
+            WhatsApp
+          </button>
+          <button class="card-share-opt" onclick="pmShareFromMenu(this,'x')">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="#fff"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.259 5.631 5.905-5.631zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            X / Twitter
+          </button>
+          <button class="card-share-opt" onclick="pmShareFromMenu(this,'instagram')">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="#E1306C"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+            Instagram
+          </button>
+          <button class="card-share-opt" onclick="pmShareFromMenu(this,'copy')">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="#aaa"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+            Copy link
+          </button>
+        </div>
+      </div>
     </div>
     <div id="listDetailGrid" class="list-posters-grid"></div>
   </div>
@@ -1389,15 +1409,19 @@
             Share
           </button>
           <div class="modal-share-menu" id="modalShareMenu">
-            <button class="modal-share-opt" data-platform="whatsapp">
+            <button class="modal-share-opt" onclick="pmShareFromMenu(this,'whatsapp')">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.862L.054 23.625a.75.75 0 00.92.92l5.733-1.487A11.955 11.955 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.714 9.714 0 01-4.964-1.362l-.355-.213-3.685.956.984-3.588-.233-.371A9.712 9.712 0 012.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg>
               WhatsApp
             </button>
-            <button class="modal-share-opt" data-platform="twitter">
+            <button class="modal-share-opt" onclick="pmShareFromMenu(this,'x')">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="#ccc"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.259 5.631 5.905-5.631zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
               X / Twitter
             </button>
-            <button class="modal-share-opt" data-platform="copy">
+            <button class="modal-share-opt" onclick="pmShareFromMenu(this,'instagram')">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="#E1306C"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+              Instagram
+            </button>
+            <button class="modal-share-opt" onclick="pmShareFromMenu(this,'copy')">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="#aaa"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
               Copy link
             </button>
@@ -1750,15 +1774,19 @@
             Share
           </button>
           <div class="card-share-menu">
-            <button class="card-share-opt" data-platform="whatsapp">
+            <button class="card-share-opt" onclick="pmShareFromMenu(this,'whatsapp')">
               <svg viewBox="0 0 24 24" width="15" height="15" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.862L.054 23.625a.75.75 0 00.92.92l5.733-1.487A11.955 11.955 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/></svg>
               WhatsApp
             </button>
-            <button class="card-share-opt" data-platform="twitter">
+            <button class="card-share-opt" onclick="pmShareFromMenu(this,'x')">
               <svg viewBox="0 0 24 24" width="15" height="15" fill="#fff"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.259 5.631 5.905-5.631zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
               X / Twitter
             </button>
-            <button class="card-share-opt" data-platform="copy">
+            <button class="card-share-opt" onclick="pmShareFromMenu(this,'instagram')">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="#E1306C"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+              Instagram
+            </button>
+            <button class="card-share-opt" onclick="pmShareFromMenu(this,'copy')">
               <svg viewBox="0 0 24 24" width="15" height="15" fill="#aaa"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
               Copy link
             </button>
@@ -1787,28 +1815,15 @@
 
     // Share button
     const shareBtn = card.querySelector('.card-share-btn');
+    const shareMenu = card.querySelector('.card-share-menu');
+    shareMenu.dataset.title = m.title;
+    shareMenu.dataset.text  = m.title + ' (' + year + ') — check it out on PMovies 📺';
+    shareMenu.dataset.url   = 'https://pmovies.github.io/pmovies-app/#series';
     shareBtn.addEventListener('click', e => {
       e.stopPropagation();
-      document.querySelectorAll('.card-share-menu.open').forEach(mn => mn.classList.remove('open'));
-      card.querySelector('.card-share-menu').classList.toggle('open');
-    });
-    card.querySelectorAll('.card-share-opt').forEach(opt => {
-      opt.addEventListener('click', e => {
-        e.stopPropagation();
-        const url = 'https://pmovies.github.io/pmovies-app/#series';
-        const msg = m.title + ' (' + year + ') — check it out on PMovies 📺';
-        if (opt.dataset.platform === 'whatsapp') {
-          window.open('https://wa.me/?text=' + encodeURIComponent(msg + ' ' + url), '_blank');
-        } else if (opt.dataset.platform === 'twitter') {
-          window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(msg) + '&url=' + encodeURIComponent(url) + '&via=PMovies155', '_blank');
-        } else if (opt.dataset.platform === 'copy') {
-          navigator.clipboard.writeText(msg + ' ' + url).then(() => {
-            const prev = opt.innerHTML; opt.innerHTML = '✓ Copied!';
-            setTimeout(() => opt.innerHTML = prev, 1500);
-          });
-        }
-        card.querySelector('.card-share-menu').classList.remove('open');
-      });
+      const wasOpen = shareMenu.classList.contains('open');
+      document.querySelectorAll('.card-share-menu.open, .modal-share-menu.open').forEach(el => el.classList.remove('open'));
+      if (!wasOpen) shareMenu.classList.add('open');
     });
 
     // Card click → modal
@@ -2329,15 +2344,19 @@
             Share
           </button>
           <div class="card-share-menu">
-            <button class="card-share-opt" data-platform="whatsapp">
+            <button class="card-share-opt" onclick="pmShareFromMenu(this,'whatsapp')">
               <svg viewBox="0 0 24 24" width="15" height="15" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.862L.054 23.625a.75.75 0 00.92.92l5.733-1.487A11.955 11.955 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.714 9.714 0 01-4.964-1.362l-.355-.213-3.685.956.984-3.588-.233-.371A9.712 9.712 0 012.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg>
               WhatsApp
             </button>
-            <button class="card-share-opt" data-platform="twitter">
+            <button class="card-share-opt" onclick="pmShareFromMenu(this,'x')">
               <svg viewBox="0 0 24 24" width="15" height="15" fill="#fff"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.259 5.631 5.905-5.631zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
               X / Twitter
             </button>
-            <button class="card-share-opt" data-platform="copy">
+            <button class="card-share-opt" onclick="pmShareFromMenu(this,'instagram')">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="#E1306C"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+              Instagram
+            </button>
+            <button class="card-share-opt" onclick="pmShareFromMenu(this,'copy')">
               <svg viewBox="0 0 24 24" width="15" height="15" fill="#aaa"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
               Copy link
             </button>
@@ -2354,33 +2373,17 @@
     }
 
     const shareBtn = card.querySelector('.card-share-btn');
+    const shareMenu = card.querySelector('.card-share-menu');
+    const shareUrl  = 'https://pmovies.github.io/pmovies-app/';
+    const shareMsg  = m.title + ' (' + year + ') — check it out on PMovies 🎬';
+    shareMenu.dataset.title = m.title;
+    shareMenu.dataset.text  = shareMsg;
+    shareMenu.dataset.url   = shareUrl;
     shareBtn.addEventListener('click', e => {
       e.stopPropagation();
-      document.querySelectorAll('.card-share-menu.open').forEach(mn => mn.classList.remove('open'));
-      card.querySelector('.card-share-menu').classList.toggle('open');
-    });
-
-    card.querySelectorAll('.card-share-opt').forEach(opt => {
-      opt.addEventListener('click', e => {
-        e.stopPropagation();
-        const platform = opt.dataset.platform;
-        const title    = m.title;
-        const url      = 'https://pmovies.github.io/pmovies-app/';
-        const msg      = title + ' (' + year + ') — check it out on PMovies \uD83C\uDFAC';
-        if (platform === 'whatsapp') {
-          window.open('https://wa.me/?text=' + encodeURIComponent(msg + ' ' + url), '_blank');
-        } else if (platform === 'twitter') {
-          window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(msg) + '&url=' + encodeURIComponent(url) + '&via=PMovies155', '_blank');
-        } else if (platform === 'copy') {
-          navigator.clipboard.writeText(msg + ' ' + url).then(() => {
-            const lbl = opt.querySelector('svg + *') || opt;
-            const prev = opt.innerHTML;
-            opt.innerHTML = '✓ Copied!';
-            setTimeout(() => opt.innerHTML = prev, 1500);
-          });
-        }
-        card.querySelector('.card-share-menu').classList.remove('open');
-      });
+      const wasOpen = shareMenu.classList.contains('open');
+      document.querySelectorAll('.card-share-menu.open, .modal-share-menu.open').forEach(m => m.classList.remove('open'));
+      if (!wasOpen) shareMenu.classList.add('open');
     });
 
     return card;
@@ -2464,18 +2467,12 @@
     document.getElementById('modalLink').href = `https://www.themoviedb.org/${m.media_type === 'tv' ? 'tv' : 'movie'}/${m.id}`;
     const shareBtn  = document.getElementById('modalShareBtn');
     const shareMenu = document.getElementById('modalShareMenu');
-    shareBtn.onclick = (e) => { e.stopPropagation(); shareMenu.classList.toggle('open'); };
-    document.querySelectorAll('.modal-share-opt').forEach(opt => {
-      opt.onclick = (e) => {
-        e.stopPropagation();
-        const url = 'https://pmovies.github.io/pmovies-app/';
-        const msg = m.title + ' (' + (m.release_date||'').slice(0,4) + ') — check it out on PMovies \uD83C\uDFAC';
-        if (opt.dataset.platform === 'whatsapp') window.open('https://wa.me/?text=' + encodeURIComponent(msg + ' ' + url), '_blank');
-        else if (opt.dataset.platform === 'twitter') window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(msg) + '&url=' + encodeURIComponent(url) + '&via=PMovies155', '_blank');
-        else if (opt.dataset.platform === 'copy') navigator.clipboard.writeText(msg + ' ' + url).then(() => { opt.textContent = '✓ Copied!'; setTimeout(() => location.reload(), 1500); });
-        shareMenu.classList.remove('open');
-      };
-    });
+    const shareUrl  = 'https://pmovies.github.io/pmovies-app/';
+    const shareMsg  = m.title + ' (' + (m.release_date||'').slice(0,4) + ') — check it out on PMovies 🎬';
+    shareMenu.dataset.title = m.title;
+    shareMenu.dataset.text  = shareMsg;
+    shareMenu.dataset.url   = shareUrl;
+    shareBtn.onclick = (e) => toggleShareMenu('modalShareMenu', e);
     document.getElementById('modalGenres').innerHTML = (m.genre_ids||[]).map(id => `<span class="genre-tag">${GENRE_NAMES[id]||id}</span>`).join('');
     // awards badges
     const awardsEl = document.getElementById('modalAwards');
@@ -2928,21 +2925,6 @@
     const countEl = btn.querySelector('.like-count');
     countEl.textContent = counts[fp] > 0 ? counts[fp] : '';
   }
-  function shareFanReview(name, movie, text, stars) {
-    const shareText = `${stars} — ${name} on "${movie}":\n"${text}"\n\nvia PMovies pmovies.github.io/pmovies-app`;
-    if (navigator.share) {
-      navigator.share({ title: `${name}'s review of ${movie}`, text: shareText }).catch(()=>{});
-    } else {
-      navigator.clipboard.writeText(shareText).then(() => {
-        const btn = event.currentTarget;
-        const orig = btn.innerHTML;
-        btn.innerHTML = '<span class="fa-icon">✓</span> Copied!';
-        btn.style.borderColor = 'rgba(80,200,80,.4)';
-        btn.style.color = '#5cb85c';
-        setTimeout(() => { btn.innerHTML = orig; btn.style.borderColor = ''; btn.style.color = ''; }, 2000);
-      }).catch(()=>{});
-    }
-  }
 
   function renderFanReviews(reviews, limit) {
     allReviews = reviews;
@@ -2991,10 +2973,33 @@
               <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
               <span class="like-count">${likes > 0 ? likes : ''}</span>
             </button>
-            <button class="fan-action-btn" onclick="shareFanReview('${esc(r.name||'Anonymous')}','${esc(r.movie||'')}','${esc((r.text||'').replace(/'/g,"\\'"))}','${stars}')">
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
-              Share
-            </button>
+            <div style="position:relative">
+              <button class="fan-action-btn" onclick="toggleShareMenu('fsm-${fp}',event)">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
+                Share
+              </button>
+              <div class="card-share-menu" id="fsm-${fp}"
+                   data-title="${esc(r.name||'Anonymous')} on ${esc(r.movie||'')}"
+                   data-text="${esc(stars + ' — ' + (r.name||'Anonymous') + ' reviewing &quot;' + (r.movie||'') + '&quot;' + (r.text ? ': &quot;' + (r.text).slice(0,120) + (r.text.length>120?'…':'') + '&quot;' : ''))}"
+                   data-url="https://pmovies.github.io/pmovies-app/#reviews">
+                <button class="card-share-opt" onclick="pmShareFromMenu(this,'whatsapp')">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.862L.054 23.625a.75.75 0 00.92.92l5.733-1.487A11.955 11.955 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/></svg>
+                  WhatsApp
+                </button>
+                <button class="card-share-opt" onclick="pmShareFromMenu(this,'x')">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="#fff"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.259 5.631 5.905-5.631zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                  X / Twitter
+                </button>
+                <button class="card-share-opt" onclick="pmShareFromMenu(this,'instagram')">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="#E1306C"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                  Instagram
+                </button>
+                <button class="card-share-opt" onclick="pmShareFromMenu(this,'copy')">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="#aaa"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                  Copy link
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       `;
@@ -3684,6 +3689,7 @@
     document.getElementById('listDetailSubtitle').textContent = (list.desc ? list.desc + '  ·  ' : '') + movies.length + ' film' + (movies.length !== 1 ? 's' : '');
     document.getElementById('listDetailLikeCount').textContent = list.likes || 0;
     document.getElementById('listDetailLikeBtn').classList.toggle('liked', liked);
+    updateListShareData();
     const detailGrid = document.getElementById('listDetailGrid');
     detailGrid.innerHTML = '';
     movies.forEach(m => {
@@ -3743,11 +3749,17 @@
   }
 
   function shareListDetail() {
+    // kept for any legacy calls — the button now uses toggleShareMenu directly
+  }
+
+  function updateListShareData() {
     if (!currentListData) return;
-    const url = window.location.origin + window.location.pathname + '#lists';
-    const text = `Check out this movie list on PMovies: "${currentListData.title}"`;
-    if (navigator.share) { navigator.share({ title: currentListData.title, text, url }).catch(()=>{}); }
-    else { window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(url) + '&via=PMovies155', '_blank'); }
+    const menu = document.getElementById('listShareMenu');
+    if (!menu) return;
+    const url  = window.location.origin + window.location.pathname + '#lists';
+    menu.dataset.title = currentListData.title;
+    menu.dataset.text  = `Check out this movie list on PMovies: "${currentListData.title}"`;
+    menu.dataset.url   = url;
   }
 
   /* Admin */
@@ -3889,10 +3901,70 @@
       </div>`).join('');
   }
 
-  /* ══ SHARE ══ */
+  /* ══ SHARE UTILITIES ══ */
+
+  // Close every open share menu on any outside click
   document.addEventListener('click', () => {
-    document.querySelectorAll('.share-menu.open').forEach(m => m.classList.remove('open'));
+    document.querySelectorAll('.card-share-menu.open, .modal-share-menu.open').forEach(m => m.classList.remove('open'));
   });
+
+  // Toggle a specific share menu by element ID
+  function toggleShareMenu(menuId, e) {
+    if (e) e.stopPropagation();
+    const menu = document.getElementById(menuId);
+    if (!menu) return;
+    const wasOpen = menu.classList.contains('open');
+    document.querySelectorAll('.card-share-menu.open, .modal-share-menu.open').forEach(m => m.classList.remove('open'));
+    if (!wasOpen) menu.classList.add('open');
+  }
+
+  // Central share dispatcher used by every share menu on the site
+  function pmShare(platform, title, text, url, el) {
+    if (typeof event !== 'undefined' && event?.stopPropagation) event.stopPropagation();
+    document.querySelectorAll('.card-share-menu.open, .modal-share-menu.open').forEach(m => m.classList.remove('open'));
+
+    const full = text + '\n\n' + url;
+
+    if (platform === 'whatsapp') {
+      window.open('https://wa.me/?text=' + encodeURIComponent(full), '_blank');
+
+    } else if (platform === 'x') {
+      window.open('https://x.com/intent/tweet?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(url) + '&via=PMovies155', '_blank');
+
+    } else if (platform === 'instagram') {
+      // Mobile: native share sheet (includes Instagram app)
+      if (navigator.share) {
+        navigator.share({ title, text: full }).catch(() => {});
+      } else {
+        // Desktop: copy to clipboard + hint toast
+        navigator.clipboard.writeText(full).then(() => {
+          const t = document.createElement('div');
+          t.textContent = '✓ Copied! Paste it in Instagram 📸';
+          t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1a1a1a;border:1px solid #E1306C;border-radius:10px;padding:10px 20px;color:#E1306C;font-size:.82rem;font-weight:700;z-index:99999;white-space:nowrap;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.6);';
+          document.body.appendChild(t);
+          setTimeout(() => t.remove(), 2800);
+        }).catch(() => {});
+      }
+
+    } else if (platform === 'copy') {
+      navigator.clipboard.writeText(url).then(() => {
+        if (el) {
+          const prev = el.innerHTML;
+          el.textContent = '✓ Copied!';
+          setTimeout(() => { el.innerHTML = prev; }, 1500);
+        }
+      }).catch(() => {});
+    }
+  }
+
+  // Read share data stored on the menu element itself (avoids inline escaping)
+  function pmShareFromMenu(btn, platform) {
+    const menu  = btn.closest('.card-share-menu, .modal-share-menu');
+    const title = menu?.dataset.title || '';
+    const text  = menu?.dataset.text  || '';
+    const url   = menu?.dataset.url   || 'https://pmovies.github.io/pmovies-app/';
+    pmShare(platform, title, text, url, btn);
+  }
 
 
   /* ══ SURPRISE ME ══ */
