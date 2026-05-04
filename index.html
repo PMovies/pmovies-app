@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <meta http-equiv="Cache-Control" content="no-cache, must-revalidate"/>
   <meta http-equiv="Pragma" content="no-cache"/>
   <!-- Google Analytics GA4 -->
@@ -375,6 +375,12 @@
       .modal-poster{object-position:center top}
       .movies-grid{grid-template-columns:repeat(2,1fr);gap:12px}
       .trending-scroll .t-card{flex:0 0 110px}
+      /* Discover cards: hide overview & actions, let poster carry the card */
+      .movie-overview{display:none}
+      .card-actions{display:none}
+      /* Community top100: allow title to wrap to 2 lines, hide genre tags */
+      .top100-movie-title{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:.85rem}
+      .top100-genres{display:none}
     }
   
   /* ── LETTERBOXD ── */
@@ -682,7 +688,7 @@
   .error-msg { text-align:center; padding:32px 20px; color:var(--muted); font-size:.9rem; }
   /* ── INSTALL BANNER ── */
   .install-banner{position:fixed;bottom:-120px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:520px;background:#1a1a1a;border:1px solid rgba(245,166,35,.35);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;z-index:9998;box-shadow:0 8px 32px rgba(0,0,0,.6);transition:bottom .4s cubic-bezier(.34,1.56,.64,1);}
-  .install-banner.show{bottom:20px;}
+  .install-banner.show{bottom:calc(20px + env(safe-area-inset-bottom, 0px));}
   .install-banner-icon{width:48px;height:48px;border-radius:12px;flex-shrink:0;object-fit:cover;}
   .install-banner-text{flex:1;min-width:0;}
   .install-banner-text strong{display:block;font-size:.88rem;font-weight:700;color:var(--text);margin-bottom:2px;}
@@ -693,7 +699,7 @@
   .install-banner-dismiss:hover{color:var(--text);}
   /* iOS install tip */
   .ios-tip{position:fixed;bottom:-200px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:360px;background:#1a1a1a;border:1px solid rgba(245,166,35,.35);border-radius:16px;padding:16px;z-index:9998;box-shadow:0 8px 32px rgba(0,0,0,.6);transition:bottom .4s cubic-bezier(.34,1.56,.64,1);text-align:center;}
-  .ios-tip.show{bottom:20px;}
+  .ios-tip.show{bottom:calc(20px + env(safe-area-inset-bottom, 0px));}
   .ios-tip-title{font-size:.9rem;font-weight:700;color:var(--orange);margin-bottom:8px;}
   .ios-tip-steps{font-size:.78rem;color:var(--muted2);line-height:1.7;margin-bottom:12px;}
   .ios-tip-steps em{color:var(--text);font-style:normal;font-weight:600;}
