@@ -4580,6 +4580,135 @@ const TOP100_MIN_VOTES  = 2;   // min votes to appear on list
 const TOP100_MAX_MOVIES = 100;
 
 // ── Browser fingerprint (survives incognito — based on hardware signals) ──
+/* ══════════════════════════════════════════════════════
+   BEHAVIORAL FINGERPRINT — passive collector
+   Runs silently from page load, sampling interaction
+   signals that bots/scripts cannot reliably replicate.
+═══════════════════════════════════════════════════════ */
+const _bfp = {
+  mouseMoves : [],   // [x, y, t]
+  clicks     : [],   // [x, y, t]
+  scrolls    : [],   // [scrollY, t]
+  touches    : [],   // [x, y, t]
+  keyTimes   : [],   // inter-keystroke ms intervals
+  pageLoad   : Date.now(),
+  _lastKey   : 0,
+  _lastMouse : 0
+};
+
+(function _initBfp() {
+  document.addEventListener('mousemove', e => {
+    const now = Date.now();
+    if (now - _bfp._lastMouse < 80) return;          // throttle to ~12 Hz
+    _bfp._lastMouse = now;
+    if (_bfp.mouseMoves.length < 60)
+      _bfp.mouseMoves.push([e.clientX|0, e.clientY|0, now]);
+  }, {passive:true});
+
+  document.addEventListener('click', e => {
+    if (_bfp.clicks.length < 25)
+      _bfp.clicks.push([e.clientX|0, e.clientY|0, Date.now()]);
+  }, {passive:true});
+
+  document.addEventListener('scroll', () => {
+    if (_bfp.scrolls.length < 40)
+      _bfp.scrolls.push([window.scrollY|0, Date.now()]);
+  }, {passive:true});
+
+  document.addEventListener('touchstart', e => {
+    if (_bfp.touches.length < 30 && e.touches[0])
+      _bfp.touches.push([e.touches[0].clientX|0, e.touches[0].clientY|0, Date.now()]);
+  }, {passive:true});
+
+  document.addEventListener('keydown', () => {
+    const now = Date.now();
+    if (_bfp._lastKey && _bfp.keyTimes.length < 40)
+      _bfp.keyTimes.push(now - _bfp._lastKey);
+    _bfp._lastKey = now;
+  }, {passive:true});
+})();
+
+function _bfpVelocityVariance() {
+  const pts = _bfp.mouseMoves;
+  if (pts.length < 4) return 0;
+  const vels = [];
+  for (let i = 1; i < pts.length; i++) {
+    const dt = pts[i][2] - pts[i-1][2];
+    if (dt <= 0) continue;
+    const dx = pts[i][0] - pts[i-1][0];
+    const dy = pts[i][1] - pts[i-1][1];
+    vels.push(Math.sqrt(dx*dx + dy*dy) / dt);
+  }
+  if (vels.length < 3) return 0;
+  const mean = vels.reduce((s,v) => s+v, 0) / vels.length;
+  return vels.reduce((s,v) => s + (v-mean)**2, 0) / vels.length;
+}
+
+function _bfpKeystrokeVariance() {
+  const kt = _bfp.keyTimes;
+  if (kt.length < 3) return 0;
+  const mean = kt.reduce((s,v) => s+v, 0) / kt.length;
+  return kt.reduce((s,v) => s + (v-mean)**2, 0) / kt.length;
+}
+
+/**
+ * Returns a 0–100 score. ≥30 = likely human.
+ * Bots typically score 0–15 (no movement, instant timing, no scroll).
+ */
+function getBehavioralScore() {
+  let score = 0;
+  const elapsed = Date.now() - _bfp.pageLoad;
+
+  // Time on page (bots vote within milliseconds)
+  if (elapsed > 2000)  score += 10;
+  if (elapsed > 8000)  score += 10;
+  if (elapsed > 20000) score += 5;
+
+  // Has pointer/touch interaction
+  if (_bfp.mouseMoves.length > 3)  score += 15;
+  if (_bfp.touches.length > 1)     score += 15;
+
+  // Scroll activity (bots rarely scroll)
+  if (_bfp.scrolls.length > 0)  score += 10;
+  if (_bfp.scrolls.length > 3)  score += 5;
+
+  // Multiple clicks (browsed the page)
+  if (_bfp.clicks.length > 1)  score += 5;
+  if (_bfp.clicks.length > 4)  score += 5;
+
+  // Mouse velocity variance — human hands produce non-uniform movement
+  const vv = _bfpVelocityVariance();
+  if (vv > 0.5)  score += 10;
+  if (vv > 5)    score += 5;
+
+  // Keystroke timing variance — human typing is irregular
+  const kv = _bfpKeystrokeVariance();
+  if (kv > 200)  score += 5;
+  if (kv > 2000) score += 5;
+
+  return Math.min(100, score);
+}
+
+/** Returns a compact string of behavioral signals included in the fp hash */
+function _bfpEntropy() {
+  const elapsed = Math.floor((Date.now() - _bfp.pageLoad) / 1000);
+  const vv      = Math.floor(_bfpVelocityVariance() * 10);
+  const kv      = Math.floor(_bfpKeystrokeVariance());
+  return [
+    `m${_bfp.mouseMoves.length}`,
+    `c${_bfp.clicks.length}`,
+    `s${_bfp.scrolls.length}`,
+    `t${_bfp.touches.length}`,
+    `k${_bfp.keyTimes.length}`,
+    `age${elapsed}`,
+    `vv${vv}`,
+    `kv${kv}`
+  ].join('_');
+}
+
+/* ══════════════════════════════════════════════════════
+   HARDWARE / CANVAS FINGERPRINT (device identity)
+═══════════════════════════════════════════════════════ */
 let _cachedFp = null;
 async function getBrowserFingerprint() {
   if (_cachedFp) return _cachedFp;
@@ -4599,6 +4728,8 @@ async function getBrowserFingerprint() {
     x.fillStyle = 'rgba(80,200,0,.7)'; x.fillText('fp2025', 4, 36);
     signals.push(c.toDataURL().slice(-60));
   } catch(_) {}
+  // Include behavioral entropy so the fp also encodes session behavior
+  signals.push(_bfpEntropy());
   const raw  = signals.join('||');
   const buf  = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
   const fp   = 'fp_' + Array.from(new Uint8Array(buf)).slice(0,10).map(b=>b.toString(16).padStart(2,'0')).join('');
@@ -4695,6 +4826,13 @@ async function evpConfirm() {
     return;
   }
 
+  // Behavioral check — reject if session looks bot-like
+  const bScore = getBehavioralScore();
+  if (bScore < 15) {
+    if (err) err.textContent = 'Unusual activity detected. Please browse the site a bit more before voting.';
+    return;
+  }
+
   if (btn) { btn.disabled = true; btn.textContent = 'Checking…'; }
   try {
     const hash  = await hashEmail(email);
@@ -4741,10 +4879,10 @@ async function submitAllVotes(email, hash) {
       return Promise.all([writeVote, writeFp]);
     }));
 
-    // Record email hash so it can't be reused
+    // Record email hash with behavioral score (for auditing)
     await fetch(`${RTDB}/voterEmails/${hash}.json`, {
       method: 'PUT', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ t: Date.now() })
+      body: JSON.stringify({ t: Date.now(), bScore: getBehavioralScore() })
     });
 
     // Move pending → submitted
