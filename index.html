@@ -4191,16 +4191,18 @@
             const newWorker = reg.installing;
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                console.log('[PWA] New version ready — waiting for controllerchange');
-                // Toast will show via controllerchange event above
+                console.log('[PWA] New version ready — SW will broadcast SW_UPDATED on activate');
               }
             });
           });
         }).catch(e => console.warn('[PWA] SW failed', e));
 
-        // When SW takes control, show a gentle toast instead of force-reloading
+        // When the new SW activates and broadcasts SW_UPDATED, show the toast.
+        // Using postMessage (sent from sw.js activate) instead of controllerchange
+        // so it only fires on real updates — not on the very first install.
         let reloading = false;
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
+        navigator.serviceWorker.addEventListener('message', e => {
+          if (e.data?.type !== 'SW_UPDATED') return;
           if (reloading) return;
           reloading = true;
           const toast = document.getElementById('swUpdateToast');

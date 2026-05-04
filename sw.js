@@ -1,5 +1,6 @@
-const CACHE = 'pmovies-v33';
-const SHELL = [
+const CACHE_NAME = 'pmovies-v29';
+
+const APP_SHELL = [
   '/pmovies-app/',
   '/pmovies-app/index.html',
   '/pmovies-app/manifest.json',
@@ -7,54 +8,93 @@ const SHELL = [
   '/pmovies-app/icons/icon-512.png',
 ];
 
-/* ── Install: pre-cache the app shell ── */
-self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(SHELL))
+/* ───────── INSTALL ───────── */
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL))
   );
   self.skipWaiting();
 });
 
-/* ── Activate: delete old caches ── */
-self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    )
+/* ───────── ACTIVATE ───────── */
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    (async () => {
+      // Delete all old caches so users never get a stale version
+      const keys = await caches.keys();
+      await Promise.all(
+        keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
+      );
+
+      // Take control of all open tabs immediately
+      await self.clients.claim();
+
+      // Tell every open tab a new version is ready → triggers the toast in index.html
+      const clients = await self.clients.matchAll({ type: 'window' });
+      clients.forEach(client => client.postMessage({ type: 'SW_UPDATED' }));
+    })()
   );
-  self.clients.claim();
 });
 
-/* ── Fetch strategy ── */
+/* ───────── FETCH ───────── */
+
+// All hosts that serve dynamic / live data — always go to network first,
+// fall back to cache only when offline.
 const API_HOSTS = [
   'api.themoviedb.org',
   'image.tmdb.org',
-  'googleapis.com',
-  'firestore.googleapis.com',
+  'googleapis.com',                  // covers Firestore & other Google APIs
+  'pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app',  // Firebase RTDB (votes, reviews, lists)
   'rss2json.com',
   'www.youtube.com',
+  'img.youtube.com',                 // YouTube thumbnails used in BACKED tab
 ];
 
-self.addEventListener('fetch', e => {
-  const url = new URL(e.request.url);
+function isApiRequest(url) {
+  return API_HOSTS.some(host => url.hostname.includes(host));
+}
 
-  // Always go network-first for live API data
-  if (API_HOSTS.some(h => url.hostname.includes(h))) {
-    e.respondWith(
-      fetch(e.request).catch(() => caches.match(e.request))
+self.addEventListener('fetch', event => {
+  const url = new URL(event.request.url);
+
+  /* ── 1. API / dynamic data: network-first ── */
+  if (isApiRequest(url)) {
+    event.respondWith(
+      fetch(event.request)
+        .then(res => {
+          // Cache a fresh copy for offline fallback
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          return res;
+        })
+        .catch(() => caches.match(event.request))
     );
     return;
   }
 
-  // Cache-first for the app shell
-  e.respondWith(
-    caches.match(e.request).then(cached => {
-      if (cached) return cached;
-      return fetch(e.request).then(res => {
-        if (res.ok) {
+  /* ── 2. HTML navigation: network-first ── */
+  // Ensures users always load the latest index.html when online.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then(res => {
           const clone = res.clone();
-          caches.open(CACHE).then(c => c.put(e.request, clone));
-        }
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          return res;
+        })
+        .catch(() => caches.match('/pmovies-app/index.html'))
+    );
+    return;
+  }
+
+  /* ── 3. Static assets (icons, manifest …): cache-first ── */
+  event.respondWith(
+    caches.match(event.request).then(cached => {
+      if (cached) return cached;
+      return fetch(event.request).then(res => {
+        if (!res || res.status !== 200) return res;
+        const clone = res.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         return res;
       });
     })
