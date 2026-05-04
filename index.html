@@ -3181,12 +3181,6 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
     history.replaceState(null, '', '#' + name);
   }
-  // Restore tab from URL hash on load
-  (function() {
-    const hash = location.hash.replace('#', '');
-    if (['discover','reviews','community','lists','series','backed'].includes(hash)) switchTab(hash);
-  })();
-
   /* ══ BACKED — CREATOR SPOTLIGHT ══ */
   // Base Monday: 2026-05-04. Each entry = one week's 3 creators.
   // To update: add a new object to BACKED_CYCLES each Monday.
@@ -3364,6 +3358,12 @@
       grid.appendChild(card);
     });
   }
+
+  // Restore tab from URL hash on load — MUST be after all tab data/functions are defined
+  (function() {
+    const hash = location.hash.replace('#', '');
+    if (['discover','reviews','community','lists','series','backed'].includes(hash)) switchTab(hash);
+  })();
 
   /* ══ FRIENDS LETTERBOXD REVIEWS ══ */
   const LB_FRIENDS = [
