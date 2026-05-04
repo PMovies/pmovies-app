@@ -620,6 +620,11 @@
   .fan-review-stars{ color:#f5a623; font-size:.95rem; letter-spacing:1px; }
   .fan-review-date { color:#555; font-size:.72rem; }
   .fan-review-body { color:#bbb; font-size:.83rem; line-height:1.6; }
+  .fan-review-actions { display:flex; gap:8px; margin-top:10px; padding-top:10px; border-top:1px solid #1e1e1e; }
+  .fan-action-btn { display:flex; align-items:center; gap:5px; background:transparent; border:1px solid #252525; border-radius:20px; color:#666; font-size:.72rem; font-weight:600; padding:5px 12px; cursor:pointer; transition:all .2s; }
+  .fan-action-btn:hover { border-color:#444; color:#ccc; }
+  .fan-action-btn.liked { border-color:rgba(255,80,80,.4); color:#ff5555; background:rgba(255,80,80,.07); }
+  .fan-action-btn .fa-icon { font-size:.85rem; line-height:1; }
   .fan-empty { color:#555; text-align:center; padding:32px; font-size:.9rem; }
   /* Fan Records toggle */
   .fan-records-toggle { display:flex; gap:8px; margin-bottom:16px; }
@@ -2865,6 +2870,50 @@
   const FAN_PAGE_SIZE = 6;
   let fanReviewsShown = FAN_PAGE_SIZE;
 
+  // ── Fan Review Like & Share ───────────────────────────────────
+  function fanReviewFp(r) {
+    return btoa(encodeURIComponent(`${(r.name||'').toLowerCase()}|${(r.movie||'').toLowerCase()}|${(r.text||'').slice(0,40).toLowerCase()}`)).slice(0,24);
+  }
+  function getFanLikes(fp) {
+    try { return JSON.parse(localStorage.getItem('fanLikeCounts') || '{}')[fp] || 0; } catch(_){ return 0; }
+  }
+  function hasFanLiked(fp) {
+    try { return (JSON.parse(localStorage.getItem('fanLikedSet') || '[]')).includes(fp); } catch(_){ return false; }
+  }
+  function toggleFanLike(btn) {
+    const fp    = btn.dataset.fp;
+    const liked = hasFanLiked(fp);
+    // Update liked set
+    let likedSet = []; try { likedSet = JSON.parse(localStorage.getItem('fanLikedSet') || '[]'); } catch(_){}
+    if (liked) { likedSet = likedSet.filter(x => x !== fp); } else { likedSet.push(fp); }
+    localStorage.setItem('fanLikedSet', JSON.stringify(likedSet));
+    // Update counts
+    let counts = {}; try { counts = JSON.parse(localStorage.getItem('fanLikeCounts') || '{}'); } catch(_){}
+    counts[fp] = Math.max(0, (counts[fp] || 0) + (liked ? -1 : 1));
+    localStorage.setItem('fanLikeCounts', JSON.stringify(counts));
+    // Update UI
+    const nowLiked = !liked;
+    btn.classList.toggle('liked', nowLiked);
+    btn.querySelector('.fa-icon').textContent = nowLiked ? '♥' : '♡';
+    const countEl = btn.querySelector('.like-count');
+    countEl.textContent = counts[fp] > 0 ? counts[fp] : '';
+  }
+  function shareFanReview(name, movie, text, stars) {
+    const shareText = `${stars} — ${name} on "${movie}":\n"${text}"\n\nvia PMovies pmovies.github.io/pmovies-app`;
+    if (navigator.share) {
+      navigator.share({ title: `${name}'s review of ${movie}`, text: shareText }).catch(()=>{});
+    } else {
+      navigator.clipboard.writeText(shareText).then(() => {
+        const btn = event.currentTarget;
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<span class="fa-icon">✓</span> Copied!';
+        btn.style.borderColor = 'rgba(80,200,80,.4)';
+        btn.style.color = '#5cb85c';
+        setTimeout(() => { btn.innerHTML = orig; btn.style.borderColor = ''; btn.style.color = ''; }, 2000);
+      }).catch(()=>{});
+    }
+  }
+
   function renderFanReviews(reviews, limit) {
     allReviews = reviews;
     if (limit !== undefined) fanReviewsShown = limit;
@@ -2886,6 +2935,9 @@
       const ts    = r.timestamp?.toDate ? r.timestamp.toDate() : (r.timestamp ? new Date(r.timestamp) : null);
       const date  = ts ? ts.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
       const isChallenge = challengeTitle && (r.movie||'').toLowerCase().trim() === challengeTitle;
+      const fp    = fanReviewFp(r);
+      const likes = getFanLikes(fp);
+      const liked = hasFanLiked(fp);
       const card  = document.createElement('div'); card.className = 'fan-review-card';
       const posterId = `fan-poster-${idx}`;
       card.innerHTML = `
@@ -2904,6 +2956,15 @@
             </div>
           </div>
           <div class="fan-review-body">${esc(r.text || '')}</div>
+          <div class="fan-review-actions">
+            <button class="fan-action-btn${liked ? ' liked' : ''}" data-fp="${fp}" onclick="toggleFanLike(this)">
+              <span class="fa-icon">${liked ? '♥' : '♡'}</span>
+              <span class="like-count">${likes > 0 ? likes : ''}</span>
+            </button>
+            <button class="fan-action-btn" onclick="shareFanReview('${esc(r.name||'Anonymous')}','${esc(r.movie||'')}','${esc((r.text||'').replace(/'/g,"\\'"))}','${stars}')">
+              <span class="fa-icon">↗</span> Share
+            </button>
+          </div>
         </div>
       `;
       grid.appendChild(card);
