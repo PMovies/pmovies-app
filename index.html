@@ -699,6 +699,25 @@
   .fan-like-btn:hover, .fan-like-btn.liked { color:var(--orange); }
   .fan-action-btn { display:flex; align-items:center; gap:6px; background:#111; border:1px solid #222; color:#777; border-radius:10px; padding:7px 14px; cursor:pointer; font-family:'Montserrat',sans-serif; font-size:.7rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; transition:all .2s; }
   .fan-action-btn:hover { border-color:#444; color:#fff; }
+  /* ── Comments ── */
+  .fan-comment-toggle { background:none; border:none; color:#555; font-size:.74rem; cursor:pointer; display:flex; align-items:center; gap:4px; padding:0; font-family:'Montserrat',sans-serif; font-weight:700; transition:color .2s; }
+  .fan-comment-toggle:hover, .fan-comment-toggle.has-comments { color:#aaa; }
+  .fan-comments-panel { display:none; margin-top:12px; border-top:1px solid #1c1c1c; padding-top:10px; }
+  .fan-comments-panel.open { display:block; }
+  .fan-comment-item { padding:7px 0; border-bottom:1px solid #191919; }
+  .fan-comment-item:last-child { border-bottom:none; }
+  .fan-comment-author { font-size:.7rem; color:#f5a623; font-weight:700; text-transform:uppercase; letter-spacing:.03em; }
+  .fan-comment-body { font-size:.78rem; color:#bbb; margin-top:3px; line-height:1.5; }
+  .fan-comment-date { font-size:.64rem; color:#444; margin-top:2px; }
+  .fan-comment-form { margin-top:12px; display:flex; flex-direction:column; gap:7px; }
+  .fan-comment-form input, .fan-comment-form textarea { background:#111; border:1px solid #2a2a2a; color:#eee; border-radius:8px; padding:7px 11px; font-size:.78rem; font-family:inherit; outline:none; }
+  .fan-comment-form textarea { resize:vertical; min-height:48px; }
+  .fan-comment-form input:focus, .fan-comment-form textarea:focus { border-color:rgba(245,166,35,.35); }
+  .fan-comment-submit { background:rgba(245,166,35,.08); border:1px solid rgba(245,166,35,.25); color:#f5a623; border-radius:20px; padding:5px 14px; font-size:.72rem; font-family:'Montserrat',sans-serif; font-weight:700; cursor:pointer; align-self:flex-end; letter-spacing:.04em; }
+  .fan-comment-submit:hover { background:rgba(245,166,35,.16); }
+  .fan-comment-empty { font-size:.74rem; color:#444; font-style:italic; padding:4px 0; }
+  .fan-comment-loading { font-size:.74rem; color:#444; padding:4px 0; }
+  .fan-no-rating { font-size:.78rem; color:#444; font-style:italic; }
   .fan-empty { color:#555; text-align:center; padding:32px; font-size:.9rem; }
   /* Fan Records toggle */
   .fan-records-toggle { display:flex; gap:8px; margin-bottom:16px; }
@@ -3036,33 +3055,128 @@
   const FAN_PAGE_SIZE = 6;
   let fanReviewsShown = FAN_PAGE_SIZE;
 
-  // ── Fan Review Like & Share ───────────────────────────────────
+  // ── Fan Review Like (Firebase-backed, shared across users) ──────
   function fanReviewFp(r) {
     return btoa(encodeURIComponent(`${(r.name||'').toLowerCase()}|${(r.movie||'').toLowerCase()}|${(r.text||'').slice(0,40).toLowerCase()}`)).slice(0,24);
   }
-  function getFanLikes(fp) {
-    try { return JSON.parse(localStorage.getItem('fanLikeCounts') || '{}')[fp] || 0; } catch(_){ return 0; }
+  let _fanLikeCache = {};   // fp → count  (movie reviews)
+  let _srLikeCache  = {};   // fp → count  (series reviews)
+
+  async function loadFanLikeCounts() {
+    try {
+      const res = await fetch(`${RTDB}/fanReviewLikes.json`);
+      _fanLikeCache = (res.ok ? await res.json() : null) || {};
+    } catch(_) {}
+  }
+  async function loadSrLikeCounts() {
+    try {
+      const res = await fetch(`${RTDB}/seriesReviewLikes.json`);
+      _srLikeCache = (res.ok ? await res.json() : null) || {};
+    } catch(_) {}
+  }
+  function getFanLikes(fp, type) {
+    return ((type === 'tv' ? _srLikeCache : _fanLikeCache)[fp]) || 0;
   }
   function hasFanLiked(fp) {
     try { return (JSON.parse(localStorage.getItem('fanLikedSet') || '[]')).includes(fp); } catch(_){ return false; }
   }
-  function toggleFanLike(btn) {
+  async function toggleFanLike(btn) {
     const fp    = btn.dataset.fp;
+    const type  = btn.dataset.type || 'movie';
     const liked = hasFanLiked(fp);
-    // Update liked set
+    // "Liked by me" — localStorage per device
     let likedSet = []; try { likedSet = JSON.parse(localStorage.getItem('fanLikedSet') || '[]'); } catch(_){}
     if (liked) { likedSet = likedSet.filter(x => x !== fp); } else { likedSet.push(fp); }
     localStorage.setItem('fanLikedSet', JSON.stringify(likedSet));
-    // Update counts
-    let counts = {}; try { counts = JSON.parse(localStorage.getItem('fanLikeCounts') || '{}'); } catch(_){}
-    counts[fp] = Math.max(0, (counts[fp] || 0) + (liked ? -1 : 1));
-    localStorage.setItem('fanLikeCounts', JSON.stringify(counts));
-    // Update UI
+    // Optimistic update to shared cache
+    const cache = type === 'tv' ? _srLikeCache : _fanLikeCache;
+    cache[fp] = Math.max(0, (cache[fp] || 0) + (liked ? -1 : 1));
+    // Update UI immediately
     const nowLiked = !liked;
     btn.classList.toggle('liked', nowLiked);
-    btn.querySelector('.fa-icon').textContent = nowLiked ? '♥' : '♡';
     const countEl = btn.querySelector('.like-count');
-    countEl.textContent = counts[fp] > 0 ? counts[fp] : '';
+    if (countEl) countEl.textContent = cache[fp] > 0 ? cache[fp] : '';
+    // Persist count to Firebase
+    const path = type === 'tv' ? 'seriesReviewLikes' : 'fanReviewLikes';
+    try {
+      await fetch(`${RTDB}/${path}/${encodeURIComponent(fp)}.json`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cache[fp])
+      });
+    } catch(_) {}
+  }
+
+  // ── Comments ─────────────────────────────────────────────────────
+  async function toggleComments(btn) {
+    const fp    = btn.dataset.fp;
+    const type  = btn.dataset.type || 'movie';
+    const panel = document.getElementById('cmt-' + fp);
+    if (!panel) return;
+    const isOpen = panel.classList.contains('open');
+    if (isOpen) { panel.classList.remove('open'); return; }
+    panel.classList.add('open');
+    if (!panel.dataset.loaded) await loadComments(fp, type, panel, btn);
+  }
+  async function loadComments(fp, type, panel, toggleBtn) {
+    const path  = type === 'tv' ? 'seriesReviewComments' : 'fanReviewComments';
+    const listEl = panel.querySelector('.fan-comment-list');
+    listEl.innerHTML = '<div class="fan-comment-loading">Loading…</div>';
+    try {
+      const res  = await fetch(`${RTDB}/${path}/${encodeURIComponent(fp)}.json`);
+      const data = res.ok ? await res.json() : null;
+      panel.dataset.loaded = '1';
+      const comments = data ? Object.values(data).sort((a, b) => a.timestamp - b.timestamp) : [];
+      _renderCommentList(listEl, comments);
+      // Update toggle label
+      const lbl = (toggleBtn || document.querySelector(`.fan-comment-toggle[data-fp="${fp}"]`))?.querySelector('.cmt-lbl');
+      if (lbl) lbl.textContent = comments.length ? comments.length + ' comment' + (comments.length !== 1 ? 's' : '') : 'Comment';
+      const tog = toggleBtn || document.querySelector(`.fan-comment-toggle[data-fp="${fp}"]`);
+      if (tog) tog.classList.toggle('has-comments', comments.length > 0);
+    } catch(_) {
+      panel.querySelector('.fan-comment-list').innerHTML = '<div class="fan-comment-empty">Could not load comments.</div>';
+    }
+  }
+  function _renderCommentList(listEl, comments) {
+    if (!comments.length) {
+      listEl.innerHTML = '<div class="fan-comment-empty">No comments yet — be the first!</div>';
+      return;
+    }
+    listEl.innerHTML = comments.map(c => {
+      const ts = c.timestamp ? new Date(c.timestamp).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) : '';
+      return `<div class="fan-comment-item">
+        <div class="fan-comment-author">${esc(c.name || 'Anonymous')}</div>
+        <div class="fan-comment-body">${esc(c.text || '')}</div>
+        ${ts ? `<div class="fan-comment-date">${ts}</div>` : ''}
+      </div>`;
+    }).join('');
+  }
+  async function submitComment(fp, type, btn) {
+    const panel     = document.getElementById('cmt-' + fp);
+    const nameInput = panel.querySelector('.cmt-name-input');
+    const textInput = panel.querySelector('.cmt-text-input');
+    const name = nameInput.value.trim();
+    const text = textInput.value.trim();
+    if (!name || !text) { alert('Please enter your name and a comment.'); return; }
+    btn.textContent = 'Posting…'; btn.disabled = true;
+    const path = type === 'tv' ? 'seriesReviewComments' : 'fanReviewComments';
+    try {
+      await fetch(`${RTDB}/${path}/${encodeURIComponent(fp)}.json`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, text, timestamp: Date.now() })
+      });
+      nameInput.value = '';
+      textInput.value = '';
+      btn.textContent = 'Post Comment';
+      btn.disabled = false;
+      panel.dataset.loaded = '';  // force reload on next open
+      await loadComments(fp, type, panel);
+    } catch(e) {
+      alert('Could not post comment: ' + e.message);
+      btn.textContent = 'Post Comment';
+      btn.disabled = false;
+    }
   }
 
   function renderFanReviews(reviews, limit) {
@@ -3088,7 +3202,7 @@
       const date  = ts ? ts.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
       const isChallenge = challengeTitle && (r.movie||'').toLowerCase().trim() === challengeTitle;
       const fp    = fanReviewFp(r);
-      const likes = getFanLikes(fp);
+      const likes = getFanLikes(fp, 'movie');
       const liked = hasFanLiked(fp);
       const card  = document.createElement('div'); card.className = 'fan-review-card';
       const posterId = `fan-poster-${idx}`;
@@ -3109,9 +3223,13 @@
           </div>
           <div class="fan-review-body">${esc(r.text || '')}</div>
           <div class="fan-review-actions">
-            <button class="fan-like-btn${liked ? ' liked' : ''}" data-fp="${fp}" onclick="toggleFanLike(this)">
+            <button class="fan-like-btn${liked ? ' liked' : ''}" data-fp="${fp}" data-type="movie" onclick="toggleFanLike(this)">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
               <span class="like-count">${likes > 0 ? likes : ''}</span>
+            </button>
+            <button class="fan-comment-toggle" data-fp="${fp}" data-type="movie" onclick="toggleComments(this)">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z"/></svg>
+              <span class="cmt-lbl">Comment</span>
             </button>
             <div style="position:relative">
               <button class="fan-action-btn" onclick="toggleShareMenu('fsm-${fp}',event)">
@@ -3143,6 +3261,14 @@
                   Save Card
                 </button>
               </div>
+            </div>
+          </div>
+          <div class="fan-comments-panel" id="cmt-${fp}">
+            <div class="fan-comment-list"></div>
+            <div class="fan-comment-form">
+              <input class="cmt-name-input" placeholder="Your name" maxlength="60"/>
+              <textarea class="cmt-text-input" placeholder="Add a comment…" maxlength="500"></textarea>
+              <button class="fan-comment-submit" onclick="submitComment('${fp}','movie',this)">Post Comment</button>
             </div>
           </div>
         </div>
@@ -3305,6 +3431,8 @@
 
     merged.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
+    await loadFanLikeCounts();
+
     try {
       renderFanReviews(merged);
     } catch(e) {
@@ -3319,7 +3447,6 @@
     const rating = +(document.getElementById('fanRating')||{}).value || 0;
     const text   = (document.getElementById('fanText') ||{}).value?.trim();
     if (!name || !movie || !text) { alert('Please fill in your name, movie, and review.'); return; }
-    if (!rating)                  { alert('Please give a star rating.'); return; }
     try {
       const btn = document.querySelector('.fan-submit-btn');
       btn.textContent = 'Posting…'; btn.disabled = true;
@@ -3393,7 +3520,7 @@
       const ts    = r.timestamp ? new Date(r.timestamp) : null;
       const date  = ts ? ts.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
       const fp    = fanReviewFp(r);
-      const likes = getFanLikes(fp);
+      const likes = getFanLikes(fp, 'tv');
       const liked = hasFanLiked(fp);
       const card  = document.createElement('div'); card.className = 'fan-review-card';
       const posterId = `sr-poster-${idx}`;
@@ -3414,9 +3541,13 @@
           </div>
           <div class="fan-review-body">${esc(r.text || '')}</div>
           <div class="fan-review-actions">
-            <button class="fan-like-btn${liked ? ' liked' : ''}" data-fp="${fp}" onclick="toggleFanLike(this)">
+            <button class="fan-like-btn${liked ? ' liked' : ''}" data-fp="${fp}" data-type="tv" onclick="toggleFanLike(this)">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
               <span class="like-count">${likes > 0 ? likes : ''}</span>
+            </button>
+            <button class="fan-comment-toggle" data-fp="${fp}" data-type="tv" onclick="toggleComments(this)">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z"/></svg>
+              <span class="cmt-lbl">Comment</span>
             </button>
             <div style="position:relative">
               <button class="fan-action-btn" onclick="toggleShareMenu('srsm-${fp}',event)">
@@ -3448,6 +3579,14 @@
                   Save Card
                 </button>
               </div>
+            </div>
+          </div>
+          <div class="fan-comments-panel" id="cmt-${fp}">
+            <div class="fan-comment-list"></div>
+            <div class="fan-comment-form">
+              <input class="cmt-name-input" placeholder="Your name" maxlength="60"/>
+              <textarea class="cmt-text-input" placeholder="Add a comment…" maxlength="500"></textarea>
+              <button class="fan-comment-submit" onclick="submitComment('${fp}','tv',this)">Post Comment</button>
             </div>
           </div>
         </div>
@@ -3520,6 +3659,7 @@
     } catch(_) {}
 
     reviews.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    await loadSrLikeCounts();
     renderSeriesReviews(reviews);
   }
 
@@ -3530,7 +3670,6 @@
     const rating = +(document.getElementById('srFanRating').value) || 0;
     const text   = document.getElementById('srFanText').value?.trim();
     if (!name || !series || !text) { alert('Please fill in your name, series, and review.'); return; }
-    if (!rating)                   { alert('Please give a star rating.'); return; }
     try {
       const btn = document.querySelector('#srFanSection .fan-submit-btn');
       btn.textContent = 'Posting…'; btn.disabled = true;
@@ -6162,6 +6301,7 @@ async function _fetchReviewAssets(title, mediaType = 'movie') {
 /* ── Star display helpers ── */
 function _starsHtml(rating) {
   const r = Math.min(5, Math.max(0, rating || 0));
+  if (!r) return '<span class="fan-no-rating">No rating</span>';
   const full = Math.floor(r), half = r % 1 >= 0.5, empty = 5 - full - (half ? 1 : 0);
   return `<span class="s-full">${'★'.repeat(full)}</span>`
     + (half ? '<span class="s-half">★</span>' : '')
@@ -6169,6 +6309,7 @@ function _starsHtml(rating) {
 }
 function _starShareStr(rating) {
   const r = Math.min(5, Math.max(0, rating || 0));
+  if (!r) return '';
   const full = Math.floor(r), half = r % 1 >= 0.5;
   return '★'.repeat(full) + (half ? '½' : '') + '☆'.repeat(5 - full - (half ? 1 : 0));
 }
