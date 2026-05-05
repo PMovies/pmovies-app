@@ -5316,22 +5316,16 @@ function buildTop100FilterBar() {
   const bar = document.getElementById('top100FilterBar');
   if (!bar || !_top100AllMovies.length) { if (bar) bar.style.display = 'none'; return; }
 
-  const genreSet = new Set(), decadeSet = new Set();
+  const decadeSet = new Set();
   _top100AllMovies.forEach(m => {
-    (m.genres||[]).forEach(g => genreSet.add(g));
     if (m.year) decadeSet.add(Math.floor(m.year / 10) * 10);
   });
 
-  const genres  = [...genreSet].sort();
   const decades = [...decadeSet].sort((a,b) => b - a);
-  if (!genres.length && !decades.length) { bar.style.display = 'none'; return; }
+  if (!decades.length) { bar.style.display = 'none'; return; }
 
-  const hasFilter  = _top100Filters.genres.size || _top100Filters.decades.size;
+  const hasFilter  = _top100Filters.decades.size;
   const matchCount = hasFilter ? _getFilteredMovies().length : _top100AllMovies.length;
-
-  const gChips = genres.map(g =>
-    `<button class="top100-filter-chip${_top100Filters.genres.has(g)?' active':''}" onclick="toggleTop100Filter('genres','${escJs(g)}')">${esc(g)}</button>`
-  ).join('');
 
   const dChips = decades.map(d =>
     `<button class="top100-filter-chip${_top100Filters.decades.has(String(d))?' active':''}" onclick="toggleTop100Filter('decades','${d}')">${d}s</button>`
@@ -5345,9 +5339,6 @@ function buildTop100FilterBar() {
 
   bar.innerHTML = `
     <div class="top100-filter-row">
-      <span class="top100-filter-label">Genre</span>${gChips}
-    </div>
-    <div class="top100-filter-row">
       <span class="top100-filter-label">Decade</span>${dChips}${actionsHtml}
     </div>`;
   bar.style.display = 'block';
@@ -5360,7 +5351,6 @@ function toggleTop100Filter(type, value) {
 }
 
 function clearTop100Filters() {
-  _top100Filters.genres.clear();
   _top100Filters.decades.clear();
   applyTop100Filters();
 }
