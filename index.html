@@ -5105,30 +5105,33 @@ async function evpConfirm() {
   // Record submit timestamp for latency check
   _latency.submitAt = Date.now();
 
-  // Behavioral score — reject obvious bots
-  const bScore = getBehavioralScore();
-  if (bScore < 15) {
-    if (err) err.textContent = 'Unusual activity detected. Please browse the site a bit more before voting.';
-    return;
-  }
-
-  // Inconsistency & latency checks
-  const { flags, hardBlock } = _detectAnomalies(getPendingVotes());
-  if (hardBlock) {
-    if (err) err.textContent = 'Suspicious activity detected. Please browse and interact with the site naturally before voting.';
-    return;
+  // Behavioral score & anomaly checks — skipped entirely in dev mode
+  if (!IS_DEV) {
+    const bScore = getBehavioralScore();
+    if (bScore < 15) {
+      if (err) err.textContent = 'Unusual activity detected. Please browse the site a bit more before voting.';
+      return;
+    }
+    const { flags, hardBlock } = _detectAnomalies(getPendingVotes());
+    if (hardBlock) {
+      if (err) err.textContent = 'Suspicious activity detected. Please browse and interact with the site naturally before voting.';
+      return;
+    }
   }
 
   if (btn) { btn.disabled = true; btn.textContent = 'Checking…'; }
   try {
     const hash  = await hashEmail(email);
-    const check = await fetch(`${RTDB}/${dbPath('voterEmails')}/${hash}.json`);
-    const used  = check.ok ? await check.json() : null;
-    if (used) {
-      if (inp) inp.classList.add('error');
-      if (err) err.textContent = 'This email has already been used to vote. Each email can vote once.';
-      if (btn) { btn.disabled = false; btn.textContent = 'Confirm & Submit'; }
-      return;
+    // Skip duplicate-email check in dev mode so you can re-test with the same email
+    if (!IS_DEV) {
+      const check = await fetch(`${RTDB}/${dbPath('voterEmails')}/${hash}.json`);
+      const used  = check.ok ? await check.json() : null;
+      if (used) {
+        if (inp) inp.classList.add('error');
+        if (err) err.textContent = 'This email has already been used to vote. Each email can vote once.';
+        if (btn) { btn.disabled = false; btn.textContent = 'Confirm & Submit'; }
+        return;
+      }
     }
     await submitAllVotes(email, hash);
   } catch(e) {
@@ -5549,19 +5552,20 @@ async function castVote(id, title, poster, backdrop, year, genresStr) {
   const myVotes = getMyVotes();
   if (myVotes.includes(id)) return;
 
-  // Get fingerprint & do server-side duplicate check
+  // Get fingerprint & do server-side duplicate check (skipped in dev mode)
   let fp = null;
-  try {
-    fp = await getBrowserFingerprint();
-    const fpCheck = await fetch(`${RTDB}/${dbPath('votesByFp')}/${fp}/${id}.json`);
-    const already = fpCheck.ok ? await fpCheck.json() : null;
-    if (already) {
-      // Server says already voted — sync local state and bail
-      if (!myVotes.includes(id)) { myVotes.push(id); saveMyVotes(myVotes); }
-      await loadTop100();
-      return;
-    }
-  } catch(_) {}
+  if (!IS_DEV) {
+    try {
+      fp = await getBrowserFingerprint();
+      const fpCheck = await fetch(`${RTDB}/${dbPath('votesByFp')}/${fp}/${id}.json`);
+      const already = fpCheck.ok ? await fpCheck.json() : null;
+      if (already) {
+        if (!myVotes.includes(id)) { myVotes.push(id); saveMyVotes(myVotes); }
+        await loadTop100();
+        return;
+      }
+    } catch(_) {}
+  }
 
   // Optimistic UI
   const item = document.getElementById(`top100-item-${id}`);
