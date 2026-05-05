@@ -424,8 +424,8 @@
   .fan-form-wrap { background:var(--surface); border-radius:16px; padding:24px; margin-bottom:24px; }
   .fan-form-title { font-family:"Bebas Neue",sans-serif; font-size:1.2rem; color:#fff; letter-spacing:.06em; margin:0 0 16px; }
   .fan-form-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
-  .fan-form-row input, #fanText { background:#111; border:1px solid #333; border-radius:8px; padding:10px 14px; color:#fff; font-size:.83rem; width:100%; box-sizing:border-box; font-family:inherit; }
-  .fan-form-row input:focus, #fanText:focus { outline:none; border-color:var(--orange); }
+  .fan-form-row input, #fanText, #srFanText { background:#111; border:1px solid #333; border-radius:8px; padding:10px 14px; color:#fff; font-size:.83rem; width:100%; box-sizing:border-box; font-family:inherit; }
+  .fan-form-row input:focus, #fanText:focus, #srFanText:focus { outline:none; border-color:var(--orange); }
   .fan-movie-wrap { position:relative; }
   .fan-movie-wrap input { width:100%; box-sizing:border-box; }
   .fan-movie-dropdown { position:absolute; top:calc(100% + 4px); left:0; right:0; background:#1a1a1a; border:1px solid #333; border-radius:10px; z-index:200; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,.6); }
@@ -436,7 +436,7 @@
   .fan-movie-opt-info { min-width:0; }
   .fan-movie-opt-title { color:#fff; font-size:.83rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .fan-movie-opt-year  { color:#666; font-size:.72rem; margin-top:1px; }
-  #fanText { resize:vertical; min-height:70px; margin-bottom:10px; }
+  #fanText, #srFanText { resize:vertical; min-height:70px; margin-bottom:10px; }
   .fan-star-row { display:flex; align-items:center; gap:4px; margin-bottom:10px; }
   .fan-star { font-size:1.5rem; color:#444; cursor:pointer; transition:.15s; }
   .fan-star.active, .fan-star:hover { color:#f5a623; }
