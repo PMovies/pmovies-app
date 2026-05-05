@@ -575,8 +575,9 @@
   .evp-vote-chip { background:#1e1e1e; border:1px solid #2a2a2a; border-radius:20px; padding:4px 12px; font-size:.72rem; color:#ccc; }
 
   /* ── Picks Card Overlay ── */
-  #picksCardOverlay { position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:11000; display:none; align-items:center; justify-content:center; padding:20px; flex-direction:column; gap:0; }
-  #picksCardOverlay.open { display:flex; }
+  #picksCardOverlay, #reviewCardOverlay { position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:11000; display:none; align-items:center; justify-content:center; padding:20px; flex-direction:column; gap:0; }
+  #picksCardOverlay.open, #reviewCardOverlay.open { display:flex; }
+  #reviewCanvas { width:100%; height:auto; display:block; border-radius:14px; }
   .pco-card { background:#161616; border:1px solid #2a2a2a; border-radius:20px; padding:28px; width:100%; max-width:480px; text-align:center; }
   .pco-title { font-family:'Bebas Neue',sans-serif; font-size:1.6rem; color:#fff; letter-spacing:.1em; margin:0 0 4px; }
   .pco-sub { color:#555; font-size:.78rem; margin:0 0 20px; }
@@ -2961,6 +2962,7 @@
   }
 
   let allReviews = [];
+  const _reviewCardRegistry = new Map(); // fp → review object
   const FAN_PAGE_SIZE = 6;
   let fanReviewsShown = FAN_PAGE_SIZE;
 
@@ -3047,7 +3049,7 @@
               </button>
               <div class="card-share-menu" id="fsm-${fp}"
                    data-title="${esc(r.name||'Anonymous')} on ${esc(r.movie||'')}"
-                   data-text="${esc(stars + ' — ' + (r.name||'Anonymous') + ' reviewing &quot;' + (r.movie||'') + '&quot;' + (r.text ? ': &quot;' + (r.text).slice(0,120) + (r.text.length>120?'…':'') + '&quot;' : ''))}"
+                   data-text="${esc(stars + (stars?' ':'') + (r.name||'Anonymous') + ' watched ' + (r.movie||'') + (r.year?' ('+r.year+')':'') + (r.text ? ' — ' + r.text.slice(0,140) + (r.text.length>140?'…':'') : ''))}"
                    data-url="https://p-movies.com/#reviews">
                 <button class="card-share-opt" onclick="pmShareFromMenu(this,'whatsapp')">
                   <svg viewBox="0 0 24 24" width="15" height="15" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.862L.054 23.625a.75.75 0 00.92.92l5.733-1.487A11.955 11.955 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/></svg>
@@ -3065,11 +3067,16 @@
                   <svg viewBox="0 0 24 24" width="15" height="15" fill="#aaa"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
                   Copy link
                 </button>
+                <button class="card-share-opt" onclick="_openReviewCard('${fp}')">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="#f5a623"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                  Save Card
+                </button>
               </div>
             </div>
           </div>
         </div>
       `;
+      _reviewCardRegistry.set(fp, r);
       grid.appendChild(card);
       if (r.movie) {
         fetchPoster(r.movie).then(url => {
@@ -4362,6 +4369,22 @@
     <span class="dev-badge">⚠ Dev Mode</span>
     <span class="dev-text">Test environment — votes go to a separate database</span>
     <span class="dev-hint">Remove ?dev from the URL to return to production</span>
+  </div>
+
+  <!-- ── Review Share Card Overlay ── -->
+  <div id="reviewCardOverlay">
+    <div class="pco-card">
+      <div class="pco-title">🎬 Review Card</div>
+      <p class="pco-sub">Save and share your review</p>
+      <div class="pco-canvas-wrap">
+        <canvas id="reviewCanvas" width="1080" height="1080"></canvas>
+      </div>
+      <div class="pco-actions">
+        <button class="pco-btn-dl" onclick="downloadReviewCard()">⬇ Download</button>
+        <button class="pco-btn-share" id="reviewShareBtn" onclick="shareReviewCard()">↗ Share</button>
+      </div>
+      <button class="pco-close" onclick="closeReviewCard()">Close</button>
+    </div>
   </div>
 
   <div id="picksCardOverlay">
@@ -5747,6 +5770,219 @@ async function enrichTop100Genres() {
   }
   // Rebuild filter bar with enriched data (only if genres were actually found)
   buildTop100FilterBar();
+}
+
+/* ══════════════════════════════════════════════
+   REVIEW CARD  — canvas-rendered shareable image
+   ══════════════════════════════════════════════ */
+
+let _reviewCardDataUrl = null;
+
+function closeReviewCard() {
+  document.getElementById('reviewCardOverlay').classList.remove('open');
+}
+function downloadReviewCard() {
+  if (!_reviewCardDataUrl) return;
+  const a = document.createElement('a');
+  a.href = _reviewCardDataUrl;
+  a.download = 'pmovies-review.png';
+  a.click();
+}
+async function shareReviewCard() {
+  if (!_reviewCardDataUrl) return;
+  try {
+    const blob = await (await fetch(_reviewCardDataUrl)).blob();
+    await navigator.share({ files: [new File([blob], 'pmovies-review.png', { type: 'image/png' })] });
+  } catch(_) { downloadReviewCard(); }
+}
+
+async function _fetchReviewAssets(movieTitle) {
+  try {
+    const res  = await fetch(`${TMDB}/search/movie?api_key=${getKey()}&query=${encodeURIComponent(movieTitle)}&language=en-US&page=1`);
+    const data = await res.json();
+    const hit  = (data.results || []).find(m => m.backdrop_path || m.poster_path) || data.results?.[0];
+    if (!hit) return { poster: null, backdrop: null, year: '' };
+    return {
+      poster:   hit.poster_path   ? `https://image.tmdb.org/t/p/w342${hit.poster_path}`   : null,
+      backdrop: hit.backdrop_path ? `https://image.tmdb.org/t/p/w780${hit.backdrop_path}` : null,
+      year:     hit.release_date  ? hit.release_date.slice(0, 4) : ''
+    };
+  } catch(_) { return { poster: null, backdrop: null, year: '' }; }
+}
+
+function _wrapReviewText(ctx, text, x, y, maxW, lineH, maxLines) {
+  const words = text.split(' ');
+  const lines = [];
+  let line = '';
+  for (const w of words) {
+    const test = line ? line + ' ' + w : w;
+    if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = w; }
+    else line = test;
+    if (lines.length === maxLines) break;
+  }
+  if (lines.length < maxLines && line) lines.push(line);
+  // truncate last line with ellipsis if text was cut
+  const lastIdx = lines.length - 1;
+  if (lines.length === maxLines && words.join(' ').length > lines.join(' ').length + 1) {
+    let last = lines[lastIdx];
+    while (last.length > 0 && ctx.measureText(last + '…').width > maxW) last = last.slice(0, -1);
+    lines[lastIdx] = last + '…';
+  }
+  lines.forEach((l, i) => ctx.fillText(l, x, y + i * lineH));
+  return lines.length;
+}
+
+async function generateReviewCard(r) {
+  const canvas = document.getElementById('reviewCanvas');
+  const ctx    = canvas.getContext('2d');
+  const W = 1080, H = 1080;
+  canvas.width = W; canvas.height = H;
+
+  const stars    = '★'.repeat(Math.max(0, Math.min(5, r.rating || 0)));
+  const emptyS   = '☆'.repeat(5 - (r.rating || 0));
+  const assets   = await _fetchReviewAssets(r.movie || '');
+  const [bdImg, posterImg] = await Promise.all([
+    assets.backdrop ? _loadImg(assets.backdrop) : Promise.resolve(null),
+    assets.poster   ? _loadImg(assets.poster)   : Promise.resolve(null)
+  ]);
+
+  // ── Background: backdrop stretched + dark overlay ──
+  ctx.fillStyle = '#0c0c0c';
+  ctx.fillRect(0, 0, W, H);
+
+  if (bdImg) {
+    // Draw backdrop covering full card
+    const bRatio = bdImg.width / bdImg.height;
+    const bH = W / bRatio;
+    const bY = (H - bH) / 2;
+    ctx.save();
+    ctx.filter = 'blur(0px)';
+    ctx.drawImage(bdImg, 0, bY, W, bH);
+    ctx.restore();
+    // Heavy dark gradient overlay — top strong, fades to total darkness in bottom half
+    const grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0,   'rgba(0,0,0,0.55)');
+    grad.addColorStop(0.45,'rgba(0,0,0,0.60)');
+    grad.addColorStop(0.62,'rgba(0,0,0,0.88)');
+    grad.addColorStop(1,   'rgba(0,0,0,0.97)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+  } else {
+    // No backdrop — warm dark radial
+    const rg = ctx.createRadialGradient(W/2, H*0.35, 60, W/2, H*0.35, 600);
+    rg.addColorStop(0, 'rgba(245,166,35,0.08)');
+    rg.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = rg; ctx.fillRect(0, 0, W, H);
+  }
+
+  // ── Corner accents ──
+  const CA = 34, CM = 28;
+  ctx.strokeStyle = '#f5a623'; ctx.lineWidth = 3; ctx.lineCap = 'square';
+  [[CM,CM+CA,CM,CM,CM+CA,CM],[W-CM-CA,CM,W-CM,CM,W-CM,CM+CA],
+   [CM,H-CM-CA,CM,H-CM,CM+CA,H-CM],[W-CM-CA,H-CM,W-CM,H-CM,W-CM,H-CM-CA]
+  ].forEach(([x1,y1,mx,my,x2,y2]) => {
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(mx,my); ctx.lineTo(x2,y2); ctx.stroke();
+  });
+
+  // ── PMOVIES brand pill ──
+  ctx.font = 'bold 18px "Arial Black", Arial, sans-serif';
+  ctx.letterSpacing = '6px'; ctx.textAlign = 'center';
+  const bW = ctx.measureText('PMOVIES').width + 44;
+  const bX = W/2 - bW/2, bY2 = 56;
+  ctx.fillStyle = 'rgba(245,166,35,0.15)';
+  ctx.beginPath(); ctx.roundRect(bX, bY2, bW, 30, 15); ctx.fill();
+  ctx.strokeStyle = 'rgba(245,166,35,0.4)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.roundRect(bX, bY2, bW, 30, 15); ctx.stroke();
+  ctx.fillStyle = '#f5a623'; ctx.fillText('PMOVIES', W/2, bY2 + 21);
+
+  // ── Movie poster ──
+  const PW = 260, PH = 390, PX = (W - PW) / 2, PY = 110;
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.9)'; ctx.shadowBlur = 40; ctx.shadowOffsetY = 16;
+  ctx.fillStyle = '#111';
+  ctx.beginPath(); ctx.roundRect(PX, PY, PW, PH, 12); ctx.fill();
+  ctx.restore();
+  ctx.save();
+  ctx.beginPath(); ctx.roundRect(PX, PY, PW, PH, 12); ctx.clip();
+  if (posterImg) {
+    ctx.drawImage(posterImg, PX, PY, PW, PH);
+  } else {
+    ctx.fillStyle = '#1c1c1c'; ctx.fillRect(PX, PY, PW, PH);
+    ctx.font = '72px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('🎬', W/2, PY + PH/2 + 24);
+  }
+  ctx.restore();
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.roundRect(PX, PY, PW, PH, 12); ctx.stroke();
+
+  // ── Stars ──
+  const STAR_Y = PY + PH + 52;
+  ctx.font = 'bold 38px Arial, sans-serif';
+  ctx.letterSpacing = '3px'; ctx.textAlign = 'center';
+  ctx.fillStyle = '#f5a623'; ctx.fillText(stars, W/2 - (emptyS.length * 10), STAR_Y);
+  ctx.fillStyle = '#2a2a2a'; ctx.fillText(emptyS, W/2 + (stars.length * 10), STAR_Y);
+
+  // ── Movie title + year ──
+  const TITLE_Y = STAR_Y + 52;
+  ctx.font = 'bold 46px "Arial Black", Arial, sans-serif';
+  ctx.fillStyle = '#ffffff'; ctx.letterSpacing = '0px';
+  // Truncate title if too wide
+  let titleText = r.movie || '';
+  while (titleText.length > 0 && ctx.measureText(titleText).width > W - 120) titleText = titleText.slice(0,-1);
+  if (titleText.length < (r.movie||'').length) titleText += '…';
+  ctx.fillText(titleText, W/2, TITLE_Y);
+
+  if (assets.year) {
+    ctx.font = '400 22px Arial, sans-serif';
+    ctx.fillStyle = '#666'; ctx.letterSpacing = '2px';
+    ctx.fillText(assets.year, W/2, TITLE_Y + 34);
+  }
+
+  // ── Divider with dot ──
+  const DIV_Y = TITLE_Y + (assets.year ? 66 : 44);
+  ctx.strokeStyle = '#2a2a2a'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(80, DIV_Y); ctx.lineTo(W/2-14, DIV_Y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(W/2+14, DIV_Y); ctx.lineTo(W-80, DIV_Y); ctx.stroke();
+  ctx.fillStyle = '#f5a623';
+  ctx.beginPath(); ctx.arc(W/2, DIV_Y, 3.5, 0, Math.PI*2); ctx.fill();
+
+  // ── Review text ──
+  if (r.text) {
+    const TEXT_Y = DIV_Y + 40;
+    ctx.font = 'italic 26px Georgia, serif';
+    ctx.fillStyle = '#cccccc'; ctx.letterSpacing = '0px'; ctx.textAlign = 'center';
+    _wrapReviewText(ctx, '“' + r.text + '”', W/2, TEXT_Y, W - 160, 40, 4);
+  }
+
+  // ── Reviewer name ──
+  const NAME_Y = 940;
+  ctx.font = 'bold 22px Arial, sans-serif';
+  ctx.fillStyle = '#f5a623'; ctx.letterSpacing = '1px'; ctx.textAlign = 'center';
+  ctx.fillText('— ' + (r.name || 'Anonymous'), W/2, NAME_Y);
+
+  // ── Footer ──
+  ctx.strokeStyle = '#222'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(80, 978); ctx.lineTo(W-80, 978); ctx.stroke();
+  ctx.font = '400 18px Arial, sans-serif';
+  ctx.fillStyle = '#3a3a3a'; ctx.letterSpacing = '2px';
+  ctx.fillText('SHARE YOUR REVIEW AT', W/2, 1002);
+  ctx.font = 'bold 22px "Arial Black", Arial, sans-serif';
+  ctx.fillStyle = '#f5a623'; ctx.letterSpacing = '0px';
+  ctx.fillText('p-movies.com', W/2, 1034);
+
+  _reviewCardDataUrl = canvas.toDataURL('image/png');
+}
+
+async function _openReviewCard(fp) {
+  _closeAllShareMenus();
+  const r = _reviewCardRegistry.get(fp);
+  if (!r) return;
+  _reviewCardDataUrl = null;
+  const overlay = document.getElementById('reviewCardOverlay');
+  const shareBtn = document.getElementById('reviewShareBtn');
+  if (shareBtn) shareBtn.style.display = navigator.share ? '' : 'none';
+  overlay.classList.add('open');
+  await generateReviewCard(r);
 }
 
 /* ══════════════════════════════════════════════
