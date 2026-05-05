@@ -5884,16 +5884,16 @@ async function generateReviewCard(r) {
     ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(mx,my); ctx.lineTo(x2,y2); ctx.stroke();
   });
 
-  // ── PMOVIES brand pill ──
-  ctx.font = 'bold 18px "Arial Black", Arial, sans-serif';
-  ctx.letterSpacing = '6px'; ctx.textAlign = 'center';
-  const bW = ctx.measureText('PMOVIES').width + 44;
-  const bX = W/2 - bW/2, bY2 = 56;
+  // ── PMOVIES brand pill — width locked to poster width (260px) ──
+  ctx.font = 'bold 20px "Arial Black", Arial, sans-serif';
+  ctx.letterSpacing = '7px'; ctx.textAlign = 'center';
+  const bW = 260; // match poster width
+  const bX = W/2 - bW/2, bY2 = 52;
   ctx.fillStyle = 'rgba(245,166,35,0.15)';
-  ctx.beginPath(); ctx.roundRect(bX, bY2, bW, 30, 15); ctx.fill();
-  ctx.strokeStyle = 'rgba(245,166,35,0.4)'; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.roundRect(bX, bY2, bW, 30, 15); ctx.stroke();
-  ctx.fillStyle = '#f5a623'; ctx.fillText('PMOVIES', W/2, bY2 + 21);
+  ctx.beginPath(); ctx.roundRect(bX, bY2, bW, 34, 17); ctx.fill();
+  ctx.strokeStyle = 'rgba(245,166,35,0.45)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.roundRect(bX, bY2, bW, 34, 17); ctx.stroke();
+  ctx.fillStyle = '#f5a623'; ctx.fillText('PMOVIES', W/2, bY2 + 24);
 
   // ── Movie poster ──
   const PW = 260, PH = 390, PX = (W - PW) / 2, PY = 110;
@@ -5948,10 +5948,16 @@ async function generateReviewCard(r) {
 
   // ── Review text ──
   if (r.text) {
-    const TEXT_Y = DIV_Y + 40;
+    const TEXT_Y = DIV_Y + 44;
+    const isRTL = /[؀-ۿݐ-ݿࢠ-ࣿﭐ-﷿ﹰ-﻿]/.test(r.text);
+    ctx.save();
+    if (isRTL) ctx.direction = 'rtl';
     ctx.font = 'italic 26px Georgia, serif';
     ctx.fillStyle = '#cccccc'; ctx.letterSpacing = '0px'; ctx.textAlign = 'center';
-    _wrapReviewText(ctx, '“' + r.text + '”', W/2, TEXT_Y, W - 160, 40, 4);
+    // For Arabic: no curly quotes (they confuse RTL rendering); for Latin: wrap in quotes
+    const reviewDisplay = isRTL ? r.text : '“' + r.text + '”';
+    _wrapReviewText(ctx, reviewDisplay, W/2, TEXT_Y, W - 160, 40, 5);
+    ctx.restore();
   }
 
   // ── Reviewer name ──
