@@ -502,6 +502,22 @@
   .top100-drop-vote:disabled { background:#2a2a2a; color:#555; cursor:not-allowed; }
   .top100-drop-voted { background:transparent; border:1px solid #333; color:#555; border-radius:20px; padding:6px 14px; font-size:.75rem; white-space:nowrap; flex-shrink:0; }
   /* The list */
+  /* ── Top 100 Filter Bar ── */
+  #top100FilterBar { position:sticky; top:58px; z-index:90; background:#0a0a0a; padding:10px 0 14px; margin-bottom:4px; display:none; }
+  .top100-filter-row { display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
+  .top100-filter-row + .top100-filter-row { margin-top:8px; }
+  .top100-filter-label { font-size:.63rem; font-weight:700; color:#555; text-transform:uppercase; letter-spacing:.07em; min-width:46px; flex-shrink:0; }
+  .top100-filter-chip { background:#111; border:1px solid #252525; border-radius:20px; color:#777; cursor:pointer; font-family:'Montserrat',sans-serif; font-size:.71rem; font-weight:600; padding:5px 13px; transition:all .15s; white-space:nowrap; }
+  .top100-filter-chip:hover { border-color:#444; color:#ccc; }
+  .top100-filter-chip.active { background:rgba(245,166,35,.12); border-color:var(--orange); color:var(--orange); }
+  .top100-filter-actions { display:flex; align-items:center; gap:10px; margin-left:auto; }
+  .top100-filter-result { font-size:.7rem; color:#555; }
+  .top100-filter-clear { background:none; border:1px solid #2a2a2a; border-radius:20px; color:#666; cursor:pointer; font-size:.68rem; font-weight:700; padding:4px 11px; transition:all .15s; letter-spacing:.03em; }
+  .top100-filter-clear:hover { border-color:#ff5555; color:#ff5555; }
+  .top100-filter-empty { text-align:center; padding:48px 20px; color:#444; font-size:.88rem; }
+  .top100-filter-empty span { display:block; font-size:2.2rem; margin-bottom:10px; }
+  /* ── End Filter Bar ── */
+
   .top100-list { display:flex; flex-direction:column; gap:8px; }
   .top100-empty { text-align:center; padding:60px 20px; color:#444; font-size:.9rem; line-height:1.8; }
   .top100-empty span { display:block; font-size:2.5rem; margin-bottom:12px; }
@@ -1121,6 +1137,7 @@
       <span class="top100-search-hint" id="top100SearchHint"></span>
       <div class="top100-dropdown" id="top100Dropdown" style="display:none"></div>
     </div>
+    <div id="top100FilterBar"></div>
     <div class="top100-list" id="top100List">
       <div class="top100-empty"><span>🎬</span>No votes yet — be the first to nominate a film!</div>
     </div>
@@ -5193,8 +5210,121 @@ function maybeSaveRankSnapshot(list) {
   localStorage.setItem('pmovies_rank_snap', JSON.stringify(newSnap));
 }
 
+/* ── Top 100 Filter State ── */
+let _top100AllMovies  = [];
+let _top100ShowAll    = false;
+const _top100Filters  = { genres: new Set(), decades: new Set() };
+const TOP100_PREVIEW  = 10;
+
+function _getFilteredMovies() {
+  return _top100AllMovies.filter(m => {
+    const genreOk  = !_top100Filters.genres.size  || (m.genres||[]).some(g => _top100Filters.genres.has(g));
+    const decade   = m.year ? String(Math.floor(m.year / 10) * 10) : '';
+    const decadeOk = !_top100Filters.decades.size || _top100Filters.decades.has(decade);
+    return genreOk && decadeOk;
+  });
+}
+
+function buildTop100FilterBar() {
+  const bar = document.getElementById('top100FilterBar');
+  if (!bar || !_top100AllMovies.length) { if (bar) bar.style.display = 'none'; return; }
+
+  const genreSet = new Set(), decadeSet = new Set();
+  _top100AllMovies.forEach(m => {
+    (m.genres||[]).forEach(g => genreSet.add(g));
+    if (m.year) decadeSet.add(Math.floor(m.year / 10) * 10);
+  });
+
+  const genres  = [...genreSet].sort();
+  const decades = [...decadeSet].sort((a,b) => b - a);
+  if (!genres.length && !decades.length) { bar.style.display = 'none'; return; }
+
+  const hasFilter  = _top100Filters.genres.size || _top100Filters.decades.size;
+  const matchCount = hasFilter ? _getFilteredMovies().length : _top100AllMovies.length;
+
+  const gChips = genres.map(g =>
+    `<button class="top100-filter-chip${_top100Filters.genres.has(g)?' active':''}" onclick="toggleTop100Filter('genres','${escJs(g)}')">${esc(g)}</button>`
+  ).join('');
+
+  const dChips = decades.map(d =>
+    `<button class="top100-filter-chip${_top100Filters.decades.has(String(d))?' active':''}" onclick="toggleTop100Filter('decades','${d}')">${d}s</button>`
+  ).join('');
+
+  const actionsHtml = hasFilter
+    ? `<div class="top100-filter-actions">
+         <span class="top100-filter-result">${matchCount} film${matchCount!==1?'s':''}</span>
+         <button class="top100-filter-clear" onclick="clearTop100Filters()">✕ Clear</button>
+       </div>` : '';
+
+  bar.innerHTML = `
+    <div class="top100-filter-row">
+      <span class="top100-filter-label">Genre</span>${gChips}
+    </div>
+    <div class="top100-filter-row">
+      <span class="top100-filter-label">Decade</span>${dChips}${actionsHtml}
+    </div>`;
+  bar.style.display = 'block';
+}
+
+function toggleTop100Filter(type, value) {
+  if (_top100Filters[type].has(value)) _top100Filters[type].delete(value);
+  else _top100Filters[type].add(value);
+  applyTop100Filters();
+}
+
+function clearTop100Filters() {
+  _top100Filters.genres.clear();
+  _top100Filters.decades.clear();
+  applyTop100Filters();
+}
+
+function applyTop100Filters() {
+  buildTop100FilterBar();
+  const hasFilter   = _top100Filters.genres.size || _top100Filters.decades.size;
+  const filtered    = hasFilter ? _getFilteredMovies() : _top100AllMovies;
+  const filteredIds = new Set(filtered.map(m => m.id));
+
+  const items = document.querySelectorAll('.top100-item');
+  items.forEach((el, i) => {
+    const mid = el.id.replace('top100-item-', '');
+    if (hasFilter) {
+      // Show all matching regardless of position; hide non-matching
+      el.style.display = filteredIds.has(mid) ? '' : 'none';
+      el.classList.remove('top100-item-hidden');
+    } else {
+      // Restore original preview limit unless user already expanded
+      el.style.display = '';
+      if (!_top100ShowAll && i >= TOP100_PREVIEW) el.classList.add('top100-item-hidden');
+      else el.classList.remove('top100-item-hidden');
+    }
+  });
+
+  // Show More button: hide while filtering, restore otherwise
+  const wrap = document.getElementById('top100ShowMoreWrap');
+  if (wrap) wrap.style.display = (hasFilter || _top100ShowAll) ? 'none' : '';
+
+  // Empty state for zero matches
+  let empty = document.getElementById('top100FilterEmpty');
+  if (hasFilter && !filtered.length) {
+    if (!empty) {
+      empty = document.createElement('div');
+      empty.id = 'top100FilterEmpty';
+      empty.className = 'top100-filter-empty';
+      empty.innerHTML = '<span>🔍</span>No films match these filters — try removing one';
+      document.getElementById('top100List').appendChild(empty);
+    }
+    empty.style.display = '';
+  } else if (empty) {
+    empty.style.display = 'none';
+  }
+}
+
 /* ── Render the list ── */
 function renderTop100(movies) {
+  // Store for filter use; reset show-all flag on fresh render
+  _top100AllMovies = movies;
+  _top100ShowAll   = false;
+
   const list       = document.getElementById('top100List');
   const myVotes    = getMyVotes();
   const pendingIds = getPendingVotes().map(v => v.id);
@@ -5210,13 +5340,13 @@ function renderTop100(movies) {
 
   if (!movies.length) {
     list.innerHTML = '<div class="top100-empty"><span>🎬</span>No votes yet — be the first to nominate a film!</div>';
+    document.getElementById('top100FilterBar').style.display = 'none';
     return;
   }
 
   maybeSaveRankSnapshot(movies);
 
-  const TOP_PREVIEW = 10;
-  const hasMore = movies.length > TOP_PREVIEW;
+  const hasMore = movies.length > TOP100_PREVIEW;
 
   list.innerHTML = movies.map((m, i) => {
     const rank       = i + 1;
@@ -5236,7 +5366,7 @@ function renderTop100(movies) {
         ? `<button class="top100-vote-btn picked" onclick="addPending('${m.id}','${escJs(m.title)}','${escJs(m.poster||'')}','${escJs(m.backdrop||'')}',${m.year||0},'${escJs((m.genres||[]).join('|'))}')">✓ Picked</button>`
         : `<button class="top100-vote-btn" ${canVote?'':'disabled'} onclick="addPending('${m.id}','${escJs(m.title)}','${escJs(m.poster||'')}','${escJs(m.backdrop||'')}',${m.year||0},'${escJs((m.genres||[]).join('|'))}')">Vote</button>`;
 
-    const hidden = i >= TOP_PREVIEW ? ' top100-item-hidden' : '';
+    const hidden = i >= TOP100_PREVIEW ? ' top100-item-hidden' : '';
 
     return `
       <div class="top100-item${hidden}" id="top100-item-${m.id}" data-mid="${m.id}">
@@ -5264,7 +5394,7 @@ function renderTop100(movies) {
 
   // "Show Full List" button or count chip
   if (hasMore) {
-    const remaining = movies.length - TOP_PREVIEW;
+    const remaining = movies.length - TOP100_PREVIEW;
     list.insertAdjacentHTML('beforeend', `
       <div class="top100-show-more-wrap" id="top100ShowMoreWrap">
         <div class="top100-show-more-fade"></div>
@@ -5279,9 +5409,13 @@ function renderTop100(movies) {
 
   // Start reading-behavior tracking on newly rendered cards
   _observeTop100Cards();
+
+  // Build filter bar from the freshly rendered data
+  buildTop100FilterBar();
 }
 
 function showFullTop100() {
+  _top100ShowAll = true;
   document.querySelectorAll('.top100-item-hidden').forEach(el => el.classList.remove('top100-item-hidden'));
   const wrap = document.getElementById('top100ShowMoreWrap');
   if (wrap) wrap.outerHTML = `<div class="top100-count-chip" id="top100CountChip">${document.querySelectorAll('.top100-item').length} films · Minimum 2 votes to appear</div>`;
