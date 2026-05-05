@@ -580,7 +580,11 @@
   #reviewCanvas { width:100%; height:auto; display:block; border-radius:14px; }
   .pco-card { background:#161616; border:1px solid #2a2a2a; border-radius:20px; padding:28px; width:100%; max-width:480px; text-align:center; }
   .pco-title { font-family:'Bebas Neue',sans-serif; font-size:1.6rem; color:#fff; letter-spacing:.1em; margin:0 0 4px; }
-  .pco-sub { color:#555; font-size:.78rem; margin:0 0 20px; }
+  .pco-sub { color:#555; font-size:.78rem; margin:0 0 14px; }
+  .rc-format-toggle { display:flex; gap:6px; justify-content:center; margin-bottom:16px; }
+  .rc-fmt-btn { background:#1a1a1a; border:1px solid #2e2e2e; color:#666; border-radius:20px; padding:6px 16px; font-size:.75rem; font-weight:700; letter-spacing:.05em; cursor:pointer; transition:.2s; }
+  .rc-fmt-btn.active { background:rgba(245,166,35,0.12); border-color:rgba(245,166,35,0.5); color:#f5a623; }
+  .rc-fmt-btn:hover:not(.active) { border-color:#444; color:#aaa; }
   .pco-canvas-wrap { position:relative; border-radius:14px; overflow:hidden; margin-bottom:20px; background:#111; min-height:160px; display:flex; align-items:center; justify-content:center; }
   #picksCanvas { width:100%; height:auto; display:block; border-radius:14px; }
   .pco-spinner { color:#444; font-size:.85rem; }
@@ -4375,7 +4379,10 @@
   <div id="reviewCardOverlay">
     <div class="pco-card">
       <div class="pco-title">🎬 Review Card</div>
-      <p class="pco-sub">Save and share your review</p>
+      <div class="rc-format-toggle">
+        <button class="rc-fmt-btn active" id="rcFmtSquare" onclick="_setReviewFormat('square')">&#9726; Square</button>
+        <button class="rc-fmt-btn" id="rcFmtReel" onclick="_setReviewFormat('reel')">&#9646; Reel / Post</button>
+      </div>
       <div class="pco-canvas-wrap">
         <canvas id="reviewCanvas" width="1080" height="1080"></canvas>
       </div>
@@ -6004,11 +6011,169 @@ async function generateReviewCard(r) {
   _reviewCardDataUrl = canvas.toDataURL('image/png');
 }
 
+let _reviewCardFormat = 'square'; // 'square' | 'reel'
+let _currentReviewFp  = null;
+
+function _setReviewFormat(fmt) {
+  _reviewCardFormat = fmt;
+  document.getElementById('rcFmtSquare').classList.toggle('active', fmt === 'square');
+  document.getElementById('rcFmtReel').classList.toggle('active',   fmt === 'reel');
+  const canvas = document.getElementById('reviewCanvas');
+  if (fmt === 'reel') {
+    canvas.width  = 1080;
+    canvas.height = 1920;
+  } else {
+    canvas.width  = 1080;
+    canvas.height = 1080;
+  }
+  const r = _reviewCardRegistry.get(_currentReviewFp);
+  if (r) (fmt === 'reel' ? generateReviewCardReel(r) : generateReviewCard(r));
+}
+
+async function generateReviewCardReel(r) {
+  const canvas = document.getElementById('reviewCanvas');
+  const ctx    = canvas.getContext('2d');
+  const W = 1080, H = 1920;
+  canvas.width = W; canvas.height = H;
+
+  const assets = await _fetchReviewAssets(r.movie || '');
+  const [bdImg, posterImg] = await Promise.all([
+    assets.backdrop ? _loadImg(assets.backdrop) : Promise.resolve(null),
+    assets.poster   ? _loadImg(assets.poster)   : Promise.resolve(null)
+  ]);
+
+  // ── Full-height backdrop ──
+  ctx.fillStyle = '#0c0c0c';
+  ctx.fillRect(0, 0, W, H);
+  if (bdImg) {
+    // Scale backdrop to cover full 9:16 height
+    const bRatio = bdImg.width / bdImg.height;
+    let bW = W, bH = W / bRatio;
+    if (bH < H) { bH = H; bW = H * bRatio; }
+    const bX = (W - bW) / 2, bY = (H - bH) / 2;
+    ctx.save(); ctx.filter = 'blur(8px)';
+    ctx.drawImage(bdImg, bX, bY, bW, bH);
+    ctx.restore();
+    const grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0,   'rgba(0,0,0,0.5)');
+    grad.addColorStop(0.3, 'rgba(0,0,0,0.55)');
+    grad.addColorStop(0.6, 'rgba(0,0,0,0.82)');
+    grad.addColorStop(1,   'rgba(0,0,0,0.97)');
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+  }
+
+  // ── Corner accents ──
+  const CA = 38, CM = 36;
+  ctx.strokeStyle = '#f5a623'; ctx.lineWidth = 3; ctx.lineCap = 'square';
+  [[CM,CM+CA,CM,CM,CM+CA,CM],[W-CM-CA,CM,W-CM,CM,W-CM,CM+CA],
+   [CM,H-CM-CA,CM,H-CM,CM+CA,H-CM],[W-CM-CA,H-CM,W-CM,H-CM,W-CM,H-CM-CA]
+  ].forEach(([x1,y1,mx,my,x2,y2]) => {
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(mx,my); ctx.lineTo(x2,y2); ctx.stroke();
+  });
+
+  // ── PMOVIES brand pill ──
+  ctx.font = 'bold 22px "Arial Black", Arial, sans-serif';
+  ctx.letterSpacing = '7px'; ctx.textAlign = 'center';
+  const bW2 = ctx.measureText('PMOVIES').width + 56;
+  const bX2 = W/2 - bW2/2, bY2 = 100;
+  ctx.save();
+  ctx.shadowColor = 'rgba(245,166,35,0.55)'; ctx.shadowBlur = 24;
+  ctx.fillStyle = 'rgba(245,166,35,0.18)';
+  ctx.beginPath(); ctx.roundRect(bX2, bY2, bW2, 38, 19); ctx.fill();
+  ctx.restore();
+  ctx.strokeStyle = 'rgba(245,166,35,0.55)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.roundRect(bX2, bY2, bW2, 38, 19); ctx.stroke();
+  ctx.save();
+  ctx.shadowColor = 'rgba(245,166,35,0.7)'; ctx.shadowBlur = 14;
+  ctx.fillStyle = '#f5a623'; ctx.fillText('PMOVIES', W/2, bY2 + 27);
+  ctx.restore();
+
+  // ── Movie poster (taller, more prominent) ──
+  const PW = 340, PH = 510, PX = (W - PW) / 2, PY = 180;
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.9)'; ctx.shadowBlur = 60; ctx.shadowOffsetY = 24;
+  ctx.fillStyle = '#111';
+  ctx.beginPath(); ctx.roundRect(PX, PY, PW, PH, 16); ctx.fill();
+  ctx.restore();
+  ctx.save();
+  ctx.beginPath(); ctx.roundRect(PX, PY, PW, PH, 16); ctx.clip();
+  if (posterImg) { ctx.drawImage(posterImg, PX, PY, PW, PH); }
+  else { ctx.fillStyle='#1c1c1c'; ctx.fillRect(PX,PY,PW,PH); ctx.font='96px sans-serif'; ctx.textAlign='center'; ctx.fillText('🎬',W/2,PY+PH/2+32); }
+  ctx.restore();
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.roundRect(PX, PY, PW, PH, 16); ctx.stroke();
+
+  // ── Stars ──
+  const stars   = '★'.repeat(Math.max(0, Math.min(5, r.rating||0)));
+  const emptyS  = '☆'.repeat(5-(r.rating||0));
+  const STAR_Y  = PY + PH + 70;
+  ctx.font = 'bold 46px Arial, sans-serif';
+  ctx.letterSpacing = '4px'; ctx.textAlign = 'center';
+  ctx.fillStyle = '#f5a623'; ctx.fillText(stars,  W/2 - (emptyS.length*12), STAR_Y);
+  ctx.fillStyle = '#2a2a2a'; ctx.fillText(emptyS, W/2 + (stars.length*12),  STAR_Y);
+
+  // ── Movie title + year ──
+  const TITLE_Y = STAR_Y + 64;
+  ctx.font = 'bold 52px "Arial Black", Arial, sans-serif';
+  ctx.fillStyle = '#ffffff'; ctx.letterSpacing = '0px';
+  let titleText = r.movie || '';
+  while (titleText.length > 0 && ctx.measureText(titleText).width > W-120) titleText = titleText.slice(0,-1);
+  if (titleText.length < (r.movie||'').length) titleText += '…';
+  ctx.fillText(titleText, W/2, TITLE_Y);
+  if (assets.year) {
+    ctx.font = '400 24px Arial, sans-serif'; ctx.fillStyle = '#666'; ctx.letterSpacing = '2px';
+    ctx.fillText(assets.year, W/2, TITLE_Y + 40);
+  }
+
+  // ── Divider ──
+  const DIV_Y = TITLE_Y + (assets.year ? 80 : 52);
+  ctx.strokeStyle = '#2a2a2a'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(100, DIV_Y); ctx.lineTo(W/2-16, DIV_Y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(W/2+16, DIV_Y); ctx.lineTo(W-100, DIV_Y); ctx.stroke();
+  ctx.fillStyle = '#f5a623';
+  ctx.beginPath(); ctx.arc(W/2, DIV_Y, 4, 0, Math.PI*2); ctx.fill();
+
+  // ── Review text (up to 8 lines — tall format has the room) ──
+  if (r.text) {
+    const TEXT_Y = DIV_Y + 52;
+    const isRTL = /[؀-ۿݐ-ݿࢠ-ࣿﭐ-﷿ﹰ-﻿]/.test(r.text);
+    ctx.save();
+    if (isRTL) ctx.direction = 'rtl';
+    ctx.font = 'italic 28px Georgia, serif';
+    ctx.fillStyle = '#cccccc'; ctx.letterSpacing = '0px'; ctx.textAlign = 'center';
+    _wrapReviewText(ctx, isRTL ? r.text : '"'+r.text+'"', W/2, TEXT_Y, W-180, 44, 8);
+    ctx.restore();
+  }
+
+  // ── Reviewer name ──
+  const NAME_Y = H - 220;
+  ctx.font = 'bold 26px Arial, sans-serif';
+  ctx.fillStyle = '#f5a623'; ctx.letterSpacing = '1px'; ctx.textAlign = 'center';
+  ctx.fillText('— ' + (r.name || 'Anonymous'), W/2, NAME_Y);
+
+  // ── Footer ──
+  ctx.strokeStyle = '#222'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(100, H-130); ctx.lineTo(W-100, H-130); ctx.stroke();
+  ctx.font = '400 20px Arial, sans-serif'; ctx.fillStyle = '#3a3a3a'; ctx.letterSpacing = '2px';
+  ctx.fillText('SHARE YOUR REVIEW AT', W/2, H-98);
+  ctx.font = 'bold 26px "Arial Black", Arial, sans-serif'; ctx.fillStyle = '#f5a623'; ctx.letterSpacing = '0px';
+  ctx.fillText('p-movies.com', W/2, H-56);
+
+  _reviewCardDataUrl = canvas.toDataURL('image/png');
+}
+
 async function _openReviewCard(fp) {
   _closeAllShareMenus();
   const r = _reviewCardRegistry.get(fp);
   if (!r) return;
+  _currentReviewFp  = fp;
+  _reviewCardFormat = 'square';
   _reviewCardDataUrl = null;
+  // Reset format toggle to square
+  document.getElementById('rcFmtSquare')?.classList.add('active');
+  document.getElementById('rcFmtReel')?.classList.remove('active');
+  const canvas = document.getElementById('reviewCanvas');
+  canvas.width = 1080; canvas.height = 1080;
   const overlay = document.getElementById('reviewCardOverlay');
   const shareBtn = document.getElementById('reviewShareBtn');
   if (shareBtn) shareBtn.style.display = navigator.share ? '' : 'none';
