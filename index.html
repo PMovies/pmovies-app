@@ -2776,11 +2776,21 @@
   }
 
   async function fetchLbItems() {
-    // Use corsproxy.io — plain pass-through, no server-side cache
-    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(LB_RSS_URL)}`;
-    const res = await fetch(proxyUrl, { cache: 'no-store' });
-    if (!res.ok) throw new Error('Feed unavailable');
-    const text = await res.text();
+    // Try multiple CORS proxies in order — fall through if one is down
+    const proxies = [
+      `https://corsproxy.io/?${encodeURIComponent(LB_RSS_URL)}`,
+      `https://api.allorigins.win/raw?url=${encodeURIComponent(LB_RSS_URL)}`,
+      `https://thingproxy.freeboard.io/fetch/${LB_RSS_URL}`
+    ];
+    let text = null;
+    for (const proxyUrl of proxies) {
+      try {
+        const res = await fetch(proxyUrl, { cache: 'no-store' });
+        if (res.ok) { text = await res.text(); break; }
+      } catch(_) {}
+    }
+    if (!text) throw new Error('Feed unavailable');
+
     const xml  = new DOMParser().parseFromString(text, 'text/xml');
     const items = [...xml.querySelectorAll('item')].map(el => {
       const get = tag => el.querySelector(tag)?.textContent?.trim() || '';
@@ -3550,10 +3560,20 @@
 
   async function fetchFriendFeed(username) {
     try {
-      const url = `https://corsproxy.io/?${encodeURIComponent('https://letterboxd.com/' + username + '/rss/')}`;
-      const res = await fetch(url, { cache: 'no-store' });
-      if (!res.ok) return [];
-      const text = await res.text();
+      const rssTarget = 'https://letterboxd.com/' + username + '/rss/';
+      const proxies = [
+        `https://corsproxy.io/?${encodeURIComponent(rssTarget)}`,
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(rssTarget)}`,
+        `https://thingproxy.freeboard.io/fetch/${rssTarget}`
+      ];
+      let text = null;
+      for (const proxyUrl of proxies) {
+        try {
+          const res = await fetch(proxyUrl, { cache: 'no-store' });
+          if (res.ok) { text = await res.text(); break; }
+        } catch(_) {}
+      }
+      if (!text) return [];
       const xml  = new DOMParser().parseFromString(text, 'text/xml');
       const items = [...xml.querySelectorAll('item')];
       return items.slice(0, 5).map(el => {
