@@ -1392,8 +1392,46 @@
 
   <!-- NOW AIRING -->
   <div class="trending-section" id="nowAiringSection" style="margin-top:32px">
+
     <div class="section-label">📺 Now Airing</div>
     <div id="nowAiringContent"></div>
+  </div>
+
+  <!-- SERIES FAN REVIEWS -->
+  <div class="section-wrap" id="srFanSection" style="margin-top:48px">
+    <div class="lb-header">
+      <div class="lb-title-block">
+        <h2>SERIES <em>REVIEWS</em></h2>
+        <p>What the community thinks</p>
+      </div>
+    </div>
+    <div id="srFanReviewForm" style="display:none">
+      <div class="fan-form-wrap">
+        <h3 class="fan-form-title">Leave a review</h3>
+        <div class="fan-form-row">
+          <input id="srFanName" type="text" placeholder="Your name" maxlength="40" autocomplete="off"/>
+          <div class="fan-movie-wrap">
+            <input id="srFanSeries" type="text" placeholder="Search series title…" maxlength="80" autocomplete="off"
+              oninput="srFanSeriesSearch(this.value)"
+              onblur="setTimeout(hideSrFanSeriesDropdown, 200)"/>
+            <div class="fan-movie-dropdown" id="srFanSeriesDropdown" style="display:none"></div>
+          </div>
+        </div>
+        <div class="fan-star-row" id="srFanStarPicker">
+          <span class="fan-star sr-star" data-v="1">★</span>
+          <span class="fan-star sr-star" data-v="2">★</span>
+          <span class="fan-star sr-star" data-v="3">★</span>
+          <span class="fan-star sr-star" data-v="4">★</span>
+          <span class="fan-star sr-star" data-v="5">★</span>
+          <span class="fan-star-label" id="srFanStarLabel">Click to rate</span>
+        </div>
+        <input type="hidden" id="srFanRating" value="0"/>
+        <textarea id="srFanText" placeholder="What did you think? (max 1500 chars)" maxlength="1500" rows="3"></textarea>
+        <button class="fan-submit-btn" onclick="submitSeriesReview()">POST REVIEW</button>
+      </div>
+    </div>
+    <div id="srFanReviewsList"></div>
+    <div id="srFanRecords" class="fan-records" style="display:none"></div>
   </div>
 
 </div><!-- /tab-panel-series -->
@@ -1719,7 +1757,8 @@
   };
   let currentTvMood = null;
   let tvPage = 1;
-  let nowAiringLoaded = false;
+  let nowAiringLoaded  = false;
+  let srReviewsLoaded  = false;
   let nowAiringHeroes = []; // backdrop-capable shows for random hero picks
   let lastTvHero = null;
 
@@ -2952,10 +2991,11 @@
   }
 
   const posterCache = {};
-  function fetchPoster(movieTitle) {
-    const key = movieTitle.toLowerCase().trim();
-    if (posterCache[key]) return posterCache[key]; // return existing promise
-    posterCache[key] = fetch(`${TMDB}/search/movie?api_key=${getKey()}&query=${encodeURIComponent(movieTitle)}&language=en-US&page=1`)
+  function fetchPoster(title, mediaType = 'movie') {
+    const key = (mediaType + ':' + title).toLowerCase().trim();
+    if (posterCache[key]) return posterCache[key];
+    const endpoint = mediaType === 'tv' ? 'search/tv' : 'search/movie';
+    posterCache[key] = fetch(`${TMDB}/${endpoint}?api_key=${getKey()}&query=${encodeURIComponent(title)}&language=en-US&page=1`)
       .then(r => r.json())
       .then(data => {
         const hit = (data.results || []).find(m => m.poster_path);
@@ -3290,6 +3330,270 @@
   }
 
 
+  /* ══════════════════════════════════════════════
+     SERIES FAN REVIEWS
+     ══════════════════════════════════════════════ */
+  let allSeriesReviews = [];
+  let srFanReviewsShown = FAN_PAGE_SIZE;
+  let srRating = 0;
+  const _srReviewCardRegistry = new Map();
+
+  function setupSrFanStars() {
+    document.querySelectorAll('.sr-star').forEach(s => {
+      s.addEventListener('mouseover', () => {
+        document.querySelectorAll('.sr-star').forEach(x => x.classList.toggle('active', +x.dataset.v <= +s.dataset.v));
+      });
+      s.addEventListener('click', () => {
+        srRating = +s.dataset.v;
+        document.getElementById('srFanRating').value = srRating;
+        document.getElementById('srFanStarLabel').textContent = ['','★','★★','★★★','★★★★','★★★★★'][srRating] + ' rated';
+      });
+    });
+    document.getElementById('srFanStarPicker').addEventListener('mouseleave', () => {
+      document.querySelectorAll('.sr-star').forEach(x => x.classList.toggle('active', +x.dataset.v <= srRating));
+    });
+  }
+
+  function renderSeriesReviews(reviews, limit) {
+    allSeriesReviews = reviews;
+    if (limit !== undefined) srFanReviewsShown = limit;
+    const list = document.getElementById('srFanReviewsList');
+    if (!reviews.length) {
+      list.innerHTML = '<div class="fan-empty">Be the first to review a series! 📺</div>';
+      document.getElementById('srFanRecords').style.display = 'none';
+      return;
+    }
+    list.innerHTML = '';
+    const visible = reviews.slice(0, srFanReviewsShown);
+    const grid = document.createElement('div'); grid.className = 'fan-reviews-grid';
+
+    visible.forEach((r, idx) => {
+      const stars = '★'.repeat(Math.max(0, Math.min(5, r.rating || 0)));
+      const ts    = r.timestamp ? new Date(r.timestamp) : null;
+      const date  = ts ? ts.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
+      const fp    = fanReviewFp(r);
+      const likes = getFanLikes(fp);
+      const liked = hasFanLiked(fp);
+      const card  = document.createElement('div'); card.className = 'fan-review-card';
+      const posterId = `sr-poster-${idx}`;
+      card.innerHTML = `
+        <div class="fan-review-poster" id="${posterId}">
+          <div class="fan-review-poster-ph">📺</div>
+        </div>
+        <div class="fan-review-content">
+          <div class="fan-review-top">
+            <div>
+              <div class="fan-reviewer">${esc(r.name || 'Anonymous')}</div>
+              <div class="fan-review-movie">📺 ${esc(r.movie || '')}</div>
+            </div>
+            <div style="text-align:right">
+              <div class="fan-review-stars">${stars}</div>
+              <div class="fan-review-date">${date}</div>
+            </div>
+          </div>
+          <div class="fan-review-body">${esc(r.text || '')}</div>
+          <div class="fan-review-actions">
+            <button class="fan-like-btn${liked ? ' liked' : ''}" data-fp="${fp}" onclick="toggleFanLike(this)">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+              <span class="like-count">${likes > 0 ? likes : ''}</span>
+            </button>
+            <div style="position:relative">
+              <button class="fan-action-btn" onclick="toggleShareMenu('srsm-${fp}',event)">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
+                Share
+              </button>
+              <div class="card-share-menu" id="srsm-${fp}"
+                   data-title="${esc(r.name||'Anonymous')} on ${esc(r.movie||'')}"
+                   data-text="${esc(stars + (stars?' ':'') + (r.name||'Anonymous') + ' watched ' + (r.movie||'') + (r.text ? ' — ' + r.text.slice(0,140) + (r.text.length>140?'…':'') : ''))}"
+                   data-url="https://p-movies.com/#series">
+                <button class="card-share-opt" onclick="pmShareFromMenu(this,'whatsapp')">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.862L.054 23.625a.75.75 0 00.92.92l5.733-1.487A11.955 11.955 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/></svg>
+                  WhatsApp
+                </button>
+                <button class="card-share-opt" onclick="pmShareFromMenu(this,'x')">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="#fff"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.259 5.631 5.905-5.631zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                  X / Twitter
+                </button>
+                <button class="card-share-opt" onclick="pmShareFromMenu(this,'instagram')">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="#E1306C"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                  Instagram
+                </button>
+                <button class="card-share-opt" onclick="pmShareFromMenu(this,'copy')">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="#aaa"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                  Copy link
+                </button>
+                <button class="card-share-opt" onclick="_openSrReviewCard('${fp}')">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="#f5a623"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                  Save Card
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      _srReviewCardRegistry.set(fp, r);
+      grid.appendChild(card);
+      if (r.movie) {
+        fetchPoster(r.movie, 'tv').then(url => {
+          const ph = document.getElementById(posterId);
+          if (ph && url) ph.innerHTML = `<img src="${url}" alt="${esc(r.movie)}" loading="lazy"/>`;
+        });
+      }
+    });
+    list.appendChild(grid);
+
+    if (reviews.length > srFanReviewsShown) {
+      const remaining = reviews.length - srFanReviewsShown;
+      const btn = document.createElement('div');
+      btn.className = 'fan-load-more-wrap';
+      btn.innerHTML = `<button class="fan-load-more-btn" onclick="loadMoreSeriesReviews()">Load More Reviews<span class="fan-load-more-count">${remaining} more</span></button>`;
+      list.appendChild(btn);
+    } else if (reviews.length > FAN_PAGE_SIZE) {
+      const chip = document.createElement('div');
+      chip.className = 'top100-count-chip';
+      chip.textContent = `All ${reviews.length} reviews loaded`;
+      list.appendChild(chip);
+    }
+    renderSeriesRecords(reviews, 'all');
+  }
+
+  function loadMoreSeriesReviews() {
+    srFanReviewsShown += FAN_PAGE_SIZE;
+    renderSeriesReviews(allSeriesReviews);
+  }
+
+  function renderSeriesRecords(reviews, tab) {
+    const wrap = document.getElementById('srFanRecords');
+    if (!reviews.length) { wrap.style.display = 'none'; return; }
+    const now = new Date(), month = now.getMonth(), year = now.getFullYear();
+    const monthName = now.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+    const monthly = reviews.filter(r => {
+      const ts = r.timestamp ? new Date(r.timestamp) : null;
+      return ts && ts.getMonth() === month && ts.getFullYear() === year;
+    });
+    const activeTab = tab || 'all';
+    const gridHTML  = activeTab === 'month' ? buildRecordsGrid(monthly) : buildRecordsGrid(reviews);
+    wrap.innerHTML = `
+      <div class="fan-records-title">🏆 Fan <span>Records</span></div>
+      <div class="fan-records-toggle">
+        <button class="fan-records-tab ${activeTab==='all'?'active':''}" onclick="renderSeriesRecords(allSeriesReviews,'all')">All Time</button>
+        <button class="fan-records-tab ${activeTab==='month'?'active':''}" onclick="renderSeriesRecords(allSeriesReviews,'month')">${monthName}</button>
+      </div>
+      ${gridHTML}`;
+    wrap.style.display = 'block';
+  }
+
+  async function loadSeriesReviews() {
+    srFanReviewsShown = FAN_PAGE_SIZE;
+    const form = document.getElementById('srFanReviewForm');
+    const list = document.getElementById('srFanReviewsList');
+    form.style.display = 'block';
+    setupSrFanStars();
+    list.innerHTML = '<div class="yt-loading">Loading series reviews…</div>';
+
+    let reviews = [];
+    try {
+      const res  = await fetch(`${RTDB}/seriesFanReviews.json`);
+      const data = res.ok ? await res.json() : null;
+      if (data) reviews = Object.values(data);
+    } catch(_) {}
+
+    reviews.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    renderSeriesReviews(reviews);
+  }
+
+  async function submitSeriesReview() {
+    const name   = document.getElementById('srFanName').value?.trim();
+    const seriesEl = document.getElementById('srFanSeries');
+    const series = (seriesEl.dataset.cleanTitle || seriesEl.value || '').trim();
+    const rating = +(document.getElementById('srFanRating').value) || 0;
+    const text   = document.getElementById('srFanText').value?.trim();
+    if (!name || !series || !text) { alert('Please fill in your name, series, and review.'); return; }
+    if (!rating)                   { alert('Please give a star rating.'); return; }
+    try {
+      const btn = document.querySelector('#srFanSection .fan-submit-btn');
+      btn.textContent = 'Posting…'; btn.disabled = true;
+      const reviewData = { name, movie: series, rating, text, timestamp: Date.now(), mediaType: 'tv' };
+      await fetch(`${RTDB}/seriesFanReviews.json`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reviewData)
+      });
+      document.getElementById('srFanName').value = '';
+      seriesEl.value = ''; seriesEl.dataset.cleanTitle = '';
+      document.getElementById('srFanText').value = '';
+      srRating = 0; document.getElementById('srFanRating').value = 0;
+      document.querySelectorAll('.sr-star').forEach(x => x.classList.remove('active'));
+      document.getElementById('srFanStarLabel').textContent = 'Click to rate';
+      btn.textContent = 'POST REVIEW'; btn.disabled = false;
+      showToast('Review posted! 📺');
+      await loadSeriesReviews();
+    } catch(e) {
+      alert('Could not submit: ' + e.message);
+      const btn = document.querySelector('#srFanSection .fan-submit-btn');
+      btn.textContent = 'POST REVIEW'; btn.disabled = false;
+    }
+  }
+
+  async function _openSrReviewCard(fp) {
+    _closeAllShareMenus();
+    const r = _srReviewCardRegistry.get(fp);
+    if (!r) return;
+    _currentReviewFp  = fp;
+    _reviewCardFormat = 'square';
+    _reviewCardDataUrl = null;
+    document.getElementById('rcFmtSquare')?.classList.add('active');
+    document.getElementById('rcFmtReel')?.classList.remove('active');
+    const canvas = document.getElementById('reviewCanvas');
+    canvas.width = 1080; canvas.height = 1080;
+    const overlay  = document.getElementById('reviewCardOverlay');
+    const shareBtn = document.getElementById('reviewShareBtn');
+    if (shareBtn) shareBtn.style.display = navigator.share ? '' : 'none';
+    overlay.classList.add('open');
+    // Patch registry so format toggle can find it
+    _reviewCardRegistry.set(fp, r);
+    await generateReviewCard(r);
+  }
+
+  /* ══ SERIES SEARCH FOR REVIEW FORM ══ */
+  let srFanSeriesTimer = null;
+  function hideSrFanSeriesDropdown() {
+    const dd = document.getElementById('srFanSeriesDropdown');
+    if (dd) dd.style.display = 'none';
+  }
+  function selectSrFanSeries(title, year) {
+    const input = document.getElementById('srFanSeries');
+    input.value = title + (year ? ` (${year})` : '');
+    input.dataset.cleanTitle = title;
+    hideSrFanSeriesDropdown();
+  }
+  function srFanSeriesSearch(q) {
+    clearTimeout(srFanSeriesTimer);
+    const dd = document.getElementById('srFanSeriesDropdown');
+    q = q.trim();
+    if (q.length < 2) { hideSrFanSeriesDropdown(); return; }
+    srFanSeriesTimer = setTimeout(async () => {
+      try {
+        const res  = await fetch(`${TMDB}/search/tv?api_key=${getKey()}&query=${encodeURIComponent(q)}&language=en-US&page=1`);
+        const data = await res.json();
+        const hits = (data.results || []).slice(0, 6);
+        if (!hits.length) { hideSrFanSeriesDropdown(); return; }
+        dd.innerHTML = hits.map(s => {
+          const year  = s.first_air_date ? s.first_air_date.slice(0,4) : '';
+          const thumb = s.poster_path ? `https://image.tmdb.org/t/p/w92${s.poster_path}` : null;
+          return `<div class="fan-movie-opt" onmousedown="selectSrFanSeries('${escJs(s.name)}','${year}')">
+            ${thumb ? `<img src="${thumb}" alt="" loading="lazy"/>` : '<div class="fan-movie-opt-no-img">📺</div>'}
+            <div class="fan-movie-opt-info">
+              <div class="fan-movie-opt-title">${esc(s.name)}</div>
+              ${year ? `<div class="fan-movie-opt-year">${year}</div>` : ''}
+            </div>
+          </div>`;
+        }).join('');
+        dd.style.display = 'block';
+      } catch(_) { hideSrFanSeriesDropdown(); }
+    }, 300);
+  }
+
   /* ══ FAN MOVIE SEARCH ══ */
   let fanMovieTimer = null;
   function hideFanMovieDropdown() {
@@ -3348,6 +3652,7 @@
         setHeroBackdrop(lastTvHero);
       }
       if (!nowAiringLoaded) { loadNowAiring(); nowAiringLoaded = true; }
+      if (!srReviewsLoaded) { loadSeriesReviews(); srReviewsLoaded = true; }
     } else if (name !== 'backed') {
       loadHeroBackdrop(); // fresh random movie hero — skip on Backed tab
     }
@@ -5817,16 +6122,18 @@ async function shareReviewCard() {
   downloadReviewCard();
 }
 
-async function _fetchReviewAssets(movieTitle) {
+async function _fetchReviewAssets(title, mediaType = 'movie') {
   try {
-    const res  = await fetch(`${TMDB}/search/movie?api_key=${getKey()}&query=${encodeURIComponent(movieTitle)}&language=en-US&page=1`);
+    const ep   = mediaType === 'tv' ? 'search/tv' : 'search/movie';
+    const res  = await fetch(`${TMDB}/${ep}?api_key=${getKey()}&query=${encodeURIComponent(title)}&language=en-US&page=1`);
     const data = await res.json();
     const hit  = (data.results || []).find(m => m.backdrop_path || m.poster_path) || data.results?.[0];
     if (!hit) return { poster: null, backdrop: null, year: '' };
+    const dateField = hit.first_air_date || hit.release_date || '';
     return {
       poster:   hit.poster_path   ? `https://image.tmdb.org/t/p/w342${hit.poster_path}`   : null,
       backdrop: hit.backdrop_path ? `https://image.tmdb.org/t/p/w780${hit.backdrop_path}` : null,
-      year:     hit.release_date  ? hit.release_date.slice(0, 4) : ''
+      year:     dateField.slice(0, 4)
     };
   } catch(_) { return { poster: null, backdrop: null, year: '' }; }
 }
@@ -5861,11 +6168,12 @@ async function generateReviewCard(r) {
 
   const stars    = '★'.repeat(Math.max(0, Math.min(5, r.rating || 0)));
   const emptyS   = '☆'.repeat(5 - (r.rating || 0));
-  const assets   = await _fetchReviewAssets(r.movie || '');
+  const assets   = await _fetchReviewAssets(r.movie || '', r.mediaType || 'movie');
   const [bdImg, posterImg] = await Promise.all([
     assets.backdrop ? _loadImg(assets.backdrop) : Promise.resolve(null),
     assets.poster   ? _loadImg(assets.poster)   : Promise.resolve(null)
   ]);
+  const mediaIcon = r.mediaType === 'tv' ? '📺' : '🎬';
 
   // ── Background: backdrop stretched + dark overlay ──
   ctx.fillStyle = '#0c0c0c';
@@ -5941,7 +6249,7 @@ async function generateReviewCard(r) {
   } else {
     ctx.fillStyle = '#1c1c1c'; ctx.fillRect(PX, PY, PW, PH);
     ctx.font = '72px sans-serif'; ctx.textAlign = 'center';
-    ctx.fillText('🎬', W/2, PY + PH/2 + 24);
+    ctx.fillText(mediaIcon, W/2, PY + PH/2 + 24);
   }
   ctx.restore();
   ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 1;
@@ -6036,11 +6344,12 @@ async function generateReviewCardReel(r) {
   const W = 1080, H = 1920;
   canvas.width = W; canvas.height = H;
 
-  const assets = await _fetchReviewAssets(r.movie || '');
+  const assets = await _fetchReviewAssets(r.movie || '', r.mediaType || 'movie');
   const [bdImg, posterImg] = await Promise.all([
     assets.backdrop ? _loadImg(assets.backdrop) : Promise.resolve(null),
     assets.poster   ? _loadImg(assets.poster)   : Promise.resolve(null)
   ]);
+  const mediaIconR = r.mediaType === 'tv' ? '📺' : '🎬';
 
   // ── Full-height backdrop ──
   ctx.fillStyle = '#0c0c0c';
@@ -6098,7 +6407,7 @@ async function generateReviewCardReel(r) {
   ctx.save();
   ctx.beginPath(); ctx.roundRect(PX, PY, PW, PH, 16); ctx.clip();
   if (posterImg) { ctx.drawImage(posterImg, PX, PY, PW, PH); }
-  else { ctx.fillStyle='#1c1c1c'; ctx.fillRect(PX,PY,PW,PH); ctx.font='96px sans-serif'; ctx.textAlign='center'; ctx.fillText('🎬',W/2,PY+PH/2+32); }
+  else { ctx.fillStyle='#1c1c1c'; ctx.fillRect(PX,PY,PW,PH); ctx.font='96px sans-serif'; ctx.textAlign='center'; ctx.fillText(mediaIconR,W/2,PY+PH/2+32); }
   ctx.restore();
   ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.roundRect(PX, PY, PW, PH, 16); ctx.stroke();
