@@ -1,11 +1,11 @@
-const CACHE_NAME = 'pmovies-v51';
+const CACHE_NAME = 'pmovies-v52';
 
 const APP_SHELL = [
-  '/pmovies-app/',
-  '/pmovies-app/index.html',
-  '/pmovies-app/manifest.json',
-  '/pmovies-app/icons/icon-192.png',
-  '/pmovies-app/icons/icon-512.png',
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
 ];
 
 /* ───────── INSTALL ───────── */
@@ -43,11 +43,15 @@ self.addEventListener('activate', event => {
 const API_HOSTS = [
   'api.themoviedb.org',
   'image.tmdb.org',
-  'googleapis.com',                  // covers Firestore & other Google APIs
-  'pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app',  // Firebase RTDB (votes, reviews, lists)
+  'googleapis.com',
+  'pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app',
   'rss2json.com',
   'www.youtube.com',
-  'img.youtube.com',                 // YouTube thumbnails used in BACKED tab
+  'img.youtube.com',
+  'corsproxy.io',
+  'allorigins.win',
+  'thingproxy.freeboard.io',
+  'letterboxd.com',
 ];
 
 function isApiRequest(url) {
@@ -62,7 +66,6 @@ self.addEventListener('fetch', event => {
     event.respondWith(
       fetch(event.request)
         .then(res => {
-          // Cache a fresh copy for offline fallback
           const clone = res.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
           return res;
@@ -73,7 +76,6 @@ self.addEventListener('fetch', event => {
   }
 
   /* ── 2. HTML navigation: network-first ── */
-  // Ensures users always load the latest index.html when online.
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request)
@@ -82,7 +84,7 @@ self.addEventListener('fetch', event => {
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
           return res;
         })
-        .catch(() => caches.match('/pmovies-app/index.html'))
+        .catch(() => caches.match('/index.html'))
     );
     return;
   }
