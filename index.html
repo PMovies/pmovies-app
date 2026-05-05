@@ -5410,8 +5410,9 @@ function renderTop100(movies) {
   // Start reading-behavior tracking on newly rendered cards
   _observeTop100Cards();
 
-  // Build filter bar from the freshly rendered data
+  // Build filter bar; then silently enrich any movies missing genre data
   buildTop100FilterBar();
+  setTimeout(enrichTop100Genres, 800);
 }
 
 function showFullTop100() {
@@ -5569,7 +5570,8 @@ function top100Search(q) {
       const voted   = myVotes.includes(id);
       const pending = pendingIds.includes(id);
       const canVote = rem > 0 && !voted && !pending;
-      const genres  = (m.genre_ids||[]).slice(0,2);
+      const genreNames = (m.genre_ids||[]).slice(0,3).map(id => GENRE_NAMES[id]).filter(Boolean);
+      const genresStr  = genreNames.join('|');
       return `
         <div class="top100-drop-item">
           ${m.poster_path
@@ -5577,7 +5579,7 @@ function top100Search(q) {
             : `<div class="top100-drop-poster"></div>`}
           <div class="top100-drop-info">
             <div class="top100-drop-title">${esc(m.title)}</div>
-            <div class="top100-drop-year">${m.release_date?.slice(0,4)||''}</div>
+            <div class="top100-drop-year">${m.release_date?.slice(0,4)||''}${genreNames.length?' · '+genreNames.slice(0,2).join(', '):''}</div>
           </div>
           ${voted
             ? `<div class="top100-drop-voted">✓ Voted</div>`
@@ -5587,7 +5589,7 @@ function top100Search(q) {
                   onclick="
                     document.getElementById('top100Dropdown').style.display='none';
                     document.getElementById('top100SearchInput').value='';
-                    addPending('${m.id}','${escJs(m.title)}','${escJs(m.poster_path||'')}','${escJs(m.backdrop_path||'')}',${m.release_date?m.release_date.slice(0,4):0},'')
+                    addPending('${m.id}','${escJs(m.title)}','${escJs(m.poster_path||'')}','${escJs(m.backdrop_path||'')}',${m.release_date?m.release_date.slice(0,4):0},'${escJs(genresStr)}')
                   ">${canVote?'+ Pick':'No votes left'}</button>`}
         </div>`;
     }).join('');
@@ -5601,6 +5603,34 @@ document.addEventListener('click', e => {
     document.getElementById('top100Dropdown').style.display = 'none';
   }
 });
+
+// Lazy-enrich movies that have no genre data stored (batched, low-priority)
+async function enrichTop100Genres() {
+  const missing = _top100AllMovies.filter(m => !(m.genres||[]).length);
+  if (!missing.length) return;
+  // Process in small batches to avoid hammering the API
+  const BATCH = 6;
+  for (let i = 0; i < missing.length; i += BATCH) {
+    const batch = missing.slice(i, i + BATCH);
+    await Promise.all(batch.map(async m => {
+      try {
+        const res  = await fetch(`${TMDB}/movie/${m.id}?api_key=${getKey()}&language=en-US`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const names = (data.genres||[]).slice(0,3).map(g => g.name).filter(Boolean);
+        if (names.length) {
+          // Update in-memory record
+          const idx = _top100AllMovies.findIndex(x => x.id === m.id);
+          if (idx !== -1) _top100AllMovies[idx] = { ..._top100AllMovies[idx], genres: names };
+        }
+      } catch(_) {}
+    }));
+    // Small pause between batches
+    if (i + BATCH < missing.length) await new Promise(r => setTimeout(r, 400));
+  }
+  // Rebuild filter bar with enriched data (only if genres were actually found)
+  buildTop100FilterBar();
+}
 
 // Boot
 loadTop100();
