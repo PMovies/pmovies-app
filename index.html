@@ -4985,8 +4985,11 @@ function _detectAnomalies(pendingVotes) {
    HARDWARE / CANVAS FINGERPRINT (device identity)
 ═══════════════════════════════════════════════════════ */
 let _cachedFp = null;
-async function getBrowserFingerprint() {
-  if (_cachedFp) return _cachedFp;
+// Stable fingerprint — device/browser signals only, no session entropy.
+// Used as the Firebase storage key so it is consistent across sessions and domains.
+let _cachedStableFp = null;
+async function getStableFp() {
+  if (_cachedStableFp) return _cachedStableFp;
   const signals = [];
   signals.push(`${screen.width}x${screen.height}x${screen.colorDepth}`);
   signals.push(Intl.DateTimeFormat().resolvedOptions().timeZone || '');
@@ -5003,9 +5006,18 @@ async function getBrowserFingerprint() {
     x.fillStyle = 'rgba(80,200,0,.7)'; x.fillText('fp2025', 4, 36);
     signals.push(c.toDataURL().slice(-60));
   } catch(_) {}
-  // Include behavioral entropy so the fp also encodes session behavior
-  signals.push(_bfpEntropy());
   const raw  = signals.join('||');
+  const buf  = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
+  _cachedStableFp = 'sfp_' + Array.from(new Uint8Array(buf)).slice(0,10).map(b=>b.toString(16).padStart(2,'0')).join('');
+  return _cachedStableFp;
+}
+
+// Behavioral fingerprint — adds session entropy on top of the stable fp.
+// Used only for anomaly scoring; NOT used as a Firebase key.
+async function getBrowserFingerprint() {
+  if (_cachedFp) return _cachedFp;
+  const stable = await getStableFp();
+  const raw  = stable + '||' + _bfpEntropy();
   const buf  = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
   const fp   = 'fp_' + Array.from(new Uint8Array(buf)).slice(0,10).map(b=>b.toString(16).padStart(2,'0')).join('');
   _cachedFp  = fp;
@@ -5015,7 +5027,7 @@ async function getBrowserFingerprint() {
 // Sync RTDB fingerprint votes → localStorage (restores votes even in incognito)
 async function syncFpVotes() {
   try {
-    const fp  = await getBrowserFingerprint();
+    const fp  = await getStableFp();
     const res = await fetch(`${RTDB}/${dbPath('votesByFp')}/${fp}.json`);
     if (!res.ok) return;
     const data = await res.json();
@@ -5144,7 +5156,7 @@ async function submitAllVotes(email, hash) {
   const btn     = document.getElementById('evpConfirmBtn');
   if (btn) { btn.disabled = true; btn.textContent = 'Submitting…'; }
   const pending = getPendingVotes();
-  const fp      = await getBrowserFingerprint().catch(() => null);
+  const fp      = await getStableFp().catch(() => null);
 
   try {
     await Promise.all(pending.map(async v => {
@@ -5552,11 +5564,11 @@ async function castVote(id, title, poster, backdrop, year, genresStr) {
   const myVotes = getMyVotes();
   if (myVotes.includes(id)) return;
 
-  // Get fingerprint & do server-side duplicate check (skipped in dev mode)
+  // Get stable fingerprint & do server-side duplicate check (skipped in dev mode)
   let fp = null;
   if (!IS_DEV) {
     try {
-      fp = await getBrowserFingerprint();
+      fp = await getStableFp();
       const fpCheck = await fetch(`${RTDB}/${dbPath('votesByFp')}/${fp}/${id}.json`);
       const already = fpCheck.ok ? await fpCheck.json() : null;
       if (already) {
