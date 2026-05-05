@@ -757,6 +757,14 @@
   .surprise-toast { position:fixed; top:24px; left:50%; transform:translateX(-50%) translateY(-80px); background:#1a1a1a; color:#fff; border:1px solid rgba(255,255,255,.15); border-radius:12px; padding:12px 24px; font-size:.85rem; font-weight:600; z-index:9999; transition:transform .35s cubic-bezier(.34,1.56,.64,1); pointer-events:none; }
   .surprise-toast.show { transform:translateX(-50%) translateY(0); }
   .error-msg { text-align:center; padding:32px 20px; color:var(--muted); font-size:.9rem; }
+  /* ── DEV MODE BANNER ── */
+  #devBanner { position:fixed; top:0; left:0; right:0; z-index:99999; background:repeating-linear-gradient(135deg,#1a0a00,#1a0a00 12px,#2a1200 12px,#2a1200 24px); border-bottom:2px solid #f5a623; padding:8px 16px; display:flex; align-items:center; justify-content:center; gap:10px; }
+  #devBanner .dev-badge { background:#f5a623; color:#000; font-weight:900; font-size:.7rem; letter-spacing:.1em; padding:3px 10px; border-radius:20px; text-transform:uppercase; }
+  #devBanner .dev-text { color:#f5a623; font-size:.78rem; font-weight:700; }
+  #devBanner .dev-hint { color:#888; font-size:.7rem; }
+  body.is-dev { padding-top:38px; }
+  body.is-dev .pmovies-tabs { top:38px; }
+
   /* ── INSTALL BANNER ── */
   .install-banner{position:fixed;bottom:-120px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:520px;background:#1a1a1a;border:1px solid rgba(245,166,35,.35);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;z-index:9998;box-shadow:0 8px 32px rgba(0,0,0,.6);transition:bottom .4s cubic-bezier(.34,1.56,.64,1);}
   .install-banner.show{bottom:calc(20px + env(safe-area-inset-bottom, 0px));}
@@ -3130,7 +3138,12 @@
     wrap.style.display = 'block';
   }
 
-  const RTDB = 'https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app';
+  const RTDB   = 'https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app';
+  const IS_DEV = new URLSearchParams(location.search).has('dev');
+
+  // Prefix Firebase paths and localStorage keys with _DEV in dev mode
+  function dbPath(p) { return IS_DEV ? p + '_DEV' : p; }
+  function lsKey(k)  { return IS_DEV ? k + '_dev' : k; }
 
   async function loadFanReviews() {
     fanReviewsShown = FAN_PAGE_SIZE; // reset to first page on every fresh load
@@ -4285,6 +4298,13 @@
   </div>
 
   <!-- PICKS CARD OVERLAY -->
+  <!-- DEV MODE BANNER — only rendered when ?dev is in URL -->
+  <div id="devBanner" style="display:none">
+    <span class="dev-badge">⚠ Dev Mode</span>
+    <span class="dev-text">Test environment — votes go to a separate database</span>
+    <span class="dev-hint">Remove ?dev from the URL to return to production</span>
+  </div>
+
   <div id="picksCardOverlay">
     <div class="pco-card">
       <div class="pco-title">🎬 Your Picks Card</div>
@@ -4859,10 +4879,10 @@ function _bfpEntropy() {
    sessionId is fresh per page-load so we can detect
    same device submitting multiple times in one session.
 ═══════════════════════════════════════════════════════ */
-let _clientId = localStorage.getItem('pmovies_cid');
+let _clientId = localStorage.getItem(lsKey('pmovies_cid'));
 if (!_clientId) {
   _clientId = 'cid_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
-  localStorage.setItem('pmovies_cid', _clientId);
+  localStorage.setItem(lsKey('pmovies_cid'), _clientId);
 }
 const _sessionId = 'sid_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
 const _pageLoadMs = Date.now();
@@ -4948,7 +4968,7 @@ function _detectAnomalies(pendingVotes) {
   if (unseenVotes.length === pendingVotes.length) flags.push('no_reading');
 
   // — Session: same session already voted (double-submit attempt)
-  const sessionUsed = sessionStorage.getItem('pmovies_session_voted');
+  const sessionUsed = sessionStorage.getItem(lsKey('pmovies_session_voted'));
   if (sessionUsed) flags.push('session_reuse');
 
   // Decide: hard block if 2+ strong signals, or any single critical one
@@ -4996,7 +5016,7 @@ async function getBrowserFingerprint() {
 async function syncFpVotes() {
   try {
     const fp  = await getBrowserFingerprint();
-    const res = await fetch(`${RTDB}/votesByFp/${fp}.json`);
+    const res = await fetch(`${RTDB}/${dbPath('votesByFp')}/${fp}.json`);
     if (!res.ok) return;
     const data = await res.json();
     if (!data) return;
@@ -5008,12 +5028,12 @@ async function syncFpVotes() {
 }
 
 // Votes this device has already cast (array of movieIds)
-function getMyVotes() { return JSON.parse(localStorage.getItem('pmovies_top100_votes') || '[]'); }
-function saveMyVotes(arr) { localStorage.setItem('pmovies_top100_votes', JSON.stringify(arr)); }
+function getMyVotes() { return JSON.parse(localStorage.getItem(lsKey('pmovies_top100_votes')) || '[]'); }
+function saveMyVotes(arr) { localStorage.setItem(lsKey('pmovies_top100_votes'), JSON.stringify(arr)); }
 
 // Pending votes — selected but not yet confirmed/submitted
-function getPendingVotes() { return JSON.parse(localStorage.getItem('pmovies_pending_votes') || '[]'); }
-function savePendingVotes(arr) { localStorage.setItem('pmovies_pending_votes', JSON.stringify(arr)); }
+function getPendingVotes() { return JSON.parse(localStorage.getItem(lsKey('pmovies_pending_votes')) || '[]'); }
+function savePendingVotes(arr) { localStorage.setItem(lsKey('pmovies_pending_votes'), JSON.stringify(arr)); }
 function pendingCount() { return getPendingVotes().length; }
 
 // Votes remaining = max − (submitted + pending)
@@ -5102,7 +5122,7 @@ async function evpConfirm() {
   if (btn) { btn.disabled = true; btn.textContent = 'Checking…'; }
   try {
     const hash  = await hashEmail(email);
-    const check = await fetch(`${RTDB}/voterEmails/${hash}.json`);
+    const check = await fetch(`${RTDB}/${dbPath('voterEmails')}/${hash}.json`);
     const used  = check.ok ? await check.json() : null;
     if (used) {
       if (inp) inp.classList.add('error');
@@ -5125,7 +5145,7 @@ async function submitAllVotes(email, hash) {
 
   try {
     await Promise.all(pending.map(async v => {
-      const url  = `${RTDB}/communityVotes/${v.id}.json`;
+      const url  = `${RTDB}/${dbPath('communityVotes')}/${v.id}.json`;
       const res  = await fetch(url);
       const curr = res.ok ? await res.json() : null;
       const genres = v.genresStr ? v.genresStr.split('|').filter(Boolean) : [];
@@ -5138,7 +5158,7 @@ async function submitAllVotes(email, hash) {
       const writeVote = fetch(url, {
         method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(updated)
       });
-      const writeFp = fp ? fetch(`${RTDB}/votesByFp/${fp}/${v.id}.json`, {
+      const writeFp = fp ? fetch(`${RTDB}/${dbPath('votesByFp')}/${fp}/${v.id}.json`, {
         method: 'PUT', headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ t: Date.now(), title: v.title })
       }) : Promise.resolve();
@@ -5147,7 +5167,7 @@ async function submitAllVotes(email, hash) {
 
     // Record email hash with full audit trail
     const { flags } = _detectAnomalies(pending);
-    await fetch(`${RTDB}/voterEmails/${hash}.json`, {
+    await fetch(`${RTDB}/${dbPath('voterEmails')}/${hash}.json`, {
       method: 'PUT', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
         t        : Date.now(),
@@ -5163,7 +5183,7 @@ async function submitAllVotes(email, hash) {
     });
 
     // Mark this session as voted (blocks double-submit in same tab)
-    sessionStorage.setItem('pmovies_session_voted', '1');
+    sessionStorage.setItem(lsKey('pmovies_session_voted'), '1');
 
     // Move pending → submitted
     const myVotes = getMyVotes();
@@ -5232,14 +5252,14 @@ function addPending(id, title, poster, backdrop, year, genresStr) {
 }
 
 // Monthly rank snapshot (for ↑↓ indicators)
-function getRankSnapshot() { return JSON.parse(localStorage.getItem('pmovies_rank_snap') || '{}'); }
+function getRankSnapshot() { return JSON.parse(localStorage.getItem(lsKey('pmovies_rank_snap')) || '{}'); }
 function maybeSaveRankSnapshot(list) {
   const key  = `${new Date().getFullYear()}-${new Date().getMonth()}`;
   const snap = getRankSnapshot();
   if (snap._month === key) return;
   const newSnap = { _month: key };
   list.forEach((m, i) => { newSnap[m.id] = i + 1; });
-  localStorage.setItem('pmovies_rank_snap', JSON.stringify(newSnap));
+  localStorage.setItem(lsKey('pmovies_rank_snap'), JSON.stringify(newSnap));
 }
 
 /* ── Top 100 Filter State ── */
@@ -5496,7 +5516,7 @@ async function loadTop100() {
   // Sync fingerprint votes first — restores votes even after incognito/cleared storage
   await syncFpVotes();
   try {
-    const res  = await fetch(`${RTDB}/communityVotes.json`);
+    const res  = await fetch(`${RTDB}/${dbPath('communityVotes')}.json`);
     const data = res.ok ? await res.json() : null;
     if (!data) { renderTop100([]); return; }
     const all = Object.entries(data).map(([id, m]) => ({ id, ...m }));
@@ -5533,7 +5553,7 @@ async function castVote(id, title, poster, backdrop, year, genresStr) {
   let fp = null;
   try {
     fp = await getBrowserFingerprint();
-    const fpCheck = await fetch(`${RTDB}/votesByFp/${fp}/${id}.json`);
+    const fpCheck = await fetch(`${RTDB}/${dbPath('votesByFp')}/${fp}/${id}.json`);
     const already = fpCheck.ok ? await fpCheck.json() : null;
     if (already) {
       // Server says already voted — sync local state and bail
@@ -5553,7 +5573,7 @@ async function castVote(id, title, poster, backdrop, year, genresStr) {
 
   // Write to RTDB — vote count + fingerprint record (parallel)
   try {
-    const url  = `${RTDB}/communityVotes/${id}.json`;
+    const url  = `${RTDB}/${dbPath('communityVotes')}/${id}.json`;
     const res  = await fetch(url);
     const curr = res.ok ? await res.json() : null;
     const genres = genresStr ? genresStr.split('|').filter(Boolean) : [];
@@ -5569,7 +5589,7 @@ async function castVote(id, title, poster, backdrop, year, genresStr) {
       body: JSON.stringify(updated)
     });
     // Record fingerprint vote (prevents incognito bypass)
-    const writeFp = fp ? fetch(`${RTDB}/votesByFp/${fp}/${id}.json`, {
+    const writeFp = fp ? fetch(`${RTDB}/${dbPath('votesByFp')}/${fp}/${id}.json`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ t: Date.now(), title })
@@ -5878,6 +5898,14 @@ async function showPicksCardModal(picks) {
   if (shareBtn) shareBtn.style.display = navigator.share ? '' : 'none';
 
   await generatePicksCard(picks);
+}
+
+// ── Dev mode activation ──
+if (IS_DEV) {
+  document.body.classList.add('is-dev');
+  const banner = document.getElementById('devBanner');
+  if (banner) banner.style.display = 'flex';
+  console.warn('%c⚠ PMovies DEV MODE — writes go to *_DEV Firebase paths', 'background:#f5a623;color:#000;font-weight:bold;padding:4px 8px;border-radius:4px;');
 }
 
 // Boot
