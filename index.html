@@ -24,10 +24,10 @@
 
   <!-- Open Graph (Facebook, WhatsApp, iMessage) -->
   <meta property="og:type"        content="website"/>
-  <meta property="og:url"         content="https://pmovies.github.io/pmovies-app/"/>
+  <meta property="og:url"         content="https://p-movies.com/"/>
   <meta property="og:title"       content="PMovies – Find Your Mood Movie 🎬"/>
   <meta property="og:description" content="Pick a mood, discover the perfect movie. Search, save to watchlist, watch trailers and explore what's in cinemas near you. By @PMovies155."/>
-  <meta property="og:image"       content="https://pmovies.github.io/pmovies-app/icons/icon-192.png"/>
+  <meta property="og:image"       content="https://p-movies.com/icons/icon-192.png"/>
   <meta property="og:image:width" content="192"/>
   <meta property="og:image:height"content="192"/>
   <meta property="og:site_name"   content="PMovies"/>
@@ -38,7 +38,7 @@
   <meta name="twitter:creator"     content="@PMovies155"/>
   <meta name="twitter:title"       content="PMovies – Find Your Mood Movie 🎬"/>
   <meta name="twitter:description" content="Pick a mood, discover the perfect movie. Search, save to watchlist, watch trailers and explore what's in cinemas near you."/>
-  <meta name="twitter:image"       content="https://pmovies.github.io/pmovies-app/icons/icon-192.png"/>
+  <meta name="twitter:image"       content="https://p-movies.com/icons/icon-192.png"/>
 
   <!-- General SEO -->
   <meta name="description" content="Pick a mood, discover the perfect movie. Search, save to watchlist, watch trailers and explore what's in cinemas near you. By @PMovies155."/>
@@ -1863,7 +1863,7 @@
     const shareMenu = card.querySelector('.card-share-menu');
     shareMenu.dataset.title = m.title;
     shareMenu.dataset.text  = m.title + ' (' + year + ') — check it out on PMovies 📺';
-    shareMenu.dataset.url   = 'https://pmovies.github.io/pmovies-app/#series';
+    shareMenu.dataset.url   = 'https://p-movies.com/#series';
     shareBtn.addEventListener('click', e => toggleShareMenuEl(shareMenu, e));
 
     // Card click → modal
@@ -2414,7 +2414,7 @@
 
     const shareBtn = card.querySelector('.card-share-btn');
     const shareMenu = card.querySelector('.card-share-menu');
-    const shareUrl  = 'https://pmovies.github.io/pmovies-app/';
+    const shareUrl  = 'https://p-movies.com/';
     const shareMsg  = m.title + ' (' + year + ') — check it out on PMovies 🎬';
     shareMenu.dataset.title = m.title;
     shareMenu.dataset.text  = shareMsg;
@@ -2502,7 +2502,7 @@
     document.getElementById('modalLink').href = `https://www.themoviedb.org/${m.media_type === 'tv' ? 'tv' : 'movie'}/${m.id}`;
     const shareBtn  = document.getElementById('modalShareBtn');
     const shareMenu = document.getElementById('modalShareMenu');
-    const shareUrl  = 'https://pmovies.github.io/pmovies-app/';
+    const shareUrl  = 'https://p-movies.com/';
     const shareMsg  = m.title + ' (' + (m.release_date||'').slice(0,4) + ') — check it out on PMovies 🎬';
     shareMenu.dataset.title = m.title;
     shareMenu.dataset.text  = shareMsg;
@@ -3016,7 +3016,7 @@
               <div class="card-share-menu" id="fsm-${fp}"
                    data-title="${esc(r.name||'Anonymous')} on ${esc(r.movie||'')}"
                    data-text="${esc(stars + ' — ' + (r.name||'Anonymous') + ' reviewing &quot;' + (r.movie||'') + '&quot;' + (r.text ? ': &quot;' + (r.text).slice(0,120) + (r.text.length>120?'…':'') + '&quot;' : ''))}"
-                   data-url="https://pmovies.github.io/pmovies-app/#reviews">
+                   data-url="https://p-movies.com/#reviews">
                 <button class="card-share-opt" onclick="pmShareFromMenu(this,'whatsapp')">
                   <svg viewBox="0 0 24 24" width="15" height="15" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.862L.054 23.625a.75.75 0 00.92.92l5.733-1.487A11.955 11.955 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/></svg>
                   WhatsApp
@@ -4032,7 +4032,7 @@
     const menu  = btn.closest('.card-share-menu, .modal-share-menu');
     const title = menu?.dataset.title || '';
     const text  = menu?.dataset.text  || '';
-    const url   = menu?.dataset.url   || 'https://pmovies.github.io/pmovies-app/';
+    const url   = menu?.dataset.url   || 'https://p-movies.com/';
     pmShare(platform, title, text, url, btn);
   }
 
@@ -5716,12 +5716,12 @@ async function sharePicksCard() {
         files : [file],
         title : 'My PMovies Picks',
         text  : 'Here are my picks for the PMovies Top 100 — cast your votes! 🎬',
-        url   : 'https://pmovies.github.io/pmovies-app/'
+        url   : 'https://p-movies.com/'
       });
       return;
     }
     // Fallback: copy URL + show hint
-    await navigator.clipboard.writeText('https://pmovies.github.io/pmovies-app/');
+    await navigator.clipboard.writeText('https://p-movies.com/');
     const btn = document.getElementById('picksShareBtn');
     const orig = btn.textContent;
     btn.textContent = '✓ Link copied!';
@@ -5923,7 +5923,7 @@ async function generatePicksCard(picks) {
 
   ctx.font = 'bold 24px "Arial Black", Arial, sans-serif';
   ctx.fillStyle = '#f5a623'; ctx.letterSpacing = '0px';
-  ctx.fillText('pmovies.github.io/pmovies-app', W/2, FOOTER_Y + 64);
+  ctx.fillText('p-movies.com', W/2, FOOTER_Y + 64);
 
   _picksCardDataUrl = canvas.toDataURL('image/png');
 }
