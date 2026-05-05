@@ -573,6 +573,25 @@
   .evp-cancel:hover { color:#aaa; }
   .evp-votes-preview { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-bottom:20px; }
   .evp-vote-chip { background:#1e1e1e; border:1px solid #2a2a2a; border-radius:20px; padding:4px 12px; font-size:.72rem; color:#ccc; }
+
+  /* ── Picks Card Overlay ── */
+  #picksCardOverlay { position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:11000; display:none; align-items:center; justify-content:center; padding:20px; flex-direction:column; gap:0; }
+  #picksCardOverlay.open { display:flex; }
+  .pco-card { background:#161616; border:1px solid #2a2a2a; border-radius:20px; padding:28px; width:100%; max-width:480px; text-align:center; }
+  .pco-title { font-family:'Bebas Neue',sans-serif; font-size:1.6rem; color:#fff; letter-spacing:.1em; margin:0 0 4px; }
+  .pco-sub { color:#555; font-size:.78rem; margin:0 0 20px; }
+  .pco-canvas-wrap { position:relative; border-radius:14px; overflow:hidden; margin-bottom:20px; background:#111; min-height:160px; display:flex; align-items:center; justify-content:center; }
+  #picksCanvas { width:100%; height:auto; display:block; border-radius:14px; }
+  .pco-spinner { color:#444; font-size:.85rem; }
+  .pco-actions { display:flex; gap:10px; margin-bottom:16px; }
+  .pco-btn-dl { flex:1; background:var(--orange); color:#000; border:none; border-radius:10px; padding:12px; font-weight:800; font-size:.85rem; cursor:pointer; letter-spacing:.04em; transition:.2s; }
+  .pco-btn-dl:hover { background:#e0940f; }
+  .pco-btn-share { flex:1; background:#1e1e1e; border:1px solid #333; color:#fff; border-radius:10px; padding:12px; font-weight:700; font-size:.85rem; cursor:pointer; transition:.2s; }
+  .pco-btn-share:hover { border-color:#555; }
+  .pco-btn-share:disabled { opacity:.4; cursor:not-allowed; }
+  .pco-close { background:transparent; border:none; color:#555; font-size:.78rem; cursor:pointer; padding:4px; }
+  .pco-close:hover { color:#aaa; }
+  /* ── End Picks Card ── */
   .top100-count-chip { background:#111; border:1px solid #2a2a2a; border-radius:20px; padding:6px 14px; color:#666; font-size:.78rem; margin-top:16px; text-align:center; }
   .top100-item-hidden { display:none; }
   /* Knocking on the Door */
@@ -4265,6 +4284,22 @@
     </div>
   </div>
 
+  <!-- PICKS CARD OVERLAY -->
+  <div id="picksCardOverlay">
+    <div class="pco-card">
+      <div class="pco-title">🎬 Your Picks Card</div>
+      <p class="pco-sub">Share your taste with the world</p>
+      <div class="pco-canvas-wrap">
+        <canvas id="picksCanvas" width="1080" height="1080"></canvas>
+      </div>
+      <div class="pco-actions">
+        <button class="pco-btn-dl" onclick="downloadPicksCard()">⬇ Download</button>
+        <button class="pco-btn-share" id="picksShareBtn" onclick="sharePicksCard()">↗ Share</button>
+      </div>
+      <button class="pco-close" onclick="closePicksCard()">Close</button>
+    </div>
+  </div>
+
   <div class="install-banner" id="installBanner">
     <img src="icons/icon-192.png" class="install-banner-icon" alt="PMovies">
     <div class="install-banner-text">
@@ -5139,14 +5174,11 @@ async function submitAllVotes(email, hash) {
     closeEmailPopup();
     updateVoteBar();
 
-    // Success toast
-    const toast = document.createElement('div');
-    toast.style.cssText = 'position:fixed;top:24px;left:50%;transform:translateX(-50%);background:#1a1a1a;border:1px solid #4caf50;border-radius:12px;padding:12px 22px;color:#4caf50;font-weight:800;font-size:.85rem;z-index:99999;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,.6);';
-    toast.textContent = `✓ ${pending.length} vote${pending.length > 1 ? 's' : ''} submitted!`;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3200);
-
-    await loadTop100();
+    // Show shareable picks card (load the list in parallel)
+    const [_] = await Promise.all([
+      loadTop100(),
+      showPicksCardModal(pending)
+    ]);
   } catch(e) {
     const err = document.getElementById('evpError');
     if (err) err.textContent = 'Submit failed — please try again.';
@@ -5630,6 +5662,226 @@ async function enrichTop100Genres() {
   }
   // Rebuild filter bar with enriched data (only if genres were actually found)
   buildTop100FilterBar();
+}
+
+/* ══════════════════════════════════════════════
+   PICKS CARD  — canvas-rendered shareable image
+   ══════════════════════════════════════════════ */
+
+let _picksCardDataUrl = null;
+
+function closePicksCard() {
+  document.getElementById('picksCardOverlay').classList.remove('open');
+}
+
+function downloadPicksCard() {
+  if (!_picksCardDataUrl) return;
+  const a = document.createElement('a');
+  a.href = _picksCardDataUrl;
+  a.download = 'my-pmovies-picks.png';
+  a.click();
+}
+
+async function sharePicksCard() {
+  if (!_picksCardDataUrl) return;
+  try {
+    const blob = await (await fetch(_picksCardDataUrl)).blob();
+    const file = new File([blob], 'my-pmovies-picks.png', { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files:[file] })) {
+      await navigator.share({
+        files : [file],
+        title : 'My PMovies Picks',
+        text  : 'Here are my picks for the PMovies Top 100 — cast your votes! 🎬',
+        url   : 'https://pmovies.github.io/pmovies-app/'
+      });
+      return;
+    }
+    // Fallback: copy URL + show hint
+    await navigator.clipboard.writeText('https://pmovies.github.io/pmovies-app/');
+    const btn = document.getElementById('picksShareBtn');
+    const orig = btn.textContent;
+    btn.textContent = '✓ Link copied!';
+    setTimeout(() => { btn.textContent = orig; }, 2200);
+  } catch(_) {}
+}
+
+function _loadImg(src) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload  = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+
+function _wrapText(ctx, text, x, y, maxW, lineH) {
+  const words = text.split(' ');
+  let line = '', lines = [];
+  for (const w of words) {
+    const test = line ? line + ' ' + w : w;
+    if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = w; }
+    else line = test;
+  }
+  lines.push(line);
+  lines.slice(0, 2).forEach((l, i) => ctx.fillText(l, x, y + i * lineH));
+}
+
+async function generatePicksCard(picks) {
+  const canvas  = document.getElementById('picksCanvas');
+  const ctx     = canvas.getContext('2d');
+  const W = 1080, H = 1080;
+  canvas.width = W; canvas.height = H;
+
+  // ── Background ──
+  ctx.fillStyle = '#0a0a0a';
+  ctx.fillRect(0, 0, W, H);
+
+  // Subtle vignette gradient
+  const vg = ctx.createRadialGradient(W/2, H/2, 200, W/2, H/2, 760);
+  vg.addColorStop(0, 'rgba(255,255,255,0.03)');
+  vg.addColorStop(1, 'rgba(0,0,0,0.55)');
+  ctx.fillStyle = vg;
+  ctx.fillRect(0, 0, W, H);
+
+  // ── Top accent line ──
+  ctx.fillStyle = '#f5a623';
+  ctx.fillRect(80, 70, W - 160, 3);
+
+  // ── PMOVIES label ──
+  ctx.font = 'bold 28px "Arial Black", Impact, sans-serif';
+  ctx.letterSpacing = '8px';
+  ctx.fillStyle = '#f5a623';
+  ctx.textAlign = 'center';
+  ctx.fillText('PMOVIES', W/2, 130);
+
+  // ── Main title ──
+  ctx.font = 'bold 88px "Arial Black", Impact, sans-serif';
+  ctx.letterSpacing = '6px';
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText('MY PICKS', W/2, 220);
+
+  // ── Tagline ──
+  ctx.font = '500 26px Arial, sans-serif';
+  ctx.letterSpacing = '2px';
+  ctx.fillStyle = '#555';
+  ctx.fillText('Top 100 Community Vote', W/2, 270);
+
+  // ── Bottom accent line above posters ──
+  ctx.fillStyle = '#1e1e1e';
+  ctx.fillRect(80, 295, W - 160, 1);
+
+  // ── Posters ──
+  const N        = picks.length;
+  const posterW  = 172;
+  const posterH  = 258;
+  const totalW   = N * posterW + (N - 1) * 26;
+  let   startX   = (W - totalW) / 2;
+  const posterY  = 320;
+
+  // Load all images in parallel
+  const imgs = await Promise.all(picks.map(p =>
+    p.poster ? _loadImg(`https://image.tmdb.org/t/p/w185${p.poster}`) : Promise.resolve(null)
+  ));
+
+  imgs.forEach((img, i) => {
+    const x = startX + i * (posterW + 26);
+
+    // Poster shadow
+    ctx.shadowColor = 'rgba(0,0,0,0.7)';
+    ctx.shadowBlur  = 24;
+    ctx.shadowOffsetY = 8;
+
+    if (img) {
+      // Rounded rect clip for poster
+      ctx.save();
+      ctx.beginPath();
+      const r = 10;
+      ctx.moveTo(x + r, posterY);
+      ctx.lineTo(x + posterW - r, posterY);
+      ctx.quadraticCurveTo(x + posterW, posterY, x + posterW, posterY + r);
+      ctx.lineTo(x + posterW, posterY + posterH - r);
+      ctx.quadraticCurveTo(x + posterW, posterY + posterH, x + posterW - r, posterY + posterH);
+      ctx.lineTo(x + r, posterY + posterH);
+      ctx.quadraticCurveTo(x, posterY + posterH, x, posterY + posterH - r);
+      ctx.lineTo(x, posterY + r);
+      ctx.quadraticCurveTo(x, posterY, x + r, posterY);
+      ctx.closePath();
+      ctx.clip();
+      ctx.drawImage(img, x, posterY, posterW, posterH);
+      ctx.restore();
+    } else {
+      // Placeholder
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#1a1a1a';
+      ctx.beginPath();
+      ctx.roundRect(x, posterY, posterW, posterH, 10);
+      ctx.fill();
+      ctx.font = '40px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('🎬', x + posterW/2, posterY + posterH/2 + 14);
+    }
+
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur  = 0;
+    ctx.shadowOffsetY = 0;
+
+    // Rank badge
+    ctx.fillStyle = '#f5a623';
+    ctx.beginPath();
+    ctx.roundRect(x + 6, posterY + 6, 36, 28, 6);
+    ctx.fill();
+    ctx.font = 'bold 16px Arial, sans-serif';
+    ctx.fillStyle = '#000';
+    ctx.textAlign = 'center';
+    ctx.fillText(`#${i+1}`, x + 24, posterY + 25);
+
+    // Film title below poster
+    const titleY = posterY + posterH + 28;
+    ctx.font = 'bold 18px Arial, sans-serif';
+    ctx.letterSpacing = '0px';
+    ctx.fillStyle = '#e8e8e8';
+    ctx.textAlign = 'center';
+    _wrapText(ctx, picks[i].title || '', x + posterW/2, titleY, posterW - 8, 22);
+
+    // Year
+    ctx.font = '15px Arial, sans-serif';
+    ctx.fillStyle = '#555';
+    ctx.fillText(picks[i].year || '', x + posterW/2, titleY + 50);
+  });
+
+  // ── Footer divider ──
+  ctx.fillStyle = '#1e1e1e';
+  ctx.fillRect(80, 930, W - 160, 1);
+
+  // ── Footer text ──
+  ctx.font = '500 22px Arial, sans-serif';
+  ctx.letterSpacing = '1px';
+  ctx.fillStyle = '#444';
+  ctx.textAlign = 'center';
+  ctx.fillText('Vote for your favourites at', W/2, 965);
+
+  ctx.font = 'bold 26px Arial, sans-serif';
+  ctx.fillStyle = '#f5a623';
+  ctx.fillText('pmovies.github.io/pmovies-app', W/2, 1002);
+
+  // ── Bottom accent ──
+  ctx.fillStyle = '#f5a623';
+  ctx.fillRect(80, 1026, W - 160, 3);
+
+  _picksCardDataUrl = canvas.toDataURL('image/png');
+}
+
+async function showPicksCardModal(picks) {
+  _picksCardDataUrl = null;
+  const overlay = document.getElementById('picksCardOverlay');
+  overlay.classList.add('open');
+
+  // Hide share button if Web Share API not available
+  const shareBtn = document.getElementById('picksShareBtn');
+  if (shareBtn) shareBtn.style.display = navigator.share ? '' : 'none';
+
+  await generatePicksCard(picks);
 }
 
 // Boot
