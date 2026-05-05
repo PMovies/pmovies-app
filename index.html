@@ -5728,146 +5728,142 @@ function _wrapText(ctx, text, x, y, maxW, lineH) {
 }
 
 async function generatePicksCard(picks) {
-  const canvas  = document.getElementById('picksCanvas');
-  const ctx     = canvas.getContext('2d');
+  const canvas = document.getElementById('picksCanvas');
+  const ctx    = canvas.getContext('2d');
   const W = 1080, H = 1080;
   canvas.width = W; canvas.height = H;
+
+  // ── Layout constants (mirrors the Python mock) ──
+  const PH      = 255;                     // poster height
+  const PW      = Math.round(PH * 2 / 3); // 170  — row 1
+  const PW2     = Math.round(PW * 1.35);  // 229  — row 2 (wider)
+  const GAP     = 26;
+  const LBL     = 50;   // label area below each poster (title + year)
+  const ROW_GAP = 30;
+  const ROW1_Y  = 308;
+  const ROW2_Y  = ROW1_Y + PH + LBL + ROW_GAP;
+  const FOOTER_Y = ROW2_Y + PH + LBL + 16;
+
+  // Row 1 start X (3 posters)
+  const R1W = 3 * PW + 2 * GAP;
+  const R1X = (W - R1W) / 2;
+
+  // Row 2 start X (2 wider posters)
+  const R2W = 2 * PW2 + GAP;
+  const R2X = (W - R2W) / 2;
 
   // ── Background ──
   ctx.fillStyle = '#0a0a0a';
   ctx.fillRect(0, 0, W, H);
 
-  // Subtle vignette gradient
-  const vg = ctx.createRadialGradient(W/2, H/2, 200, W/2, H/2, 760);
+  const vg = ctx.createRadialGradient(W/2, H/2, 180, W/2, H/2, 720);
   vg.addColorStop(0, 'rgba(255,255,255,0.03)');
-  vg.addColorStop(1, 'rgba(0,0,0,0.55)');
+  vg.addColorStop(1, 'rgba(0,0,0,0.5)');
   ctx.fillStyle = vg;
   ctx.fillRect(0, 0, W, H);
 
-  // ── Top accent line ──
+  // ── Header ──
   ctx.fillStyle = '#f5a623';
-  ctx.fillRect(80, 70, W - 160, 3);
+  ctx.fillRect(80, 68, W - 160, 3);
 
-  // ── PMOVIES label ──
   ctx.font = 'bold 28px "Arial Black", Impact, sans-serif';
-  ctx.letterSpacing = '8px';
   ctx.fillStyle = '#f5a623';
   ctx.textAlign = 'center';
-  ctx.fillText('PMOVIES', W/2, 130);
-
-  // ── Main title ──
-  ctx.font = 'bold 88px "Arial Black", Impact, sans-serif';
   ctx.letterSpacing = '6px';
+  ctx.fillText('PMOVIES', W/2, 126);
+
+  ctx.font = 'bold 88px "Arial Black", Impact, sans-serif';
   ctx.fillStyle = '#ffffff';
-  ctx.fillText('MY PICKS', W/2, 220);
+  ctx.letterSpacing = '4px';
+  ctx.fillText('MY PICKS', W/2, 218);
 
-  // ── Tagline ──
-  ctx.font = '500 26px Arial, sans-serif';
+  ctx.font = '500 24px Arial, sans-serif';
+  ctx.fillStyle = '#555555';
   ctx.letterSpacing = '2px';
-  ctx.fillStyle = '#555';
-  ctx.fillText('Top 100 Community Vote', W/2, 270);
+  ctx.fillText('Top 100 Community Vote', W/2, 262);
 
-  // ── Bottom accent line above posters ──
   ctx.fillStyle = '#1e1e1e';
-  ctx.fillRect(80, 295, W - 160, 1);
+  ctx.fillRect(80, 290, W - 160, 1);
 
-  // ── Posters ──
-  const N        = picks.length;
-  const posterW  = 172;
-  const posterH  = 258;
-  const totalW   = N * posterW + (N - 1) * 26;
-  let   startX   = (W - totalW) / 2;
-  const posterY  = 320;
-
-  // Load all images in parallel
+  // ── Load all poster images in parallel ──
   const imgs = await Promise.all(picks.map(p =>
     p.poster ? _loadImg(`https://image.tmdb.org/t/p/w185${p.poster}`) : Promise.resolve(null)
   ));
 
-  imgs.forEach((img, i) => {
-    const x = startX + i * (posterW + 26);
-
-    // Poster shadow
-    ctx.shadowColor = 'rgba(0,0,0,0.7)';
-    ctx.shadowBlur  = 24;
+  // ── Helper: draw one poster with shadow, rounded clip, badge, labels ──
+  function drawOnePoster(i, x, y, pw, ph, img) {
+    // Drop shadow
+    ctx.save();
+    ctx.shadowColor   = 'rgba(0,0,0,0.75)';
+    ctx.shadowBlur    = 22;
     ctx.shadowOffsetY = 8;
+    ctx.fillStyle = '#111';
+    ctx.beginPath(); ctx.roundRect(x, y, pw, ph, 12); ctx.fill();
+    ctx.restore();
 
+    // Poster image or placeholder
+    ctx.save();
+    ctx.beginPath(); ctx.roundRect(x, y, pw, ph, 12); ctx.clip();
     if (img) {
-      // Rounded rect clip for poster
-      ctx.save();
-      ctx.beginPath();
-      const r = 10;
-      ctx.moveTo(x + r, posterY);
-      ctx.lineTo(x + posterW - r, posterY);
-      ctx.quadraticCurveTo(x + posterW, posterY, x + posterW, posterY + r);
-      ctx.lineTo(x + posterW, posterY + posterH - r);
-      ctx.quadraticCurveTo(x + posterW, posterY + posterH, x + posterW - r, posterY + posterH);
-      ctx.lineTo(x + r, posterY + posterH);
-      ctx.quadraticCurveTo(x, posterY + posterH, x, posterY + posterH - r);
-      ctx.lineTo(x, posterY + r);
-      ctx.quadraticCurveTo(x, posterY, x + r, posterY);
-      ctx.closePath();
-      ctx.clip();
-      ctx.drawImage(img, x, posterY, posterW, posterH);
-      ctx.restore();
+      ctx.drawImage(img, x, y, pw, ph);
     } else {
-      // Placeholder
-      ctx.shadowBlur = 0;
       ctx.fillStyle = '#1a1a1a';
-      ctx.beginPath();
-      ctx.roundRect(x, posterY, posterW, posterH, 10);
-      ctx.fill();
-      ctx.font = '40px sans-serif';
+      ctx.fillRect(x, y, pw, ph);
+      ctx.font = '44px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('🎬', x + posterW/2, posterY + posterH/2 + 14);
+      ctx.fillText('🎬', x + pw/2, y + ph/2 + 16);
     }
-
-    ctx.shadowColor = 'transparent';
-    ctx.shadowBlur  = 0;
-    ctx.shadowOffsetY = 0;
+    ctx.restore();
 
     // Rank badge
     ctx.fillStyle = '#f5a623';
-    ctx.beginPath();
-    ctx.roundRect(x + 6, posterY + 6, 36, 28, 6);
-    ctx.fill();
-    ctx.font = 'bold 16px Arial, sans-serif';
+    ctx.beginPath(); ctx.roundRect(x + 7, y + 7, 44, 28, 7); ctx.fill();
+    ctx.font = 'bold 15px Arial, sans-serif';
     ctx.fillStyle = '#000';
-    ctx.textAlign = 'center';
-    ctx.fillText(`#${i+1}`, x + 24, posterY + 25);
-
-    // Film title below poster
-    const titleY = posterY + posterH + 28;
-    ctx.font = 'bold 18px Arial, sans-serif';
     ctx.letterSpacing = '0px';
-    ctx.fillStyle = '#e8e8e8';
     ctx.textAlign = 'center';
-    _wrapText(ctx, picks[i].title || '', x + posterW/2, titleY, posterW - 8, 22);
+    ctx.fillText(`#${i + 1}`, x + 7 + 22, y + 26);
+
+    // Title below poster
+    const ty = y + ph + 18;
+    ctx.font = 'bold 18px Arial, sans-serif';
+    ctx.fillStyle = '#e8e8e8';
+    ctx.letterSpacing = '0px';
+    ctx.textAlign = 'center';
+    _wrapText(ctx, picks[i].title || '', x + pw/2, ty, pw - 6, 22);
 
     // Year
     ctx.font = '15px Arial, sans-serif';
     ctx.fillStyle = '#555';
-    ctx.fillText(picks[i].year || '', x + posterW/2, titleY + 50);
-  });
+    ctx.fillText(picks[i].year || '', x + pw/2, ty + 28);
+  }
 
-  // ── Footer divider ──
+  // ── Row 1 — 3 posters ──
+  for (let i = 0; i < 3; i++) {
+    drawOnePoster(i, R1X + i * (PW + GAP), ROW1_Y, PW, PH, imgs[i]);
+  }
+
+  // ── Row 2 — 2 wider posters ──
+  for (let i = 0; i < 2; i++) {
+    drawOnePoster(i + 3, R2X + i * (PW2 + GAP), ROW2_Y, PW2, PH, imgs[i + 3]);
+  }
+
+  // ── Footer ──
   ctx.fillStyle = '#1e1e1e';
-  ctx.fillRect(80, 930, W - 160, 1);
+  ctx.fillRect(80, FOOTER_Y, W - 160, 1);
 
-  // ── Footer text ──
-  ctx.font = '500 22px Arial, sans-serif';
-  ctx.letterSpacing = '1px';
+  ctx.font = '500 20px Arial, sans-serif';
   ctx.fillStyle = '#444';
+  ctx.letterSpacing = '1px';
   ctx.textAlign = 'center';
-  ctx.fillText('Vote for your favourites at', W/2, 965);
+  ctx.fillText('Vote for your favourites at', W/2, FOOTER_Y + 26);
 
-  ctx.font = 'bold 26px Arial, sans-serif';
+  ctx.font = 'bold 25px Arial, sans-serif';
   ctx.fillStyle = '#f5a623';
-  ctx.fillText('pmovies.github.io/pmovies-app', W/2, 1002);
+  ctx.fillText('pmovies.github.io/pmovies-app', W/2, FOOTER_Y + 60);
 
-  // ── Bottom accent ──
   ctx.fillStyle = '#f5a623';
-  ctx.fillRect(80, 1026, W - 160, 3);
+  ctx.fillRect(80, FOOTER_Y + 88, W - 160, 3);
 
   _picksCardDataUrl = canvas.toDataURL('image/png');
 }
