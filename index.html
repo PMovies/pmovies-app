@@ -8369,18 +8369,23 @@ async function _shareFOTD(platform) {
     window.open(url, '_blank');
     return;
   }
-  // Instagram / Save Card — generate image
+  // Instagram / Save Card — generate image then share natively (mobile) or download (desktop)
   if (platform === 'instagram' || platform === 'save') {
     const dataUrl = await _generateFOTDCard();
     if (!dataUrl) return;
+    const filename = `pmovies-fotd-${_fotdToday}.png`;
+    // 1. Try native file share — brings up iOS/Android share sheet (Instagram, WhatsApp, save to Photos, etc.)
+    try {
+      const blob = await (await fetch(dataUrl)).blob();
+      const file = new File([blob], filename, { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'Film of the Day — PMovies', url: 'https://p-movies.com' });
+        return;
+      }
+    } catch(e) { if (e.name === 'AbortError') return; }
+    // 2. Fallback: direct download (desktop browsers)
     const a = document.createElement('a');
-    a.href = dataUrl;
-    a.download = `pmovies-fotd-${_fotdToday}.png`;
-    a.click();
-    if (platform === 'instagram') {
-      // Small hint since Instagram requires manual upload
-      setTimeout(() => alert('Card saved! Open Instagram and post the image from your gallery.'), 400);
-    }
+    a.href = dataUrl; a.download = filename; a.click();
   }
 }
 
@@ -8394,10 +8399,10 @@ async function _generateFOTDCard() {
   const myR  = parseFloat(localStorage.getItem(lsKey('pmovies_fotd_rating_' + _fotdToday)) || '0');
   const starsRow = n => { const f=Math.floor(n),h=(n-f)>=0.5?1:0; return '★'.repeat(f)+(h?'½':'')+('☆'.repeat(Math.max(0,5-f-h))); };
 
-  // Use w780 (not w1280) so browser doesn't serve the CORS-less cached version
+  // ?_c=1 cache-busts the CORS-less browser cache entry so we always get a fresh CORS response
   const [bdImg, postImg] = await Promise.all([
-    m.backdrop ? _loadImg('https://image.tmdb.org/t/p/w780'+m.backdrop).catch(()=>null) : Promise.resolve(null),
-    m.poster   ? _loadImg('https://image.tmdb.org/t/p/w342'+m.poster).catch(()=>null)   : Promise.resolve(null),
+    m.backdrop ? _loadImg('https://image.tmdb.org/t/p/w780'+m.backdrop+'?_c=1').catch(()=>null) : Promise.resolve(null),
+    m.poster   ? _loadImg('https://image.tmdb.org/t/p/w342'+m.poster+'?_c=1').catch(()=>null)   : Promise.resolve(null),
   ]);
 
   // Scale factor: match the popup card (max-width 560px CSS → 1120px canvas = ×2)
