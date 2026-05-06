@@ -8385,6 +8385,26 @@ async function _shareFOTD(platform) {
 }
 
 async function _generateFOTDCard() {
+  // Capture the actual visible popup card — no redrawing needed
+  const card = document.querySelector('#fotdOverlay .fotd-card');
+  if (!card) return null;
+  try {
+    const canvas = await html2canvas(card, {
+      useCORS: true,
+      allowTaint: false,
+      scale: 2,
+      backgroundColor: null,
+      logging: false,
+    });
+    return canvas.toDataURL('image/png');
+  } catch(e) {
+    console.warn('[FOTD card] html2canvas failed:', e);
+    return null;
+  }
+}
+
+// Legacy full-canvas fallback (kept for reference, not called)
+async function _generateFOTDCard_canvas() {
   const m   = _fotdFilmData;
   if (!m) return null;
   const hasRatings = m.ratingCount > 0 && m.ratingTotal > 0;
