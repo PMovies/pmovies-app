@@ -686,10 +686,14 @@
   .fotd-title { font-size:2rem; font-weight:900; color:#fff; line-height:1.15; margin-bottom:8px; }
   .fotd-meta { font-size:.8rem; color:#888; margin-bottom:10px; }
   .fotd-tagline { font-size:.88rem; color:#aaa; font-style:italic; margin-bottom:28px; min-height:1.2em; }
-  .fotd-stars { display:flex; justify-content:center; gap:10px; margin-bottom:24px; }
-  .fotd-star { font-size:2.4rem; cursor:pointer; color:#333; transition:color .15s, transform .15s; line-height:1; }
-  .fotd-star:hover, .fotd-star.active { color:#f5a623; transform:scale(1.15); }
-  .fotd-star-hint { font-size:.72rem; color:#555; margin-top:-16px; margin-bottom:20px; }
+  .fotd-stars { display:flex; justify-content:center; gap:6px; margin-bottom:20px; }
+  .fotd-star-wrap { position:relative; width:2.6rem; height:2.6rem; display:inline-block; cursor:pointer; }
+  .fotd-star-wrap svg { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; transition:transform .12s; }
+  .fotd-star-wrap:hover svg { transform:scale(1.18); }
+  .fotd-click-l, .fotd-click-r { position:absolute; top:0; height:100%; width:50%; z-index:2; }
+  .fotd-click-l { left:0; }
+  .fotd-click-r { right:0; }
+  .fotd-star-hint { font-size:.75rem; color:#666; margin-bottom:18px; letter-spacing:.02em; }
   .fotd-rate-btn { width:100%; max-width:320px; padding:14px; background:var(--orange); color:#000; border:none; border-radius:12px; font-weight:800; font-size:.95rem; cursor:pointer; transition:.15s; }
   .fotd-rate-btn:disabled { background:#1e1e1e; color:#444; cursor:default; }
   .fotd-rate-btn:not(:disabled):hover { background:#e0940f; }
@@ -8093,9 +8097,7 @@ function _showFOTDRating() {
     <div class="fotd-title">${esc(m.title)}</div>
     <div class="fotd-meta">${m.year || ''}${m.year ? ' · ' : ''}Rate this film</div>
     <div class="fotd-tagline">${esc(m.tagline || '')}</div>
-    <div class="fotd-stars" id="fotdStars">
-      ${[1,2,3,4,5].map(n => `<span class="fotd-star" data-val="${n}" onclick="_fotdPickStar(${n})">★</span>`).join('')}
-    </div>
+    <div class="fotd-stars" id="fotdStars">${_fotdBuildStars(0)}</div>
     <div class="fotd-star-hint" id="fotdStarHint">Tap a star to rate</div>
     <button class="fotd-rate-btn" id="fotdRateBtn" disabled onclick="_submitFOTDRating()">Rate & Continue</button>
     <button class="fotd-skip" onclick="_skipFOTD()">Skip for today</button>
@@ -8103,14 +8105,44 @@ function _showFOTDRating() {
   ov.style.display = 'flex';
 }
 
+function _fotdBuildStars(selected) {
+  // SVG polygon for a 5-point star
+  const pts = '12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26';
+  return [1,2,3,4,5].map(n => {
+    const full = selected >= n;
+    const half = !full && selected >= n - 0.5;
+    // gradient id unique per star
+    const gid  = `sg${n}`;
+    let svgInner;
+    if (full) {
+      svgInner = `<polygon points="${pts}" fill="#f5a623"/>`;
+    } else if (half) {
+      svgInner = `<defs><linearGradient id="${gid}" x1="0" x2="1" y1="0" y2="0">
+        <stop offset="50%" stop-color="#f5a623"/>
+        <stop offset="50%" stop-color="#2a2a2a"/>
+      </linearGradient></defs><polygon points="${pts}" fill="url(#${gid})"/>`;
+    } else {
+      svgInner = `<polygon points="${pts}" fill="#2a2a2a"/>`;
+    }
+    return `<span class="fotd-star-wrap" data-n="${n}">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">${svgInner}</svg>
+      <span class="fotd-click-l" onclick="_fotdPickStar(${n-0.5})"></span>
+      <span class="fotd-click-r" onclick="_fotdPickStar(${n})"></span>
+    </span>`;
+  }).join('');
+}
+
 function _fotdPickStar(n) {
   _fotdSelected = n;
-  const labels = ['','😕 Poor','😐 Fair','🙂 Good','😊 Great','🤩 Masterpiece'];
-  document.querySelectorAll('.fotd-star').forEach((s, i) => {
-    s.classList.toggle('active', i < n);
-  });
+  const labels = {
+    0.5:'😕 Terrible', 1:'😕 Poor', 1.5:'😐 Below average',
+    2:'😐 Fair', 2.5:'🙂 Okay', 3:'🙂 Good',
+    3.5:'😊 Pretty good', 4:'😊 Great', 4.5:'🤩 Excellent', 5:'🤩 Masterpiece'
+  };
+  const starsEl = document.getElementById('fotdStars');
+  if (starsEl) starsEl.innerHTML = _fotdBuildStars(n);
   const hint = document.getElementById('fotdStarHint');
-  if (hint) hint.textContent = labels[n] || '';
+  if (hint) hint.textContent = labels[n] || `${n}/5`;
   const btn = document.getElementById('fotdRateBtn');
   if (btn) btn.disabled = false;
 }
@@ -8146,7 +8178,10 @@ function _showFOTDResult() {
   const avg = m.ratingCount ? (m.ratingTotal / m.ratingCount).toFixed(1) : _fotdSelected.toFixed(1);
   const cnt = m.ratingCount || 1;
   const myR = _fotdSelected;
-  const starsFill = n => '★'.repeat(Math.round(n)) + '☆'.repeat(5 - Math.round(n));
+  const starsFill = n => {
+    const full = Math.floor(n); const half = (n - full) >= 0.5 ? 1 : 0;
+    return '★'.repeat(full) + (half ? '½' : '') + '☆'.repeat(5 - full - half);
+  };
 
   const ct = document.getElementById('fotdContent');
   ct.innerHTML = `
@@ -8193,7 +8228,7 @@ async function _shareFOTD() {
   const m    = _fotdFilmData;
   const avg  = m.ratingCount ? (m.ratingTotal / m.ratingCount).toFixed(1) : '?';
   const myR  = localStorage.getItem(lsKey('pmovies_fotd_rating_' + _fotdToday)) || '?';
-  const stars = n => '★'.repeat(Math.round(n)) + '☆'.repeat(5 - Math.round(n));
+  const stars = n => { const f=Math.floor(n),h=(n-f)>=0.5?1:0; return '★'.repeat(f)+(h?'½':'')+'☆'.repeat(5-f-h); };
   const text = `⭐ Film of the Day on PMovies\n\n${m.title} (${m.year})\n\nMy rating: ${stars(+myR)} ${myR}/5\nCommunity avg: ${avg}/5 from ${m.ratingCount || 1} voter${(m.ratingCount||1)!==1?'s':''}\n\nhttps://p-movies.com`;
   if (navigator.share) {
     try { await navigator.share({ title: 'PMovies Film of the Day', text }); return; } catch(e) {}
