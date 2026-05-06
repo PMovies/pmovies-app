@@ -705,7 +705,7 @@
   .fotd-result-stars { font-size:1rem; margin:6px 0; }
   .fotd-share-btn { width:100%; max-width:320px; padding:14px; background:#1a1a1a; border:1px solid #2a2a2a; color:#fff; border-radius:12px; font-weight:700; font-size:.9rem; cursor:pointer; }
   /* FOTD share options */
-  .fotd-share-row { display:flex; gap:10px; justify-content:center; width:100%; max-width:320px; margin-bottom:4px; }
+  .fotd-share-row { display:flex; gap:10px; justify-content:center; width:100%; max-width:320px; margin:0 auto 4px; }
   .fotd-share-opt { flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; background:#141414; border:1px solid #242424; border-radius:14px; padding:14px 8px 12px; cursor:pointer; transition:border-color .18s,background .18s; color:#ccc; font-size:.68rem; font-weight:700; letter-spacing:.03em; }
   .fotd-share-opt:hover { border-color:#f5a623; background:rgba(245,166,35,.07); color:#f5a623; }
   .fotd-share-opt svg { width:22px; height:22px; flex-shrink:0; }
@@ -8385,19 +8385,38 @@ async function _shareFOTD(platform) {
 }
 
 async function _generateFOTDCard() {
-  // Capture the actual visible popup card — no redrawing needed
+  // Capture the actual visible popup card — screenshot what's on screen
   const card = document.querySelector('#fotdOverlay .fotd-card');
+  const bd   = document.getElementById('fotdBackdrop');
   if (!card) return null;
+
+  // html2canvas can't read cross-origin CSS background-image.
+  // Fix: draw the backdrop into a canvas → data URL → swap in temporarily → capture → restore.
+  let originalBg = null;
+  if (bd && _fotdFilmData?.backdrop) {
+    try {
+      const img = await _loadImg('https://image.tmdb.org/t/p/w1280' + _fotdFilmData.backdrop);
+      const tmp = document.createElement('canvas');
+      tmp.width = img.naturalWidth; tmp.height = img.naturalHeight;
+      tmp.getContext('2d').drawImage(img, 0, 0);
+      const dataUrl = tmp.toDataURL('image/jpeg', 0.92);
+      originalBg = bd.style.backgroundImage;
+      bd.style.backgroundImage = `url('${dataUrl}')`;
+    } catch(_) {}
+  }
+
   try {
     const canvas = await html2canvas(card, {
       useCORS: true,
       allowTaint: false,
       scale: 2,
-      backgroundColor: null,
+      backgroundColor: '#111',
       logging: false,
     });
+    if (originalBg !== null) bd.style.backgroundImage = originalBg;
     return canvas.toDataURL('image/png');
   } catch(e) {
+    if (originalBg !== null) bd.style.backgroundImage = originalBg;
     console.warn('[FOTD card] html2canvas failed:', e);
     return null;
   }
