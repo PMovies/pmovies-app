@@ -7880,8 +7880,13 @@ async function initPoll() {
   const now = new Date();
   const week = Math.floor((now - new Date(now.getFullYear(),0,1))/(7*864e5));
   const seed = now.getFullYear()*100 + week;
-  const pickA = movies[seed % Math.min(10,movies.length)];
-  const pickB = movies[(seed+3) % Math.min(10,movies.length)];
+  // Draw from full top-50 pool using two independent offsets so matchups vary widely
+  const pool = Math.min(50, movies.length);
+  const idxA = seed % pool;
+  let idxB   = (seed * 7 + 17) % pool;
+  if (idxB === idxA) idxB = (idxB + 1) % pool;
+  const pickA = movies[idxA];
+  const pickB = movies[idxB];
   if (!pickA || !pickB || pickA.id===pickB.id) return;
 
   const weekKey = `${now.getFullYear()}-W${String(week).padStart(2,'0')}`;
