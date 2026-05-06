@@ -8419,11 +8419,6 @@ async function _generateFOTDCard() {
   for(const w of titleWords){ const t=tl1?tl1+' '+w:w; if(ctx.measureText(t).width>tw){tl2+=(tl2?' ':'')+w;}else{tl1=t;} }
   const titleLines = tl2 ? 2 : 1;
 
-  const hasRatings = m.ratingCount > 0 && m.ratingTotal > 0;
-  const avg = hasRatings ? (m.ratingTotal / m.ratingCount).toFixed(1) : null;
-  const myR = parseFloat(localStorage.getItem(lsKey('pmovies_fotd_rating_' + _fotdToday)) || '0');
-  const starsRow = n => { const f=Math.floor(n),h=(n-f)>=0.5?1:0; return '★'.repeat(f)+(h?'½':'')+('☆'.repeat(Math.max(0,5-f-h))); };
-
   // Content below backdrop (same as popup .fotd-content padding ~28px each side)
   const PAD = 24*SCALE;
   const eyebrowH = 20*SCALE, titleLineH = 46*SCALE, subH = 22*SCALE, boxH = avg ? 120*SCALE : 80*SCALE;
