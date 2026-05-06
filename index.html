@@ -704,9 +704,18 @@
   .fotd-result-lbl { font-size:.75rem; color:#666; margin-top:2px; }
   .fotd-result-stars { font-size:1rem; margin:6px 0; }
   .fotd-share-btn { width:100%; max-width:320px; padding:14px; background:#1a1a1a; border:1px solid #2a2a2a; color:#fff; border-radius:12px; font-weight:700; font-size:.9rem; cursor:pointer; }
-  /* FOTD summary button in the poll area */
-  .fotd-summary-btn { background:transparent; border:1px solid #252525; color:#666; border-radius:20px; padding:6px 14px; font-size:.72rem; font-weight:700; font-family:'Montserrat',sans-serif; cursor:pointer; transition:.2s; letter-spacing:.03em; }
-  .fotd-summary-btn:hover { border-color:#f5a623; color:#f5a623; }
+  /* FOTD Discovery Strip (below search bar) */
+  .fotd-strip { background:linear-gradient(135deg,#1a1300 0%,#111 100%); border:1px solid #2a2000; border-radius:14px; padding:13px 16px; margin-bottom:20px; display:flex; align-items:center; gap:14px; cursor:pointer; transition:border-color .2s, background .2s; }
+  .fotd-strip:hover { border-color:#f5a623; background:linear-gradient(135deg,#1f1700 0%,#141414 100%); }
+  .fotd-strip-poster { width:42px; height:63px; border-radius:7px; object-fit:cover; flex-shrink:0; background:#1a1a1a; }
+  .fotd-strip-info { flex:1; min-width:0; }
+  .fotd-strip-eyebrow { font-size:.58rem; font-weight:800; letter-spacing:.13em; text-transform:uppercase; color:#f5a623; margin-bottom:3px; }
+  .fotd-strip-title { font-family:'Montserrat',sans-serif; font-size:.88rem; font-weight:800; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .fotd-strip-year { font-size:.7rem; color:#666; margin-top:2px; }
+  .fotd-strip-cta { flex-shrink:0; background:#f5a623; color:#000; border:none; border-radius:10px; padding:9px 15px; font-weight:800; font-size:.76rem; cursor:pointer; font-family:'Montserrat',sans-serif; white-space:nowrap; letter-spacing:.02em; transition:.15s; }
+  .fotd-strip-cta:hover { background:#e0940f; }
+  .fotd-strip-cta.rated { background:transparent; border:1px solid #2a2a2a; color:#666; }
+  .fotd-strip-cta.rated:hover { border-color:#f5a623; color:#f5a623; background:transparent; }
 
   /* ── Achievement Badges ── */
   .reviewer-badge { display:inline-block; font-size:.8rem; margin-left:5px; vertical-align:middle; cursor:default; }
@@ -1440,7 +1449,6 @@
         <button class="fun-hdr-btn" onclick="openImpactCard()" title="See how your votes moved films">📊 My Impact</button>
         <button class="fun-hdr-btn" onclick="openTasteCard()" title="Your film taste breakdown">🎭 My Taste</button>
         <button class="fun-hdr-btn" onclick="openH2H()" title="Compare two films head-to-head">⚔ VS</button>
-        <button class="fotd-summary-btn" id="fotdSummaryBtn" style="display:none" onclick="openFOTDSummary()">⭐ Film of the Day</button>
       </div>
     </div>
     <!-- Live Vote Feed -->
@@ -1461,6 +1469,16 @@
         oninput="top100Search(this.value)" autocomplete="off"/>
       <span class="top100-search-hint" id="top100SearchHint"></span>
       <div class="top100-dropdown" id="top100Dropdown" style="display:none"></div>
+    </div>
+    <!-- FOTD Discovery Strip -->
+    <div class="fotd-strip" id="fotdStrip" style="display:none" onclick="_fotdStripClick()">
+      <img class="fotd-strip-poster" id="fotdStripPoster" src="" alt="Film of the Day poster">
+      <div class="fotd-strip-info">
+        <div class="fotd-strip-eyebrow">⭐ Film of the Day</div>
+        <div class="fotd-strip-title" id="fotdStripTitle">—</div>
+        <div class="fotd-strip-year" id="fotdStripYear"></div>
+      </div>
+      <button class="fotd-strip-cta" id="fotdStripCta" onclick="event.stopPropagation();_fotdStripClick()">Rate It ⭐</button>
     </div>
     <div id="top100FilterBar"></div>
     <div class="top100-list" id="top100List">
@@ -8029,9 +8047,8 @@ async function initFilmOfDay() {
 
   if (!_fotdFilmData || !_fotdFilmData.id) return;
 
-  // Show summary button always
-  const btn = document.getElementById('fotdSummaryBtn');
-  if (btn) btn.style.display = '';
+  // Render the discovery strip below the search bar
+  _renderFOTDStrip();
 
   // Show popup once per day — if already seen/voted today, skip
   const seen = localStorage.getItem(seenKey);
@@ -8170,6 +8187,7 @@ async function _submitFOTDRating() {
 
   localStorage.setItem(lsKey('pmovies_fotd_seen'), _fotdToday);
   localStorage.setItem(lsKey('pmovies_fotd_rating_' + _fotdToday), String(_fotdSelected));
+  _renderFOTDStrip();
   _showFOTDResult();
 }
 
@@ -8198,13 +8216,38 @@ function _showFOTDResult() {
   `;
 }
 
+function _renderFOTDStrip() {
+  const strip = document.getElementById('fotdStrip');
+  if (!strip || !_fotdFilmData) return;
+  const m = _fotdFilmData;
+  const posterEl = document.getElementById('fotdStripPoster');
+  if (posterEl) posterEl.src = m.poster ? `https://image.tmdb.org/t/p/w154${m.poster}` : '';
+  const titleEl = document.getElementById('fotdStripTitle');
+  if (titleEl) titleEl.textContent = m.title || '—';
+  const yearEl = document.getElementById('fotdStripYear');
+  if (yearEl) yearEl.textContent = m.year ? m.year + (m.ratingCount ? ` · ${m.ratingCount} rating${m.ratingCount!==1?'s':''}` : '') : '';
+  const rated = localStorage.getItem(lsKey('pmovies_fotd_seen')) === _fotdToday;
+  const cta = document.getElementById('fotdStripCta');
+  if (cta) {
+    cta.textContent = rated ? 'View Results' : 'Rate It ⭐';
+    cta.className = 'fotd-strip-cta' + (rated ? ' rated' : '');
+  }
+  strip.style.display = 'flex';
+}
+function _fotdStripClick() {
+  const rated = localStorage.getItem(lsKey('pmovies_fotd_seen')) === _fotdToday;
+  if (rated) openFOTDSummary();
+  else _showFOTDRating();
+}
 function _skipFOTD() {
   localStorage.setItem(lsKey('pmovies_fotd_seen'), _fotdToday);
   _closeFOTD();
+  _renderFOTDStrip();
 }
 function _closeFOTD() {
   const ov = document.getElementById('fotdOverlay');
   if (ov) ov.style.display = 'none';
+  _renderFOTDStrip();
 }
 
 async function openFOTDSummary() {
