@@ -712,7 +712,9 @@
   .fotd-day-btn .fotd-day-dot { width:6px; height:6px; border-radius:50%; background:#f5a623; opacity:.7; flex-shrink:0; }
 
   /* ── Achievement Badges ── */
-  .reviewer-badge { display:inline-block; font-size:.8rem; margin-left:5px; vertical-align:middle; cursor:default; }
+  .reviewer-badge { display:inline-flex; align-items:center; font-size:.8rem; cursor:default; }
+  .fan-record-badge { margin-top:-2px; line-height:1; }
+  .fan-record-badge .reviewer-badge { margin-left:0; }
   .reviewer-badge-label { display:inline-block; font-size:.6rem; font-weight:700; letter-spacing:.05em; padding:1px 5px; border-radius:6px; margin-left:5px; vertical-align:middle; text-transform:uppercase; }
   .rb-newcomer .reviewer-badge-label { background:rgba(100,100,100,.2); color:#777; }
   .rb-buff .reviewer-badge-label     { background:rgba(245,166,35,.15); color:#f5a623; }
@@ -3671,7 +3673,7 @@
       const movies = [...f.movies].slice(0, 3).map(m => `<span class="fan-record-tag">🎬 ${esc(m)}</span>`).join('');
       return `<div class="fan-record-card ${rankClass[i]||''}">
         <div class="fan-record-medal">${medals[i]||'🎬'}</div>
-        <div class="fan-record-name">${esc(f.name)}${_authorBadge(f.name)}</div>
+        <div class="fan-record-name">${esc(f.name)}</div>${_authorBadge(f.name) ? `<div class="fan-record-badge">${_authorBadge(f.name)}</div>` : ''}
         <div class="fan-record-count">${f.count} review${f.count>1?'s':''}</div>
         <div class="fan-record-avg">★ ${avg} avg rating</div>
         <div class="fan-record-movies">${movies}</div>
