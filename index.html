@@ -676,6 +676,91 @@
   .weekly-card-btn { background:transparent; border:1px solid #2a2a2a; border-radius:20px; color:#777; font-size:.72rem; font-weight:700; font-family:'Montserrat',sans-serif; padding:7px 14px; cursor:pointer; display:flex; align-items:center; gap:6px; transition:.2s; letter-spacing:.03em; }
   .weekly-card-btn:hover { border-color:#f5a623; color:#f5a623; }
 
+  /* ── Hover Backdrop ── */
+  .top100-item { position:relative; overflow:hidden; }
+  .t100-backdrop { position:absolute; inset:0; background-size:cover; background-position:center 20%; opacity:0; transition:opacity .45s ease; filter:blur(12px) brightness(.22); transform:scale(1.1); pointer-events:none; z-index:0; }
+  .top100-item:hover .t100-backdrop { opacity:1; }
+  .top100-item > *:not(.t100-backdrop) { position:relative; z-index:1; }
+
+  /* ── Vote Pulse ── */
+  @keyframes votePulse { 0%{transform:scale(1)} 35%{transform:scale(1.3);box-shadow:0 0 0 10px rgba(232,160,32,.18)} 100%{transform:scale(1);box-shadow:none} }
+  .vote-pulse { animation: votePulse .55s cubic-bezier(.36,.07,.19,.97); }
+
+  /* ── Confetti Canvas ── */
+  #confettiCanvas { position:fixed; inset:0; z-index:99999; pointer-events:none; }
+
+  /* ── Impact Card ── */
+  .impact-overlay,.h2h-overlay,.taste-overlay { position:fixed; inset:0; z-index:9000; background:rgba(0,0,0,.78); display:flex; align-items:center; justify-content:center; padding:20px; }
+  .impact-modal,.h2h-modal,.taste-modal { background:#111; border-radius:18px; width:100%; max-height:88vh; overflow-y:auto; padding:24px; }
+  .impact-modal { max-width:460px; }
+  .impact-title,.h2h-title,.taste-title { font-size:1.05rem; font-weight:800; color:#fff; margin:0 0 4px; }
+  .impact-sub,.taste-sub { font-size:.78rem; color:#555; margin:0 0 18px; }
+  .impact-film-row { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid #1c1c1c; }
+  .impact-poster { width:36px; height:54px; object-fit:cover; border-radius:5px; flex-shrink:0; background:#1e1e1e; }
+  .impact-film-info { flex:1; min-width:0; }
+  .impact-film-title { font-size:.83rem; font-weight:600; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .impact-film-change { font-size:.73rem; color:#777; margin-top:2px; }
+  .impact-rank-badge { font-size:.88rem; font-weight:700; color:var(--orange); flex-shrink:0; }
+  .impact-empty { text-align:center; color:#555; padding:28px 0; font-size:.85rem; }
+  .fun-close-btn { display:block; width:100%; margin-top:18px; padding:12px; border:none; border-radius:11px; font-weight:700; font-size:.88rem; cursor:pointer; }
+  .fun-close-btn.primary { background:var(--orange); color:#000; }
+  .fun-close-btn.secondary { background:#1e1e1e; color:#fff; margin-top:8px; }
+
+  /* ── Head-to-Head ── */
+  .h2h-modal { max-width:540px; }
+  .h2h-title { text-align:center; margin-bottom:18px; }
+  .h2h-selects { display:grid; grid-template-columns:1fr auto 1fr; gap:10px; align-items:center; margin-bottom:18px; }
+  .h2h-select { width:100%; background:#1a1a1a; border:1px solid #2a2a2a; border-radius:9px; color:#fff; padding:8px 10px; font-size:.78rem; }
+  .h2h-vs-lbl { font-size:1.1rem; font-weight:900; color:#333; text-align:center; }
+  .h2h-compare-grid { display:grid; grid-template-columns:1fr auto 1fr; gap:8px; align-items:start; }
+  .h2h-film { text-align:center; }
+  .h2h-poster { width:76px; height:114px; object-fit:cover; border-radius:8px; background:#1e1e1e; margin:0 auto 10px; display:block; border:2px solid transparent; }
+  .h2h-poster.winner { border-color:var(--orange); }
+  .h2h-film-name { font-size:.75rem; font-weight:600; color:#fff; margin-bottom:10px; }
+  .h2h-divider { display:flex; flex-direction:column; gap:8px; justify-content:center; padding-top:58px; }
+  .h2h-divider-dot { width:6px; height:6px; border-radius:50%; background:#2a2a2a; margin:0 auto; }
+  .h2h-stat { background:#1a1a1a; border-radius:8px; padding:8px 6px; margin-bottom:7px; }
+  .h2h-stat-num { font-size:.95rem; font-weight:700; color:var(--orange); }
+  .h2h-stat-lbl { font-size:.6rem; color:#555; text-transform:uppercase; letter-spacing:.06em; }
+  .h2h-stat.highlight .h2h-stat-num { color:#4caf50; }
+  .h2h-build-btn { display:block; width:100%; padding:10px; background:var(--orange); color:#000; border:none; border-radius:10px; font-weight:700; font-size:.85rem; cursor:pointer; margin-bottom:6px; }
+
+  /* ── Taste Card ── */
+  .taste-modal { max-width:400px; }
+  .taste-genre-row { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .taste-genre-name { font-size:.78rem; color:#ccc; width:85px; flex-shrink:0; }
+  .taste-bar-wrap { flex:1; height:7px; background:#1e1e1e; border-radius:4px; overflow:hidden; }
+  .taste-bar { height:100%; background:var(--orange); border-radius:4px; }
+  .taste-pct { font-size:.72rem; color:#555; width:28px; text-align:right; }
+  .taste-picks { display:flex; gap:8px; margin:14px 0 18px; overflow-x:auto; padding-bottom:4px; }
+  .taste-pick-img { width:52px; height:78px; object-fit:cover; border-radius:7px; flex-shrink:0; background:#1e1e1e; }
+
+  /* ── Poll Widget ── */
+  .poll-widget { background:#0f0f0f; border:1px solid #1e1e1e; border-radius:14px; padding:16px 20px; margin-bottom:24px; }
+  .poll-q { font-size:.78rem; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:.07em; margin:0 0 12px; }
+  .poll-options { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .poll-opt { background:#1a1a1a; border:1.5px solid #252525; border-radius:11px; padding:12px 10px 10px; text-align:center; cursor:pointer; transition:.15s; position:relative; overflow:hidden; }
+  .poll-opt:hover:not(.done) { border-color:#3a3a3a; }
+  .poll-opt.voted { border-color:var(--orange); }
+  .poll-opt-fill { position:absolute; left:0; top:0; bottom:0; background:rgba(232,160,32,.1); width:0; transition:width .7s ease; pointer-events:none; }
+  .poll-opt img { width:44px; height:66px; object-fit:cover; border-radius:6px; display:block; margin:0 auto 8px; background:#1e1e1e; }
+  .poll-opt-title { font-size:.72rem; font-weight:600; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:4px; }
+  .poll-opt-pct { font-size:.8rem; font-weight:700; color:var(--orange); display:none; }
+  .poll-opt.done .poll-opt-pct { display:block; }
+  .poll-foot { text-align:center; margin-top:10px; font-size:.68rem; color:#383838; }
+
+  /* ── Reactions ── */
+  .fi-reactions { display:flex; gap:8px; justify-content:center; margin:14px 0 6px; flex-wrap:wrap; }
+  .fi-rxn-btn { background:#1a1a1a; border:1.5px solid #252525; border-radius:22px; padding:7px 14px; cursor:pointer; font-size:.82rem; display:flex; align-items:center; gap:6px; transition:.15s; color:#aaa; }
+  .fi-rxn-btn:hover { border-color:#3a3a3a; background:#222; }
+  .fi-rxn-btn.reacted { border-color:var(--orange); background:rgba(232,160,32,.1); color:#fff; }
+  .fi-rxn-count { font-size:.72rem; font-weight:600; }
+
+  /* ── Fun header buttons ── */
+  .fun-hdr-btn { background:transparent; border:1px solid #252525; color:#666; border-radius:20px; padding:6px 13px; font-size:.72rem; font-weight:700; font-family:'Montserrat',sans-serif; cursor:pointer; transition:.2s; white-space:nowrap; letter-spacing:.03em; }
+  .fun-hdr-btn:hover { border-color:#f5a623; color:#f5a623; }
+
+
   /* ── Weekly Card Overlay ── */
   .weekly-overlay { position:fixed; inset:0; background:rgba(0,0,0,.9); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(6px); animation:fiOverlayIn .2s ease; }
   .weekly-modal { background:#111; border:1px solid #222; border-radius:20px; max-width:520px; width:100%; overflow:hidden; animation:fiModalIn .25s cubic-bezier(.34,1.56,.64,1); max-height:90vh; overflow-y:auto; }
@@ -1310,12 +1395,21 @@
           <div class="top100-votes-lbl">votes remaining</div>
         </div>
         <button class="weekly-card-btn" onclick="openWeeklyCard()">📋 This Week</button>
+        <button class="fun-hdr-btn" onclick="openImpactCard()" title="See how your votes moved films">📊 My Impact</button>
+        <button class="fun-hdr-btn" onclick="openTasteCard()" title="Your film taste breakdown">🎭 My Taste</button>
+        <button class="fun-hdr-btn" onclick="openH2H()" title="Compare two films head-to-head">⚔ VS</button>
       </div>
     </div>
     <!-- Live Vote Feed -->
     <div class="vote-feed-bar" id="voteFeedBar" style="display:none">
       <div class="vote-feed-live"><div class="vote-feed-dot"></div>LIVE</div>
       <div class="vote-feed-track" id="voteFeedTrack"></div>
+    </div>
+    <!-- Poll Widget -->
+    <div class="poll-widget" id="pollWidget" style="display:none">
+      <div class="poll-q" id="pollQuestion">🗳 Which film deserves to be #1?</div>
+      <div class="poll-options" id="pollOptions"></div>
+      <div class="poll-foot" id="pollFoot"></div>
     </div>
     <div class="top100-search-wrap">
       <span class="top100-search-icon">🔍</span>
@@ -5949,6 +6043,7 @@ async function submitAllVotes(email, hash) {
 
     closeEmailPopup();
     updateVoteBar();
+    fireConfetti();
 
     // Show shareable picks card (load the list in parallel)
     const [_] = await Promise.all([
@@ -6000,6 +6095,14 @@ function addPending(id, title, poster, backdrop, year, genresStr) {
       }
       const existing = right.querySelector('.top100-vote-btn, .top100-voted-badge');
       if (existing) existing.outerHTML = btnHtml;
+      // Pulse the button when picking (not deselecting)
+      if (hasPending) {
+        const newBtn = right.querySelector('.top100-vote-btn');
+        if (newBtn) {
+          newBtn.classList.add('vote-pulse');
+          newBtn.addEventListener('animationend', () => newBtn.classList.remove('vote-pulse'), {once:true});
+        }
+      }
     }
   }
   // Disable/re-enable all unselected Vote buttons when limit reached / freed
@@ -6411,11 +6514,16 @@ function openFilmInfo(mid) {
           </div>
           <div class="film-info-since">First appeared in the list: <strong>${firstDate}</strong></div>
           ${voteSection}
+          <div class="fi-reactions" id="fiReactions-${mid}">
+            ${['🔥','😮','❤️','😂'].map(e=>`<button class="fi-rxn-btn" id="fi-rxn-${mid}-${e.codePointAt(0)}" onclick="submitReaction('${mid}','${e}')">${e} <span class="fi-rxn-count">…</span></button>`).join('')}
+          </div>
+          <button style="background:transparent;border:none;color:#555;font-size:.72rem;cursor:pointer;margin-top:2px;text-decoration:underline" onclick="closeFilmInfo();openH2H('${mid}')">⚔ Compare vs another film</button>
         </div>
       </div>
     </div>`;
   document.body.insertAdjacentHTML('beforeend', html);
   document.addEventListener('keydown', _filmInfoKeyHandler);
+  loadReactions(mid);
 }
 
 function _filmInfoKeyHandler(e) {
@@ -6478,6 +6586,7 @@ function renderTop100(movies) {
 
     return `
       <div class="top100-item${hidden}" id="top100-item-${m.id}" data-mid="${m.id}" onclick="openFilmInfo('${m.id}')">
+        ${(m.backdrop||m.poster)?`<div class="t100-backdrop" style="background-image:url('https://image.tmdb.org/t/p/w780${m.backdrop||m.poster}')"></div>`:''}
         <div class="top100-rank">
           <div class="top100-rank-num">${rank}</div>
           ${changeHtml}
@@ -6599,6 +6708,7 @@ async function loadTop100() {
     checkRankAlerts(movies);
     _maybeRefreshWeeklySnapshot(movies);
     loadVoteFeed();
+    initPoll();
   } catch(e) { console.warn('Top100 load error', e); }
 }
 
@@ -7482,6 +7592,363 @@ if (IS_DEV) {
 
 // Boot
 loadTop100();
+
+
+/* ══════════════════════════════════════════════════
+   CONFETTI
+══════════════════════════════════════════════════ */
+function fireConfetti() {
+  const canvas = document.createElement('canvas');
+  canvas.id = 'confettiCanvas';
+  canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  const cols = ['#E8A020','#fff','#f44336','#4caf50','#2196f3','#e91e63','#ff9800','#00bcd4'];
+  const particles = Array.from({length:140}, () => ({
+    x: Math.random() * canvas.width, y: -10 - Math.random() * 80,
+    r: Math.random() * 6 + 3, color: cols[Math.floor(Math.random()*cols.length)],
+    vx: (Math.random()-.5)*5, vy: Math.random()*4+2,
+    angle: Math.random()*Math.PI*2, spin: (Math.random()-.5)*.25,
+    shape: Math.random()>.5?'rect':'circle'
+  }));
+  let frame, dead = false;
+  function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    let alive = false;
+    particles.forEach(p => {
+      p.x+=p.vx; p.y+=p.vy; p.vy+=.06; p.angle+=p.spin;
+      if (p.y < canvas.height+20) alive=true;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.angle); ctx.fillStyle=p.color;
+      if (p.shape==='rect') ctx.fillRect(-p.r,-p.r/2,p.r*2,p.r);
+      else { ctx.beginPath(); ctx.arc(0,0,p.r,0,Math.PI*2); ctx.fill(); }
+      ctx.restore();
+    });
+    if (alive && !dead) frame = requestAnimationFrame(draw);
+    else { cancelAnimationFrame(frame); canvas.remove(); }
+  }
+  draw();
+  setTimeout(() => { dead=true; cancelAnimationFrame(frame); canvas.remove(); }, 4500);
+}
+
+/* ══════════════════════════════════════════════════
+   QUICK REACTIONS
+══════════════════════════════════════════════════ */
+const REACTION_EMOJIS = ['🔥','😮','❤️','😂'];
+function _rxnLsKey(mid) { return lsKey('pmovies_reacted_'+mid); }
+
+async function loadReactions(mid) {
+  try {
+    const res  = await fetch(`${RTDB}/reactions/${mid}.json`);
+    const data = res.ok ? await res.json() : {};
+    const myRxn = localStorage.getItem(_rxnLsKey(mid));
+    REACTION_EMOJIS.forEach(e => {
+      const cp  = e.codePointAt(0);
+      const btn = document.getElementById(`fi-rxn-${mid}-${cp}`);
+      if (!btn) return;
+      const key = 'e'+cp;
+      const cnt = (data && data[key]) || 0;
+      btn.querySelector('.fi-rxn-count').textContent = cnt || '';
+      if (myRxn === e) btn.classList.add('reacted');
+    });
+  } catch(err) {}
+}
+
+async function submitReaction(mid, emoji) {
+  const myRxn = localStorage.getItem(_rxnLsKey(mid));
+  if (myRxn === emoji) return; // already reacted with this one
+  // Optimistic UI
+  const cp = emoji.codePointAt(0);
+  REACTION_EMOJIS.forEach(e => {
+    const b = document.getElementById(`fi-rxn-${mid}-${e.codePointAt(0)}`);
+    if (b) b.classList.remove('reacted');
+  });
+  const btn = document.getElementById(`fi-rxn-${mid}-${cp}`);
+  if (btn) btn.classList.add('reacted');
+  localStorage.setItem(_rxnLsKey(mid), emoji);
+  // Atomic increment via Firebase transaction-style read+write
+  try {
+    const key = 'e'+cp;
+    const res = await fetch(`${RTDB}/reactions/${mid}/${key}.json`);
+    const cur = res.ok ? (await res.json())||0 : 0;
+    await fetch(`${RTDB}/reactions/${mid}/${key}.json`, {
+      method:'PUT', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(cur+1)
+    });
+    if (btn) btn.querySelector('.fi-rxn-count').textContent = cur+1||'';
+    // Decrement old reaction if switching
+    if (myRxn && myRxn !== emoji) {
+      const oldKey = 'e'+myRxn.codePointAt(0);
+      const r2 = await fetch(`${RTDB}/reactions/${mid}/${oldKey}.json`);
+      const old = r2.ok ? (await r2.json())||0 : 0;
+      await fetch(`${RTDB}/reactions/${mid}/${oldKey}.json`, {
+        method:'PUT', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(Math.max(0,old-1))
+      });
+    }
+  } catch(e) {}
+}
+
+/* ══════════════════════════════════════════════════
+   MY IMPACT CARD
+══════════════════════════════════════════════════ */
+function openImpactCard() {
+  document.getElementById('impactOverlay').style.display='flex';
+  const modal = document.getElementById('impactModal');
+  const myVotes = getMyVotes();
+  const snap = getRankSnapshot();
+  if (!myVotes.length) {
+    modal.innerHTML = `<div class="impact-title">📊 My Impact</div>
+      <div class="impact-empty">You haven't voted yet!<br>Vote for films and see how you're shaping the list.</div>
+      <button class="fun-close-btn secondary" onclick="closeImpactCard()">Close</button>`;
+    return;
+  }
+  const films = myVotes.map(id => {
+    const m = _top100AllMovies.find(x => x.id == id);
+    if (!m) return null;
+    const rank = _top100AllMovies.indexOf(m)+1;
+    const prev = snap[id];
+    return { ...m, rank, prev };
+  }).filter(Boolean).sort((a,b)=>a.rank-b.rank);
+
+  const rows = films.map(m => {
+    const prev = m.prev;
+    let changeStr = '';
+    if (!prev)           changeStr = '<span style="color:var(--orange)">NEW to list</span>';
+    else if (prev>m.rank) changeStr = `<span style="color:#4caf50">▲ helped push from #${prev} → #${m.rank}</span>`;
+    else if (prev<m.rank) changeStr = `<span style="color:#f44336">▼ slipped from #${prev} to #${m.rank}</span>`;
+    else                  changeStr = `<span style="color:#555">holding steady at #${m.rank}</span>`;
+    const poster = m.poster?`<img class="impact-poster" src="https://image.tmdb.org/t/p/w92${m.poster}"/>`:`<div class="impact-poster"></div>`;
+    return `<div class="impact-film-row">${poster}
+      <div class="impact-film-info">
+        <div class="impact-film-title">${esc(m.title)}</div>
+        <div class="impact-film-change">${changeStr}</div>
+      </div>
+      <div class="impact-rank-badge">#${m.rank}</div>
+    </div>`;
+  }).join('');
+
+  modal.innerHTML = `<div class="impact-title">📊 My Impact</div>
+    <div class="impact-sub">You voted for ${films.length} film${films.length!==1?'s':''} — here's how they're doing</div>
+    ${rows}
+    <button class="fun-close-btn secondary" onclick="closeImpactCard()">Close</button>`;
+}
+function closeImpactCard() { document.getElementById('impactOverlay').style.display='none'; }
+
+/* ══════════════════════════════════════════════════
+   HEAD-TO-HEAD COMPARE
+══════════════════════════════════════════════════ */
+function openH2H(preselect) {
+  document.getElementById('h2hOverlay').style.display='flex';
+  _buildH2HSelects(preselect||null, null);
+}
+function closeH2H() { document.getElementById('h2hOverlay').style.display='none'; }
+
+function _buildH2HSelects(aId, bId) {
+  const modal  = document.getElementById('h2hModal');
+  const movies = _top100AllMovies.slice(0,50);
+  const opts   = movies.map((m,i) => `<option value="${m.id}" ${String(m.id)===String(aId)?'selected':''}>#${i+1} ${esc(m.title.length>30?m.title.slice(0,28)+'…':m.title)}</option>`).join('');
+  const opts2  = movies.map((m,i) => `<option value="${m.id}" ${String(m.id)===String(bId)?'selected':''}>#${i+1} ${esc(m.title.length>30?m.title.slice(0,28)+'…':m.title)}</option>`).join('');
+  modal.innerHTML = `
+    <div class="h2h-title">⚔ Head-to-Head</div>
+    <div class="h2h-selects">
+      <select class="h2h-select" id="h2hSelA" onchange="_renderH2H()">${opts}</select>
+      <div class="h2h-vs-lbl">VS</div>
+      <select class="h2h-select" id="h2hSelB" onchange="_renderH2H()">${opts2}</select>
+    </div>
+    <div id="h2hCompare"></div>
+    <button class="fun-close-btn secondary" onclick="closeH2H()">Close</button>`;
+  _renderH2H();
+}
+
+function _renderH2H() {
+  const aId = document.getElementById('h2hSelA')?.value;
+  const bId = document.getElementById('h2hSelB')?.value;
+  const wrap = document.getElementById('h2hCompare');
+  if (!wrap || !aId || !bId || aId===bId) {
+    if (wrap) wrap.innerHTML = '<div style="text-align:center;color:#444;font-size:.8rem;padding:12px">Pick two different films</div>';
+    return;
+  }
+  const mA = _top100AllMovies.find(x=>String(x.id)===String(aId));
+  const mB = _top100AllMovies.find(x=>String(x.id)===String(bId));
+  if (!mA || !mB) return;
+  const rankA = _top100AllMovies.indexOf(mA)+1;
+  const rankB = _top100AllMovies.indexOf(mB)+1;
+  const best  = getBestRanks();
+  const snap  = getRankSnapshot();
+
+  function statBlock(m, rank, oRank) {
+    const best_r = best[m.id] || rank;
+    const prev   = snap[m.id];
+    const diff   = prev ? prev-rank : 0;
+    const poster = m.poster?`<img class="h2h-poster ${rank<oRank?'winner':''}" src="https://image.tmdb.org/t/p/w185${m.poster}"/>`:`<div class="h2h-poster ${rank<oRank?'winner':''}"></div>`;
+    return `<div class="h2h-film">
+      ${poster}
+      <div class="h2h-film-name">${esc(m.title)}</div>
+      <div class="h2h-stat ${rank<oRank?'highlight':''}">
+        <div class="h2h-stat-num">#${rank}</div>
+        <div class="h2h-stat-lbl">Current Rank</div>
+      </div>
+      <div class="h2h-stat">
+        <div class="h2h-stat-num">#${best_r}</div>
+        <div class="h2h-stat-lbl">Best Rank</div>
+      </div>
+      <div class="h2h-stat ${m.votes>((m===mA?mB:mA).votes)?'highlight':''}">
+        <div class="h2h-stat-num">${m.votes}</div>
+        <div class="h2h-stat-lbl">Votes</div>
+      </div>
+      <div class="h2h-stat">
+        <div class="h2h-stat-num">${diff>0?'▲'+diff:diff<0?'▼'+Math.abs(diff):'–'}</div>
+        <div class="h2h-stat-lbl">Monthly Change</div>
+      </div>
+    </div>`;
+  }
+  wrap.innerHTML = `<div class="h2h-compare-grid">
+    ${statBlock(mA,rankA,rankB)}
+    <div class="h2h-divider">${Array(4).fill('<div class="h2h-divider-dot"></div>').join('')}</div>
+    ${statBlock(mB,rankB,rankA)}
+  </div>`;
+}
+
+/* ══════════════════════════════════════════════════
+   MY FILM TASTE CARD
+══════════════════════════════════════════════════ */
+function openTasteCard() {
+  document.getElementById('tasteOverlay').style.display='flex';
+  const modal = document.getElementById('tasteModal');
+  const myVotes = getMyVotes();
+  if (!myVotes.length) {
+    modal.innerHTML = `<div class="taste-title">🎭 My Film Taste</div>
+      <div style="color:#555;font-size:.83rem;padding:20px 0 10px;text-align:center">Vote for some films first and I'll analyse your taste!</div>
+      <button class="fun-close-btn secondary" onclick="closeTasteCard()">Close</button>`;
+    return;
+  }
+  const films = myVotes.map(id=>_top100AllMovies.find(x=>x.id==id)).filter(Boolean);
+  // Genre breakdown
+  const genreCount = {};
+  films.forEach(m => (m.genres||[]).forEach(g => { genreCount[g]=(genreCount[g]||0)+1; }));
+  const sorted = Object.entries(genreCount).sort((a,b)=>b[1]-a[1]);
+  const total  = sorted.reduce((s,[,c])=>s+c,0)||1;
+  const topGenre = sorted[0]?.[0]||'Drama';
+
+  const genreBars = sorted.slice(0,6).map(([g,c]) => {
+    const pct = Math.round(c/total*100);
+    return `<div class="taste-genre-row">
+      <div class="taste-genre-name">${g}</div>
+      <div class="taste-bar-wrap"><div class="taste-bar" style="width:${pct}%"></div></div>
+      <div class="taste-pct">${pct}%</div>
+    </div>`;
+  }).join('');
+
+  const posters = films.slice(0,6).map(m=>
+    m.poster?`<img class="taste-pick-img" src="https://image.tmdb.org/t/p/w185${m.poster}" title="${esc(m.title)}"/>`:`<div class="taste-pick-img"></div>`
+  ).join('');
+
+  // Taste persona
+  const personas = {
+    'Action':'The Adrenaline Junkie','Drama':'The Deep Thinker','Crime':'The Strategist',
+    'Thriller':'The Edge-of-Seat Watcher','Comedy':'The Life of the Party','Sci-Fi':'The Visionary',
+    'Romance':'The Hopeless Romantic','Horror':'The Thrill Seeker','Animation':'The Young at Heart',
+    'Biography':'The Truth Seeker'
+  };
+  const persona = personas[topGenre]||'The Cinephile';
+
+  modal.innerHTML = `<div class="taste-title">🎭 My Film Taste</div>
+    <div style="color:#555;font-size:.78rem;margin:0 0 14px">Based on your ${films.length} vote${films.length!==1?'s':''}</div>
+    <div style="background:#1a1a1a;border-radius:10px;padding:12px 16px;margin-bottom:16px;text-align:center">
+      <div style="font-size:.7rem;color:#555;margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em">Your taste persona</div>
+      <div style="font-size:1rem;font-weight:800;color:var(--orange)">${persona}</div>
+      <div style="font-size:.72rem;color:#666;margin-top:3px">Top genre: ${topGenre}</div>
+    </div>
+    ${genreBars}
+    <div style="font-size:.7rem;color:#555;margin:12px 0 6px;text-transform:uppercase;letter-spacing:.06em">Your picks</div>
+    <div class="taste-picks">${posters}</div>
+    <button class="fun-close-btn secondary" onclick="closeTasteCard()">Close</button>`;
+}
+function closeTasteCard() { document.getElementById('tasteOverlay').style.display='none'; }
+
+/* ══════════════════════════════════════════════════
+   WEEKLY POLL
+══════════════════════════════════════════════════ */
+let _pollVoted = false;
+async function initPoll() {
+  const movies = _top100AllMovies;
+  if (movies.length < 5) return;
+  const widget = document.getElementById('pollWidget');
+  if (!widget) return;
+
+  // Pick 2 films from top 10 based on week number (deterministic)
+  const now = new Date();
+  const week = Math.floor((now - new Date(now.getFullYear(),0,1))/(7*864e5));
+  const seed = now.getFullYear()*100 + week;
+  const pickA = movies[seed % Math.min(10,movies.length)];
+  const pickB = movies[(seed+3) % Math.min(10,movies.length)];
+  if (!pickA || !pickB || pickA.id===pickB.id) return;
+
+  const weekKey = `${now.getFullYear()}-W${String(week).padStart(2,'0')}`;
+  const myPollKey = lsKey('pmovies_poll_'+weekKey);
+  _pollVoted = !!localStorage.getItem(myPollKey);
+
+  // Load current counts
+  let counts = {a:0,b:0};
+  try {
+    const res = await fetch(`${RTDB}/poll/${weekKey}.json`);
+    const d   = res.ok ? await res.json() : null;
+    if (d) { counts.a=(d[pickA.id]||0); counts.b=(d[pickB.id]||0); }
+  } catch(e) {}
+
+  _renderPoll(widget, pickA, pickB, counts, weekKey, myPollKey);
+  widget.style.display='block';
+}
+
+function _renderPoll(widget, pickA, pickB, counts, weekKey, myPollKey) {
+  const total = (counts.a+counts.b)||1;
+  const pctA  = Math.round(counts.a/total*100);
+  const pctB  = 100-pctA;
+  const myVote = localStorage.getItem(myPollKey);
+  const voted  = !!myVote;
+  const imgA = pickA.poster?`<img src="https://image.tmdb.org/t/p/w92${pickA.poster}" alt=""/>`:`<div style="width:44px;height:66px;background:#222;border-radius:6px;margin:0 auto 8px;display:block"></div>`;
+  const imgB = pickB.poster?`<img src="https://image.tmdb.org/t/p/w92${pickB.poster}" alt=""/>`:`<div style="width:44px;height:66px;background:#222;border-radius:6px;margin:0 auto 8px;display:block"></div>`;
+
+  const optA = `<div class="poll-opt ${voted?'done':''}${myVote===String(pickA.id)?' voted':''}" onclick="_castPollVote('${pickA.id}','${pickB.id}','${weekKey}','${myPollKey}')">
+    <div class="poll-opt-fill" style="width:${voted?pctA:0}%"></div>
+    ${imgA}<div class="poll-opt-title">${esc(pickA.title)}</div>
+    <div class="poll-opt-pct">${pctA}%</div>
+  </div>`;
+  const optB = `<div class="poll-opt ${voted?'done':''}${myVote===String(pickB.id)?' voted':''}" onclick="_castPollVote('${pickB.id}','${pickA.id}','${weekKey}','${myPollKey}')">
+    <div class="poll-opt-fill" style="width:${voted?pctB:0}%"></div>
+    ${imgB}<div class="poll-opt-title">${esc(pickB.title)}</div>
+    <div class="poll-opt-pct">${pctB}%</div>
+  </div>`;
+
+  widget.querySelector('#pollOptions').innerHTML = optA+optB;
+  widget.querySelector('#pollFoot').textContent = voted
+    ? `${counts.a+counts.b} vote${(counts.a+counts.b)!==1?'s':''} this week`
+    : 'Tap to vote — results revealed after';
+}
+
+async function _castPollVote(chosenId, otherId, weekKey, myPollKey) {
+  if (localStorage.getItem(myPollKey)) return;
+  localStorage.setItem(myPollKey, chosenId);
+  // Increment in Firebase
+  try {
+    const key = chosenId;
+    const res = await fetch(`${RTDB}/poll/${weekKey}/${key}.json`);
+    const cur = res.ok ? (await res.json())||0 : 0;
+    await fetch(`${RTDB}/poll/${weekKey}/${key}.json`, {
+      method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(cur+1)
+    });
+    // Reload to show results
+    const res2 = await fetch(`${RTDB}/poll/${weekKey}.json`);
+    const d = res2.ok ? await res2.json() : {};
+    const pickA = _top100AllMovies.find(x=>String(x.id)===chosenId)||_top100AllMovies[0];
+    const pickB = _top100AllMovies.find(x=>String(x.id)===otherId)||_top100AllMovies[1];
+    const widget = document.getElementById('pollWidget');
+    if (widget && pickA && pickB) {
+      _renderPoll(widget, pickA, pickB, {a:d[chosenId]||0,b:d[otherId]||0}, weekKey, myPollKey);
+    }
+  } catch(e) {}
+}
+
 </script>
 
 <!-- Weekly List Card Overlay -->
@@ -7500,5 +7967,20 @@ loadTop100();
   </div>
 </div>
 
+
+  <!-- Impact Card Modal -->
+  <div class="impact-overlay" id="impactOverlay" style="display:none" onclick="if(event.target.id==='impactOverlay')closeImpactCard()">
+    <div class="impact-modal" id="impactModal"></div>
+  </div>
+
+  <!-- Head-to-Head Modal -->
+  <div class="h2h-overlay" id="h2hOverlay" style="display:none" onclick="if(event.target.id==='h2hOverlay')closeH2H()">
+    <div class="h2h-modal" id="h2hModal"></div>
+  </div>
+
+  <!-- Taste Card Modal -->
+  <div class="taste-overlay" id="tasteOverlay" style="display:none" onclick="if(event.target.id==='tasteOverlay')closeTasteCard()">
+    <div class="taste-modal" id="tasteModal"></div>
+  </div>
 </body>
 </html>
