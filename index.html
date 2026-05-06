@@ -3655,7 +3655,7 @@
       const movies = [...f.movies].slice(0, 3).map(m => `<span class="fan-record-tag">🎬 ${esc(m)}</span>`).join('');
       return `<div class="fan-record-card ${rankClass[i]||''}">
         <div class="fan-record-medal">${medals[i]||'🎬'}</div>
-        <div class="fan-record-name">${esc(f.name)}</div>
+        <div class="fan-record-name">${esc(f.name)}${_authorBadge(f.name)}</div>
         <div class="fan-record-count">${f.count} review${f.count>1?'s':''}</div>
         <div class="fan-record-avg">★ ${avg} avg rating</div>
         <div class="fan-record-movies">${movies}</div>
@@ -8011,7 +8011,10 @@ async function initFilmOfDay() {
   // Load today's film from Firebase (shared for all users)
   try {
     const res = await fetch(`${RTDB}/filmOfDay/${_fotdToday}.json`);
-    if (res.ok) _fotdFilmData = await res.json();
+    if (res.ok) {
+      const d = await res.json();
+      if (d && d.id) _fotdFilmData = d;
+    }
   } catch(e) {}
 
   // If no film set yet for today, pick one from TMDB and store it
@@ -8019,16 +8022,16 @@ async function initFilmOfDay() {
     _fotdFilmData = await _fotdPickAndStore(_fotdToday);
   }
 
-  if (!_fotdFilmData) return;
+  if (!_fotdFilmData || !_fotdFilmData.id) return;
 
   // Show summary button always
   const btn = document.getElementById('fotdSummaryBtn');
   if (btn) btn.style.display = '';
 
-  // Show overlay only if user hasn't rated or skipped today
+  // Show popup once per day — if already seen/voted today, skip
   const seen = localStorage.getItem(seenKey);
   if (seen !== _fotdToday) {
-    setTimeout(() => _showFOTDRating(), 800);
+    setTimeout(() => _showFOTDRating(), 900);
   }
 }
 
@@ -8037,9 +8040,8 @@ async function _fotdPickAndStore(dateKey) {
     // Deterministic page + item from date string
     const hash = dateKey.split('').reduce((acc, c) => acc * 31 + c.charCodeAt(0), 0);
     const page = (Math.abs(hash) % 8) + 1;
-    const res  = await fetch(`${RTDB_BASE || window.location.origin}/`); // placeholder
     // Fetch popular movies from TMDB
-    const tmdbRes = await fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${localStorage.getItem('pmovies_tmdb_key')||'3e1731e2bab11d87b4aef97b4ab3b49b'}&language=en-US&page=${page}`);
+    const tmdbRes = await fetch(`${TMDB}/movie/popular?api_key=${getKey()}&language=en-US&page=${page}`);
     if (!tmdbRes.ok) return null;
     const data = await tmdbRes.json();
     const pool = (data.results || []).filter(m => m.backdrop_path && m.poster_path && m.overview);
@@ -8049,7 +8051,7 @@ async function _fotdPickAndStore(dateKey) {
     // Fetch tagline
     let tagline = '';
     try {
-      const det = await fetch(`https://api.themoviedb.org/3/movie/${pick.id}?api_key=${localStorage.getItem('pmovies_tmdb_key')||'3e1731e2bab11d87b4aef97b4ab3b49b'}&language=en-US`);
+      const det = await fetch(`${TMDB}/movie/${pick.id}?api_key=${getKey()}&language=en-US`);
       if (det.ok) { const d = await det.json(); tagline = d.tagline || ''; }
     } catch(e) {}
 
