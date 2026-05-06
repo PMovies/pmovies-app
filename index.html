@@ -6103,6 +6103,8 @@ async function submitAllVotes(email, hash) {
     closeEmailPopup();
     updateVoteBar();
     fireConfetti();
+    // Refresh live feed now that new votes were written
+    setTimeout(() => loadVoteFeed(), 1200);
 
     // Show shareable picks card (load the list in parallel)
     const [_] = await Promise.all([
@@ -7419,13 +7421,13 @@ async function generatePicksCard(picks) {
   const W = 1080, H = 1350;
   canvas.width = W; canvas.height = H;
 
-  // ── Load images in parallel ──
+  // ── Load images in parallel (w342 for better quality posters) ──
   const [backdropImg, ...posterImgs] = await Promise.all([
     picks[0]?.backdrop
       ? _loadImg('https://image.tmdb.org/t/p/w1280' + picks[0].backdrop).catch(() => null)
       : Promise.resolve(null),
     ...picks.map(p =>
-      p.poster ? _loadImg('https://image.tmdb.org/t/p/w185' + p.poster).catch(() => null) : Promise.resolve(null)
+      p.poster ? _loadImg('https://image.tmdb.org/t/p/w342' + p.poster).catch(() => null) : Promise.resolve(null)
     )
   ]);
 
@@ -7446,186 +7448,240 @@ async function generatePicksCard(picks) {
   ctx.fillStyle = '#080808';
   ctx.fillRect(0, 0, W, H);
 
-  // Subtle noise texture via random dots
-  ctx.save();
-  ctx.globalAlpha = 0.018;
-  for (let i = 0; i < 6000; i++) {
-    ctx.fillStyle = Math.random() > .5 ? '#fff' : '#000';
-    ctx.fillRect(Math.random()*W, Math.random()*H, 1, 1);
-  }
-  ctx.restore();
-
   // ════════════════════════════════════
-  //  HERO — #1 pick with backdrop
+  //  HERO — full-width backdrop, 520px tall
   // ════════════════════════════════════
-  const HERO_H = 480;
+  const HERO_H = 520;
   ctx.save();
   roundRect(0, 0, W, HERO_H, 0); ctx.clip();
   if (backdropImg) {
-    // Draw + darken backdrop
     const bRatio = backdropImg.width / backdropImg.height;
     const bDrawW = Math.max(W, HERO_H * bRatio);
     const bDrawH = Math.max(HERO_H, W / bRatio);
     const bX = (W - bDrawW) / 2, bY = (HERO_H - bDrawH) / 2;
     ctx.drawImage(backdropImg, bX, bY, bDrawW, bDrawH);
-    ctx.fillStyle = 'rgba(0,0,0,0.60)'; ctx.fillRect(0, 0, W, HERO_H);
+    // Dark overlay for readability
+    ctx.fillStyle = 'rgba(0,0,0,0.52)'; ctx.fillRect(0, 0, W, HERO_H);
   } else {
-    const heroGrad = ctx.createLinearGradient(0, 0, W, HERO_H);
-    heroGrad.addColorStop(0, '#161616'); heroGrad.addColorStop(1, '#0a0a0a');
+    const heroGrad = ctx.createLinearGradient(0, 0, 0, HERO_H);
+    heroGrad.addColorStop(0, '#1a1a1a'); heroGrad.addColorStop(1, '#0a0a0a');
     ctx.fillStyle = heroGrad; ctx.fillRect(0, 0, W, HERO_H);
   }
-  // Bottom fade into background
-  const heroFade = ctx.createLinearGradient(0, HERO_H - 160, 0, HERO_H);
-  heroFade.addColorStop(0, 'rgba(8,8,8,0)'); heroFade.addColorStop(1, 'rgba(8,8,8,1)');
+  // Strong bottom-to-dark fade
+  const heroFade = ctx.createLinearGradient(0, HERO_H - 220, 0, HERO_H);
+  heroFade.addColorStop(0, 'rgba(8,8,8,0)');
+  heroFade.addColorStop(0.6, 'rgba(8,8,8,0.7)');
+  heroFade.addColorStop(1,   'rgba(8,8,8,1)');
   ctx.fillStyle = heroFade; ctx.fillRect(0, 0, W, HERO_H);
   ctx.restore();
 
-  // Orange accent line at top
+  // Orange accent line at very top
   ctx.fillStyle = '#f5a623';
-  ctx.fillRect(0, 0, W, 4);
+  ctx.fillRect(0, 0, W, 5);
 
-  // ── Brand badge ──
-  const BADGE_Y = 52;
-  ctx.font = 'bold 17px "Arial Black", Arial, sans-serif';
-  ctx.letterSpacing = '6px';
+  // ── PMOVIES badge top-center ──
+  const BADGE_Y = 58;
+  ctx.save();
+  ctx.font = '800 15px Arial, sans-serif';
+  ctx.letterSpacing = '8px';
   ctx.textAlign = 'center';
   const bm = ctx.measureText('PMOVIES');
-  const bW2 = bm.width + 44, bH2 = 30, bX2 = W/2 - bW2/2, bY2 = BADGE_Y - 20;
-  ctx.fillStyle = 'rgba(245,166,35,0.15)';
-  roundRect(bX2, bY2, bW2, bH2, 15); ctx.fill();
-  ctx.strokeStyle = 'rgba(245,166,35,0.5)'; ctx.lineWidth = 1;
-  roundRect(bX2, bY2, bW2, bH2, 15); ctx.stroke();
+  const bW2 = bm.width + 48, bH2 = 32, bX2 = W/2 - bW2/2, bY2 = BADGE_Y - 22;
+  ctx.fillStyle = 'rgba(245,166,35,0.12)';
+  roundRect(bX2, bY2, bW2, bH2, 16); ctx.fill();
+  ctx.strokeStyle = 'rgba(245,166,35,0.45)'; ctx.lineWidth = 1;
+  roundRect(bX2, bY2, bW2, bH2, 16); ctx.stroke();
   ctx.fillStyle = '#f5a623';
   ctx.fillText('PMOVIES', W/2, BADGE_Y);
-
-  // ── "MY PICKS" heading ──
-  ctx.font = 'bold 110px "Arial Black", Impact, sans-serif';
-  ctx.letterSpacing = '2px';
-  ctx.fillStyle = '#fff';
-  ctx.fillText('MY PICKS', W/2, BADGE_Y + 130);
-
-  // ── #1 poster + info in hero ──
-  const P1W = 160, P1H = 240, P1X = 60, P1Y = HERO_H - P1H - 60;
-  ctx.save();
-  ctx.shadowColor='rgba(0,0,0,0.9)'; ctx.shadowBlur=40; ctx.shadowOffsetY=16;
-  ctx.fillStyle='#111'; roundRect(P1X, P1Y, P1W, P1H, 12); ctx.fill();
   ctx.restore();
+
+  // ── Elegant "MY PICKS" label — small, refined ──
   ctx.save();
-  roundRect(P1X, P1Y, P1W, P1H, 12); ctx.clip();
-  if (posterImgs[0]) ctx.drawImage(posterImgs[0], P1X, P1Y, P1W, P1H);
-  else { ctx.fillStyle='#1c1c1c'; ctx.fillRect(P1X,P1Y,P1W,P1H); }
+  ctx.textAlign = 'center'; ctx.letterSpacing = '10px';
+  ctx.font = '300 18px Arial, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.fillText('MY PICKS', W/2, BADGE_Y + 48);
   ctx.restore();
-  ctx.strokeStyle='rgba(245,166,35,0.5)'; ctx.lineWidth=2;
-  roundRect(P1X, P1Y, P1W, P1H, 12); ctx.stroke();
 
-  // #1 rank badge
-  ctx.fillStyle='#f5a623'; roundRect(P1X+8,P1Y+8,42,26,7); ctx.fill();
-  ctx.font='bold 14px "Arial Black",Arial,sans-serif'; ctx.fillStyle='#000';
-  ctx.letterSpacing='0px'; ctx.textAlign='center';
-  ctx.fillText('#1', P1X+29, P1Y+26);
+  // ════════════════════════════════════
+  //  #1 PICK — large centered poster + info overlaid at bottom of hero
+  // ════════════════════════════════════
+  const P1W = 220, P1H = Math.round(P1W * 1.5);  // 220×330
+  const P1X = (W - P1W) / 2;
+  const P1Y = BADGE_Y + 80;  // sits in center of hero
 
-  // #1 film info next to poster
-  const INFO_X = P1X + P1W + 28, INFO_Y = P1Y + 30, INFO_W = W - INFO_X - 60;
-  ctx.textAlign = 'left';
-  ctx.font = '400 15px Arial, sans-serif';
-  ctx.fillStyle = '#f5a623'; ctx.letterSpacing = '2px';
-  ctx.fillText('MY #1 PICK', INFO_X, INFO_Y);
-  ctx.font = 'bold 44px "Arial Black", Arial, sans-serif';
-  ctx.fillStyle = '#fff'; ctx.letterSpacing = '0px';
-  // wrap title if needed
-  const p1Title = picks[0]?.title || '';
-  const words = p1Title.split(' ');
-  let line1 = '', line2 = '';
-  ctx.font = 'bold 42px "Arial Black", Arial, sans-serif';
-  for (const w of words) {
-    const test = line1 ? line1 + ' ' + w : w;
-    if (ctx.measureText(test).width > INFO_W) { line2 += (line2?' ':'')+w; }
-    else { line1 = test; }
+  // Poster glow / shadow
+  ctx.save();
+  ctx.shadowColor = 'rgba(245,166,35,0.25)';
+  ctx.shadowBlur = 60;
+  ctx.shadowOffsetY = 20;
+  ctx.fillStyle = '#111';
+  roundRect(P1X, P1Y, P1W, P1H, 16); ctx.fill();
+  ctx.restore();
+
+  // Poster image
+  ctx.save();
+  roundRect(P1X, P1Y, P1W, P1H, 16); ctx.clip();
+  if (posterImgs[0]) {
+    ctx.drawImage(posterImgs[0], P1X, P1Y, P1W, P1H);
+  } else {
+    ctx.fillStyle = '#1c1c1c'; ctx.fillRect(P1X, P1Y, P1W, P1H);
+    ctx.font = '64px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('🎬', P1X + P1W/2, P1Y + P1H/2 + 20);
   }
-  ctx.fillText(_trunc(line1, INFO_W), INFO_X, INFO_Y + 52);
-  if (line2) ctx.fillText(_trunc(line2, INFO_W), INFO_X, INFO_Y + 104);
-  ctx.font = '400 18px Arial, sans-serif';
-  ctx.fillStyle = '#888'; ctx.letterSpacing = '1px';
-  ctx.fillText(picks[0]?.year ? String(picks[0].year) : '', INFO_X, INFO_Y + (line2 ? 138 : 90));
+  ctx.restore();
+
+  // Poster border — thin orange
+  ctx.strokeStyle = 'rgba(245,166,35,0.6)'; ctx.lineWidth = 2;
+  roundRect(P1X, P1Y, P1W, P1H, 16); ctx.stroke();
+
+  // #1 rank badge — top-left of poster
+  ctx.save();
+  ctx.fillStyle = '#f5a623';
+  roundRect(P1X + 10, P1Y + 10, 48, 28, 8); ctx.fill();
+  ctx.font = 'bold 14px Arial, sans-serif';
+  ctx.fillStyle = '#000'; ctx.letterSpacing = '0px'; ctx.textAlign = 'center';
+  ctx.fillText('#1', P1X + 34, P1Y + 29);
+  ctx.restore();
+
+  // Film title + year below poster (inside hero fade zone)
+  const TY = P1Y + P1H + 36;
+  ctx.save();
+  ctx.textAlign = 'center';
+
+  // "MY #1 PICK" label
+  ctx.font = '700 13px Arial, sans-serif';
+  ctx.letterSpacing = '4px';
+  ctx.fillStyle = '#f5a623';
+  ctx.fillText('MY #1 PICK', W/2, TY);
+
+  // Title — up to 2 lines
+  ctx.font = 'bold 46px Arial, sans-serif';
+  ctx.letterSpacing = '0px';
+  ctx.fillStyle = '#ffffff';
+  const p1Title = picks[0]?.title || '';
+  const titleWords = p1Title.split(' ');
+  let tLine1 = '', tLine2 = '';
+  const maxTW = W - 120;
+  for (const w of titleWords) {
+    const test = tLine1 ? tLine1 + ' ' + w : w;
+    if (ctx.measureText(test).width > maxTW) { tLine2 += (tLine2?' ':'')+w; }
+    else { tLine1 = test; }
+  }
+  ctx.fillText(_trunc(tLine1, maxTW), W/2, TY + 52);
+  if (tLine2) ctx.fillText(_trunc(tLine2, maxTW), W/2, TY + 104);
+
+  // Year
+  ctx.font = '400 17px Arial, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.38)';
+  ctx.letterSpacing = '2px';
+  ctx.fillText(picks[0]?.year ? String(picks[0].year) : '', W/2, TY + (tLine2 ? 138 : 90));
+  ctx.restore();
 
   // ════════════════════════════════════
-  //  PICKS #2–5 — 2×2 GRID
+  //  SECTION DIVIDER — "MORE PICKS"
   // ════════════════════════════════════
-  const GRID_TOP  = HERO_H + 40;
-  const GRID_PAD  = 48;
-  const GRID_GAP  = 20;
-  const CELL_W    = (W - GRID_PAD*2 - GRID_GAP) / 2;
-  const POSTER_H  = Math.round(CELL_W * 1.46);
-  const LABEL_H   = 52;
-  const CELL_H    = POSTER_H + LABEL_H;
-  const GRID_ROWS = 2;
+  const DIV_Y = HERO_H + 46;
+
+  // Thin divider lines + "MORE PICKS" label
+  ctx.save();
+  ctx.fillStyle = 'rgba(245,166,35,0.18)';
+  ctx.fillRect(48, DIV_Y, (W/2 - 100), 1);
+  ctx.fillRect(W/2 + 100 - 48, DIV_Y, (W/2 - 100), 1);
+  ctx.font = '600 12px Arial, sans-serif';
+  ctx.letterSpacing = '5px';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(245,166,35,0.5)';
+  ctx.fillText('MORE PICKS', W/2, DIV_Y + 4);
+  ctx.restore();
+
+  // ════════════════════════════════════
+  //  PICKS #2–5 — 4-column horizontal strip
+  // ════════════════════════════════════
+  const STRIP_TOP = DIV_Y + 30;
+  const STRIP_PAD = 48;
+  const STRIP_GAP = 18;
+  const SCELL_W   = (W - STRIP_PAD*2 - STRIP_GAP*3) / 4;
+  const SCELL_PH  = Math.round(SCELL_W * 1.5);
+  const SCELL_LH  = 54;
 
   for (let i = 0; i < 4 && i + 1 < picks.length; i++) {
-    const col = i % 2, row = Math.floor(i / 2);
-    const px  = GRID_PAD + col * (CELL_W + GRID_GAP);
-    const py  = GRID_TOP + row * (CELL_H + GRID_GAP);
+    const sx  = STRIP_PAD + i * (SCELL_W + STRIP_GAP);
+    const sy  = STRIP_TOP;
     const img = posterImgs[i + 1];
     const p   = picks[i + 1];
 
     // Shadow
     ctx.save();
-    ctx.shadowColor='rgba(0,0,0,0.7)'; ctx.shadowBlur=24; ctx.shadowOffsetY=10;
-    ctx.fillStyle='#111'; roundRect(px, py, CELL_W, POSTER_H, 12); ctx.fill();
+    ctx.shadowColor = 'rgba(0,0,0,0.7)'; ctx.shadowBlur = 20; ctx.shadowOffsetY = 8;
+    ctx.fillStyle = '#111'; roundRect(sx, sy, SCELL_W, SCELL_PH, 10); ctx.fill();
     ctx.restore();
 
     // Poster
     ctx.save();
-    roundRect(px, py, CELL_W, POSTER_H, 12); ctx.clip();
+    roundRect(sx, sy, SCELL_W, SCELL_PH, 10); ctx.clip();
     if (img) {
-      ctx.drawImage(img, px, py, CELL_W, POSTER_H);
-      // subtle bottom vignette
-      const pv = ctx.createLinearGradient(px, py+POSTER_H*.6, px, py+POSTER_H);
-      pv.addColorStop(0,'rgba(0,0,0,0)'); pv.addColorStop(1,'rgba(0,0,0,0.55)');
-      ctx.fillStyle=pv; ctx.fillRect(px,py,CELL_W,POSTER_H);
+      ctx.drawImage(img, sx, sy, SCELL_W, SCELL_PH);
+      // Bottom vignette for readability
+      const pv = ctx.createLinearGradient(sx, sy+SCELL_PH*0.55, sx, sy+SCELL_PH);
+      pv.addColorStop(0,'rgba(0,0,0,0)'); pv.addColorStop(1,'rgba(0,0,0,0.6)');
+      ctx.fillStyle = pv; ctx.fillRect(sx, sy, SCELL_W, SCELL_PH);
     } else {
-      ctx.fillStyle='#1a1a1a'; ctx.fillRect(px,py,CELL_W,POSTER_H);
-      ctx.font='54px sans-serif'; ctx.textAlign='center';
-      ctx.fillText('🎬', px+CELL_W/2, py+POSTER_H/2+18);
+      ctx.fillStyle = '#1a1a1a'; ctx.fillRect(sx, sy, SCELL_W, SCELL_PH);
+      ctx.font = '36px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('🎬', sx+SCELL_W/2, sy+SCELL_PH/2+12);
     }
     ctx.restore();
 
-    // Edge highlight
-    ctx.strokeStyle='rgba(255,255,255,0.06)'; ctx.lineWidth=1;
-    roundRect(px, py, CELL_W, POSTER_H, 12); ctx.stroke();
+    // Thin border
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.lineWidth = 1;
+    roundRect(sx, sy, SCELL_W, SCELL_PH, 10); ctx.stroke();
 
-    // Rank badge
-    ctx.fillStyle='rgba(0,0,0,0.75)';
-    roundRect(px+8,py+8,44,28,8); ctx.fill();
-    ctx.strokeStyle='rgba(245,166,35,0.6)'; ctx.lineWidth=1;
-    roundRect(px+8,py+8,44,28,8); ctx.stroke();
-    ctx.font='bold 14px "Arial Black",Arial,sans-serif';
-    ctx.fillStyle='#f5a623'; ctx.letterSpacing='0px'; ctx.textAlign='center';
-    ctx.fillText('#'+(i+2), px+30, py+27);
+    // Rank badge — dark pill inside poster top-left
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,0.8)';
+    roundRect(sx+7, sy+7, 36, 22, 6); ctx.fill();
+    ctx.strokeStyle = 'rgba(245,166,35,0.5)'; ctx.lineWidth = 1;
+    roundRect(sx+7, sy+7, 36, 22, 6); ctx.stroke();
+    ctx.font = 'bold 12px Arial, sans-serif';
+    ctx.fillStyle = '#f5a623'; ctx.letterSpacing = '0px'; ctx.textAlign = 'center';
+    ctx.fillText('#'+(i+2), sx+25, sy+22);
+    ctx.restore();
 
     // Title below poster
-    ctx.textAlign='left';
-    ctx.font='bold 19px Arial,sans-serif';
-    ctx.fillStyle='#e0e0e0'; ctx.letterSpacing='0px';
-    ctx.fillText(_trunc(p.title||'', CELL_W-8), px+4, py+POSTER_H+26);
-    ctx.font='400 15px Arial,sans-serif';
-    ctx.fillStyle='#555';
-    ctx.fillText(p.year ? String(p.year) : '', px+4, py+POSTER_H+46);
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 16px Arial, sans-serif';
+    ctx.fillStyle = '#d8d8d8'; ctx.letterSpacing = '0px';
+    ctx.fillText(_trunc(p.title||'', SCELL_W + 4), sx + SCELL_W/2, sy+SCELL_PH+22);
+    ctx.font = '400 13px Arial, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.fillText(p.year ? String(p.year) : '', sx + SCELL_W/2, sy+SCELL_PH+40);
   }
 
   // ════════════════════════════════════
   //  FOOTER
   // ════════════════════════════════════
-  const FOOTER_Y = GRID_TOP + GRID_ROWS*(CELL_H+GRID_GAP) - GRID_GAP + 36;
+  const FOOTER_Y = STRIP_TOP + SCELL_PH + SCELL_LH + 32;
 
-  // Orange accent line
-  ctx.fillStyle='rgba(245,166,35,0.3)';
-  ctx.fillRect(GRID_PAD, FOOTER_Y, W-GRID_PAD*2, 1);
+  // Gradient line across full width
+  const fLineGrad = ctx.createLinearGradient(0, 0, W, 0);
+  fLineGrad.addColorStop(0, 'rgba(245,166,35,0)');
+  fLineGrad.addColorStop(0.3, 'rgba(245,166,35,0.35)');
+  fLineGrad.addColorStop(0.7, 'rgba(245,166,35,0.35)');
+  fLineGrad.addColorStop(1, 'rgba(245,166,35,0)');
+  ctx.fillStyle = fLineGrad;
+  ctx.fillRect(0, FOOTER_Y, W, 1);
 
-  ctx.textAlign='center'; ctx.letterSpacing='2px';
-  ctx.font='400 17px Arial,sans-serif'; ctx.fillStyle='#333';
-  ctx.fillText('CAST YOUR VOTES AT', W/2, FOOTER_Y+34);
-  ctx.font='bold 26px "Arial Black",Arial,sans-serif'; ctx.fillStyle='#f5a623'; ctx.letterSpacing='0px';
-  ctx.fillText('p-movies.com', W/2, FOOTER_Y+68);
+  ctx.textAlign = 'center';
+  ctx.font = '400 14px Arial, sans-serif';
+  ctx.letterSpacing = '3px';
+  ctx.fillStyle = 'rgba(255,255,255,0.2)';
+  ctx.fillText('CAST YOUR VOTES AT', W/2, FOOTER_Y + 32);
+
+  ctx.font = 'bold 24px Arial, sans-serif';
+  ctx.letterSpacing = '1px';
+  ctx.fillStyle = '#f5a623';
+  ctx.fillText('p-movies.com', W/2, FOOTER_Y + 62);
 
   _picksCardDataUrl = canvas.toDataURL('image/png');
 }
