@@ -1300,7 +1300,7 @@
   <div class="fotd-day-wrap" id="fotdDiscoverCard" style="display:none">
     <button class="fotd-day-btn" onclick="_fotdStripClick()">
       <span class="fotd-day-star">⭐</span>
-      <span id="fotdDcTitle">Film of the Day</span>
+      <span>Movie of the Day</span>
       <span class="fotd-day-dot"></span>
     </button>
   </div>
@@ -8197,6 +8197,12 @@ function _showFOTDResult() {
   };
   const myRLabel = myR > 0 ? `${starsFill(myR)} ${myR}/5` : 'not rated yet';
 
+  // Ensure backdrop is set (same as rating view)
+  const bd2 = document.getElementById('fotdBackdrop');
+  if (bd2 && m.backdrop) bd2.style.backgroundImage = `url('https://image.tmdb.org/t/p/w1280${m.backdrop}')`;
+  const ov2 = document.getElementById('fotdOverlay');
+  if (ov2) ov2.style.display = 'flex';
+
   const ct = document.getElementById('fotdContent');
   ct.innerHTML = `
     <div class="fotd-eyebrow">⭐ Film of the Day</div>
@@ -8215,9 +8221,6 @@ function _showFOTDResult() {
 function _renderFOTDStrip() {
   const wrap = document.getElementById('fotdDiscoverCard');
   if (!wrap || !_fotdFilmData) return;
-  // Show film title in the button so it's intriguing
-  const titleEl = document.getElementById('fotdDcTitle');
-  if (titleEl) titleEl.textContent = _fotdFilmData.title || 'Film of the Day';
   wrap.style.display = '';
 }
 function _fotdStripClick() {
