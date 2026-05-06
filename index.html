@@ -519,7 +519,7 @@
   /* ── Community Top 100 ── */
   .top100-section { max-width:1100px; margin:0 auto 60px; padding:0 20px; }
   .top100-header { display:flex; flex-direction:column; align-items:center; text-align:center; margin-bottom:24px; gap:16px; }
-  .top100-title-block h2 { font-size:1.4rem; font-weight:900; color:#fff; text-transform:uppercase; letter-spacing:.06em; margin:0 0 4px; }
+  .top100-title-block h2 { font-size:2rem; font-weight:900; color:#fff; text-transform:uppercase; letter-spacing:.06em; margin:0 0 6px; }
   .top100-title-block h2 span { color:var(--orange); }
   .top100-title-block p { color:#666; font-size:.82rem; margin:0; }
   .top100-header-right { display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap; }
@@ -675,6 +675,43 @@
   /* ── Weekly List Card button ── */
   .weekly-card-btn { background:transparent; border:1px solid #2a2a2a; border-radius:20px; color:#777; font-size:.72rem; font-weight:700; font-family:'Montserrat',sans-serif; padding:7px 14px; cursor:pointer; display:flex; align-items:center; gap:6px; transition:.2s; letter-spacing:.03em; }
   .weekly-card-btn:hover { border-color:#f5a623; color:#f5a623; }
+
+  /* ── Film of the Day ── */
+  .fotd-overlay { position:fixed; inset:0; z-index:10000; background:#000; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; }
+  .fotd-backdrop { position:absolute; inset:0; background-size:cover; background-position:center 20%; z-index:0; }
+  .fotd-gradient { position:absolute; inset:0; background:linear-gradient(to top, #000 0%, rgba(0,0,0,.7) 45%, rgba(0,0,0,.2) 100%); z-index:1; }
+  .fotd-content { position:relative; z-index:2; width:100%; max-width:640px; padding:32px 28px 40px; text-align:center; }
+  .fotd-eyebrow { font-size:.68rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--orange); margin-bottom:10px; }
+  .fotd-title { font-size:2rem; font-weight:900; color:#fff; line-height:1.15; margin-bottom:8px; }
+  .fotd-meta { font-size:.8rem; color:#888; margin-bottom:10px; }
+  .fotd-tagline { font-size:.88rem; color:#aaa; font-style:italic; margin-bottom:28px; min-height:1.2em; }
+  .fotd-stars { display:flex; justify-content:center; gap:10px; margin-bottom:24px; }
+  .fotd-star { font-size:2.4rem; cursor:pointer; color:#333; transition:color .15s, transform .15s; line-height:1; }
+  .fotd-star:hover, .fotd-star.active { color:#f5a623; transform:scale(1.15); }
+  .fotd-star-hint { font-size:.72rem; color:#555; margin-top:-16px; margin-bottom:20px; }
+  .fotd-rate-btn { width:100%; max-width:320px; padding:14px; background:var(--orange); color:#000; border:none; border-radius:12px; font-weight:800; font-size:.95rem; cursor:pointer; transition:.15s; }
+  .fotd-rate-btn:disabled { background:#1e1e1e; color:#444; cursor:default; }
+  .fotd-rate-btn:not(:disabled):hover { background:#e0940f; }
+  .fotd-skip { background:transparent; border:none; color:#444; font-size:.72rem; cursor:pointer; margin-top:14px; display:block; width:100%; }
+  .fotd-skip:hover { color:#666; }
+  .fotd-result { background:rgba(255,255,255,.06); border-radius:12px; padding:18px; margin-bottom:20px; }
+  .fotd-result-avg { font-size:2.2rem; font-weight:900; color:var(--orange); }
+  .fotd-result-lbl { font-size:.75rem; color:#666; margin-top:2px; }
+  .fotd-result-stars { font-size:1rem; margin:6px 0; }
+  .fotd-share-btn { width:100%; max-width:320px; padding:14px; background:#1a1a1a; border:1px solid #2a2a2a; color:#fff; border-radius:12px; font-weight:700; font-size:.9rem; cursor:pointer; }
+  /* FOTD summary button in the poll area */
+  .fotd-summary-btn { background:transparent; border:1px solid #252525; color:#666; border-radius:20px; padding:6px 14px; font-size:.72rem; font-weight:700; font-family:'Montserrat',sans-serif; cursor:pointer; transition:.2s; letter-spacing:.03em; }
+  .fotd-summary-btn:hover { border-color:#f5a623; color:#f5a623; }
+
+  /* ── Achievement Badges ── */
+  .reviewer-badge { display:inline-block; font-size:.8rem; margin-left:5px; vertical-align:middle; cursor:default; }
+  .reviewer-badge-label { display:inline-block; font-size:.6rem; font-weight:700; letter-spacing:.05em; padding:1px 5px; border-radius:6px; margin-left:5px; vertical-align:middle; text-transform:uppercase; }
+  .rb-newcomer .reviewer-badge-label { background:rgba(100,100,100,.2); color:#777; }
+  .rb-buff .reviewer-badge-label     { background:rgba(245,166,35,.15); color:#f5a623; }
+  .rb-critic .reviewer-badge-label   { background:rgba(76,175,80,.15); color:#4caf50; }
+  .rb-top .reviewer-badge-label      { background:rgba(33,150,243,.15); color:#2196f3; }
+  .rb-legend .reviewer-badge-label   { background:rgba(156,39,176,.2); color:#ce93d8; }
+
 
   /* ── Hover Backdrop ── */
   .top100-item { position:relative; overflow:hidden; }
@@ -1398,6 +1435,7 @@
         <button class="fun-hdr-btn" onclick="openImpactCard()" title="See how your votes moved films">📊 My Impact</button>
         <button class="fun-hdr-btn" onclick="openTasteCard()" title="Your film taste breakdown">🎭 My Taste</button>
         <button class="fun-hdr-btn" onclick="openH2H()" title="Compare two films head-to-head">⚔ VS</button>
+        <button class="fotd-summary-btn" id="fotdSummaryBtn" style="display:none" onclick="openFOTDSummary()">⭐ Film of the Day</button>
       </div>
     </div>
     <!-- Live Vote Feed -->
@@ -3491,7 +3529,7 @@
         <div class="fan-review-content">
           <div class="fan-review-top">
             <div>
-              <div class="fan-reviewer">${esc(r.name || 'Anonymous')}${isChallenge ? '<span class="challenge-review-badge">⚡ Challenge</span>' : ''}</div>
+              <div class="fan-reviewer">${esc(r.name || 'Anonymous')}${_authorBadge(r.name)}${isChallenge ? '<span class="challenge-review-badge">⚡ Challenge</span>' : ''}</div>
               <div class="fan-review-movie">🎬 ${esc(r.movie || '')}</div>
             </div>
             <div style="text-align:right">
@@ -3710,6 +3748,7 @@
     merged.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
     await Promise.all([loadFanLikeCounts(), loadCommentCounts('movie')]);
+    _buildAuthorCounts(merged, 'movie');
 
     try {
       renderFanReviews(merged);
@@ -3810,7 +3849,7 @@
         <div class="fan-review-content">
           <div class="fan-review-top">
             <div>
-              <div class="fan-reviewer">${esc(r.name || 'Anonymous')}</div>
+              <div class="fan-reviewer">${esc(r.name || 'Anonymous')}${_authorBadge(r.name)}</div>
               <div class="fan-review-movie">📺 ${esc(r.movie || '')}</div>
             </div>
             <div style="text-align:right">
@@ -3939,6 +3978,7 @@
 
     reviews.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
     await Promise.all([loadSrLikeCounts(), loadCommentCounts('tv')]);
+    _buildAuthorCounts(reviews, 'series');
     renderSeriesReviews(reviews);
     _applyCmtCounts();
   }
@@ -4898,6 +4938,7 @@
     setInterval(loadLetterboxd, 20 * 60 * 1000); // refresh every 20 minutes
     loadFanReviews();
     loadLists();
+    initFilmOfDay();
     loadFriendsReviews();
     setInterval(loadFriendsReviews, 60 * 60 * 1000); // rotate every hour
     renderWatchlist();
@@ -7954,6 +7995,237 @@ async function _castPollVote(chosenId, otherId, weekKey, myPollKey) {
   } catch(e) {}
 }
 
+
+
+/* ══════════════════════════════════════════════════
+   FILM OF THE DAY
+══════════════════════════════════════════════════ */
+let _fotdFilmData = null;
+let _fotdToday    = null;
+let _fotdSelected = 0;
+
+async function initFilmOfDay() {
+  _fotdToday = new Date().toISOString().slice(0, 10);
+  const seenKey = lsKey('pmovies_fotd_seen');
+
+  // Load today's film from Firebase (shared for all users)
+  try {
+    const res = await fetch(`${RTDB}/filmOfDay/${_fotdToday}.json`);
+    if (res.ok) _fotdFilmData = await res.json();
+  } catch(e) {}
+
+  // If no film set yet for today, pick one from TMDB and store it
+  if (!_fotdFilmData || !_fotdFilmData.id) {
+    _fotdFilmData = await _fotdPickAndStore(_fotdToday);
+  }
+
+  if (!_fotdFilmData) return;
+
+  // Show summary button always
+  const btn = document.getElementById('fotdSummaryBtn');
+  if (btn) btn.style.display = '';
+
+  // Show overlay only if user hasn't rated or skipped today
+  const seen = localStorage.getItem(seenKey);
+  if (seen !== _fotdToday) {
+    setTimeout(() => _showFOTDRating(), 800);
+  }
+}
+
+async function _fotdPickAndStore(dateKey) {
+  try {
+    // Deterministic page + item from date string
+    const hash = dateKey.split('').reduce((acc, c) => acc * 31 + c.charCodeAt(0), 0);
+    const page = (Math.abs(hash) % 8) + 1;
+    const res  = await fetch(`${RTDB_BASE || window.location.origin}/`); // placeholder
+    // Fetch popular movies from TMDB
+    const tmdbRes = await fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${localStorage.getItem('pmovies_tmdb_key')||'3e1731e2bab11d87b4aef97b4ab3b49b'}&language=en-US&page=${page}`);
+    if (!tmdbRes.ok) return null;
+    const data = await tmdbRes.json();
+    const pool = (data.results || []).filter(m => m.backdrop_path && m.poster_path && m.overview);
+    if (!pool.length) return null;
+    const pick = pool[Math.abs(hash) % pool.length];
+
+    // Fetch tagline
+    let tagline = '';
+    try {
+      const det = await fetch(`https://api.themoviedb.org/3/movie/${pick.id}?api_key=${localStorage.getItem('pmovies_tmdb_key')||'3e1731e2bab11d87b4aef97b4ab3b49b'}&language=en-US`);
+      if (det.ok) { const d = await det.json(); tagline = d.tagline || ''; }
+    } catch(e) {}
+
+    const film = {
+      id:       pick.id,
+      title:    pick.title,
+      backdrop: pick.backdrop_path,
+      poster:   pick.poster_path,
+      tagline:  tagline || pick.overview?.slice(0, 100) + '…' || '',
+      year:     (pick.release_date || '').slice(0, 4),
+      genres:   (pick.genre_ids || []).slice(0, 3),
+      ratingTotal: 0,
+      ratingCount: 0
+    };
+
+    // Write to Firebase so all users see same film
+    await fetch(`${RTDB}/filmOfDay/${dateKey}.json`, {
+      method: 'PUT', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(film)
+    });
+    return film;
+  } catch(e) { return null; }
+}
+
+function _showFOTDRating() {
+  const m = _fotdFilmData;
+  if (!m) return;
+  const ov = document.getElementById('fotdOverlay');
+  const bd = document.getElementById('fotdBackdrop');
+  const ct = document.getElementById('fotdContent');
+  if (!ov || !bd || !ct) return;
+
+  bd.style.backgroundImage = `url('https://image.tmdb.org/t/p/original${m.backdrop}')`;
+  _fotdSelected = 0;
+
+  ct.innerHTML = `
+    <div class="fotd-eyebrow">⭐ Film of the Day</div>
+    <div class="fotd-title">${esc(m.title)}</div>
+    <div class="fotd-meta">${m.year || ''}${m.year ? ' · ' : ''}Rate this film</div>
+    <div class="fotd-tagline">${esc(m.tagline || '')}</div>
+    <div class="fotd-stars" id="fotdStars">
+      ${[1,2,3,4,5].map(n => `<span class="fotd-star" data-val="${n}" onclick="_fotdPickStar(${n})">★</span>`).join('')}
+    </div>
+    <div class="fotd-star-hint" id="fotdStarHint">Tap a star to rate</div>
+    <button class="fotd-rate-btn" id="fotdRateBtn" disabled onclick="_submitFOTDRating()">Rate & Continue</button>
+    <button class="fotd-skip" onclick="_skipFOTD()">Skip for today</button>
+  `;
+  ov.style.display = 'flex';
+}
+
+function _fotdPickStar(n) {
+  _fotdSelected = n;
+  const labels = ['','😕 Poor','😐 Fair','🙂 Good','😊 Great','🤩 Masterpiece'];
+  document.querySelectorAll('.fotd-star').forEach((s, i) => {
+    s.classList.toggle('active', i < n);
+  });
+  const hint = document.getElementById('fotdStarHint');
+  if (hint) hint.textContent = labels[n] || '';
+  const btn = document.getElementById('fotdRateBtn');
+  if (btn) btn.disabled = false;
+}
+
+async function _submitFOTDRating() {
+  if (!_fotdSelected || !_fotdToday) return;
+  const btn = document.getElementById('fotdRateBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+
+  // Atomic increment
+  try {
+    const res  = await fetch(`${RTDB}/filmOfDay/${_fotdToday}.json`);
+    const curr = res.ok ? await res.json() : {};
+    const newTotal = (curr.ratingTotal || 0) + _fotdSelected;
+    const newCount = (curr.ratingCount || 0) + 1;
+    await fetch(`${RTDB}/filmOfDay/${_fotdToday}/ratingTotal.json`, {
+      method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(newTotal)
+    });
+    await fetch(`${RTDB}/filmOfDay/${_fotdToday}/ratingCount.json`, {
+      method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(newCount)
+    });
+    _fotdFilmData.ratingTotal = newTotal;
+    _fotdFilmData.ratingCount = newCount;
+  } catch(e) {}
+
+  localStorage.setItem(lsKey('pmovies_fotd_seen'), _fotdToday);
+  localStorage.setItem(lsKey('pmovies_fotd_rating_' + _fotdToday), String(_fotdSelected));
+  _showFOTDResult();
+}
+
+function _showFOTDResult() {
+  const m   = _fotdFilmData;
+  const avg = m.ratingCount ? (m.ratingTotal / m.ratingCount).toFixed(1) : _fotdSelected.toFixed(1);
+  const cnt = m.ratingCount || 1;
+  const myR = _fotdSelected;
+  const starsFill = n => '★'.repeat(Math.round(n)) + '☆'.repeat(5 - Math.round(n));
+
+  const ct = document.getElementById('fotdContent');
+  ct.innerHTML = `
+    <div class="fotd-eyebrow">⭐ Film of the Day</div>
+    <div class="fotd-title">${esc(m.title)}</div>
+    <div class="fotd-meta">You rated: ${starsFill(myR)} ${myR}/5</div>
+    <div class="fotd-result">
+      <div class="fotd-result-avg">${avg}</div>
+      <div class="fotd-result-stars">${starsFill(parseFloat(avg))}</div>
+      <div class="fotd-result-lbl">community avg from ${cnt} voter${cnt!==1?'s':''}</div>
+    </div>
+    <button class="fotd-rate-btn" onclick="_shareFOTD()">Share Today's Rating 📤</button>
+    <button class="fotd-skip" onclick="_closeFOTD()">Close</button>
+  `;
+}
+
+function _skipFOTD() {
+  localStorage.setItem(lsKey('pmovies_fotd_seen'), _fotdToday);
+  _closeFOTD();
+}
+function _closeFOTD() {
+  const ov = document.getElementById('fotdOverlay');
+  if (ov) ov.style.display = 'none';
+}
+
+async function openFOTDSummary() {
+  if (!_fotdFilmData) return;
+  // Refresh rating counts
+  try {
+    const res = await fetch(`${RTDB}/filmOfDay/${_fotdToday}.json`);
+    if (res.ok) _fotdFilmData = await res.json();
+  } catch(e) {}
+  const seen = localStorage.getItem(lsKey('pmovies_fotd_seen'));
+  if (seen !== _fotdToday) {
+    _showFOTDRating();
+  } else {
+    _showFOTDResult();
+    const ov = document.getElementById('fotdOverlay');
+    if (ov) ov.style.display = 'flex';
+  }
+}
+
+async function _shareFOTD() {
+  const m    = _fotdFilmData;
+  const avg  = m.ratingCount ? (m.ratingTotal / m.ratingCount).toFixed(1) : '?';
+  const myR  = localStorage.getItem(lsKey('pmovies_fotd_rating_' + _fotdToday)) || '?';
+  const stars = n => '★'.repeat(Math.round(n)) + '☆'.repeat(5 - Math.round(n));
+  const text = `⭐ Film of the Day on PMovies\n\n${m.title} (${m.year})\n\nMy rating: ${stars(+myR)} ${myR}/5\nCommunity avg: ${avg}/5 from ${m.ratingCount || 1} voter${(m.ratingCount||1)!==1?'s':''}\n\nhttps://p-movies.com`;
+  if (navigator.share) {
+    try { await navigator.share({ title: 'PMovies Film of the Day', text }); return; } catch(e) {}
+  }
+  try { await navigator.clipboard.writeText(text); alert('Copied to clipboard!'); } catch(e) {}
+}
+
+/* ══════════════════════════════════════════════════
+   ACHIEVEMENT BADGES
+══════════════════════════════════════════════════ */
+let _reviewAuthorCounts = {};
+
+function _buildAuthorCounts(reviews, type) {
+  reviews.forEach(r => {
+    const key = (r.name || 'Anonymous').trim().toLowerCase();
+    if (!_reviewAuthorCounts[key]) _reviewAuthorCounts[key] = { movie: 0, series: 0 };
+    _reviewAuthorCounts[key][type] = (_reviewAuthorCounts[key][type] || 0) + 1;
+  });
+}
+
+function _authorBadge(name) {
+  const key  = (name || 'Anonymous').trim().toLowerCase();
+  const data = _reviewAuthorCounts[key];
+  if (!data) return '';
+  const total = (data.movie || 0) + (data.series || 0);
+  if (total <= 0) return '';
+  let cls, icon, label;
+  if      (total >= 20) { cls='rb-legend';  icon='👑'; label='Legend';     }
+  else if (total >= 10) { cls='rb-top';     icon='🏆'; label='Top Critic'; }
+  else if (total >= 5)  { cls='rb-critic';  icon='🎭'; label='Critic';     }
+  else if (total >= 3)  { cls='rb-buff';    icon='⭐'; label='Film Buff';  }
+  else                  { cls='rb-newcomer';icon='🎬'; label='Newcomer';   }
+  return `<span class="reviewer-badge ${cls}" title="${label}: ${total} review${total!==1?'s':''}">${icon}<span class="reviewer-badge-label">${label}</span></span>`;
+}
+
 </script>
 
 <!-- Weekly List Card Overlay -->
@@ -7986,6 +8258,13 @@ async function _castPollVote(chosenId, otherId, weekKey, myPollKey) {
   <!-- Taste Card Modal -->
   <div class="taste-overlay" id="tasteOverlay" style="display:none" onclick="if(event.target.id==='tasteOverlay')closeTasteCard()">
     <div class="taste-modal" id="tasteModal"></div>
+  </div>
+
+  <!-- Film of the Day Overlay -->
+  <div id="fotdOverlay" class="fotd-overlay" style="display:none">
+    <div class="fotd-backdrop" id="fotdBackdrop"></div>
+    <div class="fotd-gradient"></div>
+    <div class="fotd-content" id="fotdContent"></div>
   </div>
 </body>
 </html>
