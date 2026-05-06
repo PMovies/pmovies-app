@@ -704,20 +704,12 @@
   .fotd-result-lbl { font-size:.75rem; color:#666; margin-top:2px; }
   .fotd-result-stars { font-size:1rem; margin:6px 0; }
   .fotd-share-btn { width:100%; max-width:320px; padding:14px; background:#1a1a1a; border:1px solid #2a2a2a; color:#fff; border-radius:12px; font-weight:700; font-size:.9rem; cursor:pointer; }
-  /* FOTD Discovery Card (Discover tab, below search bar) */
-  .fotd-dc-wrap { max-width:560px; margin:0 auto 36px; border-radius:20px; overflow:hidden; cursor:pointer; position:relative; box-shadow:0 20px 60px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.06); transition:transform .2s,box-shadow .2s; }
-  .fotd-dc-wrap:hover { transform:translateY(-3px); box-shadow:0 28px 72px rgba(0,0,0,.85),0 0 0 1px rgba(245,166,35,.25); }
-  .fotd-dc-backdrop { width:100%; height:240px; background-size:cover; background-position:center 25%; position:relative; }
-  .fotd-dc-gradient { position:absolute; inset:0; background:linear-gradient(to top,#111 0%,rgba(0,0,0,.25) 60%,transparent 100%); }
-  .fotd-dc-body { background:#111; padding:0 24px 26px; text-align:center; }
-  .fotd-dc-eyebrow { font-size:.6rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:#f5a623; margin-bottom:8px; padding-top:4px; }
-  .fotd-dc-title { font-family:'Montserrat',sans-serif; font-size:1.55rem; font-weight:900; color:#fff; line-height:1.15; margin-bottom:5px; }
-  .fotd-dc-meta { font-size:.75rem; color:#888; margin-bottom:5px; }
-  .fotd-dc-tagline { font-size:.82rem; color:#aaa; font-style:italic; margin-bottom:20px; min-height:1.1em; }
-  .fotd-dc-btn { background:#f5a623; color:#000; border:none; border-radius:12px; padding:11px 30px; font-weight:800; font-size:.85rem; cursor:pointer; font-family:'Montserrat',sans-serif; transition:.15s; letter-spacing:.02em; }
-  .fotd-dc-btn:hover { background:#e0940f; }
-  .fotd-dc-btn.rated { background:transparent; border:1px solid #2a2a2a; color:#777; padding:10px 30px; }
-  .fotd-dc-btn.rated:hover { border-color:#f5a623; color:#f5a623; }
+  /* FOTD Day Button (Discover tab, below search bar) */
+  .fotd-day-wrap { display:flex; justify-content:center; margin:0 auto 32px; }
+  .fotd-day-btn { display:inline-flex; align-items:center; gap:8px; background:transparent; border:1px solid #2a2a2a; border-radius:30px; padding:10px 22px; color:#aaa; font-family:'Montserrat',sans-serif; font-size:.78rem; font-weight:700; letter-spacing:.04em; cursor:pointer; transition:border-color .2s,color .2s,background .2s; }
+  .fotd-day-btn:hover { border-color:#f5a623; color:#f5a623; background:rgba(245,166,35,.06); }
+  .fotd-day-btn .fotd-day-star { font-size:1rem; line-height:1; }
+  .fotd-day-btn .fotd-day-dot { width:6px; height:6px; border-radius:50%; background:#f5a623; opacity:.7; flex-shrink:0; }
 
   /* ── Achievement Badges ── */
   .reviewer-badge { display:inline-block; font-size:.8rem; margin-left:5px; vertical-align:middle; cursor:default; }
@@ -1304,18 +1296,13 @@
   </div>
   <div class="section-label search-results-label" id="searchResultsLabel"></div>
 
-  <!-- FOTD Discovery Card -->
-  <div class="fotd-dc-wrap" id="fotdDiscoverCard" style="display:none" onclick="_fotdStripClick()">
-    <div class="fotd-dc-backdrop" id="fotdDcBackdrop">
-      <div class="fotd-dc-gradient"></div>
-    </div>
-    <div class="fotd-dc-body">
-      <div class="fotd-dc-eyebrow">⭐ Film of the Day</div>
-      <div class="fotd-dc-title" id="fotdDcTitle">—</div>
-      <div class="fotd-dc-meta" id="fotdDcMeta"></div>
-      <div class="fotd-dc-tagline" id="fotdDcTagline"></div>
-      <button class="fotd-dc-btn" id="fotdDcBtn" onclick="event.stopPropagation();_fotdStripClick()">Rate It ⭐</button>
-    </div>
+  <!-- FOTD Day Button -->
+  <div class="fotd-day-wrap" id="fotdDiscoverCard" style="display:none">
+    <button class="fotd-day-btn" onclick="_fotdStripClick()">
+      <span class="fotd-day-star">⭐</span>
+      <span id="fotdDcTitle">Film of the Day</span>
+      <span class="fotd-day-dot"></span>
+    </button>
   </div>
 
   <!-- MOOD PICKER -->
@@ -8226,32 +8213,12 @@ function _showFOTDResult() {
 }
 
 function _renderFOTDStrip() {
-  const card = document.getElementById('fotdDiscoverCard');
-  if (!card || !_fotdFilmData) return;
-  const m = _fotdFilmData;
-  // Backdrop
-  const bd = document.getElementById('fotdDcBackdrop');
-  if (bd) bd.style.backgroundImage = m.backdrop ? `url('https://image.tmdb.org/t/p/w780${m.backdrop}')` : (m.poster ? `url('https://image.tmdb.org/t/p/w500${m.poster}')` : '');
-  // Title
+  const wrap = document.getElementById('fotdDiscoverCard');
+  if (!wrap || !_fotdFilmData) return;
+  // Show film title in the button so it's intriguing
   const titleEl = document.getElementById('fotdDcTitle');
-  if (titleEl) titleEl.textContent = m.title || '—';
-  // Meta: year · community avg
-  const metaEl = document.getElementById('fotdDcMeta');
-  if (metaEl) {
-    const avg = m.ratingCount ? (m.ratingTotal / m.ratingCount).toFixed(1) : null;
-    metaEl.textContent = [m.year, avg ? `Community avg: ${avg}/5` : null].filter(Boolean).join(' · ');
-  }
-  // Tagline
-  const tagEl = document.getElementById('fotdDcTagline');
-  if (tagEl) tagEl.textContent = m.tagline || '';
-  // CTA button
-  const rated = localStorage.getItem(lsKey('pmovies_fotd_seen')) === _fotdToday;
-  const btn = document.getElementById('fotdDcBtn');
-  if (btn) {
-    btn.textContent = rated ? 'View Today\'s Results' : 'Rate It ⭐';
-    btn.className = 'fotd-dc-btn' + (rated ? ' rated' : '');
-  }
-  card.style.display = '';
+  if (titleEl) titleEl.textContent = _fotdFilmData.title || 'Film of the Day';
+  wrap.style.display = '';
 }
 function _fotdStripClick() {
   const rated = localStorage.getItem(lsKey('pmovies_fotd_seen')) === _fotdToday;
