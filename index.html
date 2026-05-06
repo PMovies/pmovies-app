@@ -6167,20 +6167,17 @@ async function writeVoteEvent(title, poster) {
    RANK CHANGE ALERTS
 ══════════════════════════════════════════════════════ */
 function checkRankAlerts(movies) {
-  const ssKey   = lsKey('pmovies_alerted_ranks');
-  const alerted = JSON.parse(sessionStorage.getItem(ssKey) || '[]');
-  const snap    = getRankSnapshot();
-  const alerts  = [];
+  const snap   = getRankSnapshot();
+  const alerts = [];
   movies.forEach((m, i) => {
     const rank = i + 1;
     const prev = snap[m.id];
-    if (!prev || alerted.includes(m.id)) return;
+    if (!prev) return;
     const diff = prev - rank; // positive = moved up
     if (Math.abs(diff) >= 10) alerts.push({ id:m.id, title:m.title, rank, prev, diff });
   });
   if (!alerts.length) return;
-  sessionStorage.setItem(ssKey, JSON.stringify([...alerted, ...alerts.map(a => a.id)]));
-  alerts.slice(0, 2).forEach((a, idx) => setTimeout(() => _showRankAlert(a), idx * 3800));
+  alerts.slice(0, 2).forEach((a, idx) => setTimeout(() => _showRankAlert(a), idx * 4500));
 }
 
 function _showRankAlert(a) {
@@ -6199,7 +6196,7 @@ function _showRankAlert(a) {
     <button class="rat-close" onclick="this.closest('.rank-alert-toast').remove()">✕</button>`;
   document.body.appendChild(el);
   requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('rat-in')));
-  setTimeout(() => { el.classList.remove('rat-in'); setTimeout(() => el.remove(), 400); }, 5500);
+  setTimeout(() => { el.classList.remove('rat-in'); setTimeout(() => el.remove(), 400); }, 12000);
 }
 
 /* ══════════════════════════════════════════════════════
