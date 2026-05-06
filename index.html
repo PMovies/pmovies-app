@@ -5941,8 +5941,11 @@ function getPendingVotes() { return JSON.parse(localStorage.getItem(lsKey('pmovi
 function savePendingVotes(arr) { localStorage.setItem(lsKey('pmovies_pending_votes'), JSON.stringify(arr)); }
 function pendingCount() { return getPendingVotes().length; }
 
-// Votes remaining = max − (submitted + pending)
-function votesRemaining() { return Math.max(0, TOP100_MAX_VOTES - getMyVotes().length - pendingCount()); }
+// Votes remaining = max − (submitted + pending). Dev mode: unlimited.
+function votesRemaining() {
+  if (IS_DEV) return 999;
+  return Math.max(0, TOP100_MAX_VOTES - getMyVotes().length - pendingCount());
+}
 
 /* ── Vote submit bar ── */
 function updateVoteBar() {
@@ -6130,7 +6133,7 @@ function addPending(id, title, poster, backdrop, year, genresStr) {
     pending.splice(idx, 1);                       // deselect — also remove its timestamp
     _latency.pickTimes = _latency.pickTimes.filter((_, i) => i !== idx);
   } else {
-    if (pending.length + myVotes.length >= TOP100_MAX_VOTES) return;
+    if (!IS_DEV && pending.length + myVotes.length >= TOP100_MAX_VOTES) return;
     const now = Date.now();
     if (!_latency.firstPickAt) _latency.firstPickAt = now;
     _latency.pickTimes.push(now);
@@ -6167,7 +6170,7 @@ function addPending(id, title, poster, backdrop, year, genresStr) {
     }
   }
   // Disable/re-enable all unselected Vote buttons when limit reached / freed
-  const atLimit = pending.length + myVotes.length >= TOP100_MAX_VOTES;
+  const atLimit = !IS_DEV && pending.length + myVotes.length >= TOP100_MAX_VOTES;
   document.querySelectorAll('.top100-vote-btn:not(.picked)').forEach(b => { b.disabled = atLimit; });
 }
 
