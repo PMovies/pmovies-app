@@ -8255,9 +8255,10 @@ async function _submitFOTDRating() {
 
 function _showFOTDResult() {
   const m   = _fotdFilmData;
-  const avg = m.ratingCount ? (m.ratingTotal / m.ratingCount).toFixed(1) : (_fotdSelected || 0).toFixed(1);
-  const cnt = m.ratingCount || 1;
-  // Read stored rating — _fotdSelected may be 0 if user is viewing summary without having rated in this session
+  // Fix: only show avg if ratingTotal > 0, otherwise show '—'
+  const hasRatings = m.ratingCount > 0 && m.ratingTotal > 0;
+  const avg = hasRatings ? (m.ratingTotal / m.ratingCount).toFixed(1) : '—';
+  const cnt = m.ratingCount || 0;
   const storedR = parseFloat(localStorage.getItem(lsKey('pmovies_fotd_rating_' + _fotdToday)) || '0');
   const myR = _fotdSelected || storedR;
   const starsFill = n => {
@@ -8266,7 +8267,6 @@ function _showFOTDResult() {
   };
   const myRLabel = myR > 0 ? `${starsFill(myR)} ${myR}/5` : 'not rated yet';
 
-  // Ensure backdrop is set (same as rating view)
   const bd2 = document.getElementById('fotdBackdrop');
   if (bd2 && m.backdrop) bd2.style.backgroundImage = `url('https://image.tmdb.org/t/p/w1280${m.backdrop}')`;
   const ov2 = document.getElementById('fotdOverlay');
@@ -8278,11 +8278,12 @@ function _showFOTDResult() {
     <div class="fotd-title">${esc(m.title)}</div>
     <div class="fotd-meta">You rated: ${myRLabel}</div>
     <div class="fotd-result">
-      <div class="fotd-result-avg">${avg}</div>
-      <div class="fotd-result-stars">${starsFill(parseFloat(avg))}</div>
-      <div class="fotd-result-lbl">community avg from ${cnt} voter${cnt!==1?'s':''}</div>
+      <div class="fotd-result-avg" style="${avg==='—'?'color:#444;font-size:1.6rem;':''}"> ${avg}</div>
+      ${hasRatings ? `<div class="fotd-result-stars">${starsFill(parseFloat(avg))}</div>` : ''}
+      <div class="fotd-result-lbl">${cnt > 0 ? `community avg from ${cnt} voter${cnt!==1?'s':''}` : 'Be the first to rate!'}</div>
     </div>
-    <div class="fotd-share-row">
+    <button class="fotd-rate-btn" id="fotdShareToggle" onclick="_toggleFOTDShare()">Share Today's Rating 📤</button>
+    <div class="fotd-share-row" id="fotdShareRow" style="display:none;margin-top:12px;">
       <button class="fotd-share-opt" onclick="_shareFOTD('twitter')" title="Share on X / Twitter">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.259 5.63 5.905-5.63zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
         X / Twitter
@@ -8302,6 +8303,15 @@ function _showFOTDResult() {
     </div>
     <button class="fotd-skip" onclick="_closeFOTD()">Close</button>
   `;
+}
+
+function _toggleFOTDShare() {
+  const row = document.getElementById('fotdShareRow');
+  const btn = document.getElementById('fotdShareToggle');
+  if (!row) return;
+  const open = row.style.display === 'none' || row.style.display === '';
+  row.style.display = open ? 'flex' : 'none';
+  btn.textContent = open ? 'Hide sharing options ✕' : 'Share Today\'s Rating 📤';
 }
 
 function _renderFOTDStrip() {
@@ -8377,119 +8387,126 @@ async function _shareFOTD(platform) {
 async function _generateFOTDCard() {
   const m   = _fotdFilmData;
   if (!m) return null;
-  const avg = m.ratingCount ? (m.ratingTotal / m.ratingCount).toFixed(1) : '?';
+  const hasRatings = m.ratingCount > 0 && m.ratingTotal > 0;
+  const avg = hasRatings ? (m.ratingTotal / m.ratingCount).toFixed(1) : null;
   const myR = parseFloat(localStorage.getItem(lsKey('pmovies_fotd_rating_' + _fotdToday)) || '0');
-  const starsStr = n => { const f=Math.floor(n),h=(n-f)>=0.5?1:0; return '★'.repeat(f)+(h?'☆':'')+'☆'.repeat(Math.max(0,5-f-h)); };
+  const starsStr = n => { const f=Math.floor(n), h=(n-f)>=0.5?1:0; return '★'.repeat(f)+(h?'½':'')+('☆'.repeat(Math.max(0,5-f-h))); };
 
   const W = 1080, H = 1080;
   const canvas = document.createElement('canvas');
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext('2d');
-
   function rr(x,y,w,h,r){ ctx.beginPath(); ctx.roundRect(x,y,w,h,r); }
+  function trunc(t,mw){ let s=t; while(s.length>0&&ctx.measureText(s+'…').width>mw) s=s.slice(0,-1); return s.length<t.length?s+'…':t; }
 
-  // Load backdrop + poster in parallel
+  // Load backdrop + poster
   const [bdImg, postImg] = await Promise.all([
     m.backdrop ? _loadImg('https://image.tmdb.org/t/p/w1280'+m.backdrop).catch(()=>null) : Promise.resolve(null),
     m.poster   ? _loadImg('https://image.tmdb.org/t/p/w342'+m.poster).catch(()=>null)   : Promise.resolve(null),
   ]);
 
-  // ── Background: full backdrop ──
+  // ── Full-bleed backdrop (mirrors the popup) ──
   ctx.fillStyle = '#080808'; ctx.fillRect(0,0,W,H);
   if (bdImg) {
     const r = bdImg.width/bdImg.height;
     const dw = Math.max(W, H*r), dh = Math.max(H, W/r);
     ctx.drawImage(bdImg, (W-dw)/2, (H-dh)/2, dw, dh);
-    // heavy dark overlay
-    ctx.fillStyle = 'rgba(0,0,0,0.68)'; ctx.fillRect(0,0,W,H);
+    // light overlay so it stays readable — same feel as the popup backdrop
+    ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(0,0,W,H);
+  } else if (postImg) {
+    // fallback: blurred poster fill
+    ctx.save(); ctx.filter = 'blur(32px)';
+    ctx.drawImage(postImg, -80, -80, W+160, H+160);
+    ctx.restore();
+    ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(0,0,W,H);
   }
-  // Bottom-to-dark gradient
-  const bg = ctx.createLinearGradient(0, H*0.38, 0, H);
-  bg.addColorStop(0,'rgba(8,8,8,0)'); bg.addColorStop(0.5,'rgba(8,8,8,0.85)'); bg.addColorStop(1,'rgba(8,8,8,1)');
-  ctx.fillStyle = bg; ctx.fillRect(0,0,W,H);
+
+  // Strong bottom-to-black gradient (same as popup)
+  const bottomFade = ctx.createLinearGradient(0, H*0.28, 0, H);
+  bottomFade.addColorStop(0,   'rgba(0,0,0,0)');
+  bottomFade.addColorStop(0.45,'rgba(0,0,0,0.75)');
+  bottomFade.addColorStop(1,   'rgba(0,0,0,1)');
+  ctx.fillStyle = bottomFade; ctx.fillRect(0,0,W,H);
 
   // Orange top bar
   ctx.fillStyle = '#f5a623'; ctx.fillRect(0,0,W,5);
 
-  // PMOVIES badge
+  // PMOVIES badge — top centre
   ctx.save();
-  ctx.font = '700 16px Arial'; ctx.letterSpacing = '7px'; ctx.textAlign = 'center';
-  const bm = ctx.measureText('PMOVIES'), bw = bm.width+44, bh=32, bx=W/2-bw/2, by=38;
-  ctx.fillStyle='rgba(245,166,35,0.12)'; rr(bx,by,bw,bh,16); ctx.fill();
-  ctx.strokeStyle='rgba(245,166,35,0.45)'; ctx.lineWidth=1; rr(bx,by,bw,bh,16); ctx.stroke();
-  ctx.fillStyle='#f5a623'; ctx.fillText('PMOVIES', W/2, by+22);
+  ctx.font = '700 15px Arial'; ctx.letterSpacing = '7px'; ctx.textAlign = 'center';
+  const bm = ctx.measureText('PMOVIES'), bw=bm.width+44, bh=30, bx=W/2-bw/2, by=34;
+  ctx.fillStyle='rgba(245,166,35,0.15)'; rr(bx,by,bw,bh,15); ctx.fill();
+  ctx.strokeStyle='rgba(245,166,35,0.5)'; ctx.lineWidth=1; rr(bx,by,bw,bh,15); ctx.stroke();
+  ctx.fillStyle='#f5a623'; ctx.fillText('PMOVIES', W/2, by+21);
   ctx.restore();
 
-  // ── Poster centered ──
-  const PW=260, PH=Math.round(PW*1.5), PX=(W-PW)/2, PY=100;
+  // ── Poster — centred in top 55% (same position as in popup) ──
+  const PW=220, PH=Math.round(PW*1.5), PX=(W-PW)/2, PY=90;
   ctx.save();
-  ctx.shadowColor='rgba(0,0,0,0.9)'; ctx.shadowBlur=60; ctx.shadowOffsetY=20;
-  ctx.fillStyle='#111'; rr(PX,PY,PW,PH,18); ctx.fill();
+  ctx.shadowColor='rgba(0,0,0,0.95)'; ctx.shadowBlur=70; ctx.shadowOffsetY=24;
+  ctx.fillStyle='#111'; rr(PX,PY,PW,PH,16); ctx.fill();
   ctx.restore();
-  ctx.save(); rr(PX,PY,PW,PH,18); ctx.clip();
+  ctx.save(); rr(PX,PY,PW,PH,16); ctx.clip();
   if (postImg) ctx.drawImage(postImg,PX,PY,PW,PH);
-  else { ctx.fillStyle='#1c1c1c'; ctx.fillRect(PX,PY,PW,PH); }
+  else { ctx.fillStyle='#1a1a1a'; ctx.fillRect(PX,PY,PW,PH); }
   ctx.restore();
-  ctx.strokeStyle='rgba(245,166,35,0.55)'; ctx.lineWidth=2.5; rr(PX,PY,PW,PH,18); ctx.stroke();
+  ctx.strokeStyle='rgba(245,166,35,0.65)'; ctx.lineWidth=2.5;
+  rr(PX,PY,PW,PH,16); ctx.stroke();
 
-  // ── Film info below poster ──
-  const TY = PY + PH + 44;
-  ctx.textAlign='center'; ctx.letterSpacing='3px';
-  ctx.font='600 13px Arial'; ctx.fillStyle='#f5a623';
-  ctx.fillText('FILM OF THE DAY', W/2, TY);
-
-  // Title — up to 2 lines
-  ctx.font='bold 54px Arial'; ctx.letterSpacing='0px'; ctx.fillStyle='#fff';
-  const title = m.title || '';
-  const tw = W-120;
-  const words = title.split(' '); let l1='',l2='';
-  for (const w of words){ const t=l1?l1+' '+w:w; if(ctx.measureText(t).width>tw){l2+=(l2?' ':'')+w;}else{l1=t;} }
-  function trunc(t,mw){ while(t.length>0&&ctx.measureText(t+'…').width>mw)t=t.slice(0,-1); return ctx.measureText(t).width>mw?t+'…':t; }
-  ctx.fillText(trunc(l1,tw), W/2, TY+60);
-  if (l2) ctx.fillText(trunc(l2,tw), W/2, TY+118);
-
-  ctx.font='400 18px Arial'; ctx.fillStyle='rgba(255,255,255,0.38)'; ctx.letterSpacing='2px';
-  ctx.fillText(m.year?String(m.year):'', W/2, TY+(l2?154:106));
-
-  // ── Scores ──
-  const SY = TY + (l2 ? 200 : 148);
-  // Divider
-  const dl=ctx.createLinearGradient(0,0,W,0);
-  dl.addColorStop(0,'rgba(245,166,35,0)'); dl.addColorStop(0.3,'rgba(245,166,35,0.3)');
-  dl.addColorStop(0.7,'rgba(245,166,35,0.3)'); dl.addColorStop(1,'rgba(245,166,35,0)');
-  ctx.fillStyle=dl; ctx.fillRect(0,SY,W,1);
-
-  // My rating (left) + Community avg (right)
-  const COL = W/2 - 10;
-  // Left — my rating
+  // ── Film info (lower half — same hierarchy as popup) ──
+  const INFO_Y = PY + PH + 40;
   ctx.textAlign='center';
-  ctx.font='600 12px Arial'; ctx.letterSpacing='3px'; ctx.fillStyle='rgba(255,255,255,0.35)';
-  ctx.fillText('MY RATING', COL/2, SY+42);
-  ctx.font='bold 64px Arial'; ctx.letterSpacing='0px';
-  ctx.fillStyle = myR > 0 ? '#f5a623' : 'rgba(255,255,255,0.25)';
-  ctx.fillText(myR > 0 ? myR+'/5' : '—', COL/2, SY+112);
-  ctx.font='22px Arial'; ctx.fillStyle='#f5a623';
-  ctx.fillText(myR > 0 ? starsStr(myR) : '', COL/2, SY+142);
 
-  // Vertical separator
-  ctx.fillStyle='rgba(255,255,255,0.1)'; ctx.fillRect(COL-1, SY+28, 1, 130);
+  // "⭐ FILM OF THE DAY" eyebrow
+  ctx.font='600 13px Arial'; ctx.letterSpacing='4px'; ctx.fillStyle='#f5a623';
+  ctx.fillText('⭐  FILM OF THE DAY', W/2, INFO_Y);
 
-  // Right — community avg
-  const RX = COL + (W-COL)/2;
-  ctx.font='600 12px Arial'; ctx.letterSpacing='3px'; ctx.fillStyle='rgba(255,255,255,0.35)';
-  ctx.fillText('COMMUNITY', RX, SY+42);
-  ctx.font='bold 64px Arial'; ctx.letterSpacing='0px'; ctx.fillStyle='#fff';
-  ctx.fillText(avg !== '?' ? avg+'/5' : '?', RX, SY+112);
-  ctx.font='22px Arial'; ctx.fillStyle='rgba(255,255,255,0.6)';
-  ctx.fillText(avg !== '?' ? starsStr(parseFloat(avg)) : '', RX, SY+142);
+  // Title (up to 2 lines)
+  ctx.font='bold 52px Arial'; ctx.letterSpacing='0px'; ctx.fillStyle='#ffffff';
+  const tw=W-100, words=(m.title||'').split(' '); let l1='',l2='';
+  for(const w of words){ const t=l1?l1+' '+w:w; ctx.font='bold 52px Arial'; if(ctx.measureText(t).width>tw){l2+=(l2?' ':'')+w;}else{l1=t;} }
+  ctx.fillText(trunc(l1,tw), W/2, INFO_Y+62);
+  if(l2) ctx.fillText(trunc(l2,tw), W/2, INFO_Y+120);
+
+  ctx.font='400 18px Arial'; ctx.fillStyle='rgba(255,255,255,0.35)'; ctx.letterSpacing='2px';
+  ctx.fillText(m.year?String(m.year):'', W/2, INFO_Y+(l2?158:108));
+
+  // ── Score box (mirrors the .fotd-result card in the popup) ──
+  const BX=80, BW=W-160, BY=INFO_Y+(l2?192:142), BH=160, BR=18;
+  ctx.fillStyle='rgba(255,255,255,0.07)'; rr(BX,BY,BW,BH,BR); ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,0.08)'; ctx.lineWidth=1; rr(BX,BY,BW,BH,BR); ctx.stroke();
+
+  const MID = BX + BW/2;
+  if (avg) {
+    // avg score — orange, big
+    ctx.font='900 72px Arial'; ctx.fillStyle='#f5a623'; ctx.letterSpacing='0px';
+    ctx.fillText(avg, MID, BY+88);
+    ctx.font='26px Arial'; ctx.fillStyle='rgba(255,255,255,0.55)';
+    ctx.fillText(starsStr(parseFloat(avg)), MID, BY+122);
+    ctx.font='400 15px Arial'; ctx.letterSpacing='1px'; ctx.fillStyle='rgba(255,255,255,0.3)';
+    ctx.fillText(`community avg · ${m.ratingCount} voter${m.ratingCount!==1?'s':''}`, MID, BY+146);
+  } else {
+    ctx.font='400 18px Arial'; ctx.fillStyle='rgba(255,255,255,0.25)'; ctx.letterSpacing='1px';
+    ctx.fillText('No community ratings yet', MID, BY+88);
+  }
+
+  // My rating pill (bottom-right of score box)
+  if (myR > 0) {
+    const PR_Y = BY + BH + 18;
+    ctx.font='600 13px Arial'; ctx.letterSpacing='2px'; ctx.fillStyle='rgba(255,255,255,0.35)';
+    ctx.fillText(`MY RATING: ${starsStr(myR)} ${myR}/5`, MID, PR_Y);
+  }
 
   // Footer
-  const FY = H - 48;
-  ctx.fillStyle='rgba(245,166,35,0.2)'; ctx.fillRect(0,FY-24,W,1);
-  ctx.font='400 14px Arial'; ctx.letterSpacing='2px'; ctx.fillStyle='rgba(255,255,255,0.2)';
-  ctx.fillText('RATE & DISCOVER AT', W/2, FY-4);
+  const FY = H - 46;
+  const fl=ctx.createLinearGradient(0,0,W,0);
+  fl.addColorStop(0,'rgba(245,166,35,0)'); fl.addColorStop(0.3,'rgba(245,166,35,0.3)');
+  fl.addColorStop(0.7,'rgba(245,166,35,0.3)'); fl.addColorStop(1,'rgba(245,166,35,0)');
+  ctx.fillStyle=fl; ctx.fillRect(0,FY-22,W,1);
+  ctx.font='400 13px Arial'; ctx.letterSpacing='3px'; ctx.fillStyle='rgba(255,255,255,0.2)';
+  ctx.fillText('RATE & DISCOVER AT', W/2, FY-2);
   ctx.font='bold 22px Arial'; ctx.letterSpacing='1px'; ctx.fillStyle='#f5a623';
-  ctx.fillText('p-movies.com', W/2, FY+24);
+  ctx.fillText('p-movies.com', W/2, FY+26);
 
   return canvas.toDataURL('image/png');
 }
