@@ -8385,41 +8385,105 @@ async function _shareFOTD(platform) {
 }
 
 async function _generateFOTDCard() {
-  // Capture the actual visible popup card — screenshot what's on screen
-  const card = document.querySelector('#fotdOverlay .fotd-card');
-  const bd   = document.getElementById('fotdBackdrop');
-  if (!card) return null;
+  // Same approach as review card — draw directly to canvas (no DOM capture, no CORS issues)
+  const m = _fotdFilmData;
+  if (!m) return null;
 
-  // html2canvas can't read cross-origin CSS background-image.
-  // Fix: draw the backdrop into a canvas → data URL → swap in temporarily → capture → restore.
-  let originalBg = null;
-  if (bd && _fotdFilmData?.backdrop) {
-    try {
-      const img = await _loadImg('https://image.tmdb.org/t/p/w1280' + _fotdFilmData.backdrop);
-      const tmp = document.createElement('canvas');
-      tmp.width = img.naturalWidth; tmp.height = img.naturalHeight;
-      tmp.getContext('2d').drawImage(img, 0, 0);
-      const dataUrl = tmp.toDataURL('image/jpeg', 0.92);
-      originalBg = bd.style.backgroundImage;
-      bd.style.backgroundImage = `url('${dataUrl}')`;
-    } catch(_) {}
-  }
+  const hasRatings = m.ratingCount > 0 && m.ratingTotal > 0;
+  const avg  = hasRatings ? (m.ratingTotal / m.ratingCount).toFixed(1) : null;
+  const myR  = parseFloat(localStorage.getItem(lsKey('pmovies_fotd_rating_' + _fotdToday)) || '0');
+  const starsRow = n => { const f=Math.floor(n),h=(n-f)>=0.5?1:0; return '★'.repeat(f)+(h?'½':'')+('☆'.repeat(Math.max(0,5-f-h))); };
 
-  try {
-    const canvas = await html2canvas(card, {
-      useCORS: true,
-      allowTaint: false,
-      scale: 2,
-      backgroundColor: '#111',
-      logging: false,
-    });
-    if (originalBg !== null) bd.style.backgroundImage = originalBg;
-    return canvas.toDataURL('image/png');
-  } catch(e) {
-    if (originalBg !== null) bd.style.backgroundImage = originalBg;
-    console.warn('[FOTD card] html2canvas failed:', e);
-    return null;
+  // Load images (crossOrigin already set in _loadImg — same as review card)
+  const [bdImg, postImg] = await Promise.all([
+    m.backdrop ? _loadImg('https://image.tmdb.org/t/p/w1280'+m.backdrop).catch(()=>null) : Promise.resolve(null),
+    m.poster   ? _loadImg('https://image.tmdb.org/t/p/w342'+m.poster).catch(()=>null)   : Promise.resolve(null),
+  ]);
+
+  // Canvas sized to match the popup card proportions (portrait)
+  const W = 1080, H = 1440;
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  function rr(x,y,w,h,r){ ctx.beginPath(); ctx.roundRect(x,y,w,h,r); }
+
+  // ── Card background ──
+  ctx.fillStyle = '#111'; ctx.fillRect(0,0,W,H);
+
+  // ── Backdrop (top 38% — mirrors .fotd-backdrop height ratio) ──
+  const BD_H = Math.round(H * 0.38);
+  ctx.save(); rr(0,0,W,BD_H,0); ctx.clip();
+  if (bdImg) {
+    const r = bdImg.width/bdImg.height;
+    const dw = Math.max(W, BD_H*r), dh = Math.max(BD_H, W/r);
+    ctx.drawImage(bdImg, (W-dw)/2, (BD_H-dh)*0.25, dw, dh); // top-biased crop like background-position:center 25%
+  } else if (postImg) {
+    ctx.save(); ctx.filter='blur(28px)';
+    ctx.drawImage(postImg,-60,-60,W+120,BD_H+120); ctx.restore();
+    ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(0,0,W,BD_H);
+  } else {
+    ctx.fillStyle='#1a1a1a'; ctx.fillRect(0,0,W,BD_H);
   }
+  // Gradient fade to card bg (mirrors .fotd-gradient)
+  const fade = ctx.createLinearGradient(0, BD_H*0.45, 0, BD_H);
+  fade.addColorStop(0,'rgba(17,17,17,0)'); fade.addColorStop(1,'rgba(17,17,17,1)');
+  ctx.fillStyle = fade; ctx.fillRect(0,0,W,BD_H);
+  ctx.restore();
+
+  // Orange top accent line
+  ctx.fillStyle = '#f5a623'; ctx.fillRect(0,0,W,5);
+
+  // ── Content area (mirrors .fotd-content padding) ──
+  const PAD = 64;
+  let cy = BD_H + 40;
+
+  // "⭐ FILM OF THE DAY" eyebrow
+  ctx.textAlign='center'; ctx.font='700 22px Arial'; ctx.letterSpacing='4px';
+  ctx.fillStyle='#f5a623'; ctx.fillText('⭐  FILM OF THE DAY', W/2, cy); cy += 54;
+
+  // Title
+  ctx.font='bold 72px Arial'; ctx.letterSpacing='0px'; ctx.fillStyle='#fff';
+  const tw=W-PAD*2, words=(m.title||'').split(' '); let l1='',l2='';
+  for(const w of words){ const t=l1?l1+' '+w:w; if(ctx.measureText(t).width>tw){l2+=(l2?' ':'')+w;}else{l1=t;} }
+  function trunc(t,mw){ let s=t; while(s.length>0&&ctx.measureText(s+'…').width>mw)s=s.slice(0,-1); return s.length<t.length?s+'…':t; }
+  ctx.fillText(trunc(l1,tw), W/2, cy); cy += l2 ? 82 : 0;
+  if(l2){ ctx.fillText(trunc(l2,tw), W/2, cy); cy += 82; } else cy += 82;
+
+  // "You rated" line
+  ctx.font='400 32px Arial'; ctx.fillStyle='rgba(255,255,255,0.45)'; ctx.letterSpacing='0px';
+  const myRText = myR > 0 ? `You rated:  ${starsRow(myR)}  ${myR}/5` : '';
+  if(myRText) { ctx.fillText(myRText, W/2, cy); } cy += 60;
+
+  // ── Score box (mirrors .fotd-result) ──
+  const BX=PAD, BW=W-PAD*2, BY=cy, BH=avg ? 210 : 140;
+  ctx.fillStyle='rgba(255,255,255,0.055)'; rr(BX,BY,BW,BH,22); ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,0.07)'; ctx.lineWidth=1; rr(BX,BY,BW,BH,22); ctx.stroke();
+
+  if (avg) {
+    ctx.textAlign='center';
+    ctx.font='900 96px Arial'; ctx.fillStyle='#f5a623'; ctx.letterSpacing='-1px';
+    ctx.fillText(avg, W/2, BY+102);
+    ctx.font='34px Arial'; ctx.fillStyle='rgba(255,255,255,0.55)'; ctx.letterSpacing='2px';
+    ctx.fillText(starsRow(parseFloat(avg)), W/2, BY+148);
+    ctx.font='400 24px Arial'; ctx.fillStyle='rgba(255,255,255,0.28)'; ctx.letterSpacing='1px';
+    ctx.fillText(`community avg from ${m.ratingCount} voter${m.ratingCount!==1?'s':''}`, W/2, BY+188);
+  } else {
+    ctx.textAlign='center'; ctx.font='400 28px Arial'; ctx.fillStyle='rgba(255,255,255,0.2)'; ctx.letterSpacing='0px';
+    ctx.fillText('Be the first to rate!', W/2, BY+76);
+  }
+  cy = BY + BH + 60;
+
+  // ── PMOVIES footer ──
+  const fl=ctx.createLinearGradient(0,0,W,0);
+  fl.addColorStop(0,'rgba(245,166,35,0)'); fl.addColorStop(0.3,'rgba(245,166,35,0.3)');
+  fl.addColorStop(0.7,'rgba(245,166,35,0.3)'); fl.addColorStop(1,'rgba(245,166,35,0)');
+  ctx.fillStyle=fl; ctx.fillRect(0,cy,W,1); cy+=36;
+  ctx.textAlign='center'; ctx.font='400 22px Arial'; ctx.letterSpacing='3px'; ctx.fillStyle='rgba(255,255,255,0.2)';
+  ctx.fillText('RATE & DISCOVER AT', W/2, cy); cy+=40;
+  ctx.font='bold 34px Arial'; ctx.letterSpacing='1px'; ctx.fillStyle='#f5a623';
+  ctx.fillText('p-movies.com', W/2, cy);
+
+  return canvas.toDataURL('image/png');
 }
 
 // Legacy full-canvas fallback (kept for reference, not called)
