@@ -648,6 +648,60 @@
   .top100-item-hidden { display:none; }
   .top100-item { cursor:pointer; }
 
+
+  /* ── Live Vote Feed Bar ── */
+  .vote-feed-bar { display:flex; align-items:center; gap:12px; background:#0d0d0d; border:1px solid #191919; border-radius:10px; padding:9px 16px; margin-bottom:16px; overflow:hidden; }
+  .vote-feed-live { flex-shrink:0; font-size:.58rem; font-weight:900; color:#f44336; letter-spacing:.12em; font-family:'Montserrat',sans-serif; display:flex; align-items:center; gap:5px; }
+  .vote-feed-dot { width:6px; height:6px; background:#f44336; border-radius:50%; animation:livePulse 1.4s ease-in-out infinite; flex-shrink:0; }
+  @keyframes livePulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.35;transform:scale(1.4)} }
+  .vote-feed-track { flex:1; overflow:hidden; position:relative; height:20px; }
+  .vote-feed-inner { display:flex; gap:36px; position:absolute; white-space:nowrap; animation:feedScroll 30s linear infinite; }
+  .vote-feed-inner:hover { animation-play-state:paused; cursor:default; }
+  .vote-feed-item { font-size:.72rem; color:#666; display:inline-flex; align-items:center; gap:6px; flex-shrink:0; }
+  .vote-feed-item strong { color:#bbb; }
+  .vote-feed-ago { color:#3a3a3a; margin-left:2px; }
+  @keyframes feedScroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+
+  /* ── Rank Alert Toast ── */
+  .rank-alert-toast { position:fixed; top:72px; right:16px; z-index:9999; background:#161616; border:1px solid #2a2a2a; border-radius:14px; padding:12px 14px; display:flex; align-items:center; gap:12px; max-width:300px; box-shadow:0 8px 32px rgba(0,0,0,.6); transform:translateX(340px); transition:transform .38s cubic-bezier(.34,1.56,.64,1); }
+  .rank-alert-toast.rat-in { transform:translateX(0); }
+  .rat-icon { font-size:1.4rem; flex-shrink:0; }
+  .rat-body { flex:1; min-width:0; }
+  .rat-title { font-size:.8rem; font-weight:700; color:#fff; font-family:'Montserrat',sans-serif; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .rat-detail { font-size:.72rem; margin-top:2px; font-weight:600; }
+  .rat-close { background:none; border:none; color:#444; cursor:pointer; font-size:.8rem; flex-shrink:0; padding:0; }
+  .rat-close:hover { color:#aaa; }
+
+  /* ── Weekly List Card button ── */
+  .weekly-card-btn { background:transparent; border:1px solid #2a2a2a; border-radius:20px; color:#777; font-size:.72rem; font-weight:700; font-family:'Montserrat',sans-serif; padding:7px 14px; cursor:pointer; display:flex; align-items:center; gap:6px; transition:.2s; letter-spacing:.03em; }
+  .weekly-card-btn:hover { border-color:#f5a623; color:#f5a623; }
+
+  /* ── Weekly Card Overlay ── */
+  .weekly-overlay { position:fixed; inset:0; background:rgba(0,0,0,.9); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(6px); animation:fiOverlayIn .2s ease; }
+  .weekly-modal { background:#111; border:1px solid #222; border-radius:20px; max-width:520px; width:100%; overflow:hidden; animation:fiModalIn .25s cubic-bezier(.34,1.56,.64,1); max-height:90vh; overflow-y:auto; }
+  .weekly-modal-head { padding:22px 24px 16px; border-bottom:1px solid #1a1a1a; display:flex; align-items:center; justify-content:space-between; }
+  .weekly-modal-title { font-size:1rem; font-weight:900; color:#fff; font-family:'Montserrat',sans-serif; }
+  .weekly-modal-sub { font-size:.72rem; color:#555; margin-top:2px; }
+  .weekly-close-btn { background:none; border:none; color:#444; cursor:pointer; font-size:1rem; }
+  .weekly-close-btn:hover { color:#aaa; }
+  .weekly-modal-body { padding:20px 24px 24px; }
+  .weekly-section-label { font-size:.6rem; font-weight:900; color:#555; letter-spacing:.1em; text-transform:uppercase; margin:16px 0 8px; font-family:'Montserrat',sans-serif; }
+  .weekly-section-label:first-child { margin-top:0; }
+  .weekly-film-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid #181818; }
+  .weekly-film-row:last-child { border-bottom:none; }
+  .weekly-film-poster { width:32px; height:46px; border-radius:5px; object-fit:cover; background:#1e1e1e; flex-shrink:0; }
+  .weekly-film-poster-ph { width:32px; height:46px; border-radius:5px; background:#1e1e1e; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:1rem; }
+  .weekly-film-name { flex:1; font-size:.82rem; font-weight:700; color:#eee; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .weekly-film-meta { font-size:.7rem; color:#555; }
+  .weekly-badge { font-size:.66rem; font-weight:900; padding:3px 9px; border-radius:20px; font-family:'Montserrat',sans-serif; flex-shrink:0; }
+  .weekly-badge.up   { background:rgba(76,175,80,.12); color:#4caf50; border:1px solid rgba(76,175,80,.25); }
+  .weekly-badge.down { background:rgba(244,67,54,.1); color:#f44336; border:1px solid rgba(244,67,54,.2); }
+  .weekly-badge.new  { background:rgba(245,166,35,.1); color:var(--orange); border:1px solid rgba(245,166,35,.25); }
+  .weekly-badge.rank { background:#161616; color:#888; border:1px solid #242424; }
+  .weekly-share-row { display:flex; gap:10px; margin-top:20px; }
+  .weekly-share-btn { flex:1; background:var(--orange); color:#000; border:none; border-radius:20px; padding:11px; font-weight:900; font-size:.82rem; font-family:'Montserrat',sans-serif; cursor:pointer; transition:.2s; }
+  .weekly-share-btn:hover { background:var(--orange2); }
+
   /* ── Film Info Modal ── */
   .film-info-overlay { position:fixed; inset:0; background:rgba(0,0,0,.88); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(6px); animation:fiOverlayIn .2s ease; }
   @keyframes fiOverlayIn { from{opacity:0} to{opacity:1} }
@@ -1255,7 +1309,13 @@
           <div class="top100-votes-num" id="top100VotesNum">5</div>
           <div class="top100-votes-lbl">votes remaining</div>
         </div>
+        <button class="weekly-card-btn" onclick="openWeeklyCard()">📋 This Week</button>
       </div>
+    </div>
+    <!-- Live Vote Feed -->
+    <div class="vote-feed-bar" id="voteFeedBar" style="display:none">
+      <div class="vote-feed-live"><div class="vote-feed-dot"></div>LIVE</div>
+      <div class="vote-feed-track" id="voteFeedTrack"></div>
     </div>
     <div class="top100-search-wrap">
       <span class="top100-search-icon">🔍</span>
@@ -4990,7 +5050,7 @@
       <div class="pco-title">🎬 Your Picks Card</div>
       <p class="pco-sub">Share your taste with the world</p>
       <div class="pco-canvas-wrap">
-        <canvas id="picksCanvas" width="1080" height="1080"></canvas>
+        <canvas id="picksCanvas" width="1080" height="1350"></canvas>
       </div>
       <div class="pco-actions">
         <button class="pco-btn-dl" onclick="downloadPicksCard()">⬇ Download</button>
@@ -5853,6 +5913,7 @@ async function submitAllVotes(email, hash) {
       const writeVote = fetch(url, {
         method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(updated)
       });
+      writeVoteEvent(v.title, v.poster); // live feed event
       const writeFp = fp ? fetch(`${RTDB}/${dbPath('votesByFp')}/${fp}/${v.id}.json`, {
         method: 'PUT', headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ t: Date.now(), title: v.title })
@@ -6057,6 +6118,185 @@ function applyTop100Filters() {
 }
 
 /* ── Render the list ── */
+
+
+/* ══════════════════════════════════════════════════════
+   LIVE VOTE FEED
+══════════════════════════════════════════════════════ */
+async function loadVoteFeed() {
+  try {
+    const res  = await fetch(`${RTDB}/voteEvents.json?limitToLast=20`);
+    const data = res.ok ? await res.json() : null;
+    if (!data) return;
+    const events = Object.values(data)
+      .filter(e => e && e.ts && e.title)
+      .sort((a, b) => b.ts - a.ts)
+      .slice(0, 16);
+    if (!events.length) return;
+    const now = Date.now();
+    const items = events.map(e => {
+      const mins = Math.round((now - e.ts) / 60000);
+      const ago  = mins < 1 ? 'just now' : mins < 60 ? `${mins}m ago` : `${Math.round(mins/60)}h ago`;
+      return `<span class="vote-feed-item">🎬 <strong>${esc(e.title)}</strong><span class="vote-feed-ago">${ago}</span></span>`;
+    });
+    const inner = items.join('') + items.join(''); // duplicate for seamless loop
+    const track = document.getElementById('voteFeedTrack');
+    if (track) track.innerHTML = `<div class="vote-feed-inner">${inner}</div>`;
+    const bar = document.getElementById('voteFeedBar');
+    if (bar) bar.style.display = 'flex';
+  } catch(e) {}
+}
+
+async function writeVoteEvent(title, poster) {
+  try {
+    await fetch(`${RTDB}/voteEvents.json`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ title, poster: poster || '', ts: Date.now() })
+    });
+  } catch(e) {}
+}
+
+/* ══════════════════════════════════════════════════════
+   RANK CHANGE ALERTS
+══════════════════════════════════════════════════════ */
+function checkRankAlerts(movies) {
+  const ssKey   = lsKey('pmovies_alerted_ranks');
+  const alerted = JSON.parse(sessionStorage.getItem(ssKey) || '[]');
+  const snap    = getRankSnapshot();
+  const alerts  = [];
+  movies.forEach((m, i) => {
+    const rank = i + 1;
+    const prev = snap[m.id];
+    if (!prev || alerted.includes(m.id)) return;
+    const diff = prev - rank; // positive = moved up
+    if (Math.abs(diff) >= 10) alerts.push({ id:m.id, title:m.title, rank, prev, diff });
+  });
+  if (!alerts.length) return;
+  sessionStorage.setItem(ssKey, JSON.stringify([...alerted, ...alerts.map(a => a.id)]));
+  alerts.slice(0, 2).forEach((a, idx) => setTimeout(() => _showRankAlert(a), idx * 3800));
+}
+
+function _showRankAlert(a) {
+  const up    = a.diff > 0;
+  const icon  = up ? '🚀' : '📉';
+  const color = up ? '#4caf50' : '#f44336';
+  const label = up ? `jumped up ${a.diff} spot${a.diff!==1?'s':''}!` : `dropped ${Math.abs(a.diff)} spot${Math.abs(a.diff)!==1?'s':''}`;
+  const el    = document.createElement('div');
+  el.className = 'rank-alert-toast';
+  el.innerHTML = `
+    <div class="rat-icon">${icon}</div>
+    <div class="rat-body">
+      <div class="rat-title">${esc(a.title)}</div>
+      <div class="rat-detail" style="color:${color}">${label} — now #${a.rank}</div>
+    </div>
+    <button class="rat-close" onclick="this.closest('.rank-alert-toast').remove()">✕</button>`;
+  document.body.appendChild(el);
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('rat-in')));
+  setTimeout(() => { el.classList.remove('rat-in'); setTimeout(() => el.remove(), 400); }, 5500);
+}
+
+/* ══════════════════════════════════════════════════════
+   WEEKLY LIST CARD
+══════════════════════════════════════════════════════ */
+function _getWeeklySnapshot() {
+  try { return JSON.parse(localStorage.getItem(lsKey('pmovies_weekly_snap')) || 'null'); } catch(e) { return null; }
+}
+function _saveWeeklySnapshot(movies) {
+  const snap = {};
+  movies.forEach((m, i) => { snap[m.id] = { rank: i+1, title: m.title, poster: m.poster||'', votes: m.votes }; });
+  snap._savedAt = Date.now();
+  localStorage.setItem(lsKey('pmovies_weekly_snap'), JSON.stringify(snap));
+}
+function _maybeRefreshWeeklySnapshot(movies) {
+  const snap = _getWeeklySnapshot();
+  const now  = Date.now();
+  // Refresh if no snapshot OR snapshot is older than 7 days
+  if (!snap || !snap._savedAt || (now - snap._savedAt) > 7 * 24 * 3600 * 1000) {
+    _saveWeeklySnapshot(movies);
+  }
+}
+
+function openWeeklyCard() {
+  const overlay = document.getElementById('weeklyOverlay');
+  if (!overlay) return;
+  overlay.style.display = 'flex';
+  document.addEventListener('keydown', _weeklyKeyHandler);
+  _buildWeeklyCard();
+}
+function closeWeeklyCard() {
+  const overlay = document.getElementById('weeklyOverlay');
+  if (overlay) overlay.style.display = 'none';
+  document.removeEventListener('keydown', _weeklyKeyHandler);
+}
+function _weeklyKeyHandler(e) { if (e.key === 'Escape') closeWeeklyCard(); }
+
+function _buildWeeklyCard() {
+  const body    = document.getElementById('weeklyModalBody');
+  const dateEl  = document.getElementById('weeklyDateRange');
+  const snap    = _getWeeklySnapshot();
+  const current = _top100AllMovies;
+  if (!current.length) { body.innerHTML = '<div style="text-align:center;color:#444;padding:30px">Load the Top 100 first</div>'; return; }
+
+  // Date range label
+  const now = new Date();
+  if (snap && snap._savedAt) {
+    const from = new Date(snap._savedAt);
+    dateEl.textContent = `${from.toLocaleDateString('en-US',{month:'short',day:'numeric'})} – ${now.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
+  } else {
+    dateEl.textContent = now.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  }
+
+  // ── Top 5 ──
+  const top5 = current.slice(0, 5);
+
+  // ── Movers (compare to snap) ──
+  let biggestUp = null, biggestDown = null, newEntries = [];
+  if (snap) {
+    current.forEach((m, i) => {
+      const rank = i + 1;
+      const prev = snap[m.id];
+      if (!prev) { newEntries.push({ ...m, rank }); return; }
+      const diff = prev.rank - rank;
+      if (diff >= 5 && (!biggestUp || diff > biggestUp.diff))     biggestUp   = { ...m, rank, diff, prevRank: prev.rank };
+      if (diff <= -5 && (!biggestDown || diff < biggestDown.diff)) biggestDown = { ...m, rank, diff, prevRank: prev.rank };
+    });
+  }
+
+  function filmRow(m, badge, badgeClass) {
+    const poster = m.poster ? `<img class="weekly-film-poster" src="https://image.tmdb.org/t/p/w92${m.poster}" loading="lazy"/>` : `<div class="weekly-film-poster-ph">🎬</div>`;
+    return `<div class="weekly-film-row">${poster}<div class="weekly-film-name">${esc(m.title)}</div><div class="weekly-film-meta">${m.year||''}</div><span class="weekly-badge ${badgeClass}">${badge}</span></div>`;
+  }
+
+  let html = `<div class="weekly-section-label">🏆 Top 5 This Week</div>`;
+  html += top5.map((m, i) => filmRow(m, `#${i+1}`, 'rank')).join('');
+
+  if (biggestUp) {
+    html += `<div class="weekly-section-label">🚀 Biggest Climber</div>`;
+    html += filmRow(biggestUp, `▲${biggestUp.diff} spots`, 'up');
+  }
+  if (biggestDown) {
+    html += `<div class="weekly-section-label">📉 Biggest Drop</div>`;
+    html += filmRow(biggestDown, `▼${Math.abs(biggestDown.diff)} spots`, 'down');
+  }
+  if (newEntries.length) {
+    html += `<div class="weekly-section-label">✨ New This Week (${newEntries.length})</div>`;
+    html += newEntries.slice(0, 5).map(m => filmRow(m, 'NEW', 'new')).join('');
+  }
+
+  html += `<div class="weekly-share-row"><button class="weekly-share-btn" onclick="_shareWeeklyCard()">Share This Week's List</button></div>`;
+  body.innerHTML = html;
+}
+
+async function _shareWeeklyCard() {
+  const current = _top100AllMovies.slice(0, 5);
+  const lines   = current.map((m, i) => `#${i+1} ${m.title} (${m.year||''})`).join('\n');
+  const text    = `🎬 PMovies Top 5 This Week:\n${lines}\n\nhttps://p-movies.com`;
+  if (navigator.share) {
+    try { await navigator.share({ title: 'PMovies – The List This Week', text }); return; } catch(e) {}
+  }
+  try { await navigator.clipboard.writeText(text); alert('Copied to clipboard!'); } catch(e) {}
+}
+
 
 /* ── Film Info Card ── */
 function getBestRanks() { return JSON.parse(localStorage.getItem(lsKey('pmovies_best_ranks')) || '{}'); }
@@ -6315,6 +6555,9 @@ async function loadTop100() {
 
     renderTop100(movies);
     renderKnocking(knocking, movies[movies.length - 1]);
+    checkRankAlerts(movies);
+    _maybeRefreshWeeklySnapshot(movies);
+    loadVoteFeed();
   } catch(e) { console.warn('Top100 load error', e); }
 }
 
@@ -6961,176 +7204,217 @@ function _wrapText(ctx, text, x, y, maxW, lineH) {
 async function generatePicksCard(picks) {
   const canvas = document.getElementById('picksCanvas');
   const ctx    = canvas.getContext('2d');
-  const W = 1080, H = 1080;
+  // ── 4:5 portrait — great for Instagram, WhatsApp, Twitter ──
+  const W = 1080, H = 1350;
   canvas.width = W; canvas.height = H;
 
-  // ── Layout constants ──
-  const PH      = 255;
-  const PW      = Math.round(PH * 2 / 3);   // 170 — row 1
-  const PW2     = Math.round(PW * 1.38);    // 234 — row 2 wider
-  const GAP     = 28;
-  const LBL     = 44;   // label zone: single-line title + year
-  const ROW_GAP = 28;
-  const ROW1_Y  = 305;
-  const ROW2_Y  = ROW1_Y + PH + LBL + ROW_GAP;
-  const FOOTER_Y = ROW2_Y + PH + LBL + 18;
+  // ── Load images in parallel ──
+  const [backdropImg, ...posterImgs] = await Promise.all([
+    picks[0]?.backdrop
+      ? _loadImg('https://image.tmdb.org/t/p/w1280' + picks[0].backdrop).catch(() => null)
+      : Promise.resolve(null),
+    ...picks.map(p =>
+      p.poster ? _loadImg('https://image.tmdb.org/t/p/w185' + p.poster).catch(() => null) : Promise.resolve(null)
+    )
+  ]);
 
-  const R1W = 3 * PW + 2 * GAP;  const R1X = (W - R1W) / 2;
-  const R2W = 2 * PW2 + GAP;     const R2X = (W - R2W) / 2;
-
-  // ── Background ──
-  ctx.fillStyle = '#0c0c0c';
-  ctx.fillRect(0, 0, W, H);
-
-  // Warm amber centre glow
-  const cg = ctx.createRadialGradient(W/2, 430, 60, W/2, 430, 580);
-  cg.addColorStop(0, 'rgba(245,166,35,0.07)');
-  cg.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = cg; ctx.fillRect(0, 0, W, H);
-
-  // Corner vignette
-  [[0,0],[W,0],[0,H],[W,H]].forEach(([cx,cy]) => {
-    const cv = ctx.createRadialGradient(cx, cy, 0, cx, cy, 540);
-    cv.addColorStop(0, 'rgba(0,0,0,0.45)'); cv.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = cv; ctx.fillRect(0, 0, W, H);
-  });
-
-  // Outer frame border
-  ctx.strokeStyle = '#1e1e1e'; ctx.lineWidth = 1.5;
-  ctx.strokeRect(28, 28, W - 56, H - 56);
-
-  // Corner accent marks (orange L-brackets)
-  const CA = 34, CM = 28;
-  ctx.strokeStyle = '#f5a623'; ctx.lineWidth = 3; ctx.lineCap = 'square';
-  [ [CM, CM+CA, CM, CM, CM+CA, CM],
-    [W-CM-CA, CM, W-CM, CM, W-CM, CM+CA],
-    [CM, H-CM-CA, CM, H-CM, CM+CA, H-CM],
-    [W-CM-CA, H-CM, W-CM, H-CM, W-CM, H-CM-CA]
-  ].forEach(([x1,y1,mx,my,x2,y2]) => {
-    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(mx,my); ctx.lineTo(x2,y2); ctx.stroke();
-  });
-
-  // ── Header ──
-  const BRAND_Y = 104;
-
-  // PMOVIES — amber pill badge
-  ctx.font = 'bold 20px "Arial Black", Arial, sans-serif';
-  ctx.letterSpacing = '7px';
-  ctx.textAlign = 'center';
-  const bMeasure = ctx.measureText('PMOVIES');
-  const bW = bMeasure.width + 48, bH = 32, bX = W/2 - bW/2, bY = BRAND_Y - 22;
-  ctx.fillStyle = 'rgba(245,166,35,0.13)';
-  ctx.beginPath(); ctx.roundRect(bX, bY, bW, bH, 16); ctx.fill();
-  ctx.strokeStyle = 'rgba(245,166,35,0.38)'; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.roundRect(bX, bY, bW, bH, 16); ctx.stroke();
-  ctx.fillStyle = '#f5a623';
-  ctx.fillText('PMOVIES', W/2, BRAND_Y);
-
-  // MY PICKS — large hero text
-  ctx.font = 'bold 92px "Arial Black", Impact, sans-serif';
-  ctx.fillStyle = '#ffffff';
-  ctx.letterSpacing = '3px';
-  ctx.fillText('MY PICKS', W/2, BRAND_Y + 112);
-
-  // Subtitle
-  ctx.font = '400 20px Arial, sans-serif';
-  ctx.fillStyle = '#484848';
-  ctx.letterSpacing = '3.5px';
-  ctx.fillText('TOP 100 COMMUNITY VOTE', W/2, BRAND_Y + 150);
-
-  // Divider with centre dot
-  const DIV_Y = BRAND_Y + 174;
-  ctx.strokeStyle = '#252525'; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(80, DIV_Y); ctx.lineTo(W/2 - 14, DIV_Y); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(W/2 + 14, DIV_Y); ctx.lineTo(W - 80, DIV_Y); ctx.stroke();
-  ctx.fillStyle = '#f5a623';
-  ctx.beginPath(); ctx.arc(W/2, DIV_Y, 4, 0, Math.PI*2); ctx.fill();
-
-  // ── Load posters ──
-  const imgs = await Promise.all(picks.map(p =>
-    p.poster ? _loadImg(`https://image.tmdb.org/t/p/w185${p.poster}`) : Promise.resolve(null)
-  ));
-
-  // ── Truncate text to fit maxW (single line + ellipsis) ──
-  function _truncate(text, maxW) {
+  // ── Shared helpers ──
+  function _trunc(text, maxW) {
     if (ctx.measureText(text).width <= maxW) return text;
     let t = text;
-    while (t.length > 0 && ctx.measureText(t + '…').width > maxW) t = t.slice(0, -1);
+    while (t.length > 0 && ctx.measureText(t+'…').width > maxW) t = t.slice(0,-1);
     return t + '…';
   }
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath(); ctx.roundRect(x, y, w, h, r);
+  }
 
-  // ── Draw one poster ──
-  function drawOnePoster(i, x, y, pw, ph, img) {
-    const R = 10;
+  // ════════════════════════════════════
+  //  BACKGROUND
+  // ════════════════════════════════════
+  ctx.fillStyle = '#080808';
+  ctx.fillRect(0, 0, W, H);
+
+  // Subtle noise texture via random dots
+  ctx.save();
+  ctx.globalAlpha = 0.018;
+  for (let i = 0; i < 6000; i++) {
+    ctx.fillStyle = Math.random() > .5 ? '#fff' : '#000';
+    ctx.fillRect(Math.random()*W, Math.random()*H, 1, 1);
+  }
+  ctx.restore();
+
+  // ════════════════════════════════════
+  //  HERO — #1 pick with backdrop
+  // ════════════════════════════════════
+  const HERO_H = 480;
+  ctx.save();
+  roundRect(0, 0, W, HERO_H, 0); ctx.clip();
+  if (backdropImg) {
+    // Draw + darken backdrop
+    const bRatio = backdropImg.width / backdropImg.height;
+    const bDrawW = Math.max(W, HERO_H * bRatio);
+    const bDrawH = Math.max(HERO_H, W / bRatio);
+    const bX = (W - bDrawW) / 2, bY = (HERO_H - bDrawH) / 2;
+    ctx.drawImage(backdropImg, bX, bY, bDrawW, bDrawH);
+    ctx.fillStyle = 'rgba(0,0,0,0.60)'; ctx.fillRect(0, 0, W, HERO_H);
+  } else {
+    const heroGrad = ctx.createLinearGradient(0, 0, W, HERO_H);
+    heroGrad.addColorStop(0, '#161616'); heroGrad.addColorStop(1, '#0a0a0a');
+    ctx.fillStyle = heroGrad; ctx.fillRect(0, 0, W, HERO_H);
+  }
+  // Bottom fade into background
+  const heroFade = ctx.createLinearGradient(0, HERO_H - 160, 0, HERO_H);
+  heroFade.addColorStop(0, 'rgba(8,8,8,0)'); heroFade.addColorStop(1, 'rgba(8,8,8,1)');
+  ctx.fillStyle = heroFade; ctx.fillRect(0, 0, W, HERO_H);
+  ctx.restore();
+
+  // Orange accent line at top
+  ctx.fillStyle = '#f5a623';
+  ctx.fillRect(0, 0, W, 4);
+
+  // ── Brand badge ──
+  const BADGE_Y = 52;
+  ctx.font = 'bold 17px "Arial Black", Arial, sans-serif';
+  ctx.letterSpacing = '6px';
+  ctx.textAlign = 'center';
+  const bm = ctx.measureText('PMOVIES');
+  const bW2 = bm.width + 44, bH2 = 30, bX2 = W/2 - bW2/2, bY2 = BADGE_Y - 20;
+  ctx.fillStyle = 'rgba(245,166,35,0.15)';
+  roundRect(bX2, bY2, bW2, bH2, 15); ctx.fill();
+  ctx.strokeStyle = 'rgba(245,166,35,0.5)'; ctx.lineWidth = 1;
+  roundRect(bX2, bY2, bW2, bH2, 15); ctx.stroke();
+  ctx.fillStyle = '#f5a623';
+  ctx.fillText('PMOVIES', W/2, BADGE_Y);
+
+  // ── "MY PICKS" heading ──
+  ctx.font = 'bold 110px "Arial Black", Impact, sans-serif';
+  ctx.letterSpacing = '2px';
+  ctx.fillStyle = '#fff';
+  ctx.fillText('MY PICKS', W/2, BADGE_Y + 130);
+
+  // ── #1 poster + info in hero ──
+  const P1W = 160, P1H = 240, P1X = 60, P1Y = HERO_H - P1H - 60;
+  ctx.save();
+  ctx.shadowColor='rgba(0,0,0,0.9)'; ctx.shadowBlur=40; ctx.shadowOffsetY=16;
+  ctx.fillStyle='#111'; roundRect(P1X, P1Y, P1W, P1H, 12); ctx.fill();
+  ctx.restore();
+  ctx.save();
+  roundRect(P1X, P1Y, P1W, P1H, 12); ctx.clip();
+  if (posterImgs[0]) ctx.drawImage(posterImgs[0], P1X, P1Y, P1W, P1H);
+  else { ctx.fillStyle='#1c1c1c'; ctx.fillRect(P1X,P1Y,P1W,P1H); }
+  ctx.restore();
+  ctx.strokeStyle='rgba(245,166,35,0.5)'; ctx.lineWidth=2;
+  roundRect(P1X, P1Y, P1W, P1H, 12); ctx.stroke();
+
+  // #1 rank badge
+  ctx.fillStyle='#f5a623'; roundRect(P1X+8,P1Y+8,42,26,7); ctx.fill();
+  ctx.font='bold 14px "Arial Black",Arial,sans-serif'; ctx.fillStyle='#000';
+  ctx.letterSpacing='0px'; ctx.textAlign='center';
+  ctx.fillText('#1', P1X+29, P1Y+26);
+
+  // #1 film info next to poster
+  const INFO_X = P1X + P1W + 28, INFO_Y = P1Y + 30, INFO_W = W - INFO_X - 60;
+  ctx.textAlign = 'left';
+  ctx.font = '400 15px Arial, sans-serif';
+  ctx.fillStyle = '#f5a623'; ctx.letterSpacing = '2px';
+  ctx.fillText('MY #1 PICK', INFO_X, INFO_Y);
+  ctx.font = 'bold 44px "Arial Black", Arial, sans-serif';
+  ctx.fillStyle = '#fff'; ctx.letterSpacing = '0px';
+  // wrap title if needed
+  const p1Title = picks[0]?.title || '';
+  const words = p1Title.split(' ');
+  let line1 = '', line2 = '';
+  ctx.font = 'bold 42px "Arial Black", Arial, sans-serif';
+  for (const w of words) {
+    const test = line1 ? line1 + ' ' + w : w;
+    if (ctx.measureText(test).width > INFO_W) { line2 += (line2?' ':'')+w; }
+    else { line1 = test; }
+  }
+  ctx.fillText(_trunc(line1, INFO_W), INFO_X, INFO_Y + 52);
+  if (line2) ctx.fillText(_trunc(line2, INFO_W), INFO_X, INFO_Y + 104);
+  ctx.font = '400 18px Arial, sans-serif';
+  ctx.fillStyle = '#888'; ctx.letterSpacing = '1px';
+  ctx.fillText(picks[0]?.year ? String(picks[0].year) : '', INFO_X, INFO_Y + (line2 ? 138 : 90));
+
+  // ════════════════════════════════════
+  //  PICKS #2–5 — 2×2 GRID
+  // ════════════════════════════════════
+  const GRID_TOP  = HERO_H + 40;
+  const GRID_PAD  = 48;
+  const GRID_GAP  = 20;
+  const CELL_W    = (W - GRID_PAD*2 - GRID_GAP) / 2;
+  const POSTER_H  = Math.round(CELL_W * 1.46);
+  const LABEL_H   = 52;
+  const CELL_H    = POSTER_H + LABEL_H;
+  const GRID_ROWS = 2;
+
+  for (let i = 0; i < 4 && i + 1 < picks.length; i++) {
+    const col = i % 2, row = Math.floor(i / 2);
+    const px  = GRID_PAD + col * (CELL_W + GRID_GAP);
+    const py  = GRID_TOP + row * (CELL_H + GRID_GAP);
+    const img = posterImgs[i + 1];
+    const p   = picks[i + 1];
+
     // Shadow
     ctx.save();
-    ctx.shadowColor = 'rgba(0,0,0,0.85)'; ctx.shadowBlur = 30; ctx.shadowOffsetY = 12;
-    ctx.fillStyle = '#0c0c0c';
-    ctx.beginPath(); ctx.roundRect(x, y, pw, ph, R); ctx.fill();
+    ctx.shadowColor='rgba(0,0,0,0.7)'; ctx.shadowBlur=24; ctx.shadowOffsetY=10;
+    ctx.fillStyle='#111'; roundRect(px, py, CELL_W, POSTER_H, 12); ctx.fill();
     ctx.restore();
 
-    // Poster clip + draw
+    // Poster
     ctx.save();
-    ctx.beginPath(); ctx.roundRect(x, y, pw, ph, R); ctx.clip();
+    roundRect(px, py, CELL_W, POSTER_H, 12); ctx.clip();
     if (img) {
-      ctx.drawImage(img, x, y, pw, ph);
-      // bottom vignette on poster
-      const pv = ctx.createLinearGradient(x, y + ph * 0.55, x, y + ph);
-      pv.addColorStop(0, 'rgba(0,0,0,0)'); pv.addColorStop(1, 'rgba(0,0,0,0.6)');
-      ctx.fillStyle = pv; ctx.fillRect(x, y, pw, ph);
+      ctx.drawImage(img, px, py, CELL_W, POSTER_H);
+      // subtle bottom vignette
+      const pv = ctx.createLinearGradient(px, py+POSTER_H*.6, px, py+POSTER_H);
+      pv.addColorStop(0,'rgba(0,0,0,0)'); pv.addColorStop(1,'rgba(0,0,0,0.55)');
+      ctx.fillStyle=pv; ctx.fillRect(px,py,CELL_W,POSTER_H);
     } else {
-      ctx.fillStyle = '#1a1a1a'; ctx.fillRect(x, y, pw, ph);
-      ctx.font = '44px sans-serif'; ctx.textAlign = 'center';
-      ctx.fillText('🎬', x + pw/2, y + ph/2 + 16);
+      ctx.fillStyle='#1a1a1a'; ctx.fillRect(px,py,CELL_W,POSTER_H);
+      ctx.font='54px sans-serif'; ctx.textAlign='center';
+      ctx.fillText('🎬', px+CELL_W/2, py+POSTER_H/2+18);
     }
     ctx.restore();
 
-    // Poster edge highlight
-    ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.roundRect(x, y, pw, ph, R); ctx.stroke();
+    // Edge highlight
+    ctx.strokeStyle='rgba(255,255,255,0.06)'; ctx.lineWidth=1;
+    roundRect(px, py, CELL_W, POSTER_H, 12); ctx.stroke();
 
     // Rank badge
-    ctx.save();
-    ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 8;
-    ctx.fillStyle = '#f5a623';
-    ctx.beginPath(); ctx.roundRect(x + 8, y + 8, 44, 26, 7); ctx.fill();
-    ctx.restore();
-    ctx.font = 'bold 14px "Arial Black", Arial, sans-serif';
-    ctx.fillStyle = '#000'; ctx.letterSpacing = '0px'; ctx.textAlign = 'center';
-    ctx.fillText(`#${i + 1}`, x + 8 + 22, y + 26);
+    ctx.fillStyle='rgba(0,0,0,0.75)';
+    roundRect(px+8,py+8,44,28,8); ctx.fill();
+    ctx.strokeStyle='rgba(245,166,35,0.6)'; ctx.lineWidth=1;
+    roundRect(px+8,py+8,44,28,8); ctx.stroke();
+    ctx.font='bold 14px "Arial Black",Arial,sans-serif';
+    ctx.fillStyle='#f5a623'; ctx.letterSpacing='0px'; ctx.textAlign='center';
+    ctx.fillText('#'+(i+2), px+30, py+27);
 
-    // Title — single line, truncated
-    const ty = y + ph + 16;
-    ctx.font = 'bold 17px Arial, sans-serif';
-    ctx.fillStyle = '#dedede'; ctx.letterSpacing = '0px'; ctx.textAlign = 'center';
-    ctx.fillText(_truncate(picks[i].title || '', pw - 10), x + pw/2, ty);
-
-    // Year
-    ctx.font = '400 14px Arial, sans-serif';
-    ctx.fillStyle = '#474747';
-    ctx.fillText(picks[i].year || '', x + pw/2, ty + 20);
+    // Title below poster
+    ctx.textAlign='left';
+    ctx.font='bold 19px Arial,sans-serif';
+    ctx.fillStyle='#e0e0e0'; ctx.letterSpacing='0px';
+    ctx.fillText(_trunc(p.title||'', CELL_W-8), px+4, py+POSTER_H+26);
+    ctx.font='400 15px Arial,sans-serif';
+    ctx.fillStyle='#555';
+    ctx.fillText(p.year ? String(p.year) : '', px+4, py+POSTER_H+46);
   }
 
-  // ── Rows ──
-  for (let i = 0; i < 3; i++)
-    drawOnePoster(i,     R1X + i * (PW  + GAP), ROW1_Y, PW,  PH, imgs[i]);
-  for (let i = 0; i < 2; i++)
-    drawOnePoster(i + 3, R2X + i * (PW2 + GAP), ROW2_Y, PW2, PH, imgs[i + 3]);
+  // ════════════════════════════════════
+  //  FOOTER
+  // ════════════════════════════════════
+  const FOOTER_Y = GRID_TOP + GRID_ROWS*(CELL_H+GRID_GAP) - GRID_GAP + 36;
 
-  // ── Footer ──
-  ctx.strokeStyle = '#252525'; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(80, FOOTER_Y); ctx.lineTo(W/2 - 14, FOOTER_Y); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(W/2 + 14, FOOTER_Y); ctx.lineTo(W - 80, FOOTER_Y); ctx.stroke();
-  ctx.fillStyle = '#303030';
-  ctx.beginPath(); ctx.arc(W/2, FOOTER_Y, 3, 0, Math.PI*2); ctx.fill();
+  // Orange accent line
+  ctx.fillStyle='rgba(245,166,35,0.3)';
+  ctx.fillRect(GRID_PAD, FOOTER_Y, W-GRID_PAD*2, 1);
 
-  ctx.font = '400 18px Arial, sans-serif';
-  ctx.fillStyle = '#3a3a3a'; ctx.letterSpacing = '2px'; ctx.textAlign = 'center';
-  ctx.fillText('VOTE FOR YOUR FAVOURITES AT', W/2, FOOTER_Y + 30);
-
-  ctx.font = 'bold 24px "Arial Black", Arial, sans-serif';
-  ctx.fillStyle = '#f5a623'; ctx.letterSpacing = '0px';
-  ctx.fillText('p-movies.com', W/2, FOOTER_Y + 64);
+  ctx.textAlign='center'; ctx.letterSpacing='2px';
+  ctx.font='400 17px Arial,sans-serif'; ctx.fillStyle='#333';
+  ctx.fillText('CAST YOUR VOTES AT', W/2, FOOTER_Y+34);
+  ctx.font='bold 26px "Arial Black",Arial,sans-serif'; ctx.fillStyle='#f5a623'; ctx.letterSpacing='0px';
+  ctx.fillText('p-movies.com', W/2, FOOTER_Y+68);
 
   _picksCardDataUrl = canvas.toDataURL('image/png');
 }
@@ -7158,5 +7442,22 @@ if (IS_DEV) {
 // Boot
 loadTop100();
 </script>
+
+<!-- Weekly List Card Overlay -->
+<div class="weekly-overlay" id="weeklyOverlay" style="display:none" onclick="if(event.target.id==='weeklyOverlay')closeWeeklyCard()">
+  <div class="weekly-modal" id="weeklyModal">
+    <div class="weekly-modal-head">
+      <div>
+        <div class="weekly-modal-title">📋 The List This Week</div>
+        <div class="weekly-modal-sub" id="weeklyDateRange"></div>
+      </div>
+      <button class="weekly-close-btn" onclick="closeWeeklyCard()">✕</button>
+    </div>
+    <div class="weekly-modal-body" id="weeklyModalBody">
+      <div style="text-align:center;color:#444;padding:30px">Loading…</div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
