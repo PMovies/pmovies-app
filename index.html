@@ -8394,94 +8394,120 @@ async function _generateFOTDCard() {
   const myR  = parseFloat(localStorage.getItem(lsKey('pmovies_fotd_rating_' + _fotdToday)) || '0');
   const starsRow = n => { const f=Math.floor(n),h=(n-f)>=0.5?1:0; return '★'.repeat(f)+(h?'½':'')+('☆'.repeat(Math.max(0,5-f-h))); };
 
-  // Load images (crossOrigin already set in _loadImg — same as review card)
+  // Use w780 (not w1280) so browser doesn't serve the CORS-less cached version
   const [bdImg, postImg] = await Promise.all([
-    m.backdrop ? _loadImg('https://image.tmdb.org/t/p/w1280'+m.backdrop).catch(()=>null) : Promise.resolve(null),
+    m.backdrop ? _loadImg('https://image.tmdb.org/t/p/w780'+m.backdrop).catch(()=>null) : Promise.resolve(null),
     m.poster   ? _loadImg('https://image.tmdb.org/t/p/w342'+m.poster).catch(()=>null)   : Promise.resolve(null),
   ]);
 
-  // Canvas sized to match the popup card proportions (portrait)
-  const W = 1080, H = 1440;
+  // Scale factor: match the popup card (max-width 560px CSS → 1120px canvas = ×2)
+  const SCALE = 2;
+  const CARD_W_CSS = 560;
+  const BD_H_CSS   = 280;   // matches .fotd-backdrop height:280px
+  const W = CARD_W_CSS * SCALE;
+  const BD_H = BD_H_CSS * SCALE;
+
+  // Measure content height dynamically
   const canvas = document.createElement('canvas');
-  canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext('2d');
   function rr(x,y,w,h,r){ ctx.beginPath(); ctx.roundRect(x,y,w,h,r); }
 
-  // ── Card background ──
-  ctx.fillStyle = '#111'; ctx.fillRect(0,0,W,H);
+  // Pre-measure title to know total height
+  ctx.font = `bold ${38*SCALE}px Arial`;
+  const tw = W - 48*SCALE;
+  const titleWords = (m.title||'').split(' '); let tl1='', tl2='';
+  for(const w of titleWords){ const t=tl1?tl1+' '+w:w; if(ctx.measureText(t).width>tw){tl2+=(tl2?' ':'')+w;}else{tl1=t;} }
+  const titleLines = tl2 ? 2 : 1;
 
-  // ── Backdrop (top 38% — mirrors .fotd-backdrop height ratio) ──
-  const BD_H = Math.round(H * 0.38);
-  ctx.save(); rr(0,0,W,BD_H,0); ctx.clip();
+  const hasRatings = m.ratingCount > 0 && m.ratingTotal > 0;
+  const avg = hasRatings ? (m.ratingTotal / m.ratingCount).toFixed(1) : null;
+  const myR = parseFloat(localStorage.getItem(lsKey('pmovies_fotd_rating_' + _fotdToday)) || '0');
+  const starsRow = n => { const f=Math.floor(n),h=(n-f)>=0.5?1:0; return '★'.repeat(f)+(h?'½':'')+('☆'.repeat(Math.max(0,5-f-h))); };
+
+  // Content below backdrop (same as popup .fotd-content padding ~28px each side)
+  const PAD = 24*SCALE;
+  const eyebrowH = 20*SCALE, titleLineH = 46*SCALE, subH = 22*SCALE, boxH = avg ? 120*SCALE : 80*SCALE;
+  const footerH  = 52*SCALE;
+  const contentH = 28*SCALE + eyebrowH + 10*SCALE          // eyebrow
+                 + titleLines * titleLineH + 14*SCALE       // title
+                 + (myR > 0 ? subH + 10*SCALE : 0)          // "You rated"
+                 + 18*SCALE + boxH + 24*SCALE               // score box
+                 + footerH + 20*SCALE;                      // footer
+
+  const H = BD_H + contentH;
+  canvas.width = W; canvas.height = H;
+
+  function trunc(t,mw){ let s=t; while(s.length>0&&ctx.measureText(s+'…').width>mw)s=s.slice(0,-1); return s.length<t.length?s+'…':t; }
+
+  // ── Card background — exact match to popup (#111) ──
+  ctx.fillStyle = '#111111'; ctx.fillRect(0,0,W,H);
+
+  // ── Backdrop — same crop as CSS background-position:center 25% ──
+  ctx.save(); ctx.beginPath(); ctx.rect(0,0,W,BD_H); ctx.clip();
   if (bdImg) {
     const r = bdImg.width/bdImg.height;
     const dw = Math.max(W, BD_H*r), dh = Math.max(BD_H, W/r);
-    ctx.drawImage(bdImg, (W-dw)/2, (BD_H-dh)*0.25, dw, dh); // top-biased crop like background-position:center 25%
+    const dx = (W-dw)/2, dy = (BD_H-dh)*0.25;  // 25% vertical = background-position:center 25%
+    ctx.drawImage(bdImg, dx, dy, dw, dh);
   } else if (postImg) {
-    ctx.save(); ctx.filter='blur(28px)';
+    ctx.save(); ctx.filter='blur(30px)';
     ctx.drawImage(postImg,-60,-60,W+120,BD_H+120); ctx.restore();
-    ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(0,0,W,BD_H);
-  } else {
-    ctx.fillStyle='#1a1a1a'; ctx.fillRect(0,0,W,BD_H);
+    ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillRect(0,0,W,BD_H);
   }
-  // Gradient fade to card bg (mirrors .fotd-gradient)
-  const fade = ctx.createLinearGradient(0, BD_H*0.45, 0, BD_H);
-  fade.addColorStop(0,'rgba(17,17,17,0)'); fade.addColorStop(1,'rgba(17,17,17,1)');
-  ctx.fillStyle = fade; ctx.fillRect(0,0,W,BD_H);
+  // Gradient: linear-gradient(to top, #111 0%, rgba(0,0,0,.3) 60%, transparent 100%)
+  const g = ctx.createLinearGradient(0, BD_H, 0, 0);
+  g.addColorStop(0,    '#111111');
+  g.addColorStop(0.40, 'rgba(0,0,0,0.3)');
+  g.addColorStop(1,    'rgba(0,0,0,0)');
+  ctx.fillStyle = g; ctx.fillRect(0,0,W,BD_H);
   ctx.restore();
 
-  // Orange top accent line
-  ctx.fillStyle = '#f5a623'; ctx.fillRect(0,0,W,5);
+  // ── Content — exact same text styles as popup CSS ──
+  let cy = BD_H + 28*SCALE;
+  ctx.textAlign = 'center';
 
-  // ── Content area (mirrors .fotd-content padding) ──
-  const PAD = 64;
-  let cy = BD_H + 40;
+  // "⭐ FILM OF THE DAY" — .fotd-eyebrow: font-size:.75rem color:#f5a623 letter-spacing:.12em
+  ctx.font = `700 ${13*SCALE}px Arial`; ctx.letterSpacing = `${1.5*SCALE}px`; ctx.fillStyle = '#f5a623';
+  ctx.fillText('⭐  FILM OF THE DAY', W/2, cy + 13*SCALE); cy += eyebrowH + 10*SCALE;
 
-  // "⭐ FILM OF THE DAY" eyebrow
-  ctx.textAlign='center'; ctx.font='700 22px Arial'; ctx.letterSpacing='4px';
-  ctx.fillStyle='#f5a623'; ctx.fillText('⭐  FILM OF THE DAY', W/2, cy); cy += 54;
+  // Title — .fotd-title: font-size:1.9rem font-weight:800
+  ctx.font = `800 ${38*SCALE}px Arial`; ctx.letterSpacing = '0px'; ctx.fillStyle = '#ffffff';
+  ctx.fillText(trunc(tl1, tw), W/2, cy + 38*SCALE); cy += titleLineH;
+  if (tl2) { ctx.fillText(trunc(tl2, tw), W/2, cy + 38*SCALE); cy += titleLineH; }
+  cy += 14*SCALE;
 
-  // Title
-  ctx.font='bold 72px Arial'; ctx.letterSpacing='0px'; ctx.fillStyle='#fff';
-  const tw=W-PAD*2, words=(m.title||'').split(' '); let l1='',l2='';
-  for(const w of words){ const t=l1?l1+' '+w:w; if(ctx.measureText(t).width>tw){l2+=(l2?' ':'')+w;}else{l1=t;} }
-  function trunc(t,mw){ let s=t; while(s.length>0&&ctx.measureText(s+'…').width>mw)s=s.slice(0,-1); return s.length<t.length?s+'…':t; }
-  ctx.fillText(trunc(l1,tw), W/2, cy); cy += l2 ? 82 : 0;
-  if(l2){ ctx.fillText(trunc(l2,tw), W/2, cy); cy += 82; } else cy += 82;
+  // "You rated" — .fotd-meta: font-size:.82rem color:#666
+  if (myR > 0) {
+    ctx.font = `400 ${14*SCALE}px Arial`; ctx.letterSpacing = '0px'; ctx.fillStyle = '#666666';
+    ctx.fillText(`You rated:  ${starsRow(myR)}  ${myR}/5`, W/2, cy + 14*SCALE);
+    cy += subH + 10*SCALE;
+  }
 
-  // "You rated" line
-  ctx.font='400 32px Arial'; ctx.fillStyle='rgba(255,255,255,0.45)'; ctx.letterSpacing='0px';
-  const myRText = myR > 0 ? `You rated:  ${starsRow(myR)}  ${myR}/5` : '';
-  if(myRText) { ctx.fillText(myRText, W/2, cy); } cy += 60;
-
-  // ── Score box (mirrors .fotd-result) ──
-  const BX=PAD, BW=W-PAD*2, BY=cy, BH=avg ? 210 : 140;
-  ctx.fillStyle='rgba(255,255,255,0.055)'; rr(BX,BY,BW,BH,22); ctx.fill();
-  ctx.strokeStyle='rgba(255,255,255,0.07)'; ctx.lineWidth=1; rr(BX,BY,BW,BH,22); ctx.stroke();
+  // Score box — .fotd-result: background rgba(255,255,255,.06) border-radius:12px
+  const BX=PAD, BW=W-PAD*2, BY=cy;
+  ctx.fillStyle='rgba(255,255,255,0.06)'; rr(BX,BY,BW,boxH,12*SCALE); ctx.fill();
 
   if (avg) {
-    ctx.textAlign='center';
-    ctx.font='900 96px Arial'; ctx.fillStyle='#f5a623'; ctx.letterSpacing='-1px';
-    ctx.fillText(avg, W/2, BY+102);
-    ctx.font='34px Arial'; ctx.fillStyle='rgba(255,255,255,0.55)'; ctx.letterSpacing='2px';
-    ctx.fillText(starsRow(parseFloat(avg)), W/2, BY+148);
-    ctx.font='400 24px Arial'; ctx.fillStyle='rgba(255,255,255,0.28)'; ctx.letterSpacing='1px';
-    ctx.fillText(`community avg from ${m.ratingCount} voter${m.ratingCount!==1?'s':''}`, W/2, BY+188);
+    // avg number — .fotd-result-avg: font-size:2.2rem font-weight:900 color:#f5a623
+    ctx.font=`900 ${44*SCALE}px Arial`; ctx.letterSpacing='0px'; ctx.fillStyle='#f5a623';
+    ctx.fillText(avg, W/2, BY + 52*SCALE);
+    // stars — .fotd-result-stars: font-size:1rem
+    ctx.font=`${18*SCALE}px Arial`; ctx.fillStyle='rgba(255,255,255,0.55)'; ctx.letterSpacing=`${1*SCALE}px`;
+    ctx.fillText(starsRow(parseFloat(avg)), W/2, BY + 74*SCALE);
+    // label — .fotd-result-lbl: font-size:.75rem color:#666
+    ctx.font=`400 ${13*SCALE}px Arial`; ctx.fillStyle='#666666'; ctx.letterSpacing='0px';
+    ctx.fillText(`community avg from ${m.ratingCount} voter${m.ratingCount!==1?'s':''}`, W/2, BY + 96*SCALE);
   } else {
-    ctx.textAlign='center'; ctx.font='400 28px Arial'; ctx.fillStyle='rgba(255,255,255,0.2)'; ctx.letterSpacing='0px';
-    ctx.fillText('Be the first to rate!', W/2, BY+76);
+    ctx.font=`400 ${15*SCALE}px Arial`; ctx.fillStyle='rgba(255,255,255,0.25)';
+    ctx.fillText('Be the first to rate!', W/2, BY + boxH/2 + 8*SCALE);
   }
-  cy = BY + BH + 60;
+  cy = BY + boxH + 24*SCALE;
 
-  // ── PMOVIES footer ──
-  const fl=ctx.createLinearGradient(0,0,W,0);
-  fl.addColorStop(0,'rgba(245,166,35,0)'); fl.addColorStop(0.3,'rgba(245,166,35,0.3)');
-  fl.addColorStop(0.7,'rgba(245,166,35,0.3)'); fl.addColorStop(1,'rgba(245,166,35,0)');
-  ctx.fillStyle=fl; ctx.fillRect(0,cy,W,1); cy+=36;
-  ctx.textAlign='center'; ctx.font='400 22px Arial'; ctx.letterSpacing='3px'; ctx.fillStyle='rgba(255,255,255,0.2)';
-  ctx.fillText('RATE & DISCOVER AT', W/2, cy); cy+=40;
-  ctx.font='bold 34px Arial'; ctx.letterSpacing='1px'; ctx.fillStyle='#f5a623';
-  ctx.fillText('p-movies.com', W/2, cy);
+  // Footer — replaces share button
+  ctx.font=`400 ${11*SCALE}px Arial`; ctx.letterSpacing=`${1.5*SCALE}px`; ctx.fillStyle='rgba(255,255,255,0.25)';
+  ctx.fillText('RATE & DISCOVER AT', W/2, cy + 16*SCALE);
+  ctx.font=`700 ${18*SCALE}px Arial`; ctx.letterSpacing='0px'; ctx.fillStyle='#f5a623';
+  ctx.fillText('p-movies.com', W/2, cy + 40*SCALE);
 
   return canvas.toDataURL('image/png');
 }
