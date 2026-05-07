@@ -6298,24 +6298,26 @@ async function loadVoteFeed() {
   const bar   = document.getElementById('voteFeedBar');
   const track = document.getElementById('voteFeedTrack');
   if (!bar || !track) return;
-  // Show bar immediately with loading state
   bar.style.display = 'flex';
   track.innerHTML = '<div class="vote-feed-inner"><span class="vote-feed-item" style="opacity:.4">Loading recent votes…</span></div>';
   try {
-    const res  = await fetch(`${RTDB}/voteEvents.json?limitToLast=20`);
+    // Derive recent votes from communityVotes (sorted by lastVoted) — no separate path needed
+    const res  = await fetch(`${RTDB}/${dbPath('communityVotes')}.json`);
     const data = res.ok ? await res.json() : null;
     const events = data
-      ? Object.values(data).filter(e => e && e.ts && e.title).sort((a, b) => b.ts - a.ts).slice(0, 16)
+      ? Object.values(data)
+          .filter(e => e && e.lastVoted && e.title)
+          .sort((a, b) => b.lastVoted - a.lastVoted)
+          .slice(0, 16)
       : [];
     if (!events.length) {
-      // No events yet — show a subtle placeholder
       track.innerHTML = '<div class="vote-feed-inner"><span class="vote-feed-item" style="opacity:.45">No recent votes yet — cast yours to be first! 🎬</span><span class="vote-feed-item" style="opacity:.45">No recent votes yet — cast yours to be first! 🎬</span></div>';
       return;
     }
     const now   = Date.now();
     const items = events.map(e => {
-      const mins = Math.round((now - e.ts) / 60000);
-      const ago  = mins < 1 ? 'just now' : mins < 60 ? `${mins}m ago` : `${Math.round(mins/60)}h ago`;
+      const mins = Math.round((now - e.lastVoted) / 60000);
+      const ago  = mins < 1 ? 'just now' : mins < 60 ? `${mins}m ago` : mins < 1440 ? `${Math.round(mins/60)}h ago` : `${Math.round(mins/1440)}d ago`;
       return `<span class="vote-feed-item">🎬 <strong>${esc(e.title)}</strong><span class="vote-feed-ago">${ago}</span></span>`;
     });
     const inner = items.join('') + items.join(''); // duplicate for seamless loop
@@ -6340,16 +6342,25 @@ async function writeVoteEvent(title, poster) {
 ══════════════════════════════════════════════════════ */
 function checkRankAlerts(movies) {
   const snap   = getRankSnapshot();
+  const today  = new Date().toISOString().slice(0, 10);
+  const shownKey = lsKey('pmovies_alert_shown');
+  let shown = {};
+  try { shown = JSON.parse(localStorage.getItem(shownKey) || '{}'); } catch(e) {}
   const alerts = [];
   movies.forEach((m, i) => {
     const rank = i + 1;
     const prev = snap[m.id];
     if (!prev) return;
+    if (shown[m.id] === today) return; // already shown today — skip
     const diff = prev - rank; // positive = moved up
     if (Math.abs(diff) >= 10) alerts.push({ id:m.id, title:m.title, rank, prev, diff });
   });
   if (!alerts.length) return;
-  alerts.slice(0, 2).forEach((a, idx) => setTimeout(() => _showRankAlert(a), idx * 4500));
+  alerts.slice(0, 2).forEach((a, idx) => {
+    shown[a.id] = today;
+    setTimeout(() => _showRankAlert(a), idx * 4500);
+  });
+  localStorage.setItem(shownKey, JSON.stringify(shown));
 }
 
 function _showRankAlert(a) {
@@ -6409,40 +6420,14 @@ function _weeklyKeyHandler(e) { if (e.key === 'Escape') closeWeeklyCard(); }
 function _buildWeeklyCard() {
   const body    = document.getElementById('weeklyModalBody');
   const dateEl  = document.getElementById('weeklyDateRange');
-  const snap    = _getWeeklySnapshot();
   const current = _top100AllMovies;
   if (!current.length) { body.innerHTML = '<div style="text-align:center;color:#444;padding:30px">Load the Top 100 first</div>'; return; }
 
-  // Date range label
+  // Date label — always show current week
   const now = new Date();
-  if (snap && snap._savedAt) {
-    const from = new Date(snap._savedAt);
-    dateEl.textContent = `${from.toLocaleDateString('en-US',{month:'short',day:'numeric'})} – ${now.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
-  } else {
-    dateEl.textContent = now.toLocaleDateString('en-US',{month:'long',year:'numeric'});
-  }
-
-  // ── Movers vs weekly snapshot ──
-  const climbers = [], drops = [], newEntries = [];
-  const snapIsStale = snap && snap._savedAt && (Date.now() - snap._savedAt) > 12 * 3600 * 1000; // 12h+ old
-  if (snap && snapIsStale) {
-    current.forEach((m, i) => {
-      const rank = i + 1;
-      const prev = snap[m.id];
-      if (!prev) { newEntries.push({ ...m, rank }); return; }
-      const diff = prev.rank - rank; // positive = climbed
-      if (diff >= 3) climbers.push({ ...m, rank, diff, prevRank: prev.rank });
-      if (diff <= -3) drops.push({ ...m, rank, diff: Math.abs(diff), prevRank: prev.rank });
-    });
-    climbers.sort((a, b) => b.diff - a.diff);
-    drops.sort((a, b) => b.diff - a.diff);
-  }
-
-  // ── New to the list (firstVoted within last 14 days, not in snap) ──
-  const fourteenDaysAgo = Date.now() - 14 * 24 * 3600 * 1000;
-  const recentlyAdded = current.filter(m =>
-    m.firstVoted && m.firstVoted > fourteenDaysAgo && (!snap || !snap[m.id])
-  ).map((m, _, arr) => ({ ...m, rank: current.indexOf(m) + 1 }));
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - now.getDay()); // Sunday
+  dateEl.textContent = `${weekStart.toLocaleDateString('en-US',{month:'short',day:'numeric'})} – ${now.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
 
   function filmRow(m, badge, badgeClass, extra) {
     const poster = m.poster
@@ -6454,40 +6439,24 @@ function _buildWeeklyCard() {
 
   let html = '';
 
-  // Top movers (most exciting — show first if available)
-  if (climbers.length) {
-    html += `<div class="weekly-section-label">🚀 Top Climbers</div>`;
-    html += climbers.slice(0, 3).map(m =>
-      filmRow(m, `▲${m.diff}`, 'up', `was #${m.prevRank}`)
-    ).join('');
+  // ── New to the list (firstVoted within last 14 days) — consistent across all devices ──
+  const fourteenDaysAgo = Date.now() - 14 * 24 * 3600 * 1000;
+  const recentlyAdded = current
+    .filter(m => m.firstVoted && m.firstVoted > fourteenDaysAgo)
+    .map(m => ({ ...m, rank: current.indexOf(m) + 1 }))
+    .slice(0, 5);
+
+  if (recentlyAdded.length) {
+    html += `<div class="weekly-section-label">✨ New to the List</div>`;
+    html += recentlyAdded.map(m => filmRow(m, 'NEW', 'new', m.year || '')).join('');
   }
 
-  // Biggest drops
-  if (drops.length) {
-    html += `<div class="weekly-section-label">📉 Biggest Drops</div>`;
-    html += drops.slice(0, 3).map(m =>
-      filmRow(m, `▼${m.diff}`, 'down', `was #${m.prevRank}`)
-    ).join('');
-  }
-
-  // New entries (recently added films)
-  const newToShow = [...recentlyAdded, ...newEntries].slice(0, 5);
-  if (newToShow.length) {
-    html += `<div class="weekly-section-label">✨ New to the List (${newToShow.length})</div>`;
-    html += newToShow.map(m => filmRow(m, 'NEW', 'new', m.year || '')).join('');
-  }
-
-  // Top 5 — always shown, with vote counts
+  // ── Top 5 — always shown, with vote counts ──
   html += `<div class="weekly-section-label">🏆 Top 5 This Week</div>`;
   html += current.slice(0, 5).map((m, i) => {
     const votes = m.votes ? `${m.votes} vote${m.votes !== 1 ? 's' : ''}` : '';
     return filmRow(m, `#${i+1}`, 'rank', votes);
   }).join('');
-
-  // If no movers/drops/new at all, show a note
-  if (!climbers.length && !drops.length && !newToShow.length) {
-    html = `<div style="text-align:center;color:#555;padding:16px 0 8px;font-size:.85rem">Check back next week for movers & new entries!</div>` + html;
-  }
 
   html += `<div class="weekly-share-row"><button class="weekly-share-btn" onclick="_shareWeeklyCard()">Share This Week's List</button></div>`;
   body.innerHTML = html;
