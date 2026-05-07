@@ -7800,6 +7800,8 @@ const _J_PATH_ACCENT = {
 
 let _jState = { step:0, currentNode:null };
 let _jCache = {}; // "title_year" → poster_path
+let _jLastGatewayIdx = -1; // prevent back-to-back same Q1
+let _jGen = 0;             // incremented on each init; stale async runs bail out
 
 async function _jFetchPoster(film) {
   const key = `${film.title}_${film.year}`;
@@ -7816,17 +7818,31 @@ async function _jFetchPoster(film) {
 }
 
 async function _journeyInit() {
+  const gen = ++_jGen;           // stamp this run; any older async will see gen !== _jGen and bail
   _jState = { step:0, currentNode:null };
+
+  // Always clear stuck animation class so the cards are never left invisible
+  const cards = document.getElementById('journeyCards');
+  if (cards) cards.classList.remove('j-animating');
+
   const app = document.getElementById('journeyApp');
   app.style.setProperty('--j-accent', 'var(--orange)');
   app.style.background = '';
   document.getElementById('journeyResults').style.display  = 'none';
   document.getElementById('journeyQuestion').style.display = 'block';
-  const gw = _JOURNEY_GATEWAYS[Math.floor(Math.random() * _JOURNEY_GATEWAYS.length)];
-  await _jShowNode(gw);
+
+  // Pick a different gateway than the last one shown
+  let idx;
+  do { idx = Math.floor(Math.random() * _JOURNEY_GATEWAYS.length); }
+  while (_JOURNEY_GATEWAYS.length > 1 && idx === _jLastGatewayIdx);
+  _jLastGatewayIdx = idx;
+
+  if (gen !== _jGen) return;     // another init was triggered while we were setting up
+  await _jShowNode(_JOURNEY_GATEWAYS[idx], gen);
 }
 
-async function _jShowNode(node) {
+async function _jShowNode(node, gen) {
+  if (gen === undefined) gen = _jGen;   // called internally (e.g. from _journeyPick)
   _jState.currentNode = node;
   _jState.step++;
 
@@ -7834,6 +7850,7 @@ async function _jShowNode(node) {
   cards.classList.add('j-animating');
 
   const [pA, pB] = await Promise.all([ _jFetchPoster(node.a), _jFetchPoster(node.b) ]);
+  if (gen !== _jGen) return;            // a fresher init started while we awaited posters
 
   const imgA = document.getElementById('journeyPosterA');
   const imgB = document.getElementById('journeyPosterB');
@@ -7874,15 +7891,18 @@ async function _journeyPick(side) {
   const node    = _jState.currentNode;
   if (!node) return;
   const nextKey = side === 'a' ? node.ap : node.bp;
+  const gen     = _jGen;   // snapshot; stale if user hit "take again" before pick resolves
 
   // Shift accent mid-journey based on path taken
   const app = document.getElementById('journeyApp');
   if (_J_PATH_ACCENT[nextKey]) app.style.setProperty('--j-accent', _J_PATH_ACCENT[nextKey]);
 
   if (_JOURNEY_RESULTS[nextKey]) {
+    if (gen !== _jGen) return;
     await _jShowResults(nextKey);
   } else if (_JOURNEY_NODES[nextKey]) {
-    await _jShowNode(_JOURNEY_NODES[nextKey]);
+    if (gen !== _jGen) return;
+    await _jShowNode(_JOURNEY_NODES[nextKey], gen);
   }
 }
 
