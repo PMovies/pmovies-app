@@ -7750,34 +7750,142 @@ loadTop100();
    FOR YOU — CINEMATIC TASTE JOURNEY
 ══════════════════════════════════════════════════ */
 // Film pairs use title+year — poster fetched via TMDB search (no hardcoded IDs)
+// Q1 — 6 gateways; anti-repeat logic picks a different one each reset
 const _JOURNEY_GATEWAYS = [
-  { a:{title:'The Ring',           year:2002}, b:{title:'Past Lives',                         year:2023}, ap:'dark', bp:'emotional' },
-  { a:{title:'Mad Max: Fury Road', year:2015}, b:{title:'Eternal Sunshine of the Spotless Mind', year:2004}, ap:'dark', bp:'emotional' },
-  { a:{title:'Joker',              year:2019}, b:{title:'La La Land',                        year:2016}, ap:'dark', bp:'emotional' },
+  { a:{title:'The Ring',              year:2002}, b:{title:'Past Lives',                          year:2023}, ap:'dark', bp:'emotional' },
+  { a:{title:'Mad Max: Fury Road',    year:2015}, b:{title:'Eternal Sunshine of the Spotless Mind',year:2004}, ap:'dark', bp:'emotional' },
+  { a:{title:'Joker',                 year:2019}, b:{title:'La La Land',                         year:2016}, ap:'dark', bp:'emotional' },
+  { a:{title:'Requiem for a Dream',   year:2000}, b:{title:'Amélie',                             year:2001}, ap:'dark', bp:'emotional' },
+  { a:{title:'Parasite',              year:2019}, b:{title:'Notting Hill',                       year:1999}, ap:'dark', bp:'emotional' },
+  { a:{title:'Whiplash',              year:2014}, b:{title:'500 Days of Summer',                 year:2009}, ap:'dark', bp:'emotional' },
 ];
 
-// Q2 nodes (broad direction)
-// Q3 nodes (sub-direction)
-// Q4 nodes (final refinement — leads to result)
+// Q2–Q4 nodes: each has ap/bp paths + multiple film pairs (one picked at random per journey)
 const _JOURNEY_NODES = {
-  // Q2
-  dark:             { a:{title:'Hereditary',          year:2018}, b:{title:'Prisoners',              year:2013}, ap:'supernatural',    bp:'human_dark'      },
-  emotional:        { a:{title:'Marriage Story',      year:2019}, b:{title:'About Time',             year:2013}, ap:'heartbreak',      bp:'hopeful'         },
-  // Q3
-  supernatural:     { a:{title:'Midsommar',           year:2019}, b:{title:'The Others',             year:2001}, ap:'folk_path',       bp:'gothic_path'     },
-  human_dark:       { a:{title:'Zodiac',              year:2007}, b:{title:'Nightcrawler',           year:2014}, ap:'procedural_path', bp:'noir_path'       },
-  heartbreak:       { a:{title:'Blue Valentine',      year:2010}, b:{title:'Manchester by the Sea',  year:2016}, ap:'rawbreak_path',   bp:'grief_path'      },
-  hopeful:          { a:{title:'Before Sunrise',      year:1995}, b:{title:'Lost in Translation',    year:2003}, ap:'romance_path',    bp:'melancholy_path' },
-  // Q4 — none of these films appear in Q1-Q3
-  folk_path:        { a:{title:'The Witch',           year:2015}, b:{title:'Raw',                    year:2016}, ap:'folk_horror',     bp:'folk_horror'     },
-  gothic_path:      { a:{title:'The Shining',         year:1980}, b:{title:'Crimson Peak',           year:2015}, ap:'gothic_horror',   bp:'gothic_horror'   },
-  procedural_path:  { a:{title:'Se7en',               year:1995}, b:{title:'Memories of Murder',     year:2003}, ap:'dark_procedural', bp:'dark_procedural' },
-  noir_path:        { a:{title:'Drive',               year:2011}, b:{title:'No Country for Old Men', year:2007}, ap:'neo_noir',        bp:'neo_noir'        },
-  rawbreak_path:    { a:{title:'Aftersun',            year:2022}, b:{title:'Normal People',          year:2020}, ap:'raw_heartbreak',  bp:'raw_heartbreak'  },
-  grief_path:       { a:{title:'A Ghost Story',       year:2017}, b:{title:'Rabbit Hole',            year:2010}, ap:'quiet_grief',     bp:'quiet_grief'     },
-  romance_path:     { a:{title:'Call Me by Your Name',year:2017}, b:{title:'Portrait of a Lady on Fire',year:2019}, ap:'romance',    bp:'romance'         },
-  melancholy_path:  { a:{title:'Her',                 year:2013}, b:{title:'Paterson',               year:2016}, ap:'melancholy',      bp:'melancholy'      },
+  // ── Q2 ──
+  dark: {
+    ap:'supernatural', bp:'human_dark',
+    pairs:[
+      { a:{title:'Hereditary',          year:2018}, b:{title:'Prisoners',              year:2013} },
+      { a:{title:'The Babadook',        year:2014}, b:{title:'Gone Girl',              year:2014} },
+      { a:{title:'Get Out',             year:2017}, b:{title:'American Psycho',        year:2000} },
+    ]
+  },
+  emotional: {
+    ap:'heartbreak', bp:'hopeful',
+    pairs:[
+      { a:{title:'Marriage Story',      year:2019}, b:{title:'About Time',             year:2013} },
+      { a:{title:'Atonement',           year:2007}, b:{title:'Little Miss Sunshine',   year:2006} },
+      { a:{title:'Moonlight',           year:2016}, b:{title:'Silver Linings Playbook',year:2012} },
+    ]
+  },
+  // ── Q3 ──
+  supernatural: {
+    ap:'folk_path', bp:'gothic_path',
+    pairs:[
+      { a:{title:'Midsommar',           year:2019}, b:{title:'The Others',             year:2001} },
+      { a:{title:'Annihilation',        year:2018}, b:{title:'Suspiria',               year:2018} },
+      { a:{title:'Men',                 year:2022}, b:{title:"The Devil's Backbone",   year:2001} },
+    ]
+  },
+  human_dark: {
+    ap:'procedural_path', bp:'noir_path',
+    pairs:[
+      { a:{title:'Zodiac',              year:2007}, b:{title:'Nightcrawler',           year:2014} },
+      { a:{title:'The Girl with the Dragon Tattoo', year:2011}, b:{title:'Heat',       year:1995} },
+      { a:{title:'Sicario',             year:2015}, b:{title:'Chinatown',              year:1974} },
+    ]
+  },
+  heartbreak: {
+    ap:'rawbreak_path', bp:'grief_path',
+    pairs:[
+      { a:{title:'Blue Valentine',      year:2010}, b:{title:'Manchester by the Sea',  year:2016} },
+      { a:{title:'Closer',              year:2004}, b:{title:'In the Bedroom',         year:2001} },
+      { a:{title:'A Single Man',        year:2009}, b:{title:'We Need to Talk About Kevin', year:2011} },
+    ]
+  },
+  hopeful: {
+    ap:'romance_path', bp:'melancholy_path',
+    pairs:[
+      { a:{title:'Before Sunrise',      year:1995}, b:{title:'Lost in Translation',    year:2003} },
+      { a:{title:'Moonrise Kingdom',    year:2012}, b:{title:'Somewhere',              year:2010} },
+      { a:{title:'Notting Hill',        year:1999}, b:{title:'Submarine',              year:2010} },
+    ]
+  },
+  // ── Q4 — both ap/bp reach the same result; variety purely for freshness ──
+  folk_path: {
+    ap:'folk_horror', bp:'folk_horror',
+    pairs:[
+      { a:{title:'The Witch',           year:2015}, b:{title:'Raw',                    year:2016} },
+      { a:{title:'Lamb',                year:2021}, b:{title:'The Ritual',             year:2017} },
+      { a:{title:'Talk to Me',          year:2022}, b:{title:'Haunt',                  year:2019} },
+    ]
+  },
+  gothic_path: {
+    ap:'gothic_horror', bp:'gothic_horror',
+    pairs:[
+      { a:{title:'The Shining',         year:1980}, b:{title:'Crimson Peak',           year:2015} },
+      { a:{title:'Stoker',              year:2013}, b:{title:'The Innocents',          year:1961} },
+      { a:{title:'Byzantium',           year:2012}, b:{title:'What Lies Beneath',      year:2000} },
+    ]
+  },
+  procedural_path: {
+    ap:'dark_procedural', bp:'dark_procedural',
+    pairs:[
+      { a:{title:'Se7en',               year:1995}, b:{title:'Memories of Murder',     year:2003} },
+      { a:{title:'Spotlight',           year:2015}, b:{title:"All the President's Men",year:1976} },
+      { a:{title:'The Conversation',    year:1974}, b:{title:'Knives Out',             year:2019} },
+    ]
+  },
+  noir_path: {
+    ap:'neo_noir', bp:'neo_noir',
+    pairs:[
+      { a:{title:'Drive',               year:2011}, b:{title:'No Country for Old Men', year:2007} },
+      { a:{title:'Blade Runner',        year:1982}, b:{title:'L.A. Confidential',      year:1997} },
+      { a:{title:'Mulholland Drive',    year:2001}, b:{title:'The Long Goodbye',       year:1973} },
+    ]
+  },
+  rawbreak_path: {
+    ap:'raw_heartbreak', bp:'raw_heartbreak',
+    pairs:[
+      { a:{title:'Aftersun',            year:2022}, b:{title:'Normal People',          year:2020} },
+      { a:{title:'Short Term 12',       year:2013}, b:{title:'Never Rarely Sometimes Always', year:2020} },
+      { a:{title:'Beginners',           year:2010}, b:{title:'Pieces of a Woman',      year:2020} },
+    ]
+  },
+  grief_path: {
+    ap:'quiet_grief', bp:'quiet_grief',
+    pairs:[
+      { a:{title:'A Ghost Story',       year:2017}, b:{title:'Rabbit Hole',            year:2010} },
+      { a:{title:'Wild',                year:2014}, b:{title:'The Tree of Life',        year:2011} },
+      { a:{title:'Ordinary People',     year:1980}, b:{title:'The Remains of the Day', year:1993} },
+    ]
+  },
+  romance_path: {
+    ap:'romance', bp:'romance',
+    pairs:[
+      { a:{title:'Call Me by Your Name',year:2017}, b:{title:'Portrait of a Lady on Fire', year:2019} },
+      { a:{title:'Brokeback Mountain',  year:2005}, b:{title:'In the Mood for Love',   year:2000} },
+      { a:{title:'Carol',               year:2015}, b:{title:'The Shape of Water',     year:2017} },
+    ]
+  },
+  melancholy_path: {
+    ap:'melancholy', bp:'melancholy',
+    pairs:[
+      { a:{title:'Her',                 year:2013}, b:{title:'Paterson',               year:2016} },
+      { a:{title:'Frances Ha',           year:2012}, b:{title:'Columbus',               year:2017} },
+      { a:{title:'20th Century Women',  year:2016}, b:{title:'The Virgin Suicides',    year:1999} },
+    ]
+  },
 };
+
+// Resolves a node key → flat {a, b, ap, bp} with a randomly chosen film pair
+function _jResolveNode(key) {
+  const node = _JOURNEY_NODES[key];
+  if (!node) return null;
+  const pair = node.pairs[Math.floor(Math.random() * node.pairs.length)];
+  return { a: pair.a, b: pair.b, ap: node.ap, bp: node.bp };
+}
 
 const _JOURNEY_RESULTS = {
   folk_horror:     { accent:'#c0392b', bg:'rgba(80,0,0,.18)',   label:'Visceral & Primal',   tagline:'You want it to get under your skin and stay there.',                    genres:'27',       kw:'251853',  vMin:300,  vMax:80000,  r:6.8 },
@@ -7900,9 +8008,12 @@ async function _journeyPick(side) {
   if (_JOURNEY_RESULTS[nextKey]) {
     if (gen !== _jGen) return;
     await _jShowResults(nextKey);
-  } else if (_JOURNEY_NODES[nextKey]) {
-    if (gen !== _jGen) return;
-    await _jShowNode(_JOURNEY_NODES[nextKey], gen);
+  } else {
+    const nextNode = _jResolveNode(nextKey);
+    if (nextNode) {
+      if (gen !== _jGen) return;
+      await _jShowNode(nextNode, gen);
+    }
   }
 }
 
