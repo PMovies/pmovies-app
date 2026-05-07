@@ -1144,7 +1144,8 @@
   .pmovies-tab.active { background:var(--orange); border-color:var(--orange); color:#000; }
   .pmovies-tab .tab-icon { font-size:1.25rem; line-height:1; }
   .tab-panel { display:none; }
-  .tab-panel.active { display:block; animation:tabFadeIn .25s ease; }
+  .tab-panel.active { display:block; }
+  .tab-panel.tab-entering { animation:tabFadeIn .25s ease; }
   @keyframes tabFadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
   @media(max-width:600px){ .pmovies-tab .tab-icon { font-size:1rem; } .pmovies-tab { font-size:.6rem; padding:10px 3px 8px; letter-spacing:.03em; } .pmovies-tabs { gap:4px; } }
 
@@ -1441,8 +1442,8 @@
       <div class="journey-cards" id="journeyCards">
         <div class="journey-card" id="journeyCardA" onclick="_journeyPick('a')">
           <div class="journey-poster-wrap">
-            <img id="journeyPosterA" src="" alt="" />
-            <div class="journey-poster-ph" id="journeyPhA">🎬</div>
+            <img id="journeyPosterA" src="" alt="" style="display:none" />
+            <div class="journey-poster-ph" id="journeyPhA" style="display:flex">🎬</div>
           </div>
           <div class="journey-card-info">
             <div class="journey-card-title" id="journeyTitleA"></div>
@@ -1452,8 +1453,8 @@
         <div class="journey-or">or</div>
         <div class="journey-card" id="journeyCardB" onclick="_journeyPick('b')">
           <div class="journey-poster-wrap">
-            <img id="journeyPosterB" src="" alt="" />
-            <div class="journey-poster-ph" id="journeyPhB">🎬</div>
+            <img id="journeyPosterB" src="" alt="" style="display:none" />
+            <div class="journey-poster-ph" id="journeyPhB" style="display:flex">🎬</div>
           </div>
           <div class="journey-card-info">
             <div class="journey-card-title" id="journeyTitleB"></div>
@@ -4197,7 +4198,15 @@
   /* ══ TAB NAVIGATION ══ */
   function switchTab(name) {
     ['discover','foryou','community','lists','series','backed'].forEach(t => {
-      document.getElementById('tab-panel-' + t).classList.toggle('active', t === name);
+      const panel = document.getElementById('tab-panel-' + t);
+      const wasActive = panel.classList.contains('active');
+      panel.classList.toggle('active', t === name);
+      // Only play enter animation when actually switching to this tab (not re-clicking it)
+      if (t === name && !wasActive) {
+        panel.classList.remove('tab-entering');
+        void panel.offsetWidth; // force reflow to restart animation
+        panel.classList.add('tab-entering');
+      }
       document.getElementById('tab-btn-' + t).classList.toggle('active', t === name);
     });
     if (name === 'foryou') { _journeyInit(); }
@@ -7957,7 +7966,11 @@ async function _jShowNode(node, gen) {
   const cards = document.getElementById('journeyCards');
   cards.classList.add('j-animating');
 
-  const [pA, pB] = await Promise.all([ _jFetchPoster(node.a), _jFetchPoster(node.b) ]);
+  const _timeout = t => new Promise(res => setTimeout(() => res(null), t));
+  const [pA, pB] = await Promise.all([
+    Promise.race([ _jFetchPoster(node.a), _timeout(4000) ]),
+    Promise.race([ _jFetchPoster(node.b), _timeout(4000) ]),
+  ]);
   if (gen !== _jGen) return;            // a fresher init started while we awaited posters
 
   const imgA = document.getElementById('journeyPosterA');
