@@ -1272,7 +1272,7 @@
   .journey-film-title { font-family:'Montserrat',sans-serif; font-size:.72rem; font-weight:700; color:#ddd; line-height:1.35; margin-bottom:4px; }
   .journey-film-meta { font-size:.66rem; color:#555; }
   .journey-again-wrap { text-align:center; margin-top:48px; }
-  .journey-again-btn { background:none; border:1px solid #2a2a2a; color:#666; font-family:'Montserrat',sans-serif; font-size:.72rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; padding:12px 28px; border-radius:40px; cursor:pointer; transition:all .25s; }
+  .journey-again-btn { background:none; border:1px solid #2a2a2a; color:#666; font-family:'Montserrat',Arial,sans-serif; font-size:.72rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; padding:12px 28px; border-radius:40px; cursor:pointer; transition:all .25s; unicode-bidi:plaintext; }
   .journey-again-btn:hover { border-color:var(--j-accent); color:var(--j-accent); box-shadow:0 0 18px rgba(245,166,35,.12); }
   .journey-loading { text-align:center; color:#444; padding:48px 20px; font-size:.82rem; letter-spacing:.08em; font-family:'Montserrat',sans-serif; }
   @media(max-width:600px){
@@ -1471,7 +1471,7 @@
       </div>
       <div class="journey-films-grid" id="journeyFilmsGrid"></div>
       <div class="journey-again-wrap">
-        <button class="journey-again-btn" onclick="_journeyReset()">Take the journey again &nbsp;↺</button>
+        <button class="journey-again-btn" onclick="_journeyReset()">Take the journey again &nbsp;&#8635;</button>
       </div>
     </div>
 
@@ -7744,43 +7744,70 @@ loadTop100();
 /* ══════════════════════════════════════════════════
    FOR YOU — CINEMATIC TASTE JOURNEY
 ══════════════════════════════════════════════════ */
+// Film pairs use title+year — poster fetched via TMDB search (no hardcoded IDs)
 const _JOURNEY_GATEWAYS = [
-  { a:{id:22980,  title:'The Ring',              year:2002}, b:{id:976573, title:'Past Lives',                        year:2023}, ap:'dark', bp:'emotional' },
-  { a:{id:76341,  title:'Mad Max: Fury Road',    year:2015}, b:{id:38142,  title:'Eternal Sunshine of the Spotless Mind', year:2004}, ap:'dark', bp:'emotional' },
-  { a:{id:475557, title:'Joker',                 year:2019}, b:{id:313369, title:'La La Land',                       year:2016}, ap:'dark', bp:'emotional' },
+  { a:{title:'The Ring',           year:2002}, b:{title:'Past Lives',                         year:2023}, ap:'dark', bp:'emotional' },
+  { a:{title:'Mad Max: Fury Road', year:2015}, b:{title:'Eternal Sunshine of the Spotless Mind', year:2004}, ap:'dark', bp:'emotional' },
+  { a:{title:'Joker',              year:2019}, b:{title:'La La Land',                        year:2016}, ap:'dark', bp:'emotional' },
 ];
 
+// Q2 nodes (broad direction)
+// Q3 nodes (sub-direction)
+// Q4 nodes (final refinement — leads to result)
 const _JOURNEY_NODES = {
-  dark:        { a:{id:493922,title:'Hereditary',          year:2018}, b:{id:146233,title:'Prisoners',               year:2013}, ap:'supernatural', bp:'human_dark'   },
-  emotional:   { a:{id:492188,title:'Marriage Story',      year:2019}, b:{id:153518,title:'About Time',              year:2013}, ap:'heartbreak',   bp:'hopeful'       },
-  supernatural:{ a:{id:530385,title:'Midsommar',           year:2019}, b:{id:1930,  title:'The Others',              year:2001}, ap:'folk_horror',  bp:'gothic_horror' },
-  human_dark:  { a:{id:10909, title:'Zodiac',              year:2007}, b:{id:242582,title:'Nightcrawler',            year:2014}, ap:'dark_procedural',bp:'neo_noir'    },
-  heartbreak:  { a:{id:45610, title:'Blue Valentine',      year:2010}, b:{id:334541,title:'Manchester by the Sea',   year:2016}, ap:'raw_heartbreak',bp:'quiet_grief'  },
-  hopeful:     { a:{id:11970, title:'Before Sunrise',      year:1995}, b:{id:153,   title:'Lost in Translation',     year:2003}, ap:'romance',      bp:'melancholy'    },
+  // Q2
+  dark:             { a:{title:'Hereditary',          year:2018}, b:{title:'Prisoners',              year:2013}, ap:'supernatural',    bp:'human_dark'      },
+  emotional:        { a:{title:'Marriage Story',      year:2019}, b:{title:'About Time',             year:2013}, ap:'heartbreak',      bp:'hopeful'         },
+  // Q3
+  supernatural:     { a:{title:'Midsommar',           year:2019}, b:{title:'The Others',             year:2001}, ap:'folk_path',       bp:'gothic_path'     },
+  human_dark:       { a:{title:'Zodiac',              year:2007}, b:{title:'Nightcrawler',           year:2014}, ap:'procedural_path', bp:'noir_path'       },
+  heartbreak:       { a:{title:'Blue Valentine',      year:2010}, b:{title:'Manchester by the Sea',  year:2016}, ap:'rawbreak_path',   bp:'grief_path'      },
+  hopeful:          { a:{title:'Before Sunrise',      year:1995}, b:{title:'Lost in Translation',    year:2003}, ap:'romance_path',    bp:'melancholy_path' },
+  // Q4 — none of these films appear in Q1-Q3
+  folk_path:        { a:{title:'The Witch',           year:2015}, b:{title:'Raw',                    year:2016}, ap:'folk_horror',     bp:'folk_horror'     },
+  gothic_path:      { a:{title:'The Shining',         year:1980}, b:{title:'Crimson Peak',           year:2015}, ap:'gothic_horror',   bp:'gothic_horror'   },
+  procedural_path:  { a:{title:'Se7en',               year:1995}, b:{title:'Memories of Murder',     year:2003}, ap:'dark_procedural', bp:'dark_procedural' },
+  noir_path:        { a:{title:'Drive',               year:2011}, b:{title:'No Country for Old Men', year:2007}, ap:'neo_noir',        bp:'neo_noir'        },
+  rawbreak_path:    { a:{title:'Aftersun',            year:2022}, b:{title:'Normal People',          year:2020}, ap:'raw_heartbreak',  bp:'raw_heartbreak'  },
+  grief_path:       { a:{title:'A Ghost Story',       year:2017}, b:{title:'Rabbit Hole',            year:2010}, ap:'quiet_grief',     bp:'quiet_grief'     },
+  romance_path:     { a:{title:'Call Me by Your Name',year:2017}, b:{title:'Portrait of a Lady on Fire',year:2019}, ap:'romance',    bp:'romance'         },
+  melancholy_path:  { a:{title:'Her',                 year:2013}, b:{title:'Paterson',               year:2016}, ap:'melancholy',      bp:'melancholy'      },
 };
 
 const _JOURNEY_RESULTS = {
-  folk_horror:     { accent:'#c0392b', bg:'rgba(80,0,0,.18)',     label:'Visceral & Primal',    tagline:'You want it to get under your skin and stay there.',              genres:'27',       kw:'251853',  vMin:300,  vMax:80000,  r:6.8 },
-  gothic_horror:   { accent:'#8e44ad', bg:'rgba(50,0,80,.18)',    label:'Atmospheric Dread',    tagline:'The kind of fear that builds slowly and never fully leaves.',     genres:'27',       kw:'10264',   vMin:300,  vMax:80000,  r:6.8 },
-  dark_procedural: { accent:'#2980b9', bg:'rgba(0,20,50,.22)',    label:'Cold & Obsessive',     tagline:'You need the truth. Even when the truth is the most disturbing thing.', genres:'53,9648', kw:'158717', vMin:3000, vMax:200000, r:7.0 },
-  neo_noir:        { accent:'#e67e22', bg:'rgba(40,10,0,.22)',    label:'Dark & Relentless',    tagline:'Morality is a luxury you can\'t afford tonight.',                 genres:'53,80',    kw:'',        vMin:500,  vMax:80000,  r:7.0 },
-  raw_heartbreak:  { accent:'#e74c3c', bg:'rgba(60,0,15,.2)',     label:'Raw & Honest',         tagline:'You want to feel it all. Even the parts that hurt.',             genres:'18,10749', kw:'',        vMin:500,  vMax:100000, r:7.2 },
-  quiet_grief:     { accent:'#95a5a6', bg:'rgba(5,10,18,.25)',    label:'Still & Aching',       tagline:'Some things don\'t heal. They just become part of who you are.',  genres:'18',       kw:'',        vMin:200,  vMax:70000,  r:7.2 },
-  romance:         { accent:'#f39c12', bg:'rgba(30,15,0,.2)',     label:'Tender & Real',        tagline:'You believe in the kind of love that changes everything.',        genres:'10749,18', kw:'',        vMin:3000, vMax:200000, r:7.3 },
-  melancholy:      { accent:'#1abc9c', bg:'rgba(0,20,18,.22)',    label:'Distant & Beautiful',  tagline:'Connection feels close and impossibly far at the same time.',     genres:'18',       kw:'',        vMin:500,  vMax:70000,  r:7.3 },
+  folk_horror:     { accent:'#c0392b', bg:'rgba(80,0,0,.18)',   label:'Visceral & Primal',   tagline:'You want it to get under your skin and stay there.',                    genres:'27',       kw:'251853',  vMin:300,  vMax:80000,  r:6.8 },
+  gothic_horror:   { accent:'#8e44ad', bg:'rgba(50,0,80,.18)',  label:'Atmospheric Dread',   tagline:'The kind of fear that builds slowly and never fully leaves.',           genres:'27',       kw:'10264',   vMin:300,  vMax:80000,  r:6.8 },
+  dark_procedural: { accent:'#2980b9', bg:'rgba(0,20,50,.22)',  label:'Cold & Obsessive',    tagline:'You need the truth. Even when the truth is the most disturbing thing.', genres:'53,9648',  kw:'158717',  vMin:3000, vMax:200000, r:7.0 },
+  neo_noir:        { accent:'#e67e22', bg:'rgba(40,10,0,.22)',  label:'Dark & Relentless',   tagline:"Morality is a luxury you can't afford tonight.",                        genres:'53,80',    kw:'',        vMin:500,  vMax:80000,  r:7.0 },
+  raw_heartbreak:  { accent:'#e74c3c', bg:'rgba(60,0,15,.2)',   label:'Raw & Honest',        tagline:'You want to feel it all. Even the parts that hurt.',                   genres:'18,10749', kw:'',        vMin:500,  vMax:100000, r:7.2 },
+  quiet_grief:     { accent:'#95a5a6', bg:'rgba(5,10,18,.25)',  label:'Still & Aching',      tagline:"Some things don't heal. They just become part of who you are.",        genres:'18',       kw:'',        vMin:200,  vMax:70000,  r:7.2 },
+  romance:         { accent:'#f39c12', bg:'rgba(30,15,0,.2)',   label:'Tender & Real',       tagline:'You believe in the kind of love that changes everything.',             genres:'10749,18', kw:'',        vMin:3000, vMax:200000, r:7.3 },
+  melancholy:      { accent:'#1abc9c', bg:'rgba(0,20,18,.22)',  label:'Distant & Beautiful', tagline:'Connection feels close and impossibly far at the same time.',          genres:'18',       kw:'',        vMin:500,  vMax:70000,  r:7.3 },
 };
 
-let _jState  = { step:0, currentNode:null };
-let _jCache  = {}; // tmdb_id → poster_path
+// Accent colour per broad path for mid-journey shifts
+const _J_PATH_ACCENT = {
+  dark:'#e74c3c', supernatural:'#c0392b', human_dark:'#e67e22',
+  folk_path:'#c0392b', gothic_path:'#8e44ad', procedural_path:'#2980b9', noir_path:'#e67e22',
+  emotional:'#f39c12', heartbreak:'#e74c3c', hopeful:'#f39c12',
+  rawbreak_path:'#e74c3c', grief_path:'#95a5a6', romance_path:'#f39c12', melancholy_path:'#1abc9c',
+};
 
-async function _jFetchPoster(id) {
-  if (_jCache[id] !== undefined) return _jCache[id];
+let _jState = { step:0, currentNode:null };
+let _jCache = {}; // "title_year" → poster_path
+
+async function _jFetchPoster(film) {
+  const key = `${film.title}_${film.year}`;
+  if (_jCache[key] !== undefined) return _jCache[key];
   try {
-    const r = await fetch(`${TMDB}/movie/${id}?api_key=${getKey()}`);
+    const q = encodeURIComponent(film.title);
+    const r = await fetch(`${TMDB}/search/movie?api_key=${getKey()}&query=${q}&year=${film.year}&page=1`);
     const d = r.ok ? await r.json() : {};
-    _jCache[id] = d.poster_path || null;
-    return _jCache[id];
-  } catch(e) { _jCache[id] = null; return null; }
+    const results = d.results || [];
+    const match = results.find(m => m.title.toLowerCase() === film.title.toLowerCase()) || results[0];
+    _jCache[key] = match?.poster_path || null;
+    return _jCache[key];
+  } catch(e) { _jCache[key] = null; return null; }
 }
 
 async function _journeyInit() {
@@ -7801,7 +7828,7 @@ async function _jShowNode(node) {
   const cards = document.getElementById('journeyCards');
   cards.classList.add('j-animating');
 
-  const [pA, pB] = await Promise.all([ _jFetchPoster(node.a.id), _jFetchPoster(node.b.id) ]);
+  const [pA, pB] = await Promise.all([ _jFetchPoster(node.a), _jFetchPoster(node.b) ]);
 
   const imgA = document.getElementById('journeyPosterA');
   const imgB = document.getElementById('journeyPosterB');
@@ -7820,11 +7847,18 @@ async function _jShowNode(node) {
 
   _jRenderDots();
 
+  // Subtle background tint follows the accent during questions
+  const app = document.getElementById('journeyApp');
+  const acc = getComputedStyle(app).getPropertyValue('--j-accent').trim() || '#f5a623';
+  app.style.background = _jState.step > 1
+    ? `radial-gradient(ellipse at 50% 0%, ${acc}14 0%, transparent 65%)`
+    : '';
+
   requestAnimationFrame(() => requestAnimationFrame(() => cards.classList.remove('j-animating')));
 }
 
 function _jRenderDots() {
-  const total = 3;
+  const total = 4;
   document.getElementById('journeyDots').innerHTML =
     Array.from({length:total}, (_,i) =>
       `<span class="j-dot${i < _jState.step-1 ? ' j-dot-done' : i === _jState.step-1 ? ' j-dot-active' : ''}"></span>`
@@ -7836,13 +7870,9 @@ async function _journeyPick(side) {
   if (!node) return;
   const nextKey = side === 'a' ? node.ap : node.bp;
 
-  // Shift accent mid-journey
+  // Shift accent mid-journey based on path taken
   const app = document.getElementById('journeyApp');
-  if (nextKey === 'dark' || nextKey === 'supernatural' || nextKey === 'human_dark') {
-    app.style.setProperty('--j-accent', '#e74c3c');
-  } else if (nextKey === 'emotional' || nextKey === 'heartbreak' || nextKey === 'hopeful') {
-    app.style.setProperty('--j-accent', '#f39c12');
-  }
+  if (_J_PATH_ACCENT[nextKey]) app.style.setProperty('--j-accent', _J_PATH_ACCENT[nextKey]);
 
   if (_JOURNEY_RESULTS[nextKey]) {
     await _jShowResults(nextKey);
