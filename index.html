@@ -7963,7 +7963,21 @@ async function _generateMoodCard() {
     const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
     return `rgba(${r},${g},${b},${a})`;
   }
-  function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.roundRect(x,y,w,h,r); }
+  // Manual roundRect polyfill — ctx.roundRect is Chrome 99+ only
+  function roundRect(x,y,w,h,r){
+    r = Math.min(r, w/2, h/2);
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.lineTo(x+w-r, y);
+    ctx.arcTo(x+w, y, x+w, y+r, r);
+    ctx.lineTo(x+w, y+h-r);
+    ctx.arcTo(x+w, y+h, x+w-r, y+h, r);
+    ctx.lineTo(x+r, y+h);
+    ctx.arcTo(x, y+h, x, y+h-r, r);
+    ctx.lineTo(x, y+r);
+    ctx.arcTo(x, y, x+r, y, r);
+    ctx.closePath();
+  }
   function wrapText(text, x, y, maxW, lineH) {
     const words = text.split(' ');
     let line = '';
@@ -8108,7 +8122,33 @@ async function _generateMoodCard() {
   ctx.fillText('P-MOVIES.COM', W/2, footerY);
   ctx.restore();
 
-  return canvas.toDataURL('image/png');
+  // Guard against tainted canvas (CORS) — fallback to text-only card
+  try {
+    return canvas.toDataURL('image/png');
+  } catch(e) {
+    // Redraw without images
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle = '#080808'; ctx.fillRect(0,0,W,H);
+    const glow2 = ctx.createRadialGradient(W/2,0,0,W/2,0,W*0.75);
+    glow2.addColorStop(0, hex2rgba(cfg.accent,0.22)); glow2.addColorStop(1,'rgba(8,8,8,0)');
+    ctx.fillStyle = glow2; ctx.fillRect(0,0,W,H*0.6);
+    ctx.fillStyle = cfg.accent; ctx.fillRect(0,0,W,6);
+    ctx.textAlign = 'center';
+    ctx.font = '800 16px Arial, sans-serif'; ctx.fillStyle = cfg.accent;
+    ctx.fillText('PMOVIES', W/2, 72);
+    ctx.font = '600 13px Arial, sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.fillText('RIGHT NOW · FOR YOU', W/2, 148);
+    const lfs = cfg.label.length > 14 ? 74 : 86;
+    ctx.font = `900 ${lfs}px Arial, sans-serif`; ctx.fillStyle = cfg.accent;
+    ctx.shadowColor = hex2rgba(cfg.accent,0.35); ctx.shadowBlur = 40;
+    ctx.fillText(cfg.label.toUpperCase(), W/2, 270);
+    ctx.shadowBlur = 0;
+    ctx.font = 'italic 400 26px Arial, sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    wrapText(`"${cfg.tagline}"`, W/2, 360, W-160, 38);
+    ctx.font = '700 18px Arial, sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.18)';
+    ctx.fillText('P-MOVIES.COM', W/2, H-52);
+    return canvas.toDataURL('image/png');
+  }
 }
 
 async function _shareMoodCard() {
