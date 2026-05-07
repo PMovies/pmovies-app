@@ -1233,6 +1233,54 @@
   .admin-list-row-meta { font-size:.7rem; color:#555; margin-top:2px; }
   .admin-del-btn { background:none; border:1px solid #2a2a2a; color:#555; border-radius:8px; padding:5px 12px; cursor:pointer; font-size:.7rem; font-family:'Montserrat',sans-serif; font-weight:700; transition:all .2s; flex-shrink:0; }
   .admin-del-btn:hover { border-color:#ff4444; color:#ff4444; }
+
+  /* ── FOR YOU — JOURNEY ── */
+  #journeyApp { --j-accent: var(--orange); min-height:70vh; padding:40px 0 60px; transition:background 1s ease; border-radius:16px; }
+  .journey-intro { text-align:center; margin-bottom:44px; }
+  .journey-eyebrow { font-family:'Montserrat',sans-serif; font-size:.58rem; letter-spacing:.22em; text-transform:uppercase; color:var(--j-accent); margin-bottom:10px; transition:color .6s; }
+  .journey-heading { font-family:'Montserrat',sans-serif; font-size:clamp(1.6rem,4vw,2.4rem); font-weight:900; color:#fff; margin:0 0 10px; }
+  .journey-subhead { font-size:.85rem; color:#555; margin:0; }
+  .journey-cards { display:flex; align-items:stretch; justify-content:center; gap:0; flex-wrap:wrap; }
+  .journey-card { flex:0 0 220px; max-width:260px; cursor:pointer; border-radius:14px; overflow:hidden; background:#111; border:2px solid #1c1c1c; transition:transform .22s, border-color .22s, box-shadow .22s; position:relative; }
+  .journey-card:hover { transform:translateY(-6px) scale(1.02); border-color:var(--j-accent); box-shadow:0 12px 40px rgba(0,0,0,.5), 0 0 0 1px var(--j-accent); }
+  .journey-poster-wrap { position:relative; aspect-ratio:2/3; overflow:hidden; background:#0d0d0d; }
+  .journey-poster-wrap img { width:100%; height:100%; object-fit:cover; display:block; transition:opacity .3s; }
+  .journey-poster-ph { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:2.5rem; color:#333; }
+  .journey-card-info { padding:14px 14px 16px; }
+  .journey-card-title { font-family:'Montserrat',sans-serif; font-weight:800; font-size:.82rem; color:#eee; line-height:1.3; margin-bottom:4px; }
+  .journey-card-year { font-size:.72rem; color:#555; }
+  .journey-or { display:flex; align-items:center; justify-content:center; padding:0 28px; font-family:'Montserrat',sans-serif; font-size:.7rem; font-weight:700; letter-spacing:.15em; color:#333; text-transform:uppercase; flex-shrink:0; }
+  .journey-dots { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:36px; }
+  .j-dot { width:7px; height:7px; border-radius:50%; background:#222; transition:background .4s, transform .3s; }
+  .j-dot-active { background:var(--j-accent); transform:scale(1.3); }
+  .j-dot-done { background:#3a3a3a; }
+  /* card fade transition */
+  .j-fade { opacity:0; transform:translateY(10px); transition:opacity .25s, transform .25s; }
+  .journey-cards.j-animating .journey-card { opacity:0; transform:translateY(14px); }
+  /* results */
+  .journey-result-header { text-align:center; padding:20px 20px 36px; }
+  .journey-result-label { font-family:'Montserrat',sans-serif; font-size:clamp(1.2rem,3.5vw,1.9rem); font-weight:900; color:var(--j-accent); letter-spacing:.04em; text-transform:uppercase; margin-bottom:12px; transition:color .6s; }
+  .journey-result-tagline { font-size:.9rem; color:#888; max-width:480px; margin:0 auto 10px; line-height:1.6; font-style:italic; }
+  .journey-result-now { font-family:'Montserrat',sans-serif; font-size:.65rem; letter-spacing:.2em; text-transform:uppercase; color:#3a3a3a; margin-top:6px; }
+  .journey-films-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:16px; padding:0 4px 10px; max-width:900px; margin:0 auto; }
+  .journey-film-card { background:#111; border-radius:12px; overflow:hidden; cursor:pointer; border:1px solid #1c1c1c; transition:transform .2s, border-color .2s, box-shadow .2s; opacity:0; transform:translateY(12px); }
+  .journey-film-card.j-card-in { opacity:1; transform:none; transition:opacity .4s, transform .4s, border-color .2s, box-shadow .2s; }
+  .journey-film-card:hover { transform:translateY(-4px); border-color:var(--j-accent); box-shadow:0 8px 24px rgba(0,0,0,.4); }
+  .journey-film-card img { width:100%; aspect-ratio:2/3; object-fit:cover; display:block; }
+  .journey-film-ph { aspect-ratio:2/3; display:flex; align-items:center; justify-content:center; font-size:2rem; color:#333; background:#0d0d0d; }
+  .journey-film-info { padding:10px 10px 12px; }
+  .journey-film-title { font-family:'Montserrat',sans-serif; font-size:.72rem; font-weight:700; color:#ddd; line-height:1.35; margin-bottom:4px; }
+  .journey-film-meta { font-size:.66rem; color:#555; }
+  .journey-again-wrap { text-align:center; margin-top:48px; }
+  .journey-again-btn { background:none; border:1px solid #2a2a2a; color:#666; font-family:'Montserrat',sans-serif; font-size:.72rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; padding:12px 28px; border-radius:40px; cursor:pointer; transition:all .25s; }
+  .journey-again-btn:hover { border-color:var(--j-accent); color:var(--j-accent); box-shadow:0 0 18px rgba(245,166,35,.12); }
+  .journey-loading { text-align:center; color:#444; padding:48px 20px; font-size:.82rem; letter-spacing:.08em; font-family:'Montserrat',sans-serif; }
+  @media(max-width:600px){
+    .journey-cards { gap:16px; }
+    .journey-card { flex:0 0 calc(50% - 28px); max-width:none; }
+    .journey-or { padding:0; width:100%; order:3; margin-top:-8px; font-size:.65rem; }
+    .journey-films-grid { grid-template-columns:repeat(2,1fr); }
+  }
 </style>
 </head>
 <body>
@@ -1269,8 +1317,8 @@
   <button class="pmovies-tab active" id="tab-btn-discover" onclick="switchTab('discover')" role="tab">
     <span class="tab-icon">🎬</span>Discover
   </button>
-  <button class="pmovies-tab" id="tab-btn-reviews" onclick="switchTab('reviews')" role="tab">
-    <span class="tab-icon">▶️</span>Reviews
+  <button class="pmovies-tab" id="tab-btn-foryou" onclick="switchTab('foryou')" role="tab">
+    <span class="tab-icon">✦</span>For You
   </button>
   <button class="pmovies-tab" id="tab-btn-community" onclick="switchTab('community')" role="tab">
     <span class="tab-icon">👥</span>Community
@@ -1378,53 +1426,57 @@
 
 </div><!-- /tab-panel-discover -->
 
-<div class="tab-panel" id="tab-panel-reviews">
+<div class="tab-panel" id="tab-panel-foryou">
+  <div id="journeyApp">
 
-  <!-- PMOVIES REVIEWS -->
-  <div class="yt-section" id="ytSection">
-    <div class="yt-header">
-      <div class="yt-title-block"><h2>From <em>PMovies</em></h2><p>Latest reviews from the channel</p></div>
-      <div class="yt-badge"><span class="yt-dot"></span> LIVE FROM YOUTUBE</div>
-    </div>
-    <div id="ytContent"></div>
-  </div><!-- /ytSection -->
-
-  <!-- LETTERBOXD WRITTEN REVIEWS -->
-  <div class="section-wrap" id="lbSection">
-    <div class="lb-header">
-      <div class="lb-title-block">
-        <h2>WRITTEN <em>REVIEWS</em></h2>
-        <p>Ahmed's picks from Letterboxd</p>
+    <!-- QUESTION PHASE -->
+    <div id="journeyQuestion">
+      <div class="journey-intro">
+        <div class="journey-eyebrow">Let's discover together</div>
+        <h2 class="journey-heading">Who are you today?</h2>
+        <p class="journey-subhead">Pick the one that pulls you in right now.</p>
       </div>
-      <a class="lb-badge-link" href="https://letterboxd.com/Pastoo" target="_blank">
-        <svg viewBox="0 0 100 100" width="18" height="18" fill="currentColor"><path d="M50 0C22.4 0 0 22.4 0 50s22.4 50 50 50 50-22.4 50-50S77.6 0 50 0zm0 90C27.9 90 10 72.1 10 50S27.9 10 50 10s40 17.9 40 40S72.1 90 50 90z"/><path d="M35 30h10v40H35zm20 0h10v40H55z"/></svg>
-        Letterboxd
-      </a>
+      <div class="journey-cards" id="journeyCards">
+        <div class="journey-card" id="journeyCardA" onclick="_journeyPick('a')">
+          <div class="journey-poster-wrap">
+            <img id="journeyPosterA" src="" alt="" />
+            <div class="journey-poster-ph" id="journeyPhA">🎬</div>
+          </div>
+          <div class="journey-card-info">
+            <div class="journey-card-title" id="journeyTitleA"></div>
+            <div class="journey-card-year"  id="journeyYearA"></div>
+          </div>
+        </div>
+        <div class="journey-or">or</div>
+        <div class="journey-card" id="journeyCardB" onclick="_journeyPick('b')">
+          <div class="journey-poster-wrap">
+            <img id="journeyPosterB" src="" alt="" />
+            <div class="journey-poster-ph" id="journeyPhB">🎬</div>
+          </div>
+          <div class="journey-card-info">
+            <div class="journey-card-title" id="journeyTitleB"></div>
+            <div class="journey-card-year"  id="journeyYearB"></div>
+          </div>
+        </div>
+      </div>
+      <div class="journey-dots" id="journeyDots"></div>
     </div>
-    <div id="lbContent"></div>
-  </div>
 
-  <!-- FRIENDS LETTERBOXD REVIEWS -->
-  <div class="section-wrap" id="friendsSection">
-    <div class="lb-header">
-      <div class="lb-title-block">
-        <h2>FRIENDS <em>REVIEWS</em></h2>
-        <p>What the community is watching on Letterboxd</p>
+    <!-- RESULTS PHASE -->
+    <div id="journeyResults" style="display:none">
+      <div class="journey-result-header">
+        <div class="journey-result-label" id="journeyLabel"></div>
+        <div class="journey-result-tagline" id="journeyTagline"></div>
+        <div class="journey-result-now">Right now, for you.</div>
+      </div>
+      <div class="journey-films-grid" id="journeyFilmsGrid"></div>
+      <div class="journey-again-wrap">
+        <button class="journey-again-btn" onclick="_journeyReset()">Take the journey again &nbsp;↺</button>
       </div>
     </div>
-    <div class="friends-refresh-row">
-      <span class="friends-count-label" id="friendsCountLabel">Loading…</span>
-      <button class="friends-refresh-btn" id="friendsRefreshBtn" onclick="loadFriendsReviews(true)">
-        <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
-        Refresh
-      </button>
-    </div>
-    <div id="friendsGrid" class="friends-grid">
-      <div class="yt-loading">Fetching friends' reviews…</div>
-    </div>
-  </div>
 
-</div><!-- /tab-panel-reviews -->
+  </div>
+</div><!-- /tab-panel-foryou -->
 
 <div class="tab-panel" id="tab-panel-community">
 
@@ -4139,10 +4191,11 @@
 
   /* ══ TAB NAVIGATION ══ */
   function switchTab(name) {
-    ['discover','reviews','community','lists','series','backed'].forEach(t => {
+    ['discover','foryou','community','lists','series','backed'].forEach(t => {
       document.getElementById('tab-panel-' + t).classList.toggle('active', t === name);
       document.getElementById('tab-btn-' + t).classList.toggle('active', t === name);
     });
+    if (name === 'foryou') { _journeyInit(); }
     if (name === 'backed') { renderBackedTab(); }
     if (name === 'series') {
       if (nowAiringHeroes.length) {
@@ -4164,6 +4217,8 @@
       ? 'Your TV &nbsp;·&nbsp; Your Mood &nbsp;·&nbsp; Your Series'
       : name === 'backed'
       ? 'Discover &nbsp;·&nbsp; Support &nbsp;·&nbsp; Share the Love'
+      : name === 'foryou'
+      ? 'Let\'s discover together &nbsp;·&nbsp; who are you today?'
       : 'Your Cinema &nbsp;·&nbsp; Your Mood &nbsp;·&nbsp; Your Film';
     window.scrollTo({ top: 0, behavior: 'smooth' });
     history.replaceState(null, '', '#' + name);
@@ -4349,7 +4404,7 @@
   // Restore tab from URL hash on load — MUST be after all tab data/functions are defined
   (function() {
     const hash = location.hash.replace('#', '');
-    if (['discover','reviews','community','lists','series','backed'].includes(hash)) switchTab(hash);
+    if (['discover','foryou','community','lists','series','backed'].includes(hash)) switchTab(hash);
   })();
 
   /* ══ FRIENDS LETTERBOXD REVIEWS ══ */
@@ -7684,6 +7739,180 @@ if (IS_DEV) {
 
 // Boot
 loadTop100();
+
+
+/* ══════════════════════════════════════════════════
+   FOR YOU — CINEMATIC TASTE JOURNEY
+══════════════════════════════════════════════════ */
+const _JOURNEY_GATEWAYS = [
+  { a:{id:22980,  title:'The Ring',              year:2002}, b:{id:976573, title:'Past Lives',                        year:2023}, ap:'dark', bp:'emotional' },
+  { a:{id:76341,  title:'Mad Max: Fury Road',    year:2015}, b:{id:38142,  title:'Eternal Sunshine of the Spotless Mind', year:2004}, ap:'dark', bp:'emotional' },
+  { a:{id:475557, title:'Joker',                 year:2019}, b:{id:313369, title:'La La Land',                       year:2016}, ap:'dark', bp:'emotional' },
+];
+
+const _JOURNEY_NODES = {
+  dark:        { a:{id:493922,title:'Hereditary',          year:2018}, b:{id:146233,title:'Prisoners',               year:2013}, ap:'supernatural', bp:'human_dark'   },
+  emotional:   { a:{id:492188,title:'Marriage Story',      year:2019}, b:{id:153518,title:'About Time',              year:2013}, ap:'heartbreak',   bp:'hopeful'       },
+  supernatural:{ a:{id:530385,title:'Midsommar',           year:2019}, b:{id:1930,  title:'The Others',              year:2001}, ap:'folk_horror',  bp:'gothic_horror' },
+  human_dark:  { a:{id:10909, title:'Zodiac',              year:2007}, b:{id:242582,title:'Nightcrawler',            year:2014}, ap:'dark_procedural',bp:'neo_noir'    },
+  heartbreak:  { a:{id:45610, title:'Blue Valentine',      year:2010}, b:{id:334541,title:'Manchester by the Sea',   year:2016}, ap:'raw_heartbreak',bp:'quiet_grief'  },
+  hopeful:     { a:{id:11970, title:'Before Sunrise',      year:1995}, b:{id:153,   title:'Lost in Translation',     year:2003}, ap:'romance',      bp:'melancholy'    },
+};
+
+const _JOURNEY_RESULTS = {
+  folk_horror:     { accent:'#c0392b', bg:'rgba(80,0,0,.18)',     label:'Visceral & Primal',    tagline:'You want it to get under your skin and stay there.',              genres:'27',       kw:'251853',  vMin:300,  vMax:80000,  r:6.8 },
+  gothic_horror:   { accent:'#8e44ad', bg:'rgba(50,0,80,.18)',    label:'Atmospheric Dread',    tagline:'The kind of fear that builds slowly and never fully leaves.',     genres:'27',       kw:'10264',   vMin:300,  vMax:80000,  r:6.8 },
+  dark_procedural: { accent:'#2980b9', bg:'rgba(0,20,50,.22)',    label:'Cold & Obsessive',     tagline:'You need the truth. Even when the truth is the most disturbing thing.', genres:'53,9648', kw:'158717', vMin:3000, vMax:200000, r:7.0 },
+  neo_noir:        { accent:'#e67e22', bg:'rgba(40,10,0,.22)',    label:'Dark & Relentless',    tagline:'Morality is a luxury you can\'t afford tonight.',                 genres:'53,80',    kw:'',        vMin:500,  vMax:80000,  r:7.0 },
+  raw_heartbreak:  { accent:'#e74c3c', bg:'rgba(60,0,15,.2)',     label:'Raw & Honest',         tagline:'You want to feel it all. Even the parts that hurt.',             genres:'18,10749', kw:'',        vMin:500,  vMax:100000, r:7.2 },
+  quiet_grief:     { accent:'#95a5a6', bg:'rgba(5,10,18,.25)',    label:'Still & Aching',       tagline:'Some things don\'t heal. They just become part of who you are.',  genres:'18',       kw:'',        vMin:200,  vMax:70000,  r:7.2 },
+  romance:         { accent:'#f39c12', bg:'rgba(30,15,0,.2)',     label:'Tender & Real',        tagline:'You believe in the kind of love that changes everything.',        genres:'10749,18', kw:'',        vMin:3000, vMax:200000, r:7.3 },
+  melancholy:      { accent:'#1abc9c', bg:'rgba(0,20,18,.22)',    label:'Distant & Beautiful',  tagline:'Connection feels close and impossibly far at the same time.',     genres:'18',       kw:'',        vMin:500,  vMax:70000,  r:7.3 },
+};
+
+let _jState  = { step:0, currentNode:null };
+let _jCache  = {}; // tmdb_id → poster_path
+
+async function _jFetchPoster(id) {
+  if (_jCache[id] !== undefined) return _jCache[id];
+  try {
+    const r = await fetch(`${TMDB}/movie/${id}?api_key=${getKey()}`);
+    const d = r.ok ? await r.json() : {};
+    _jCache[id] = d.poster_path || null;
+    return _jCache[id];
+  } catch(e) { _jCache[id] = null; return null; }
+}
+
+async function _journeyInit() {
+  _jState = { step:0, currentNode:null };
+  const app = document.getElementById('journeyApp');
+  app.style.setProperty('--j-accent', 'var(--orange)');
+  app.style.background = '';
+  document.getElementById('journeyResults').style.display  = 'none';
+  document.getElementById('journeyQuestion').style.display = 'block';
+  const gw = _JOURNEY_GATEWAYS[Math.floor(Math.random() * _JOURNEY_GATEWAYS.length)];
+  await _jShowNode(gw);
+}
+
+async function _jShowNode(node) {
+  _jState.currentNode = node;
+  _jState.step++;
+
+  const cards = document.getElementById('journeyCards');
+  cards.classList.add('j-animating');
+
+  const [pA, pB] = await Promise.all([ _jFetchPoster(node.a.id), _jFetchPoster(node.b.id) ]);
+
+  const imgA = document.getElementById('journeyPosterA');
+  const imgB = document.getElementById('journeyPosterB');
+  const phA  = document.getElementById('journeyPhA');
+  const phB  = document.getElementById('journeyPhB');
+
+  if (pA) { imgA.src = `https://image.tmdb.org/t/p/w342${pA}`; imgA.style.display='block'; phA.style.display='none'; }
+  else    { imgA.style.display='none'; phA.style.display='flex'; }
+  if (pB) { imgB.src = `https://image.tmdb.org/t/p/w342${pB}`; imgB.style.display='block'; phB.style.display='none'; }
+  else    { imgB.style.display='none'; phB.style.display='flex'; }
+
+  document.getElementById('journeyTitleA').textContent = node.a.title;
+  document.getElementById('journeyYearA').textContent  = node.a.year;
+  document.getElementById('journeyTitleB').textContent = node.b.title;
+  document.getElementById('journeyYearB').textContent  = node.b.year;
+
+  _jRenderDots();
+
+  requestAnimationFrame(() => requestAnimationFrame(() => cards.classList.remove('j-animating')));
+}
+
+function _jRenderDots() {
+  const total = 3;
+  document.getElementById('journeyDots').innerHTML =
+    Array.from({length:total}, (_,i) =>
+      `<span class="j-dot${i < _jState.step-1 ? ' j-dot-done' : i === _jState.step-1 ? ' j-dot-active' : ''}"></span>`
+    ).join('');
+}
+
+async function _journeyPick(side) {
+  const node    = _jState.currentNode;
+  if (!node) return;
+  const nextKey = side === 'a' ? node.ap : node.bp;
+
+  // Shift accent mid-journey
+  const app = document.getElementById('journeyApp');
+  if (nextKey === 'dark' || nextKey === 'supernatural' || nextKey === 'human_dark') {
+    app.style.setProperty('--j-accent', '#e74c3c');
+  } else if (nextKey === 'emotional' || nextKey === 'heartbreak' || nextKey === 'hopeful') {
+    app.style.setProperty('--j-accent', '#f39c12');
+  }
+
+  if (_JOURNEY_RESULTS[nextKey]) {
+    await _jShowResults(nextKey);
+  } else if (_JOURNEY_NODES[nextKey]) {
+    await _jShowNode(_JOURNEY_NODES[nextKey]);
+  }
+}
+
+async function _jShowResults(key) {
+  const cfg = _JOURNEY_RESULTS[key];
+  const app = document.getElementById('journeyApp');
+  app.style.setProperty('--j-accent', cfg.accent);
+  app.style.background = `radial-gradient(ellipse at 50% 0%, ${cfg.bg} 0%, transparent 70%)`;
+
+  document.getElementById('journeyQuestion').style.display = 'none';
+  const res = document.getElementById('journeyResults');
+  res.style.display = 'block';
+  document.getElementById('journeyLabel').textContent   = cfg.label;
+  document.getElementById('journeyTagline').textContent = cfg.tagline;
+
+  const grid = document.getElementById('journeyFilmsGrid');
+  grid.innerHTML = '<div class="journey-loading">Finding your films…</div>';
+
+  try {
+    const page = Math.ceil(Math.random() * 3);
+    let url = `${TMDB}/discover/movie?api_key=${getKey()}&sort_by=vote_average.desc&vote_count.gte=${cfg.vMin}&vote_count.lte=${cfg.vMax}&vote_average.gte=${cfg.r}&with_genres=${cfg.genres}&page=${page}`;
+    if (cfg.kw) url += `&with_keywords=${cfg.kw}`;
+    const r    = await fetch(url);
+    const data = r.ok ? await r.json() : null;
+    let films  = (data?.results || []).filter(f => f.poster_path);
+    // Shuffle, take 7
+    films = films.sort(() => Math.random() - 0.5).slice(0, 7);
+
+    if (!films.length) {
+      // Fallback: drop keyword filter
+      const r2   = await fetch(`${TMDB}/discover/movie?api_key=${getKey()}&sort_by=vote_average.desc&vote_count.gte=${cfg.vMin}&vote_count.lte=${cfg.vMax}&vote_average.gte=${cfg.r}&with_genres=${cfg.genres}&page=1`);
+      const d2   = r2.ok ? await r2.json() : null;
+      films = ((d2?.results||[]).filter(f=>f.poster_path)).sort(()=>Math.random()-.5).slice(0,7);
+    }
+
+    if (!films.length) { grid.innerHTML = '<div class="journey-loading">No films found — take the journey again.</div>'; return; }
+
+    grid.innerHTML = films.map(f => {
+      const yr  = f.release_date ? f.release_date.slice(0,4) : '';
+      const rat = f.vote_average ? `★ ${f.vote_average.toFixed(1)}` : '';
+      return `<div class="journey-film-card" onclick='openModal(${JSON.stringify(f)})'>
+        <img src="https://image.tmdb.org/t/p/w342${f.poster_path}" alt="${esc(f.title)}" loading="lazy"/>
+        <div class="journey-film-info">
+          <div class="journey-film-title">${esc(f.title)}</div>
+          <div class="journey-film-meta">${yr}${yr && rat ? ' · ' : ''}${rat}</div>
+        </div>
+      </div>`;
+    }).join('');
+
+    setTimeout(() => {
+      grid.querySelectorAll('.journey-film-card').forEach((el,i) => {
+        setTimeout(() => el.classList.add('j-card-in'), i * 90);
+      });
+    }, 60);
+
+  } catch(e) {
+    grid.innerHTML = '<div class="journey-loading">Something went wrong — try the journey again.</div>';
+  }
+}
+
+function _journeyReset() {
+  _journeyInit();
+  const panel = document.getElementById('tab-panel-foryou');
+  if (panel) window.scrollTo({ top: panel.offsetTop - 80, behavior:'smooth' });
+}
 
 
 /* ══════════════════════════════════════════════════
