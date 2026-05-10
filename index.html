@@ -1257,6 +1257,7 @@
   .posters-lightbox-info{text-align:center;width:100%;}
   .posters-lightbox-movie{font-size:1rem;font-weight:800;color:#fff;}
   .posters-lightbox-artist{font-size:.8rem;color:#666;margin-top:2px;}
+  .posters-lightbox-note{font-size:.78rem;color:#888;margin-top:8px;font-style:italic;line-height:1.5;max-width:400px;margin-left:auto;margin-right:auto;}
   .posters-lightbox-actions{display:flex;gap:10px;justify-content:center;margin-top:12px;flex-wrap:wrap;}
   .poster-action-btn{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:20px;color:#ccc;font-size:.78rem;padding:8px 18px;cursor:pointer;transition:all .18s;font-family:'Montserrat',sans-serif;font-weight:700;}
   .poster-action-btn:hover{border-color:#555;color:#fff;}
@@ -2081,6 +2082,7 @@
     <div class="posters-lightbox-info">
       <div class="posters-lightbox-movie" id="postersLightboxMovie"></div>
       <div class="posters-lightbox-artist" id="postersLightboxArtist"></div>
+      <div class="posters-lightbox-note" id="postersLightboxNote" style="display:none"></div>
       <div class="posters-lightbox-actions">
         <button class="poster-action-btn" id="postersLightboxLike" onclick="postersLightboxToggleLike()">♡ <span id="postersLightboxLikeCount">0</span></button>
         <button class="poster-action-btn" id="postersLightboxDownload" onclick="postersDownload()">↓ Download</button>
@@ -9627,7 +9629,7 @@ function posterCardHTML(key, p) {
   return `
     <div class="poster-card" id="pcard-${key}">
       <img src="${p.cloudinaryUrl}" alt="${esc(p.movie)} poster by ${esc(p.artistName)}" loading="lazy"
-           onclick="postersOpenLightbox('${key}','${esc(p.cloudinaryUrl)}','${esc(p.movie)}','${p.year}','${esc(p.artistName)}',${p.likes||0})" />
+           onclick="postersOpenLightbox('${key}','${esc(p.cloudinaryUrl)}','${esc(p.movie)}','${p.year}','${esc(p.artistName)}',${p.likes||0},'${esc(p.note||'')}')" />
       <div class="poster-card-info">
         <div class="poster-card-movie">${esc(p.movie)} <span style="color:#555;font-weight:400">(${p.year})</span></div>
         <div class="poster-card-artist">by ${esc(p.artistName)}</div>
@@ -9769,11 +9771,18 @@ async function postersSubmit() {
 }
 
 /* ── Lightbox ───────────────────────────────────── */
-function postersOpenLightbox(key, url, movie, year, artist, likes) {
+function postersOpenLightbox(key, url, movie, year, artist, likes, note) {
   _postersLightboxKey = key;
   document.getElementById('postersLightboxImg').src = url;
   document.getElementById('postersLightboxMovie').textContent = `${movie} (${year})`;
   document.getElementById('postersLightboxArtist').textContent = `by ${artist}`;
+  const noteEl = document.getElementById('postersLightboxNote');
+  if (note && note.trim()) {
+    noteEl.textContent = `"${note.trim()}"`;
+    noteEl.style.display = 'block';
+  } else {
+    noteEl.style.display = 'none';
+  }
   const likeBtn = document.getElementById('postersLightboxLike');
   const liked = _postersLikedSet.has(key);
   likeBtn.className = `poster-action-btn${liked?' liked':''}`;
@@ -9813,12 +9822,45 @@ function postersDownloadDirect(e, url, movie) {
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
 async function postersShare() {
-  const img = document.getElementById('postersLightboxImg');
   const movie = document.getElementById('postersLightboxMovie').textContent;
+  const artist = document.getElementById('postersLightboxArtist').textContent;
+  const shareUrl = 'https://p-movies.com/#posters';
+  const shareText = `${movie} — Fan Art ${artist} on PMovies 🎨`;
+
+  // 1. Try native share sheet (works great on mobile)
   if (navigator.share) {
-    try { await navigator.share({ title:`${movie} — Fan Art on PMovies`, url: img.src }); return; } catch(e) {}
+    try {
+      await navigator.share({ title: shareText, url: shareUrl });
+      return;
+    } catch(e) {
+      if (e.name === 'AbortError') return; // user cancelled — don't fall through
+    }
   }
-  try { await navigator.clipboard.writeText(img.src); showToast('Link copied!'); } catch(e) {}
+
+  // 2. Clipboard fallback with visible confirmation
+  const copied = await _copyToClipboard(shareUrl);
+  showToast(copied ? '🔗 Link copied to clipboard!' : '🔗 ' + shareUrl);
+}
+
+function _copyToClipboard(text) {
+  // Modern API first
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text).then(() => true).catch(() => _copyLegacy(text));
+  }
+  return Promise.resolve(_copyLegacy(text));
+}
+function _copyLegacy(text) {
+  // Fallback for older browsers / http
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  } catch(e) { return false; }
 }
 
 /* ── Admin: load pending ───────────────────────── */
