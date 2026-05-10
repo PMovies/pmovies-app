@@ -4627,7 +4627,8 @@
   // _journeyInit lives in a later script block and would be undefined if called synchronously here.
   setTimeout(function() {
     const hash = location.hash.replace('#', '');
-    if (['discover','foryou','community','lists','series','backed','posters'].includes(hash)) switchTab(hash);
+    const tabName = hash.split('?')[0]; // strip any ?admin=... from the hash before matching
+    if (['discover','foryou','community','lists','series','backed','posters'].includes(tabName)) switchTab(tabName);
   }, 0);
 
   /* ══ FRIENDS LETTERBOXD REVIEWS ══ */
@@ -9508,8 +9509,9 @@ let _postersLikedSet = new Set(JSON.parse(localStorage.getItem('posters_liked') 
 function postersInit() {
   if (_postersLikedSet === undefined) _postersLikedSet = new Set();
 
-  // Check if admin mode
-  const params = new URLSearchParams(location.search);
+  // Check if admin mode — ?admin= lives inside the hash, not the real query string
+  const hashQuery = location.hash.includes('?') ? location.hash.split('?')[1] : location.search.slice(1);
+  const params = new URLSearchParams(hashQuery);
   if (params.get('admin') === POSTERS_ADMIN_KEY) {
     document.getElementById('postersAdmin').style.display = 'block';
     postersLoadPending();
