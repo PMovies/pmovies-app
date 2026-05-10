@@ -449,12 +449,18 @@
     .cast-name{font-size:.6rem;font-family:'Montserrat',sans-serif;font-weight:700;margin-top:5px;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--text)}
     .cast-char{font-size:.56rem;color:var(--muted2);font-family:'Montserrat',sans-serif;line-height:1.2;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
     /* On PMovies section */
-    .pm-section{margin-top:4px}
+    #pmoviesSection{border-top:1px solid #1e1e1e;padding-top:18px;margin-top:18px}
+    #pmoviesSection>.modal-section-label{color:var(--orange);display:flex;align-items:center;gap:7px;font-size:.7rem;letter-spacing:2px}
+    #pmoviesSection>.modal-section-label::before{content:'◆';font-size:.45rem;opacity:.8}
+    .pm-section{margin-top:2px}
     .pm-block{margin-bottom:14px}
-    .pm-block-label{font-size:.68rem;font-weight:700;color:#666;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;font-family:'Montserrat',sans-serif}
+    .pm-block-label{font-size:.65rem;font-weight:700;color:#555;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;font-family:'Montserrat',sans-serif}
     .pm-reviews-row{display:flex;flex-direction:column;gap:7px}
-    .pm-review-card{background:#111;border:1px solid #222;border-radius:10px;padding:10px 12px;display:flex;gap:10px;align-items:flex-start}
-    .pm-review-stars{color:var(--orange);font-size:.75rem;flex-shrink:0;min-width:56px}
+    .pm-review-card{background:#111;border:1px solid #1e1e1e;border-radius:10px;padding:10px 12px;display:flex;gap:10px;align-items:flex-start}
+    .pm-review-stars{font-size:.75rem;flex-shrink:0;min-width:62px;line-height:1}
+    .pm-star-full{color:var(--orange)}
+    .pm-star-empty{color:#383838}
+    .pm-star-half{display:inline-block;background:linear-gradient(90deg,var(--orange) 50%,#383838 50%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
     .pm-review-body{flex:1;min-width:0}
     .pm-review-name{font-size:.72rem;font-weight:700;color:#ccc;margin-bottom:3px;font-family:'Montserrat',sans-serif}
     .pm-review-text{font-size:.72rem;color:#777;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -463,8 +469,7 @@
     .pm-poster-thumb:hover{transform:scale(1.06);border-color:var(--orange)}
     .pm-see-all{display:inline-block;margin-top:8px;font-size:.72rem;font-weight:700;color:var(--orange);letter-spacing:.04em;cursor:pointer;text-transform:uppercase;font-family:'Montserrat',sans-serif;background:none;border:none;padding:0;transition:opacity .18s}
     .pm-see-all:hover{opacity:.75}
-    .pm-avg-badge{display:inline-flex;align-items:center;gap:5px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:20px;padding:3px 10px;font-size:.7rem;font-weight:700;color:#ccc;margin-bottom:8px}
-    .pm-avg-badge span{color:var(--orange)}
+    .pm-avg-badge{display:inline-flex;align-items:center;gap:6px;background:#161616;border:1px solid #252525;border-radius:20px;padding:4px 12px;font-size:.72rem;font-weight:700;color:#aaa;margin-bottom:8px}
 
     /* Award badges */
     .modal-awards{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 4px}
@@ -3389,14 +3394,25 @@
       const sorted = [...matchedReviews].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
       const rated  = sorted.filter(r => r.rating > 0);
       const avg    = rated.length ? (rated.reduce((s, r) => s + r.rating, 0) / rated.length) : 0;
-      const stars  = r => '★'.repeat(Math.round(r)) + '☆'.repeat(5 - Math.round(r));
+
+      // Half-star aware renderer
+      function _pmStarsHtml(n) {
+        const full  = Math.floor(n);
+        const half  = (n % 1) >= 0.25 && (n % 1) < 0.75 ? 1 : 0;
+        const roundUp = (n % 1) >= 0.75 ? 1 : 0;
+        const totalFull = full + roundUp;
+        const empty = Math.max(0, 5 - totalFull - half);
+        return (totalFull ? `<span class="pm-star-full">${'★'.repeat(totalFull)}</span>` : '')
+             + (half      ? `<span class="pm-star-half">★</span>` : '')
+             + (empty     ? `<span class="pm-star-empty">${'★'.repeat(empty)}</span>` : '');
+      }
 
       html += `<div class="pm-block">
         <div class="pm-block-label">Community Reviews (${matchedReviews.length})</div>`;
-      if (avg) html += `<div class="pm-avg-badge"><span>${stars(avg)}</span> ${avg.toFixed(1)} / 5</div>`;
+      if (avg) html += `<div class="pm-avg-badge">${_pmStarsHtml(avg)} <span style="color:#fff">${avg.toFixed(1)}</span><span style="color:#555">/ 5</span></div>`;
       html += `<div class="pm-reviews-row">`;
       sorted.slice(0, 2).forEach(r => {
-        const starsHtml = r.rating ? `<div class="pm-review-stars">${'★'.repeat(Math.round(r.rating))}${'☆'.repeat(5 - Math.round(r.rating))}</div>` : '';
+        const starsHtml = r.rating ? `<div class="pm-review-stars">${_pmStarsHtml(r.rating)}</div>` : '';
         html += `<div class="pm-review-card">
           ${starsHtml}
           <div class="pm-review-body">
