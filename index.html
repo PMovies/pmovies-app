@@ -9576,6 +9576,7 @@ const POSTERS_RTDB_APPROVED = `${RTDB}/posterUploads/approved.json`;
 let _postersLoaded = false;
 let _postersLightboxKey = null;
 let _postersLikedSet = new Set(JSON.parse(localStorage.getItem('posters_liked') || '[]'));
+const _postersData = new Map(); // key → full poster record — avoids passing data through onclick strings
 
 /* ── Init (called when tab activates) ─────────── */
 function postersInit() {
@@ -9618,7 +9619,15 @@ async function postersLoadGallery() {
     const entries = Object.entries(data).sort((a,b) => b[1].uploadDate - a[1].uploadDate);
     if (!entries.length) { empty.style.display = 'block'; grid.innerHTML = ''; return; }
     empty.style.display = 'none';
+    // Store full records in map — avoids any escaping issues with onclick strings
+    _postersData.clear();
+    entries.forEach(([key, p]) => _postersData.set(key, p));
     grid.innerHTML = entries.map(([key, p]) => posterCardHTML(key, p)).join('');
+    // Attach click handlers from JS — no data in onclick attributes
+    entries.forEach(([key]) => {
+      const img = document.querySelector(`#pcard-${key} img`);
+      if (img) img.addEventListener('click', () => postersOpenLightbox(key));
+    });
   } catch(e) {
     loading.innerHTML = `<p style="color:#555">Failed to load gallery.</p>`;
   }
@@ -9628,8 +9637,7 @@ function posterCardHTML(key, p) {
   const liked = _postersLikedSet.has(key);
   return `
     <div class="poster-card" id="pcard-${key}">
-      <img src="${p.cloudinaryUrl}" alt="${esc(p.movie)} poster by ${esc(p.artistName)}" loading="lazy"
-           onclick="postersOpenLightbox('${key}','${esc(p.cloudinaryUrl)}','${esc(p.movie)}','${p.year}','${esc(p.artistName)}',${p.likes||0},'${esc(p.note||'')}')" />
+      <img src="${p.cloudinaryUrl}" alt="${esc(p.movie)} poster by ${esc(p.artistName)}" loading="lazy" style="cursor:pointer" />
       <div class="poster-card-info">
         <div class="poster-card-movie">${esc(p.movie)} <span style="color:#555;font-weight:400">(${p.year})</span></div>
         <div class="poster-card-artist">by ${esc(p.artistName)}</div>
@@ -9637,7 +9645,7 @@ function posterCardHTML(key, p) {
           <button class="poster-card-like${liked?' liked':''}" id="plike-${key}" onclick="postersToggleLike(event,'${key}')">
             ${liked?'♥':'♡'} <span id="plikecount-${key}">${p.likes||0}</span>
           </button>
-          <button class="poster-card-dl" onclick="postersDownloadDirect(event,'${p.cloudinaryUrl}','${esc(p.movie)}')">↓</button>
+          <button class="poster-card-dl" onclick="postersDlByKey(event,'${key}')">↓</button>
         </div>
       </div>
     </div>`;
@@ -9771,14 +9779,16 @@ async function postersSubmit() {
 }
 
 /* ── Lightbox ───────────────────────────────────── */
-function postersOpenLightbox(key, url, movie, year, artist, likes, note) {
+function postersOpenLightbox(key) {
+  const p = _postersData.get(key);
+  if (!p) return;
   _postersLightboxKey = key;
-  document.getElementById('postersLightboxImg').src = url;
-  document.getElementById('postersLightboxMovie').textContent = `${movie} (${year})`;
-  document.getElementById('postersLightboxArtist').textContent = `by ${artist}`;
+  document.getElementById('postersLightboxImg').src = p.cloudinaryUrl;
+  document.getElementById('postersLightboxMovie').textContent = `${p.movie} (${p.year})`;
+  document.getElementById('postersLightboxArtist').textContent = `by ${p.artistName}`;
   const noteEl = document.getElementById('postersLightboxNote');
-  if (note && note.trim()) {
-    noteEl.textContent = `"${note.trim()}"`;
+  if (p.note && p.note.trim()) {
+    noteEl.textContent = `"${p.note.trim()}"`;
     noteEl.style.display = 'block';
   } else {
     noteEl.style.display = 'none';
@@ -9786,9 +9796,15 @@ function postersOpenLightbox(key, url, movie, year, artist, likes, note) {
   const likeBtn = document.getElementById('postersLightboxLike');
   const liked = _postersLikedSet.has(key);
   likeBtn.className = `poster-action-btn${liked?' liked':''}`;
-  likeBtn.innerHTML = `${liked?'♥':'♡'} <span id="postersLightboxLikeCount">${likes}</span>`;
+  likeBtn.innerHTML = `${liked?'♥':'♡'} <span id="postersLightboxLikeCount">${p.likes||0}</span>`;
   document.getElementById('postersLightboxOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
+}
+
+function postersDlByKey(e, key) {
+  if (e) e.stopPropagation();
+  const p = _postersData.get(key);
+  if (p) postersDownloadDirect(null, p.cloudinaryUrl, p.movie);
 }
 function postersCloseLightbox(e) {
   if (e && e.target !== document.getElementById('postersLightboxOverlay')) return;
