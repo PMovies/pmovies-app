@@ -1247,6 +1247,26 @@
   .posters-form-status.ok{color:#4caf50;}
   .posters-form-status.err{color:#e53935;}
 
+  /* TMDB movie autocomplete */
+  .pf-movie-wrap{position:relative;}
+  .pf-movie-dd{position:absolute;top:100%;left:0;right:0;background:#181818;border:1px solid #333;border-radius:10px;z-index:3100;max-height:240px;overflow-y:auto;display:none;margin-top:4px;box-shadow:0 8px 24px rgba(0,0,0,.7);}
+  .pf-movie-dd.open{display:block;}
+  .pf-movie-dd-item{padding:10px 14px;cursor:pointer;font-size:.78rem;color:#ccc;display:flex;align-items:center;gap:10px;border-bottom:1px solid #222;}
+  .pf-movie-dd-item:last-child{border-bottom:none;}
+  .pf-movie-dd-item:hover{background:#252525;}
+  .pf-movie-dd-item img{width:28px;height:42px;object-fit:cover;border-radius:4px;background:#333;flex-shrink:0;}
+  .pf-movie-dd-ph{width:28px;height:42px;background:#2a2a2a;border-radius:4px;flex-shrink:0;}
+  .pf-movie-dd-info{flex:1;min-width:0;}
+  .pf-movie-dd-title{font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .pf-movie-dd-year{font-size:.7rem;color:#666;margin-top:2px;}
+  .pf-movie-selected{display:flex;align-items:center;gap:10px;background:#141414;border:1px solid #2e2e2e;border-radius:10px;padding:8px 12px;margin-top:6px;}
+  .pf-movie-selected img{width:24px;height:36px;object-fit:cover;border-radius:3px;background:#333;flex-shrink:0;}
+  .pf-movie-sel-ph{width:24px;height:36px;background:#2a2a2a;border-radius:3px;flex-shrink:0;}
+  .pf-movie-sel-title{flex:1;font-size:.83rem;font-weight:700;color:#fff;}
+  .pf-movie-sel-year{font-size:.72rem;color:#888;margin-left:5px;}
+  .pf-movie-clear{background:none;border:none;color:#555;cursor:pointer;font-size:1.1rem;padding:0 0 0 6px;line-height:1;transition:color .18s;}
+  .pf-movie-clear:hover{color:#ff4444;}
+
   /* Lightbox */
   .posters-lightbox-overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:4000;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .22s;}
   .posters-lightbox-overlay.open{opacity:1;pointer-events:all;}
@@ -2043,15 +2063,17 @@
         <label>Your Email <span class="req">*</span></label>
         <input type="email" id="pf_email" placeholder="yourname@email.com" />
       </div>
-      <div class="posters-field posters-row">
-        <div>
-          <label>Movie Title <span class="req">*</span></label>
-          <input type="text" id="pf_movie" placeholder="e.g. Dune" maxlength="80" />
+      <div class="posters-field">
+        <label>Movie <span class="req">*</span></label>
+        <div class="pf-movie-wrap">
+          <input type="text" id="pf_movie_search" placeholder="Search for a movie…" autocomplete="off" oninput="pfMovieSearch(this.value)" onkeydown="pfMovieKeydown(event)" />
+          <div class="pf-movie-dd" id="pfMovieDD"></div>
         </div>
-        <div style="max-width:100px">
-          <label>Year <span class="req">*</span></label>
-          <input type="number" id="pf_year" placeholder="2024" min="1900" max="2030" />
-        </div>
+        <div class="pf-movie-selected" id="pfMovieSelected" style="display:none"></div>
+        <!-- Hidden fields populated by selection -->
+        <input type="hidden" id="pf_movie" />
+        <input type="hidden" id="pf_year" />
+        <input type="hidden" id="pf_tmdb_id" />
       </div>
       <div class="posters-field">
         <label>Poster Image <span class="req">*</span></label>
@@ -5610,16 +5632,16 @@
           });
         }).catch(e => console.warn('[PWA] SW failed', e));
 
-        // When the new SW activates and broadcasts SW_UPDATED, show the toast.
-        // Using postMessage (sent from sw.js activate) instead of controllerchange
-        // so it only fires on real updates — not on the very first install.
+        // When the new SW activates and broadcasts SW_UPDATED, silently reload
+        // so the user always gets the latest version without manual refresh.
+        // Safe because the new SW is already controlling by this point —
+        // it won't send SW_UPDATED again on the reloaded page.
         let reloading = false;
         navigator.serviceWorker.addEventListener('message', e => {
           if (e.data?.type !== 'SW_UPDATED') return;
           if (reloading) return;
           reloading = true;
-          const toast = document.getElementById('swUpdateToast');
-          if (toast) toast.classList.add('show');
+          location.reload();
         });
       });
     }
@@ -9678,12 +9700,100 @@ async function postersToggleLike(e, key) {
 function postersOpenUpload() {
   document.getElementById('postersModalOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
+  // Clear any previous movie selection
+  pfMovieClear();
 }
 function postersCloseUpload(e) {
   if (e && e.target !== document.getElementById('postersModalOverlay')) return;
   document.getElementById('postersModalOverlay').classList.remove('open');
   document.body.style.overflow = '';
 }
+
+/* ── TMDB movie autocomplete for upload form ─────────────────────────── */
+let _pfMovieTimer = null;
+
+function pfMovieSearch(q) {
+  // Clear previously selected movie
+  document.getElementById('pf_movie').value = '';
+  document.getElementById('pf_year').value = '';
+  document.getElementById('pf_tmdb_id').value = '';
+  document.getElementById('pfMovieSelected').style.display = 'none';
+
+  clearTimeout(_pfMovieTimer);
+  const dd = document.getElementById('pfMovieDD');
+  if (!q.trim()) { dd.classList.remove('open'); dd.innerHTML = ''; return; }
+
+  _pfMovieTimer = setTimeout(async () => {
+    try {
+      const res = await fetch(`${TMDB}/search/movie?api_key=${DEFAULT_TMDB_KEY}&query=${encodeURIComponent(q)}&page=1`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const results = (data.results || []).slice(0, 8);
+      if (!results.length) {
+        dd.innerHTML = '<div class="pf-movie-dd-item" style="color:#555;cursor:default">No results found</div>';
+        dd.classList.add('open');
+        return;
+      }
+      dd.innerHTML = results.map(m => {
+        const year = m.release_date ? m.release_date.slice(0, 4) : '?';
+        const poster = m.poster_path ? `https://image.tmdb.org/t/p/w92${m.poster_path}` : '';
+        const imgEl = poster
+          ? `<img src="${poster}" alt="" loading="lazy" />`
+          : `<div class="pf-movie-dd-ph"></div>`;
+        const safeTitle = m.title.replace(/'/g, '&#39;');
+        const safeYear  = String(year).replace(/'/g, '&#39;');
+        const safePoster = poster.replace(/'/g, '&#39;');
+        return `<div class="pf-movie-dd-item" onclick="pfMovieSelect(${m.id},'${safeTitle}','${safeYear}','${safePoster}')">${imgEl}<div class="pf-movie-dd-info"><div class="pf-movie-dd-title">${m.title}</div><div class="pf-movie-dd-year">${year}</div></div></div>`;
+      }).join('');
+      dd.classList.add('open');
+    } catch(e) { console.warn('[pfMovieSearch]', e); }
+  }, 320);
+}
+
+function pfMovieSelect(id, title, year, poster) {
+  document.getElementById('pf_movie').value    = title;
+  document.getElementById('pf_year').value     = year;
+  document.getElementById('pf_tmdb_id').value  = id;
+  document.getElementById('pf_movie_search').value = '';
+
+  const dd = document.getElementById('pfMovieDD');
+  dd.classList.remove('open'); dd.innerHTML = '';
+
+  const imgEl = poster
+    ? `<img src="${poster}" alt="" />`
+    : `<div class="pf-movie-sel-ph"></div>`;
+  const sel = document.getElementById('pfMovieSelected');
+  sel.innerHTML = `${imgEl}<span class="pf-movie-sel-title">${title}<span class="pf-movie-sel-year">(${year})</span></span><button class="pf-movie-clear" onclick="pfMovieClear()" title="Change movie">&times;</button>`;
+  sel.style.display = 'flex';
+}
+
+function pfMovieClear() {
+  document.getElementById('pf_movie').value       = '';
+  document.getElementById('pf_year').value        = '';
+  document.getElementById('pf_tmdb_id').value     = '';
+  document.getElementById('pf_movie_search').value = '';
+  const dd = document.getElementById('pfMovieDD');
+  if (dd) { dd.classList.remove('open'); dd.innerHTML = ''; }
+  const sel = document.getElementById('pfMovieSelected');
+  if (sel) sel.style.display = 'none';
+}
+
+function pfMovieKeydown(e) {
+  // Esc closes the dropdown
+  if (e.key === 'Escape') {
+    const dd = document.getElementById('pfMovieDD');
+    dd.classList.remove('open'); dd.innerHTML = '';
+  }
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  const wrap = document.querySelector('.pf-movie-wrap');
+  if (wrap && !wrap.contains(e.target)) {
+    const dd = document.getElementById('pfMovieDD');
+    if (dd) { dd.classList.remove('open'); dd.innerHTML = ''; }
+  }
+});
 
 let _postersFile = null;
 function postersFileChosen(input) {
@@ -9706,17 +9816,18 @@ function postersValidateAndPreview(file) {
 }
 
 async function postersSubmit() {
-  const name  = document.getElementById('pf_name').value.trim();
-  const email = document.getElementById('pf_email').value.trim();
-  const movie = document.getElementById('pf_movie').value.trim();
-  const year  = document.getElementById('pf_year').value.trim();
-  const note  = document.getElementById('pf_note').value.trim();
+  const name   = document.getElementById('pf_name').value.trim();
+  const email  = document.getElementById('pf_email').value.trim();
+  const movie  = document.getElementById('pf_movie').value.trim();
+  const year   = document.getElementById('pf_year').value.trim();
+  const tmdbId = parseInt(document.getElementById('pf_tmdb_id').value) || null;
+  const note   = document.getElementById('pf_note').value.trim();
   const status = document.getElementById('postersFormStatus');
 
   if (!name)  { status.textContent='Please enter your name.'; status.className='posters-form-status err'; return; }
   if (!email || !/\S+@\S+\.\S+/.test(email)) { status.textContent='Please enter a valid email.'; status.className='posters-form-status err'; return; }
-  if (!movie) { status.textContent='Please enter the movie title.'; status.className='posters-form-status err'; return; }
-  if (!year || year < 1900 || year > 2030) { status.textContent='Please enter a valid year.'; status.className='posters-form-status err'; return; }
+  if (!movie) { status.textContent='Please search and select a movie.'; status.className='posters-form-status err'; return; }
+  if (!year || year < 1900 || year > 2030) { status.textContent='Please select a valid movie from the list.'; status.className='posters-form-status err'; return; }
   if (!_postersFile) { status.textContent='Please choose an image file.'; status.className='posters-form-status err'; return; }
 
   const btn = document.getElementById('postersSubmitBtn');
@@ -9740,6 +9851,7 @@ async function postersSubmit() {
       email: email,
       movie: movie,
       year: parseInt(year),
+      tmdbId: tmdbId,
       note: note,
       cloudinaryUrl: cloudData.secure_url,
       publicId: cloudData.public_id,
@@ -9759,10 +9871,9 @@ async function postersSubmit() {
     setTimeout(() => {
       document.getElementById('pf_name').value='';
       document.getElementById('pf_email').value='';
-      document.getElementById('pf_movie').value='';
-      document.getElementById('pf_year').value='';
       document.getElementById('pf_note').value='';
       document.getElementById('pf_file').value='';
+      pfMovieClear();
       _postersFile = null;
       const dz = document.getElementById('postersDropZone');
       dz.classList.remove('has-file');
