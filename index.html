@@ -448,6 +448,24 @@
     .cast-photo-placeholder{width:72px;height:72px;border-radius:50%;background:var(--surface);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.6rem}
     .cast-name{font-size:.6rem;font-family:'Montserrat',sans-serif;font-weight:700;margin-top:5px;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--text)}
     .cast-char{font-size:.56rem;color:var(--muted2);font-family:'Montserrat',sans-serif;line-height:1.2;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+    /* On PMovies section */
+    .pm-section{margin-top:4px}
+    .pm-block{margin-bottom:14px}
+    .pm-block-label{font-size:.68rem;font-weight:700;color:#666;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;font-family:'Montserrat',sans-serif}
+    .pm-reviews-row{display:flex;flex-direction:column;gap:7px}
+    .pm-review-card{background:#111;border:1px solid #222;border-radius:10px;padding:10px 12px;display:flex;gap:10px;align-items:flex-start}
+    .pm-review-stars{color:var(--orange);font-size:.75rem;flex-shrink:0;min-width:56px}
+    .pm-review-body{flex:1;min-width:0}
+    .pm-review-name{font-size:.72rem;font-weight:700;color:#ccc;margin-bottom:3px;font-family:'Montserrat',sans-serif}
+    .pm-review-text{font-size:.72rem;color:#777;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .pm-posters-row{display:flex;gap:8px;flex-wrap:wrap}
+    .pm-poster-thumb{width:56px;height:84px;border-radius:6px;object-fit:cover;border:1px solid #2a2a2a;cursor:pointer;transition:transform .18s,border-color .18s;display:block}
+    .pm-poster-thumb:hover{transform:scale(1.06);border-color:var(--orange)}
+    .pm-see-all{display:inline-block;margin-top:8px;font-size:.72rem;font-weight:700;color:var(--orange);letter-spacing:.04em;cursor:pointer;text-transform:uppercase;font-family:'Montserrat',sans-serif;background:none;border:none;padding:0;transition:opacity .18s}
+    .pm-see-all:hover{opacity:.75}
+    .pm-avg-badge{display:inline-flex;align-items:center;gap:5px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:20px;padding:3px 10px;font-size:.7rem;font-weight:700;color:#ccc;margin-bottom:8px}
+    .pm-avg-badge span{color:var(--orange)}
+
     /* Award badges */
     .modal-awards{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 4px}
     .award-badge{display:inline-flex;align-items:center;gap:5px;border-radius:20px;font-size:.65rem;font-family:'Montserrat',sans-serif;font-weight:700;letter-spacing:.5px;padding:4px 10px;white-space:nowrap}
@@ -2139,6 +2157,11 @@
         <div class="modal-section-label" style="margin-top:14px">Similar Movies</div>
         <div class="similar-scroll" id="similarScroll"></div>
       </div>
+      <!-- On PMovies -->
+      <div id="pmoviesSection" style="display:none">
+        <div class="modal-section-label" style="margin-top:18px">On PMovies</div>
+        <div id="pmoviesSectionBody"></div>
+      </div>
       <div class="modal-actions">
         <a class="modal-cta" id="modalLink" href="#" target="_blank">View on TMDb →</a>
         <button class="modal-cta secondary" id="trailerBtn" onclick="loadTrailer()">▶ Trailer</button>
@@ -3227,14 +3250,18 @@
     // reset similar
     document.getElementById('similarSection').style.display = 'none';
     document.getElementById('similarScroll').innerHTML = '';
+    // reset On PMovies
+    document.getElementById('pmoviesSection').style.display = 'none';
+    document.getElementById('pmoviesSectionBody').innerHTML = '';
     document.getElementById('modalOverlay').classList.add('visible');
     document.body.style.overflow = 'hidden';
     // track recently viewed
     if (m.media_type === 'tv') { if (typeof addToTvRv === 'function') addToTvRv(m); }
     else addToRecentlyViewed(m);
-    // load cast + similar async
+    // load cast + similar + On PMovies async
     loadCast(m.id);
     loadSimilar(m.id);
+    loadPMoviesSection(m);
   }
 
   async function loadTrailer() {
@@ -3300,6 +3327,105 @@
       });
       sec.style.display = 'block';
     } catch (_) {}
+  }
+
+  /* ── On PMovies section ─────────────────────────────────────────────── */
+  // Lazy RTDB cache — populated on first modal open (or reused from tab loads)
+  let _pmReviewsCache   = null;  // array of fan reviews
+  let _pmPostersCache   = null;  // array of approved poster objects
+
+  function _normTitle(t) {
+    return (t || '').toLowerCase().trim().replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ');
+  }
+
+  async function loadPMoviesSection(movie) {
+    const sec  = document.getElementById('pmoviesSection');
+    const body = document.getElementById('pmoviesSectionBody');
+    if (!sec || !body) return;
+
+    // Use already-loaded in-memory data when available, else fetch once
+    try {
+      if (!_pmReviewsCache) {
+        // allReviews is populated when Community tab loads; reuse it if non-empty
+        if (typeof allReviews !== 'undefined' && allReviews.length) {
+          _pmReviewsCache = allReviews;
+        } else {
+          const r = await fetch(`${RTDB}/fanReviews.json`);
+          const d = await r.json();
+          _pmReviewsCache = d ? Object.values(d) : [];
+        }
+      }
+      if (!_pmPostersCache) {
+        // _postersData Map is populated when Fan Art tab loads; reuse if non-empty
+        if (typeof _postersData !== 'undefined' && _postersData.size) {
+          _pmPostersCache = [..._postersData.values()];
+        } else {
+          const r = await fetch(`${RTDB}/posterUploads/approved.json`);
+          const d = await r.json();
+          _pmPostersCache = d ? Object.values(d) : [];
+        }
+      }
+    } catch (_) { return; }
+
+    const norm = _normTitle(movie.title || movie.name);
+    const id   = movie.id;
+
+    // Match reviews by tmdbId (exact) or normalised title (fallback for old records)
+    const matchedReviews = _pmReviewsCache.filter(r =>
+      (r.tmdbId && r.tmdbId === id) || _normTitle(r.movie) === norm
+    );
+
+    // Match posters the same way
+    const matchedPosters = _pmPostersCache.filter(p =>
+      (p.tmdbId && p.tmdbId === id) || _normTitle(p.movie) === norm
+    );
+
+    if (!matchedReviews.length && !matchedPosters.length) return;
+
+    let html = '<div class="pm-section">';
+
+    // ── Reviews block ──
+    if (matchedReviews.length) {
+      const sorted = [...matchedReviews].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      const rated  = sorted.filter(r => r.rating > 0);
+      const avg    = rated.length ? (rated.reduce((s, r) => s + r.rating, 0) / rated.length) : 0;
+      const stars  = r => '★'.repeat(Math.round(r)) + '☆'.repeat(5 - Math.round(r));
+
+      html += `<div class="pm-block">
+        <div class="pm-block-label">Community Reviews (${matchedReviews.length})</div>`;
+      if (avg) html += `<div class="pm-avg-badge"><span>${stars(avg)}</span> ${avg.toFixed(1)} / 5</div>`;
+      html += `<div class="pm-reviews-row">`;
+      sorted.slice(0, 2).forEach(r => {
+        const starsHtml = r.rating ? `<div class="pm-review-stars">${'★'.repeat(Math.round(r.rating))}${'☆'.repeat(5 - Math.round(r.rating))}</div>` : '';
+        html += `<div class="pm-review-card">
+          ${starsHtml}
+          <div class="pm-review-body">
+            <div class="pm-review-name">${esc(r.name || 'Anonymous')}</div>
+            <div class="pm-review-text">${esc(r.text || '')}</div>
+          </div>
+        </div>`;
+      });
+      html += `</div>`;
+      html += `<button class="pm-see-all" onclick="closeModal(null);switchTab('community')">See all reviews →</button>`;
+      html += `</div>`;
+    }
+
+    // ── Fan Art block ──
+    if (matchedPosters.length) {
+      html += `<div class="pm-block">
+        <div class="pm-block-label">Fan Art (${matchedPosters.length})</div>
+        <div class="pm-posters-row">`;
+      matchedPosters.slice(0, 4).forEach(p => {
+        html += `<img class="pm-poster-thumb" src="${esc(p.cloudinaryUrl)}" alt="${esc(p.movie)}" title="by ${esc(p.artistName)}" onclick="closeModal(null);switchTab('posters')" loading="lazy" />`;
+      });
+      html += `</div>`;
+      html += `<button class="pm-see-all" onclick="closeModal(null);switchTab('posters')">See all fan art →</button>`;
+      html += `</div>`;
+    }
+
+    html += '</div>';
+    body.innerHTML = html;
+    sec.style.display = 'block';
   }
 
   function closeModal(e) {
@@ -3865,6 +3991,7 @@
 
   function renderFanReviews(reviews, limit) {
     allReviews = reviews;
+    _pmReviewsCache = reviews; // keep modal cache in sync
     if (limit !== undefined) fanReviewsShown = limit;
     const list = document.getElementById('fanReviewsList');
     if (!reviews.length) {
@@ -4130,13 +4257,14 @@
     const name   = (document.getElementById('fanName') ||{}).value?.trim();
     const fanMovieEl = document.getElementById('fanMovie');
     const movie  = (fanMovieEl.dataset.cleanTitle || fanMovieEl.value || '').trim();
+    const tmdbId = parseInt(fanMovieEl.dataset.tmdbId) || null;
     const rating = +(document.getElementById('fanRating')||{}).value || 0;
     const text   = (document.getElementById('fanText') ||{}).value?.trim();
     if (!name || !movie || !text) { alert('Please fill in your name, movie, and review.'); return; }
     try {
       const btn = document.querySelector('.fan-submit-btn');
       btn.textContent = 'Posting…'; btn.disabled = true;
-      const reviewData = { name, movie, rating, text, timestamp: Date.now() };
+      const reviewData = { name, movie, tmdbId, rating, text, timestamp: Date.now() };
       // Write to RTDB (new path)
       await fetch(`${RTDB}/fanReviews.json`, {
         method: 'POST',
@@ -4154,7 +4282,7 @@
       }
       document.getElementById('fanName').value  = '';
       const _fm = document.getElementById('fanMovie');
-      _fm.value = ''; _fm.dataset.cleanTitle = '';
+      _fm.value = ''; _fm.dataset.cleanTitle = ''; _fm.dataset.tmdbId = '';
       document.getElementById('fanText').value  = '';
       fanRating = 0;
       document.getElementById('fanRating').value = 0;
@@ -4355,20 +4483,21 @@
     const name   = document.getElementById('srFanName').value?.trim();
     const seriesEl = document.getElementById('srFanSeries');
     const series = (seriesEl.dataset.cleanTitle || seriesEl.value || '').trim();
+    const srTmdbId = parseInt(seriesEl.dataset.tmdbId) || null;
     const rating = +(document.getElementById('srFanRating').value) || 0;
     const text   = document.getElementById('srFanText').value?.trim();
     if (!name || !series || !text) { alert('Please fill in your name, series, and review.'); return; }
     try {
       const btn = document.querySelector('#srFanSection .fan-submit-btn');
       btn.textContent = 'Posting…'; btn.disabled = true;
-      const reviewData = { name, movie: series, rating, text, timestamp: Date.now(), mediaType: 'tv' };
+      const reviewData = { name, movie: series, tmdbId: srTmdbId, rating, text, timestamp: Date.now(), mediaType: 'tv' };
       await fetch(`${RTDB}/seriesFanReviews.json`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(reviewData)
       });
       document.getElementById('srFanName').value = '';
-      seriesEl.value = ''; seriesEl.dataset.cleanTitle = '';
+      seriesEl.value = ''; seriesEl.dataset.cleanTitle = ''; seriesEl.dataset.tmdbId = '';
       document.getElementById('srFanText').value = '';
       srRating = 0; document.getElementById('srFanRating').value = 0;
       document.querySelectorAll('.sr-star').forEach(x => x.classList.remove('active'));
@@ -4409,10 +4538,11 @@
     const dd = document.getElementById('srFanSeriesDropdown');
     if (dd) dd.style.display = 'none';
   }
-  function selectSrFanSeries(title, year) {
+  function selectSrFanSeries(title, year, id) {
     const input = document.getElementById('srFanSeries');
     input.value = title + (year ? ` (${year})` : '');
     input.dataset.cleanTitle = title;
+    input.dataset.tmdbId = id || '';
     hideSrFanSeriesDropdown();
   }
   function srFanSeriesSearch(q) {
@@ -4429,7 +4559,7 @@
         dd.innerHTML = hits.map(s => {
           const year  = s.first_air_date ? s.first_air_date.slice(0,4) : '';
           const thumb = s.poster_path ? `https://image.tmdb.org/t/p/w92${s.poster_path}` : null;
-          return `<div class="fan-movie-opt" onmousedown="selectSrFanSeries('${escJs(s.name)}','${year}')">
+          return `<div class="fan-movie-opt" onmousedown="selectSrFanSeries('${escJs(s.name)}','${year}',${s.id})">
             ${thumb ? `<img src="${thumb}" alt="" loading="lazy"/>` : '<div class="fan-movie-opt-no-img">📺</div>'}
             <div class="fan-movie-opt-info">
               <div class="fan-movie-opt-title">${esc(s.name)}</div>
@@ -4448,11 +4578,11 @@
     const dd = document.getElementById('fanMovieDropdown');
     if (dd) dd.style.display = 'none';
   }
-  function selectFanMovie(title, year) {
+  function selectFanMovie(title, year, id) {
     const input = document.getElementById('fanMovie');
     input.value = title + (year ? ` (${year})` : '');
-    // Store clean title without year for submission
     input.dataset.cleanTitle = title;
+    input.dataset.tmdbId = id || '';
     hideFanMovieDropdown();
   }
   function fanMovieSearch(q) {
@@ -4469,7 +4599,7 @@
         dd.innerHTML = hits.map(m => {
           const year  = m.release_date ? m.release_date.slice(0,4) : '';
           const thumb = m.poster_path ? `https://image.tmdb.org/t/p/w92${m.poster_path}` : null;
-          return `<div class="fan-movie-opt" onmousedown="selectFanMovie('${escJs(m.title)}','${year}')">
+          return `<div class="fan-movie-opt" onmousedown="selectFanMovie('${escJs(m.title)}','${year}',${m.id})">
             ${thumb ? `<img src="${thumb}" alt="" loading="lazy"/>` : '<div class="fan-movie-opt-no-img">🎬</div>'}
             <div class="fan-movie-opt-info">
               <div class="fan-movie-opt-title">${esc(m.title)}</div>
@@ -9640,6 +9770,7 @@ async function postersLoadGallery() {
     // Store full records in map — avoids any escaping issues with onclick strings
     _postersData.clear();
     entries.forEach(([key, p]) => _postersData.set(key, p));
+    _pmPostersCache = [..._postersData.values()]; // keep modal cache in sync
     grid.innerHTML = entries.map(([key, p]) => posterCardHTML(key, p)).join('');
     // Attach click handlers from JS — no data in onclick attributes
     entries.forEach(([key]) => {
