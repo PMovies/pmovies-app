@@ -3363,11 +3363,11 @@
       if (!_pmPostersCache) {
         // _postersData Map is populated when Fan Art tab loads; reuse if non-empty
         if (typeof _postersData !== 'undefined' && _postersData.size) {
-          _pmPostersCache = [..._postersData.values()];
+          _pmPostersCache = [..._postersData.entries()].map(([key, p]) => ({...p, _key: key}));
         } else {
           const r = await fetch(`${RTDB}/posterUploads/approved.json`);
           const d = await r.json();
-          _pmPostersCache = d ? Object.values(d) : [];
+          _pmPostersCache = d ? Object.entries(d).map(([key, p]) => ({...p, _key: key})) : [];
         }
       }
     } catch (_) { return; }
@@ -3432,7 +3432,8 @@
         <div class="pm-block-label">Fan Art (${matchedPosters.length})</div>
         <div class="pm-posters-row">`;
       matchedPosters.slice(0, 4).forEach(p => {
-        html += `<img class="pm-poster-thumb" src="${esc(p.cloudinaryUrl)}" alt="${esc(p.movie)}" title="by ${esc(p.artistName)}" onclick="closeModal(null);switchTab('posters')" loading="lazy" />`;
+        const safeKey = (p._key || '').replace(/'/g, "\\'");
+        html += `<img class="pm-poster-thumb" src="${esc(p.cloudinaryUrl)}" alt="${esc(p.movie)}" title="by ${esc(p.artistName)}" onclick="pmOpenPosterLightbox('${safeKey}')" loading="lazy" />`;
       });
       html += `</div>`;
       html += `<button class="pm-see-all" onclick="closeModal(null);switchTab('posters')">See all fan art →</button>`;
@@ -3442,6 +3443,17 @@
     html += '</div>';
     body.innerHTML = html;
     sec.style.display = 'block';
+  }
+
+  function pmOpenPosterLightbox(key) {
+    // Sync the poster into _postersData if the Fan Art tab hasn't been visited yet
+    // so postersOpenLightbox can find it. Lightbox z-index (4000) > modal z-index (200)
+    // so it floats on top — no need to close the movie modal first.
+    if (typeof _postersData !== 'undefined' && !_postersData.has(key) && _pmPostersCache) {
+      const p = _pmPostersCache.find(x => x._key === key);
+      if (p) _postersData.set(key, p);
+    }
+    if (typeof postersOpenLightbox === 'function') postersOpenLightbox(key);
   }
 
   function closeModal(e) {
@@ -9786,7 +9798,7 @@ async function postersLoadGallery() {
     // Store full records in map — avoids any escaping issues with onclick strings
     _postersData.clear();
     entries.forEach(([key, p]) => _postersData.set(key, p));
-    _pmPostersCache = [..._postersData.values()]; // keep modal cache in sync
+    _pmPostersCache = [..._postersData.entries()].map(([key, p]) => ({...p, _key: key})); // keep modal cache in sync
     grid.innerHTML = entries.map(([key, p]) => posterCardHTML(key, p)).join('');
     // Attach click handlers from JS — no data in onclick attributes
     entries.forEach(([key]) => {
