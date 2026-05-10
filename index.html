@@ -4197,11 +4197,13 @@
 
   /* ══ TAB NAVIGATION ══ */
   function switchTab(name) {
+    let foryouWasActive = false;
     ['discover','foryou','community','lists','series','backed'].forEach(t => {
       const panel = document.getElementById('tab-panel-' + t);
       const wasActive = panel.classList.contains('active');
+      if (t === 'foryou') foryouWasActive = wasActive;
       panel.classList.toggle('active', t === name);
-      // Only play enter animation when actually switching to this tab (not re-clicking it)
+      // Only play enter animation when actually switching TO this tab (not re-clicking it)
       if (t === name && !wasActive) {
         panel.classList.remove('tab-entering');
         void panel.offsetWidth; // force reflow to restart animation
@@ -4209,7 +4211,10 @@
       }
       document.getElementById('tab-btn-' + t).classList.toggle('active', t === name);
     });
-    if (name === 'foryou') { _journeyInit(); }
+    // Only init journey when navigating TO For You — not when already there.
+    // Re-clicking the active tab restarts the animation but keeps the current journey state.
+    // Users can explicitly reset via "Take the journey again".
+    if (name === 'foryou' && !foryouWasActive) { _journeyInit(); }
     if (name === 'backed') { renderBackedTab(); }
     if (name === 'series') {
       if (nowAiringHeroes.length) {
