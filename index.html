@@ -4420,11 +4420,13 @@
     });
   }
 
-  // Restore tab from URL hash on load — MUST be after all tab data/functions are defined
-  (function() {
+  // Restore tab from URL hash on load.
+  // Uses setTimeout(0) so this runs AFTER all <script> blocks are evaluated —
+  // _journeyInit lives in a later script block and would be undefined if called synchronously here.
+  setTimeout(function() {
     const hash = location.hash.replace('#', '');
     if (['discover','foryou','community','lists','series','backed'].includes(hash)) switchTab(hash);
-  })();
+  }, 0);
 
   /* ══ FRIENDS LETTERBOXD REVIEWS ══ */
   const LB_FRIENDS = [
