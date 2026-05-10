@@ -1137,6 +1137,102 @@
     .creator-pick-wrap{width:100%;}
   }
 
+  /* ═══ POSTERS TAB ═══ */
+  .posters-header{text-align:center;padding:48px 16px 40px;max-width:600px;margin:0 auto;}
+  .posters-eyebrow{font-size:.7rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--orange);margin-bottom:10px;}
+  .posters-heading{font-size:2.2rem;font-weight:900;color:#fff;margin:0 0 10px;letter-spacing:-.02em;}
+  .posters-sub{color:#888;font-size:.9rem;line-height:1.6;margin:0 0 24px;}
+  .posters-upload-btn{background:var(--orange);color:#000;border:none;border-radius:24px;padding:12px 26px;font-family:'Montserrat',sans-serif;font-size:.82rem;font-weight:800;cursor:pointer;transition:all .2s;letter-spacing:.04em;}
+  .posters-upload-btn:hover{background:#ffb733;transform:translateY(-1px);}
+
+  /* Grid */
+  .posters-grid{display:columns;columns:4 220px;gap:14px;padding:0 0 48px;}
+  .posters-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;padding:0 0 48px;}
+  .poster-card{position:relative;border-radius:12px;overflow:hidden;background:#111;border:1px solid #1e1e1e;cursor:pointer;transition:transform .2s,box-shadow .2s;break-inside:avoid;}
+  .poster-card:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(0,0,0,.6);}
+  .poster-card img{width:100%;aspect-ratio:2/3;object-fit:cover;display:block;}
+  .poster-card-info{padding:10px 12px 12px;}
+  .poster-card-movie{font-size:.82rem;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .poster-card-artist{font-size:.72rem;color:#666;margin-top:2px;}
+  .poster-card-actions{display:flex;gap:6px;margin-top:8px;}
+  .poster-card-like{background:none;border:1px solid #2a2a2a;border-radius:20px;color:#888;font-size:.7rem;padding:4px 10px;cursor:pointer;transition:all .18s;font-family:inherit;}
+  .poster-card-like:hover,.poster-card-like.liked{background:#e53935;border-color:#e53935;color:#fff;}
+  .poster-card-dl{background:none;border:1px solid #2a2a2a;border-radius:20px;color:#888;font-size:.7rem;padding:4px 10px;cursor:pointer;transition:all .18s;font-family:inherit;}
+  .poster-card-dl:hover{border-color:#555;color:#ccc;}
+
+  /* Loading / empty */
+  .posters-loading{text-align:center;padding:80px 16px;color:#555;}
+  .posters-spinner{width:32px;height:32px;border:3px solid #222;border-top-color:var(--orange);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px;}
+  .posters-empty{text-align:center;padding:80px 16px;color:#555;font-size:.9rem;}
+
+  /* Upload modal */
+  .posters-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:3000;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .22s;}
+  .posters-modal-overlay.open{opacity:1;pointer-events:all;}
+  .posters-modal{background:#111;border:1px solid #222;border-radius:20px;padding:32px;max-width:500px;width:100%;max-height:90vh;overflow-y:auto;position:relative;}
+  .posters-modal-close{position:absolute;top:16px;right:18px;background:none;border:none;color:#666;font-size:1.4rem;cursor:pointer;line-height:1;padding:4px;}
+  .posters-modal-close:hover{color:#fff;}
+  .posters-modal-title{font-size:1.15rem;font-weight:800;color:#fff;margin-bottom:6px;}
+  .posters-modal-sub{font-size:.8rem;color:#666;margin-bottom:22px;line-height:1.5;}
+  .posters-field{margin-bottom:16px;}
+  .posters-field label{display:block;font-size:.72rem;font-weight:700;color:#999;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;}
+  .posters-field input,.posters-field textarea{width:100%;background:#0d0d0d;border:1px solid #2a2a2a;border-radius:10px;color:#fff;font-family:'Montserrat',sans-serif;font-size:.85rem;padding:11px 14px;box-sizing:border-box;transition:border-color .18s;outline:none;}
+  .posters-field input:focus,.posters-field textarea:focus{border-color:var(--orange);}
+  .posters-field textarea{resize:vertical;min-height:60px;}
+  .posters-row{display:grid;grid-template-columns:1fr 100px;gap:12px;}
+  .req{color:var(--orange);}
+  .posters-drop-zone{border:2px dashed #2a2a2a;border-radius:12px;padding:28px 16px;text-align:center;cursor:pointer;transition:border-color .18s,background .18s;}
+  .posters-drop-zone:hover,.posters-drop-zone.drag-over{border-color:var(--orange);background:#0f0e0a;}
+  .posters-drop-icon{font-size:2rem;margin-bottom:8px;}
+  #postersDropLabel{font-size:.82rem;color:#888;margin-bottom:4px;}
+  .posters-drop-hint{font-size:.72rem;color:#555;}
+  .posters-drop-zone.has-file{border-color:#4caf50;background:#0a0f0a;}
+  .posters-drop-zone.has-file #postersDropLabel{color:#4caf50;}
+  .posters-submit-btn{width:100%;background:var(--orange);color:#000;border:none;border-radius:12px;padding:13px;font-family:'Montserrat',sans-serif;font-size:.85rem;font-weight:800;cursor:pointer;transition:all .2s;margin-top:4px;}
+  .posters-submit-btn:hover:not(:disabled){background:#ffb733;}
+  .posters-submit-btn:disabled{opacity:.5;cursor:not-allowed;}
+  .posters-form-status{text-align:center;font-size:.8rem;min-height:1.4em;margin-top:10px;}
+  .posters-form-status.ok{color:#4caf50;}
+  .posters-form-status.err{color:#e53935;}
+
+  /* Lightbox */
+  .posters-lightbox-overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:4000;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .22s;}
+  .posters-lightbox-overlay.open{opacity:1;pointer-events:all;}
+  .posters-lightbox{position:relative;max-width:520px;width:100%;display:flex;flex-direction:column;align-items:center;gap:16px;}
+  .posters-lightbox-close{position:fixed;top:20px;right:24px;background:rgba(0,0,0,.6);border:1px solid #333;border-radius:50%;color:#ccc;font-size:1.2rem;width:36px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .18s;}
+  .posters-lightbox-close:hover{background:#222;color:#fff;}
+  .posters-lightbox-img{width:100%;max-height:70vh;object-fit:contain;border-radius:12px;box-shadow:0 24px 64px rgba(0,0,0,.8);}
+  .posters-lightbox-info{text-align:center;width:100%;}
+  .posters-lightbox-movie{font-size:1rem;font-weight:800;color:#fff;}
+  .posters-lightbox-artist{font-size:.8rem;color:#666;margin-top:2px;}
+  .posters-lightbox-actions{display:flex;gap:10px;justify-content:center;margin-top:12px;flex-wrap:wrap;}
+  .poster-action-btn{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:20px;color:#ccc;font-size:.78rem;padding:8px 18px;cursor:pointer;transition:all .18s;font-family:'Montserrat',sans-serif;font-weight:700;}
+  .poster-action-btn:hover{border-color:#555;color:#fff;}
+  .poster-action-btn.liked{background:#e53935;border-color:#e53935;color:#fff;}
+
+  /* Admin panel */
+  .posters-admin{border-top:1px solid #1e1e1e;margin-top:48px;padding-top:32px;}
+  .posters-admin-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
+  .posters-admin-header h3{color:#fff;font-size:1rem;margin:0;}
+  .posters-admin-badge{background:var(--orange);color:#000;font-size:.7rem;font-weight:800;border-radius:20px;padding:3px 10px;}
+  .posters-pending-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;}
+  .poster-pending-card{background:#111;border:1px solid #2a2a2a;border-radius:12px;overflow:hidden;}
+  .poster-pending-card img{width:100%;aspect-ratio:2/3;object-fit:cover;display:block;}
+  .poster-pending-info{padding:10px 12px;}
+  .poster-pending-movie{font-size:.82rem;font-weight:700;color:#fff;}
+  .poster-pending-meta{font-size:.72rem;color:#666;margin-top:2px;}
+  .poster-pending-note{font-size:.72rem;color:#888;margin-top:6px;font-style:italic;}
+  .poster-pending-actions{display:flex;gap:8px;margin-top:10px;}
+  .poster-approve-btn{flex:1;background:#2e7d32;border:none;border-radius:8px;color:#fff;font-size:.75rem;font-weight:700;padding:7px;cursor:pointer;font-family:'Montserrat',sans-serif;transition:background .18s;}
+  .poster-approve-btn:hover{background:#388e3c;}
+  .poster-reject-btn{flex:1;background:#b71c1c;border:none;border-radius:8px;color:#fff;font-size:.75rem;font-weight:700;padding:7px;cursor:pointer;font-family:'Montserrat',sans-serif;transition:background .18s;}
+  .poster-reject-btn:hover{background:#c62828;}
+
+  @media(max-width:600px){
+    .posters-heading{font-size:1.6rem;}
+    .posters-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));}
+    .posters-row{grid-template-columns:1fr 80px;}
+  }
+
   /* ═══ TAB NAVIGATION ═══ */
   .pmovies-tabs { display:flex; gap:8px; margin-bottom:32px; position:sticky; top:0; z-index:100; background:linear-gradient(to bottom,#0a0a0a 82%,transparent); padding:14px 0 10px; }
   .pmovies-tab { flex:1; background:#111; border:1px solid #222; border-radius:14px; color:#666; cursor:pointer; font-family:'Montserrat',sans-serif; font-size:.72rem; font-weight:700; letter-spacing:.07em; padding:13px 8px 10px; text-transform:uppercase; transition:all .2s; display:flex; flex-direction:column; align-items:center; gap:4px; }
@@ -1334,6 +1430,9 @@
   </button>
   <button class="pmovies-tab" id="tab-btn-backed" onclick="switchTab('backed')" role="tab">
     <span class="tab-icon">❤️</span>Backed
+  </button>
+  <button class="pmovies-tab" id="tab-btn-posters" onclick="switchTab('posters')" role="tab">
+    <span class="tab-icon">🎨</span>Posters
   </button>
 </nav>
 <div class="tab-panel active" id="tab-panel-discover">
@@ -1821,6 +1920,108 @@
     <a href="https://docs.google.com/forms/d/1_qge6a5gjBamL8S9xF8x1vgVHszqoOS2FlUdYRRK0oQ/viewform" target="_blank" rel="noopener" class="backed-suggest-btn">Suggest a Creator →</a>
   </div>
 </div><!-- /tab-panel-backed -->
+
+<!-- ══════════════ POSTERS TAB ══════════════ -->
+<div class="tab-panel" id="tab-panel-posters">
+
+  <!-- GALLERY HEADER -->
+  <div class="posters-header">
+    <div class="posters-eyebrow">Community</div>
+    <h2 class="posters-heading">Fan Art Gallery</h2>
+    <p class="posters-sub">Original posters by the PMovies community. Download, share, get inspired.</p>
+    <button class="posters-upload-btn" id="postersUploadBtn" onclick="postersOpenUpload()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:7px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Submit Your Poster
+    </button>
+  </div>
+
+  <!-- GALLERY GRID -->
+  <div class="posters-grid" id="postersGrid">
+    <div class="posters-loading" id="postersLoading">
+      <div class="posters-spinner"></div>
+      <p>Loading gallery…</p>
+    </div>
+  </div>
+  <div class="posters-empty" id="postersEmpty" style="display:none">
+    <div style="font-size:3rem;margin-bottom:16px">🎬</div>
+    <p>No posters yet — be the first to submit yours!</p>
+  </div>
+
+  <!-- ADMIN PANEL (shown when ?admin=pmovies2024 is in URL) -->
+  <div class="posters-admin" id="postersAdmin" style="display:none">
+    <div class="posters-admin-header">
+      <h3>⚙️ Admin — Pending Submissions</h3>
+      <span class="posters-admin-badge" id="postersAdminCount">0 pending</span>
+    </div>
+    <div class="posters-pending-grid" id="postersPendingGrid">
+      <p style="color:#666;font-size:.85rem">No pending submissions.</p>
+    </div>
+  </div>
+
+</div><!-- /tab-panel-posters -->
+
+<!-- UPLOAD MODAL -->
+<div class="posters-modal-overlay" id="postersModalOverlay" onclick="postersCloseUpload(event)">
+  <div class="posters-modal" id="postersModal">
+    <button class="posters-modal-close" onclick="postersCloseUpload()">&times;</button>
+    <div class="posters-modal-title">Submit Your Fan Art Poster</div>
+    <p class="posters-modal-sub">Share your original movie poster with the community. All submissions are reviewed before going live.</p>
+    <div class="posters-form" id="postersForm">
+      <div class="posters-field">
+        <label>Your Name <span class="req">*</span></label>
+        <input type="text" id="pf_name" placeholder="Display name" maxlength="40" />
+      </div>
+      <div class="posters-field">
+        <label>Your Email <span class="req">*</span></label>
+        <input type="email" id="pf_email" placeholder="yourname@email.com" />
+      </div>
+      <div class="posters-field posters-row">
+        <div>
+          <label>Movie Title <span class="req">*</span></label>
+          <input type="text" id="pf_movie" placeholder="e.g. Dune" maxlength="80" />
+        </div>
+        <div style="max-width:100px">
+          <label>Year <span class="req">*</span></label>
+          <input type="number" id="pf_year" placeholder="2024" min="1900" max="2030" />
+        </div>
+      </div>
+      <div class="posters-field">
+        <label>Poster Image <span class="req">*</span></label>
+        <div class="posters-drop-zone" id="postersDropZone" onclick="document.getElementById('pf_file').click()">
+          <div class="posters-drop-icon">🖼️</div>
+          <div id="postersDropLabel">Click to choose or drag &amp; drop your image</div>
+          <div class="posters-drop-hint">JPG or PNG · Max 8 MB</div>
+        </div>
+        <input type="file" id="pf_file" accept="image/jpeg,image/png" style="display:none" onchange="postersFileChosen(this)" />
+      </div>
+      <div class="posters-field">
+        <label>Short Note <span style="color:#555;font-size:.75rem">(optional)</span></label>
+        <textarea id="pf_note" placeholder="Tools used, inspiration, anything you'd like to share…" maxlength="200" rows="2"></textarea>
+      </div>
+      <button class="posters-submit-btn" id="postersSubmitBtn" onclick="postersSubmit()">
+        Submit for Review
+      </button>
+      <div class="posters-form-status" id="postersFormStatus"></div>
+    </div>
+  </div>
+</div>
+
+<!-- POSTER LIGHTBOX -->
+<div class="posters-lightbox-overlay" id="postersLightboxOverlay" onclick="postersCloseLightbox(event)">
+  <div class="posters-lightbox">
+    <button class="posters-lightbox-close" onclick="postersCloseLightbox()">&times;</button>
+    <img class="posters-lightbox-img" id="postersLightboxImg" src="" alt="" />
+    <div class="posters-lightbox-info">
+      <div class="posters-lightbox-movie" id="postersLightboxMovie"></div>
+      <div class="posters-lightbox-artist" id="postersLightboxArtist"></div>
+      <div class="posters-lightbox-actions">
+        <button class="poster-action-btn" id="postersLightboxLike" onclick="postersLightboxToggleLike()">♡ <span id="postersLightboxLikeCount">0</span></button>
+        <button class="poster-action-btn" id="postersLightboxDownload" onclick="postersDownload()">↓ Download</button>
+        <button class="poster-action-btn" onclick="postersShare()">⤴ Share</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 </main>
 
@@ -4198,7 +4399,7 @@
   /* ══ TAB NAVIGATION ══ */
   function switchTab(name) {
     let foryouWasActive = false;
-    ['discover','foryou','community','lists','series','backed'].forEach(t => {
+    ['discover','foryou','community','lists','series','backed','posters'].forEach(t => {
       const panel = document.getElementById('tab-panel-' + t);
       const wasActive = panel.classList.contains('active');
       if (t === 'foryou') foryouWasActive = wasActive;
@@ -4216,6 +4417,7 @@
     // Users can explicitly reset via "Take the journey again".
     if (name === 'foryou' && !foryouWasActive) { _journeyInit(); }
     if (name === 'backed') { renderBackedTab(); }
+    if (name === 'posters') { postersInit(); }
     if (name === 'series') {
       if (nowAiringHeroes.length) {
         const pick   = nowAiringHeroes[Math.floor(Math.random() * nowAiringHeroes.length)];
@@ -4425,7 +4627,7 @@
   // _journeyInit lives in a later script block and would be undefined if called synchronously here.
   setTimeout(function() {
     const hash = location.hash.replace('#', '');
-    if (['discover','foryou','community','lists','series','backed'].includes(hash)) switchTab(hash);
+    if (['discover','foryou','community','lists','series','backed','posters'].includes(hash)) switchTab(hash);
   }, 0);
 
   /* ══ FRIENDS LETTERBOXD REVIEWS ══ */
@@ -9286,6 +9488,342 @@ function _authorBadge(name) {
   else if (total >= 3)  { cls='rb-buff';    icon='⭐'; label='Film Buff';  }
   else                  { cls='rb-newcomer';icon='🎬'; label='Newcomer';   }
   return `<span class="reviewer-badge ${cls}" title="${label}: ${total} review${total!==1?'s':''}">${icon}<span class="reviewer-badge-label">${label}</span></span>`;
+}
+
+/* ══════════════════════════════════════════════════
+   POSTERS — FAN ART GALLERY
+══════════════════════════════════════════════════ */
+
+const CLOUDINARY_CLOUD = 'dmkgrsl1j';
+const CLOUDINARY_PRESET = 'PMovies';
+const POSTERS_ADMIN_KEY = 'pmovies2024';
+const POSTERS_RTDB_PENDING  = `${RTDB}/posterUploads/pending.json`;
+const POSTERS_RTDB_APPROVED = `${RTDB}/posterUploads/approved.json`;
+
+let _postersLoaded = false;
+let _postersLightboxKey = null;
+let _postersLikedSet = new Set(JSON.parse(localStorage.getItem('posters_liked') || '[]'));
+
+/* ── Init (called when tab activates) ─────────── */
+function postersInit() {
+  if (_postersLikedSet === undefined) _postersLikedSet = new Set();
+
+  // Check if admin mode
+  const params = new URLSearchParams(location.search);
+  if (params.get('admin') === POSTERS_ADMIN_KEY) {
+    document.getElementById('postersAdmin').style.display = 'block';
+    postersLoadPending();
+  }
+
+  if (_postersLoaded) return;
+  _postersLoaded = true;
+  postersLoadGallery();
+
+  // Drag-and-drop on the drop zone
+  const dz = document.getElementById('postersDropZone');
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault();
+    dz.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) postersValidateAndPreview(file);
+  });
+}
+
+/* ── Load approved gallery ─────────────────────── */
+async function postersLoadGallery() {
+  const grid = document.getElementById('postersGrid');
+  const loading = document.getElementById('postersLoading');
+  const empty = document.getElementById('postersEmpty');
+  try {
+    const res = await fetch(POSTERS_RTDB_APPROVED);
+    const data = await res.json();
+    loading.style.display = 'none';
+    if (!data) { empty.style.display = 'block'; grid.innerHTML = ''; return; }
+    const entries = Object.entries(data).sort((a,b) => b[1].uploadDate - a[1].uploadDate);
+    if (!entries.length) { empty.style.display = 'block'; grid.innerHTML = ''; return; }
+    empty.style.display = 'none';
+    grid.innerHTML = entries.map(([key, p]) => posterCardHTML(key, p)).join('');
+  } catch(e) {
+    loading.innerHTML = `<p style="color:#555">Failed to load gallery.</p>`;
+  }
+}
+
+function posterCardHTML(key, p) {
+  const liked = _postersLikedSet.has(key);
+  return `
+    <div class="poster-card" id="pcard-${key}">
+      <img src="${p.cloudinaryUrl}" alt="${esc(p.movie)} poster by ${esc(p.artistName)}" loading="lazy"
+           onclick="postersOpenLightbox('${key}','${esc(p.cloudinaryUrl)}','${esc(p.movie)}','${p.year}','${esc(p.artistName)}',${p.likes||0})" />
+      <div class="poster-card-info">
+        <div class="poster-card-movie">${esc(p.movie)} <span style="color:#555;font-weight:400">(${p.year})</span></div>
+        <div class="poster-card-artist">by ${esc(p.artistName)}</div>
+        <div class="poster-card-actions">
+          <button class="poster-card-like${liked?' liked':''}" id="plike-${key}" onclick="postersToggleLike(event,'${key}')">
+            ${liked?'♥':'♡'} <span id="plikecount-${key}">${p.likes||0}</span>
+          </button>
+          <button class="poster-card-dl" onclick="postersDownloadDirect(event,'${p.cloudinaryUrl}','${esc(p.movie)}')">↓</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ── Like toggle ───────────────────────────────── */
+async function postersToggleLike(e, key) {
+  e.stopPropagation();
+  const btn = document.getElementById(`plike-${key}`);
+  const countEl = document.getElementById(`plikecount-${key}`);
+  const liked = _postersLikedSet.has(key);
+  const delta = liked ? -1 : 1;
+
+  // Optimistic UI
+  if (liked) { _postersLikedSet.delete(key); btn.classList.remove('liked'); btn.innerHTML = `♡ <span id="plikecount-${key}">${Math.max(0,parseInt(countEl.textContent)+delta)}</span>`; }
+  else        { _postersLikedSet.add(key);    btn.classList.add('liked');    btn.innerHTML = `♥ <span id="plikecount-${key}">${parseInt(countEl.textContent)+delta}</span>`; }
+  localStorage.setItem('posters_liked', JSON.stringify([..._postersLikedSet]));
+
+  // Sync to RTDB
+  try {
+    const r = await fetch(`${RTDB}/posterUploads/approved/${key}/likes.json`);
+    const cur = (await r.json()) || 0;
+    await fetch(`${RTDB}/posterUploads/approved/${key}/likes.json`, {
+      method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(Math.max(0, cur+delta))
+    });
+  } catch(err) { /* silent — local state is still updated */ }
+}
+
+/* ── Upload modal ──────────────────────────────── */
+function postersOpenUpload() {
+  document.getElementById('postersModalOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function postersCloseUpload(e) {
+  if (e && e.target !== document.getElementById('postersModalOverlay')) return;
+  document.getElementById('postersModalOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+let _postersFile = null;
+function postersFileChosen(input) {
+  const file = input.files[0];
+  if (file) postersValidateAndPreview(file);
+}
+function postersValidateAndPreview(file) {
+  const status = document.getElementById('postersFormStatus');
+  if (!['image/jpeg','image/png'].includes(file.type)) {
+    status.textContent = 'Only JPG or PNG files are accepted.'; status.className='posters-form-status err'; return;
+  }
+  if (file.size > 8 * 1024 * 1024) {
+    status.textContent = 'File is too large. Max 8 MB.'; status.className='posters-form-status err'; return;
+  }
+  _postersFile = file;
+  status.textContent = '';
+  const dz = document.getElementById('postersDropZone');
+  dz.classList.add('has-file');
+  document.getElementById('postersDropLabel').textContent = `✓ ${file.name}`;
+}
+
+async function postersSubmit() {
+  const name  = document.getElementById('pf_name').value.trim();
+  const email = document.getElementById('pf_email').value.trim();
+  const movie = document.getElementById('pf_movie').value.trim();
+  const year  = document.getElementById('pf_year').value.trim();
+  const note  = document.getElementById('pf_note').value.trim();
+  const status = document.getElementById('postersFormStatus');
+
+  if (!name)  { status.textContent='Please enter your name.'; status.className='posters-form-status err'; return; }
+  if (!email || !/\S+@\S+\.\S+/.test(email)) { status.textContent='Please enter a valid email.'; status.className='posters-form-status err'; return; }
+  if (!movie) { status.textContent='Please enter the movie title.'; status.className='posters-form-status err'; return; }
+  if (!year || year < 1900 || year > 2030) { status.textContent='Please enter a valid year.'; status.className='posters-form-status err'; return; }
+  if (!_postersFile) { status.textContent='Please choose an image file.'; status.className='posters-form-status err'; return; }
+
+  const btn = document.getElementById('postersSubmitBtn');
+  btn.disabled = true; btn.textContent = 'Uploading…';
+  status.textContent = ''; status.className = 'posters-form-status';
+
+  try {
+    // 1. Upload to Cloudinary
+    const fd = new FormData();
+    fd.append('file', _postersFile);
+    fd.append('upload_preset', CLOUDINARY_PRESET);
+    fd.append('folder', 'pmovies_posters');
+
+    const cloudRes = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method:'POST', body:fd });
+    if (!cloudRes.ok) throw new Error('Cloudinary upload failed');
+    const cloudData = await cloudRes.json();
+
+    // 2. Save metadata to RTDB pending queue
+    const record = {
+      artistName: name,
+      email: email,
+      movie: movie,
+      year: parseInt(year),
+      note: note,
+      cloudinaryUrl: cloudData.secure_url,
+      publicId: cloudData.public_id,
+      uploadDate: Date.now(),
+      likes: 0
+    };
+    const rtdbRes = await fetch(`${RTDB}/posterUploads/pending.json`, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(record)
+    });
+    if (!rtdbRes.ok) throw new Error('Database error');
+
+    status.textContent = '✓ Submitted! Your poster will appear in the gallery after review.';
+    status.className = 'posters-form-status ok';
+    btn.textContent = 'Submitted ✓';
+
+    // Reset form after a moment
+    setTimeout(() => {
+      document.getElementById('pf_name').value='';
+      document.getElementById('pf_email').value='';
+      document.getElementById('pf_movie').value='';
+      document.getElementById('pf_year').value='';
+      document.getElementById('pf_note').value='';
+      document.getElementById('pf_file').value='';
+      _postersFile = null;
+      const dz = document.getElementById('postersDropZone');
+      dz.classList.remove('has-file');
+      document.getElementById('postersDropLabel').textContent = 'Click to choose or drag & drop your image';
+      btn.disabled=false; btn.textContent='Submit for Review';
+      status.textContent=''; status.className='posters-form-status';
+      postersCloseUpload();
+    }, 2800);
+
+  } catch(err) {
+    status.textContent = 'Upload failed — please try again.'; status.className='posters-form-status err';
+    btn.disabled=false; btn.textContent='Submit for Review';
+  }
+}
+
+/* ── Lightbox ───────────────────────────────────── */
+function postersOpenLightbox(key, url, movie, year, artist, likes) {
+  _postersLightboxKey = key;
+  document.getElementById('postersLightboxImg').src = url;
+  document.getElementById('postersLightboxMovie').textContent = `${movie} (${year})`;
+  document.getElementById('postersLightboxArtist').textContent = `by ${artist}`;
+  const likeBtn = document.getElementById('postersLightboxLike');
+  const liked = _postersLikedSet.has(key);
+  likeBtn.className = `poster-action-btn${liked?' liked':''}`;
+  likeBtn.innerHTML = `${liked?'♥':'♡'} <span id="postersLightboxLikeCount">${likes}</span>`;
+  document.getElementById('postersLightboxOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function postersCloseLightbox(e) {
+  if (e && e.target !== document.getElementById('postersLightboxOverlay')) return;
+  document.getElementById('postersLightboxOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+  _postersLightboxKey = null;
+}
+async function postersLightboxToggleLike() {
+  if (!_postersLightboxKey) return;
+  // Sync the card like and update lightbox button
+  await postersToggleLike({ stopPropagation:()=>{} }, _postersLightboxKey);
+  const key = _postersLightboxKey;
+  const liked = _postersLikedSet.has(key);
+  const countEl = document.getElementById(`plikecount-${key}`);
+  const likeBtn = document.getElementById('postersLightboxLike');
+  likeBtn.className = `poster-action-btn${liked?' liked':''}`;
+  likeBtn.innerHTML = `${liked?'♥':'♡'} <span id="postersLightboxLikeCount">${countEl ? countEl.textContent : 0}</span>`;
+}
+function postersDownload() {
+  const img = document.getElementById('postersLightboxImg');
+  const movie = document.getElementById('postersLightboxMovie').textContent.replace(/[^a-z0-9]/gi,'_');
+  postersDownloadDirect(null, img.src, movie);
+}
+function postersDownloadDirect(e, url, movie) {
+  if (e) e.stopPropagation();
+  const a = document.createElement('a');
+  // Cloudinary: force download via fl_attachment
+  a.href = url.replace('/upload/', '/upload/fl_attachment/');
+  a.download = (movie||'poster').replace(/[^a-z0-9]/gi,'_') + '_pmovies.jpg';
+  a.target = '_blank';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+async function postersShare() {
+  const img = document.getElementById('postersLightboxImg');
+  const movie = document.getElementById('postersLightboxMovie').textContent;
+  if (navigator.share) {
+    try { await navigator.share({ title:`${movie} — Fan Art on PMovies`, url: img.src }); return; } catch(e) {}
+  }
+  try { await navigator.clipboard.writeText(img.src); showToast('Link copied!'); } catch(e) {}
+}
+
+/* ── Admin: load pending ───────────────────────── */
+async function postersLoadPending() {
+  const grid = document.getElementById('postersPendingGrid');
+  const badge = document.getElementById('postersAdminCount');
+  try {
+    const res = await fetch(POSTERS_RTDB_PENDING);
+    const data = await res.json();
+    if (!data) { grid.innerHTML='<p style="color:#666;font-size:.85rem">No pending submissions.</p>'; badge.textContent='0 pending'; return; }
+    const entries = Object.entries(data).sort((a,b)=>b[1].uploadDate-a[1].uploadDate);
+    badge.textContent = `${entries.length} pending`;
+    grid.innerHTML = entries.map(([key,p]) => `
+      <div class="poster-pending-card" id="ppend-${key}">
+        <img src="${p.cloudinaryUrl}" alt="" />
+        <div class="poster-pending-info">
+          <div class="poster-pending-movie">${esc(p.movie)} (${p.year})</div>
+          <div class="poster-pending-meta">by ${esc(p.artistName)} · ${new Date(p.uploadDate).toLocaleDateString()}</div>
+          <div class="poster-pending-meta" style="margin-top:2px">${esc(p.email)}</div>
+          ${p.note ? `<div class="poster-pending-note">"${esc(p.note)}"</div>`:''}
+          <div class="poster-pending-actions">
+            <button class="poster-approve-btn" onclick="postersApprove('${key}')">✓ Approve</button>
+            <button class="poster-reject-btn"  onclick="postersReject('${key}')">✕ Reject</button>
+          </div>
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    grid.innerHTML='<p style="color:#e53935;font-size:.85rem">Failed to load pending submissions.</p>';
+  }
+}
+
+async function postersApprove(key) {
+  const card = document.getElementById(`ppend-${key}`);
+  card.style.opacity = '0.5';
+  try {
+    // 1. Read the pending record
+    const r = await fetch(`${RTDB}/posterUploads/pending/${key}.json`);
+    const record = await r.json();
+    if (!record) throw new Error('Record not found');
+
+    // 2. Write to approved with the same key
+    await fetch(`${RTDB}/posterUploads/approved/${key}.json`, {
+      method:'PUT', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ ...record, approvedDate: Date.now() })
+    });
+
+    // 3. Delete from pending
+    await fetch(`${RTDB}/posterUploads/pending/${key}.json`, { method:'DELETE' });
+
+    card.remove();
+    // Reload gallery
+    _postersLoaded = false;
+    postersLoadGallery();
+    // Update badge
+    const remaining = document.querySelectorAll('[id^="ppend-"]').length;
+    document.getElementById('postersAdminCount').textContent = `${remaining} pending`;
+    showToast('Poster approved ✓');
+  } catch(e) {
+    card.style.opacity='1';
+    showToast('Approval failed — try again');
+  }
+}
+
+async function postersReject(key) {
+  if (!confirm('Reject and delete this submission?')) return;
+  const card = document.getElementById(`ppend-${key}`);
+  card.style.opacity = '0.5';
+  try {
+    await fetch(`${RTDB}/posterUploads/pending/${key}.json`, { method:'DELETE' });
+    card.remove();
+    const remaining = document.querySelectorAll('[id^="ppend-"]').length;
+    document.getElementById('postersAdminCount').textContent = `${remaining} pending`;
+    showToast('Submission rejected.');
+  } catch(e) {
+    card.style.opacity='1';
+    showToast('Failed — try again');
+  }
 }
 
 </script>
