@@ -5883,7 +5883,7 @@
     <div class="admin-pw-wrap" id="adminPwWrap">
       <div class="admin-field">
         <label>Admin Password</label>
-        <input type="password" id="adminPwInput" placeholder="Enter password…" onkeydown="if(event.key==='Enter')checkAdminPw()"/>
+        <input type="password" id="challengeAdminPwInput" placeholder="Enter password…" onkeydown="if(event.key==='Enter')checkAdminPw()"/>
       </div>
       <div class="admin-btns">
         <button class="admin-save-btn" onclick="checkAdminPw()">Unlock</button>
@@ -5931,7 +5931,7 @@
     document.getElementById('adminOverlay').style.display = 'flex';
     document.getElementById('adminPwWrap').style.display = 'block';
     document.getElementById('adminForm').style.display = 'none';
-    document.getElementById('adminPwInput').value = '';
+    document.getElementById('challengeAdminPwInput').value = '';
     // Pre-fill deadline to next Thursday 23:59
     const d = new Date(); const day = d.getDay();
     const daysToThurs = (4 - day + 7) % 7 || 7;
@@ -5946,12 +5946,12 @@
     selectedChallenge = null;
   }
   function checkAdminPw() {
-    if (document.getElementById('adminPwInput').value === CHALLENGE_PW) {
+    if (document.getElementById('challengeAdminPwInput').value === CHALLENGE_PW) {
       document.getElementById('adminPwWrap').style.display = 'none';
       document.getElementById('adminForm').style.display = 'block';
     } else {
-      document.getElementById('adminPwInput').style.borderColor = '#f44';
-      setTimeout(() => document.getElementById('adminPwInput').style.borderColor = '', 1000);
+      document.getElementById('challengeAdminPwInput').style.borderColor = '#f44';
+      setTimeout(() => document.getElementById('challengeAdminPwInput').style.borderColor = '', 1000);
     }
   }
 
