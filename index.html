@@ -1254,14 +1254,10 @@
   .pf-movie-dd-item{padding:10px 14px;cursor:pointer;font-size:.78rem;color:#ccc;display:flex;align-items:center;gap:10px;border-bottom:1px solid #222;}
   .pf-movie-dd-item:last-child{border-bottom:none;}
   .pf-movie-dd-item:hover{background:#252525;}
-  .pf-movie-dd-item img{width:28px;height:42px;object-fit:cover;border-radius:4px;background:#333;flex-shrink:0;}
-  .pf-movie-dd-ph{width:28px;height:42px;background:#2a2a2a;border-radius:4px;flex-shrink:0;}
   .pf-movie-dd-info{flex:1;min-width:0;}
   .pf-movie-dd-title{font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .pf-movie-dd-year{font-size:.7rem;color:#666;margin-top:2px;}
   .pf-movie-selected{display:flex;align-items:center;gap:10px;background:#141414;border:1px solid #2e2e2e;border-radius:10px;padding:8px 12px;margin-top:6px;}
-  .pf-movie-selected img{width:24px;height:36px;object-fit:cover;border-radius:3px;background:#333;flex-shrink:0;}
-  .pf-movie-sel-ph{width:24px;height:36px;background:#2a2a2a;border-radius:3px;flex-shrink:0;}
   .pf-movie-sel-title{flex:1;font-size:.83rem;font-weight:700;color:#fff;}
   .pf-movie-sel-year{font-size:.72rem;color:#888;margin-left:5px;}
   .pf-movie-clear{background:none;border:none;color:#555;cursor:pointer;font-size:1.1rem;padding:0 0 0 6px;line-height:1;transition:color .18s;}
@@ -9736,21 +9732,16 @@ function pfMovieSearch(q) {
       }
       dd.innerHTML = results.map(m => {
         const year = m.release_date ? m.release_date.slice(0, 4) : '?';
-        const poster = m.poster_path ? `https://image.tmdb.org/t/p/w92${m.poster_path}` : '';
-        const imgEl = poster
-          ? `<img src="${poster}" alt="" loading="lazy" />`
-          : `<div class="pf-movie-dd-ph"></div>`;
         const safeTitle = m.title.replace(/'/g, '&#39;');
         const safeYear  = String(year).replace(/'/g, '&#39;');
-        const safePoster = poster.replace(/'/g, '&#39;');
-        return `<div class="pf-movie-dd-item" onclick="pfMovieSelect(${m.id},'${safeTitle}','${safeYear}','${safePoster}')">${imgEl}<div class="pf-movie-dd-info"><div class="pf-movie-dd-title">${m.title}</div><div class="pf-movie-dd-year">${year}</div></div></div>`;
+        return `<div class="pf-movie-dd-item" onclick="pfMovieSelect(${m.id},'${safeTitle}','${safeYear}')"><div class="pf-movie-dd-info"><div class="pf-movie-dd-title">${m.title}</div><div class="pf-movie-dd-year">${year}</div></div></div>`;
       }).join('');
       dd.classList.add('open');
     } catch(e) { console.warn('[pfMovieSearch]', e); }
   }, 320);
 }
 
-function pfMovieSelect(id, title, year, poster) {
+function pfMovieSelect(id, title, year) {
   document.getElementById('pf_movie').value    = title;
   document.getElementById('pf_year').value     = year;
   document.getElementById('pf_tmdb_id').value  = id;
@@ -9759,11 +9750,8 @@ function pfMovieSelect(id, title, year, poster) {
   const dd = document.getElementById('pfMovieDD');
   dd.classList.remove('open'); dd.innerHTML = '';
 
-  const imgEl = poster
-    ? `<img src="${poster}" alt="" />`
-    : `<div class="pf-movie-sel-ph"></div>`;
   const sel = document.getElementById('pfMovieSelected');
-  sel.innerHTML = `${imgEl}<span class="pf-movie-sel-title">${title}<span class="pf-movie-sel-year">(${year})</span></span><button class="pf-movie-clear" onclick="pfMovieClear()" title="Change movie">&times;</button>`;
+  sel.innerHTML = `<span class="pf-movie-sel-title">${title}<span class="pf-movie-sel-year">(${year})</span></span><button class="pf-movie-clear" onclick="pfMovieClear()" title="Change movie">&times;</button>`;
   sel.style.display = 'flex';
 }
 
