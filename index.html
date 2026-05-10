@@ -4442,7 +4442,10 @@
       ? 'Let\'s discover together &nbsp;·&nbsp; who are you today?'
       : 'Your Cinema &nbsp;·&nbsp; Your Mood &nbsp;·&nbsp; Your Film';
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    history.replaceState(null, '', '#' + name);
+    // Preserve ?admin= (or any hash query param) when staying on the same tab
+    const existingHashQuery = location.hash.includes('?') ? '?' + location.hash.split('?')[1] : '';
+    const hashSuffix = (name === 'posters' && existingHashQuery) ? existingHashQuery : '';
+    history.replaceState(null, '', '#' + name + hashSuffix);
   }
   /* ══ BACKED — CREATOR SPOTLIGHT ══ */
   // Base Monday: 2026-05-04. Each entry = one week's 3 creators.
