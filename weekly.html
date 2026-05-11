@@ -434,12 +434,11 @@
       padding: 32px 0;
       border-bottom: 1px solid var(--border);
     }
+    .share-buttons { display: flex; gap: 12px; margin-bottom: 22px; flex-wrap: wrap; }
     .share-btn {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: var(--orange);
-      color: #000;
       font-family: 'Montserrat', sans-serif;
       font-size: 13px;
       font-weight: 700;
@@ -448,11 +447,13 @@
       border-radius: 6px;
       padding: 11px 22px;
       cursor: pointer;
-      margin-bottom: 22px;
       transition: opacity .2s;
+      text-decoration: none;
     }
-    .share-btn:hover { opacity: .85; }
-    .share-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .share-btn:hover { opacity: .85; text-decoration: none; }
+    .share-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .share-copy { background: var(--orange); color: #000; }
+    .share-x    { background: #000; color: #fff; border: 1px solid #333; }
 
     .og-label { font-size: 10px; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 10px; }
     .og-preview {
@@ -547,7 +548,7 @@
       transition: color .2s, border-color .2s;
     }
     .social-link:hover { color: var(--orange); border-color: var(--orange); text-decoration: none; }
-    .social-link svg { width: 18px; height: 18px; fill: currentColor; }
+    .social-link svg { width: 18px; height: 18px; }
 
     /* ── Loading skeleton ── */
     #loading {
@@ -634,29 +635,39 @@ function platformLabel(p){
   return { youtube:'YouTube', tiktok:'TikTok', instagram:'Instagram', x:'X / Twitter', letterboxd:'Letterboxd', blog:'Blog', podcast:'Podcast' }[p] || 'Other';
 }
 
+function platformLogo(platform){
+  const p = (platform||'').toLowerCase();
+  if(p==='youtube') return `<svg width="22" height="16" viewBox="0 0 24 17" fill="currentColor"><path d="M23.5 2.69A3.02 3.02 0 0021.38.55C19.54 0 12 0 12 0S4.46 0 2.62.55A3.02 3.02 0 00.5 2.69C0 4.54 0 8.5 0 8.5s0 3.96.5 5.81a3.02 3.02 0 002.12 2.14C4.46 17 12 17 12 17s7.54 0 9.38-.55a3.02 3.02 0 002.12-2.14C24 12.46 24 8.5 24 8.5s0-3.96-.5-5.81zM9.75 12V5l6.5 3.5-6.5 3.5z"/></svg>`;
+  if(p==='tiktok') return `<svg width="18" height="20" viewBox="0 0 19 22" fill="currentColor"><path d="M18.09 5.19a4.83 4.83 0 01-3.77-4.25V.5h-3.45v13.17a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V8.01a6.27 6.27 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V7.52a8.27 8.27 0 004.84 1.55V5.62a4.85 4.85 0 01-1.07-.43z"/></svg>`;
+  if(p==='instagram') return `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>`;
+  // Blog / other — globe icon
+  return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>`;
+}
+
 function socialIcon(platform){
   const icons = {
-    x:          `<svg viewBox="0 0 24 24"><path d="M4 4l16 16M4 20L20 4"/></svg>`,
-    youtube:    `<svg viewBox="0 0 24 24"><path d="M2.5 17a24.12 24.12 0 010-10C2.5 5 4 4 8 4h8c4 0 5.5 1 5.5 3a24.12 24.12 0 010 10C21.5 19 20 20 16 20H8c-4 0-5.5-1-5.5-3z"/><path d="M10 15l5-3-5-3v6z"/></svg>`,
-    instagram:  `<svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".5" fill="currentColor"/></svg>`,
-    tiktok:     `<svg viewBox="0 0 24 24"><path d="M9 12a4 4 0 104 4V4a5 5 0 005 5"/></svg>`,
-    letterboxd: `<svg viewBox="0 0 24 24"><circle cx="8" cy="12" r="5"/><circle cx="16" cy="12" r="5"/></svg>`,
+    x: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.747l7.73-8.835L2 2.25h6.172l4.265 5.658L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>`,
+    youtube: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>`,
+    instagram: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>`,
+    tiktok: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V9.02a8.27 8.27 0 004.84 1.55V7.12a4.85 4.85 0 01-1.07-.43z"/></svg>`,
+    letterboxd: `<svg viewBox="0 0 32 24" fill="currentColor"><ellipse cx="10" cy="12" rx="9.5" ry="9.5" opacity="0.85"/><ellipse cx="22" cy="12" rx="9.5" ry="9.5" opacity="0.85"/></svg>`,
   };
   return icons[platform] || icons.x;
 }
 
 /* ─── Render Header ─── */
 function renderHeader(data){
-  const d = new Date(data.weekOf + 'T00:00:00');
-  const weekStr = d.toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
+  // Show the Friday publish date (publishDate), fall back to weekOf if absent
+  const d = new Date((data.publishDate || data.weekOf) + 'T00:00:00Z');
+  const dateStr = d.toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric', timeZone:'UTC' });
   return `
     <div class="pmw-header">
       <div class="pmw-eyebrow">Weekly digest</div>
-      <div class="pmw-title">PMovies <span>Weekly</span></div>
+      <div class="pmw-title"><span>PMovies</span> Weekly</div>
       <div class="pmw-meta">
         <span>Issue #${esc(data.issue)}</span>
         <div class="pmw-meta-dot"></div>
-        <span>Week of ${weekStr}</span>
+        <span>${dateStr}</span>
         <div class="pmw-meta-dot"></div>
         <span class="pmw-teaser">${esc(data.teaser)}</span>
       </div>
@@ -774,7 +785,7 @@ function renderCreators(creators){
     return `
       <div class="creator-card">
         <div class="creator-top">
-          <div class="creator-avatar">${esc(c.initials||c.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase())}</div>
+          <div class="creator-avatar">${platformLogo(p)}</div>
           <div>
             <div class="creator-platform ${pClass}">${platformLabel(p)}</div>
             <div class="creator-name">${esc(c.name)}</div>
@@ -793,20 +804,27 @@ function renderCreators(creators){
 
 /* ─── Render Share ─── */
 function renderShare(data){
-  const shareUrl  = `${SITE_URL}/weekly`;
-  const shareTitle= `PMovies Weekly #${data.issue} — ${data.teaser||'Film Community Digest'}`;
+  const shareUrl   = `${SITE_URL}/weekly`;
+  const shareText  = `PMovies Weekly #${data.issue} — ${data.teaser||'Film Community Digest'}`;
+  const tweetHref  = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
   return `
     <div class="share-section">
       <div class="section-label">Share this issue</div>
-      <button class="share-btn" onclick="shareIssue('${shareUrl}','${esc(shareTitle)}')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-        Share this issue
-      </button>
+      <div class="share-buttons">
+        <button class="share-btn share-copy" onclick="copyLink('${shareUrl}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          Copy link
+        </button>
+        <a href="${tweetHref}" target="_blank" rel="noopener" class="share-btn share-x">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.747l7.73-8.835L2 2.25h6.172l4.265 5.658L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          Share on X
+        </a>
+      </div>
       <div class="og-label">How it looks when shared</div>
       <div class="og-preview">
         <div class="og-cover">
           <img src="${SITE_URL}/weekly-cover.jpg" alt="PMovies Weekly cover" onerror="this.style.display='none'"/>
-          <div class="og-cover-fallback">PMovies <span>Weekly</span></div>
+          <div class="og-cover-fallback"><span>PMovies</span> Weekly</div>
         </div>
         <div class="og-body">
           <div class="og-body-title">PMovies Weekly #${esc(data.issue)} — ${esc(data.teaser||'Film Community Digest')}</div>
@@ -817,15 +835,20 @@ function renderShare(data){
     </div>`;
 }
 
-function shareIssue(url, title){
-  if(navigator.share){
-    navigator.share({ title, url }).catch(()=>{});
-  } else {
-    navigator.clipboard.writeText(url).then(()=>{
-      const btn = document.querySelector('.share-btn');
-      if(btn){ btn.textContent = 'Link copied ✓'; setTimeout(()=>{ btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Share this issue`; }, 2500); }
-    });
-  }
+function copyLink(url){
+  navigator.clipboard.writeText(url).then(()=>{
+    const btn = document.querySelector('.share-copy');
+    if(btn){
+      const orig = btn.innerHTML;
+      btn.textContent = '✓ Link copied!';
+      setTimeout(()=>{ btn.innerHTML = orig; }, 2500);
+    }
+  }).catch(()=>{
+    const ta = document.createElement('textarea');
+    ta.value = url; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+  });
 }
 
 /* ─── Render Archive ─── */
@@ -856,8 +879,8 @@ function renderFooter(){
     { p:'x',          url:'https://twitter.com/PMovies155',   label:'X / Twitter' },
     { p:'youtube',    url:'https://youtube.com/@PMovies155',   label:'YouTube'     },
     { p:'instagram',  url:'https://instagram.com/pmovies155',  label:'Instagram'   },
-    { p:'tiktok',     url:'https://tiktok.com/@pmovies',       label:'TikTok'      },
-    { p:'letterboxd', url:'https://letterboxd.com/pmovies',    label:'Letterboxd'  },
+    { p:'tiktok',     url:'https://tiktok.com/@pmovies155',     label:'TikTok'      },
+    { p:'letterboxd', url:'https://letterboxd.com/pastoo',     label:'Letterboxd'  },
   ];
   const links = socials.map(s=>`
     <a href="${s.url}" class="social-link" target="_blank" rel="noopener" title="${s.label}" aria-label="${s.label}">
@@ -878,7 +901,7 @@ function showComingSoon(){
   el.innerHTML = `
     <div id="coming-soon">
       <div class="cs-issue">Issue #1 · Coming Friday</div>
-      <div class="cs-title">PMovies <span>Weekly</span></div>
+      <div class="cs-title"><span>PMovies</span> Weekly</div>
       <div class="cs-sub">Your weekly film community digest — every Friday.</div>
       <div class="cs-date">
         First issue
