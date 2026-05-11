@@ -19,6 +19,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="PMovies">
   <link rel="manifest" href="manifest.json">
+  <!-- Favicon: file-URL required so Google Search can display the icon -->
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="shortcut icon" type="image/png" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <title>PMovies – Top 100 Films, Movie Recommendations &amp; Mood Discovery</title>
 
@@ -39,6 +42,56 @@
   <meta name="twitter:title"       content="PMovies – Top 100 Films &amp; Movie Recommendations 🎬"/>
   <meta name="twitter:description" content="Community-voted top 100 films of all time, mood-based recommendations, trailers and now in cinemas. Find your next film."/>
   <meta name="twitter:image"       content="https://p-movies.com/icons/icon-192.png"/>
+
+  <!-- FAQPage structured data — enables "People also ask" rich results in Google -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "What are the top 100 films of all time?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "PMovies hosts a community-voted top 100 films list. Current top picks include The Godfather (1972), The Shawshank Redemption (1994), Schindler's List (1993), The Dark Knight (2008) and Pulp Fiction (1994). The list is updated in real time by film lovers voting for their favourites at p-movies.com."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What are the best movies to watch right now?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "PMovies offers personalised mood-based movie recommendations. Answer a few questions about how you feel today — whether you want something dark and intense, funny, emotional or action-packed — and discover the perfect film for your mood. Visit p-movies.com to find your next film."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What movies are in cinemas now?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "PMovies tracks currently showing films and updates regularly. Visit the Discover tab at p-movies.com for the latest films now in cinemas, complete with trailers and community ratings."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What is the greatest film ever made?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "According to the PMovies community vote, The Godfather (1972) currently holds the top spot as the greatest film ever made, followed by The Shawshank Redemption (1994) and Schindler's List (1993). You can vote and shape the list yourself at p-movies.com."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How do I find a movie to watch based on my mood?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "PMovies has a cinematic journey feature — choose how you feel right now (happy, sad, intense, nostalgic, etc.) and the site guides you to a film perfectly matched to your mood. No account needed. Just visit p-movies.com and click 'For You'."
+        }
+      }
+    ]
+  }
+  </script>
 
   <!-- General SEO -->
   <meta name="description" content="Discover the community-voted top 100 films of all time, get personalised mood-based movie recommendations, watch trailers and explore what's now in cinemas near you."/>
@@ -1548,6 +1601,9 @@
   <button class="pmovies-tab" id="tab-btn-posters" onclick="switchTab('posters')" role="tab">
     <span class="tab-icon">🎨</span>Fan Art
   </button>
+  <a href="weekly.html" class="pmovies-tab" style="text-decoration:none" title="PMovies Weekly newsletter">
+    <span class="tab-icon">📰</span>Weekly
+  </a>
 </nav>
 <div class="tab-panel active" id="tab-panel-discover">
 
