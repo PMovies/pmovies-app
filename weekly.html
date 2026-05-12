@@ -354,6 +354,72 @@
     .fanart-link { font-size: 13px; font-weight: 700; color: var(--orange); }
     .fanart-link:hover { text-decoration: underline; }
 
+    /* ── YouTube ── */
+    .yt-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .yt-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      text-decoration: none;
+      color: var(--text);
+      display: block;
+      transition: border-color .2s;
+    }
+    .yt-card:hover { border-color: #c00; text-decoration: none; }
+    .yt-thumb {
+      position: relative;
+      padding-top: 56.25%; /* 16:9 */
+      background: #1a1a1a;
+      overflow: hidden;
+    }
+    .yt-thumb img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .yt-play {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,.3);
+      opacity: 0;
+      transition: opacity .2s;
+    }
+    .yt-card:hover .yt-play { opacity: 1; }
+    .yt-play svg { width: 40px; height: 40px; fill: #fff; filter: drop-shadow(0 2px 6px rgba(0,0,0,.6)); }
+    .yt-info { padding: 10px 12px; }
+    .yt-title {
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .yt-sub { font-size: 10px; color: var(--muted); margin-top: 4px; }
+    .yt-channel-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 14px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #c00;
+    }
+    .yt-channel-link svg { width: 14px; height: 14px; fill: currentColor; }
+    .yt-channel-link:hover { text-decoration: underline; }
+    @media (max-width: 600px) { .yt-grid { grid-template-columns: 1fr; } }
+
     /* ── Creators ── */
     .creators-grid {
       display: grid;
@@ -751,6 +817,37 @@ function renderCinemas(cinemas){
     </div>`;
 }
 
+/* ─── Render YouTube ─── */
+function renderYouTube(videos){
+  if(!videos||!videos.length) return '';
+  const cards = videos.map(v => {
+    const thumb = v.thumbnail || `https://img.youtube.com/vi/${esc(v.videoId)}/mqdefault.jpg`;
+    const date  = v.publishedAt ? new Date(v.publishedAt).toLocaleDateString('en-GB',{day:'numeric',month:'short'}) : '';
+    return `
+      <a href="${esc(v.url)}" target="_blank" rel="noopener" class="yt-card">
+        <div class="yt-thumb">
+          <img src="${esc(thumb)}" alt="${esc(v.title)}" loading="lazy" onerror="this.style.display='none'"/>
+          <div class="yt-play">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+        </div>
+        <div class="yt-info">
+          <div class="yt-title">${esc(v.title)}</div>
+          ${date?`<div class="yt-sub">Published ${date}</div>`:''}
+        </div>
+      </a>`;
+  }).join('');
+  return `
+    <div class="section">
+      <div class="section-label">This week on YouTube</div>
+      <div class="yt-grid">${cards}</div>
+      <a href="https://www.youtube.com/@PMovies155" target="_blank" rel="noopener" class="yt-channel-link">
+        <svg viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+        See all videos on PMovies YouTube ↗
+      </a>
+    </div>`;
+}
+
 /* ─── Render Fan Art ─── */
 function renderFanArt(fa){
   if(!fa) return '';
@@ -919,6 +1016,7 @@ function renderAll(data){
     renderMovers(data.movers) +
     renderStats(data.stats, data.quotes) +
     renderCinemas(data.cinemas) +
+    renderYouTube(data.youtube) +
     renderFanArt(data.fanArt) +
     renderCreators(data.creators) +
     renderShare(data) +

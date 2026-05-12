@@ -19,11 +19,14 @@
 const RTDB       = 'https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app';
 const TMDB_KEY   = 'd04038fc4e0708bd069b323b220d5dc0';
 const TMDB_BASE  = 'https://api.themoviedb.org/3';
+const YT_KEY     = 'AIzaSyDubh6LcvxTzsP52MW8-zg_I3kq-TT60CE';
+const YT_BASE    = 'https://www.googleapis.com/youtube/v3';
+const YT_HANDLE  = 'PMovies155';
 const SITE_URL   = 'https://p-movies.com';
 
 // ── Force a specific issue number for the first real run.
 // Set to null after Issue #1 is published — auto-increments from then on.
-const FORCE_ISSUE_NUMBER = null;
+const FORCE_ISSUE_NUMBER = 1; // Reset — Thursday publishes real Issue #1. Set back to null after Friday.
 
 // How many risers/fallers to include
 const MOVERS_COUNT = 3;
@@ -307,13 +310,11 @@ async function fetchFanArtData(sinceTimestamp) {
     film:      featured.movie  || featured.film  || featured.title || '',
     year:      featured.year   || '',
     director:  featured.director || '',
-    // Try every common field name for the submitter
-    submitter: (featured.name || featured.userName || featured.displayName ||
-                featured.submitter || featured.uploadedBy || featured.userId || 'anonymous').replace(/^@/, ''),
-    // Try every common field name for the image URL (Firebase often uses capital URL)
-    imageUrl:  featured.imageUrl || featured.imageURL || featured.url || featured.URL ||
-               featured.posterUrl || featured.posterURL || featured.photoURL ||
-               featured.fileUrl || featured.fileURL || featured.downloadURL || '',
+    // Firebase posterUploads fields confirmed from live data
+    submitter: (featured.artistName || featured.name || featured.userName ||
+                featured.displayName || featured.submitter || featured.uploadedBy || 'anonymous').replace(/^@/, ''),
+    imageUrl:  featured.cloudinaryUrl || featured.imageUrl || featured.imageURL ||
+               featured.url || featured.posterUrl || featured.photoURL || '',
     description: featured.description || featured.caption || '',
   } : null;
 
@@ -323,39 +324,27 @@ async function fetchFanArtData(sinceTimestamp) {
 /* ─────────────── STEP 6: Fetch now-playing from TMDB ─────────────── */
 
 async function fetchCinemas(now = new Date()) {
-  console.log('🎬 Fetching theatrical releases from TMDB…');
+  console.log('🎬 Fetching now-playing from TMDB (region=AE)…');
   try {
-    // Use discover with theatrical release type (3 = Theatrical) to avoid streaming titles
-    // Show films released in the last 3 weeks, sorted newest first
-    const today        = now.toISOString().slice(0, 10);
-    const threeWeeksAgo = new Date(now.getTime() - 21 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-    const url = `${TMDB_BASE}/discover/movie?api_key=${TMDB_KEY}&language=en-US` +
-      `&sort_by=primary_release_date.desc` +
-      `&with_release_type=3` +                     // theatrical only (not streaming)
-      `&primary_release_date.gte=${threeWeeksAgo}` +
-      `&primary_release_date.lte=${today}` +
-      `&page=1`;
+    // Same query as the working Discover tab in index.html:
+    // now_playing + region=AE (Middle East) + sorted by release_date desc → correct local releases
+    const url = `${TMDB_BASE}/movie/now_playing?api_key=${TMDB_KEY}&language=en-US&region=AE&page=1`;
     const res  = await fetch(url);
     const data = await res.json();
-    const films = (data.results || []).slice(0, CINEMA_COUNT).map(f => ({
-      tmdbId: f.id,
-      title:  f.title,
-      year:   f.release_date ? f.release_date.slice(0, 4) : '',
-      genre:  '',
-      poster: f.poster_path || '',
-    }));
-    console.log(`  Found ${films.length} theatrical releases.`);
-    if (films.length === 0) {
-      // Fallback to now_playing if discover returns nothing
-      console.log('  Falling back to now_playing endpoint…');
-      const res2  = await fetch(`${TMDB_BASE}/movie/now_playing?api_key=${TMDB_KEY}&language=en-US&page=1`);
-      const data2 = await res2.json();
-      return (data2.results || []).slice(0, CINEMA_COUNT).map(f => ({
-        tmdbId: f.id, title: f.title,
-        year: f.release_date ? f.release_date.slice(0, 4) : '',
-        genre: '', poster: f.poster_path || '',
+
+    const films = (data.results || [])
+      .sort((a, b) => (b.release_date || '').localeCompare(a.release_date || ''))
+      .slice(0, CINEMA_COUNT)
+      .map(f => ({
+        tmdbId: f.id,
+        title:  f.title,
+        year:   f.release_date ? f.release_date.slice(0, 4) : '',
+        genre:  '',
+        poster: f.poster_path || '',
       }));
-    }
+
+    console.log(`  Found ${films.length} now-playing films.`);
+    films.forEach(f => console.log(`    • ${f.title} (${f.year})`));
     return films;
   } catch (e) {
     console.warn('  ⚠️  TMDB fetch failed:', e.message);
@@ -363,7 +352,50 @@ async function fetchCinemas(now = new Date()) {
   }
 }
 
-/* ─────────────── STEP 7: Get backed creators for this week ─────────────── */
+/* ─────────────── STEP 7: Fetch this week's YouTube videos ─────────────── */
+
+async function fetchYouTubeVideos(sinceTimestamp) {
+  console.log('📺 Fetching YouTube videos…');
+  try {
+    // API key is restricted to p-movies.com — send Referer header to satisfy the restriction
+    const ytHeaders = { 'Referer': 'https://p-movies.com' };
+
+    // Step 1: Get uploads playlist ID from channel handle
+    const chRes  = await fetch(`${YT_BASE}/channels?part=contentDetails&forHandle=${YT_HANDLE}&key=${YT_KEY}`, { headers: ytHeaders });
+    const chData = await chRes.json();
+    if (!chRes.ok || !chData.items?.length) throw new Error(chData.error?.message || 'Channel not found');
+    const uploadsId = chData.items[0].contentDetails.relatedPlaylists.uploads;
+
+    // Step 2: Fetch recent uploads (most recent first)
+    const plRes  = await fetch(`${YT_BASE}/playlistItems?part=snippet&playlistId=${uploadsId}&maxResults=10&key=${YT_KEY}`, { headers: ytHeaders });
+    const plData = await plRes.json();
+    if (!plRes.ok) throw new Error(plData.error?.message || 'Could not fetch videos');
+
+    // Filter to this week only (Saturday → Thursday)
+    const videos = (plData.items || [])
+      .map(item => ({
+        videoId:     item.snippet.resourceId.videoId,
+        title:       item.snippet.title,
+        thumbnail:   item.snippet.thumbnails?.medium?.url ||
+                     item.snippet.thumbnails?.default?.url ||
+                     `https://img.youtube.com/vi/${item.snippet.resourceId.videoId}/mqdefault.jpg`,
+        publishedAt: item.snippet.publishedAt,
+        publishedTs: new Date(item.snippet.publishedAt).getTime(),
+        url:         `https://www.youtube.com/watch?v=${item.snippet.resourceId.videoId}`,
+      }))
+      .filter(v => v.publishedTs >= sinceTimestamp)
+      .slice(0, 3); // max 3 per issue
+
+    console.log(`  Found ${videos.length} new YouTube videos this week.`);
+    videos.forEach(v => console.log(`    • ${v.title}`));
+    return videos;
+  } catch (e) {
+    console.warn('  ⚠️  YouTube fetch failed:', e.message);
+    return [];
+  }
+}
+
+/* ─────────────── STEP 8: Get backed creators for this week ─────────────── */
 
 function getCreatorsForDate(date = new Date()) {
   const weekIndex = Math.max(0, Math.floor((date.getTime() - BACKED_BASE_MS) / MS_PER_WEEK));
@@ -434,11 +466,12 @@ async function run() {
   await archivePreviousIssue(prevKey);
 
   // Fetch all data in parallel
-  const [top100, reviewData, fanArtData, cinemas] = await Promise.all([
+  const [top100, reviewData, fanArtData, cinemas, youtubeVideos] = await Promise.all([
     fetchTop100(),
     fetchReviewData(sinceTimestamp),
     fetchFanArtData(sinceTimestamp),
     fetchCinemas(now),
+    fetchYouTubeVideos(sinceTimestamp),
   ]);
 
   // Save this week's snapshot
@@ -478,6 +511,7 @@ async function run() {
     quotes:   reviewData.quotes,
     cinemas,
     fanArt:   fanArtData.fanArt,
+    youtube:  youtubeVideos,
     creators,
   };
 
@@ -495,6 +529,7 @@ async function run() {
   console.log(`💬  ${reviewData.count} new reviews · ${reviewData.quotes.length} quotes picked`);
   console.log(`🎨  ${fanArtData.count} new fan art · fan art of week: ${fanArtData.fanArt?.film || 'none'}`);
   console.log(`🎬  ${cinemas.length} films now in cinemas`);
+  console.log(`📺  ${youtubeVideos.length} YouTube videos this week`);
   console.log(`👥  ${creators.length} backed creators`);
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
