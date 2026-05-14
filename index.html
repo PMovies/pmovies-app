@@ -10982,6 +10982,17 @@ async function loadTop50Mini() {
     const data = res.ok ? await res.json() : null;
     if (!data) { renderMini50([]); return; }
     const all = Object.entries(data).map(([id, m]) => ({ id, ...m }));
+
+    // Auto-heal: if a user voted for a series that has since been removed by an admin,
+    // clear those stale IDs from localStorage so their vote slots are returned.
+    const liveIds = new Set(Object.keys(data));
+    const storedVotes = getMini50Votes();
+    const cleanedVotes = storedVotes.filter(id => liveIds.has(id));
+    if (cleanedVotes.length < storedVotes.length) {
+      saveMini50Votes(cleanedVotes);
+      updateMini50VoteBar();
+    }
+
     const totalVotes  = all.reduce((s, m) => s + (m.votes||0), 0);
     const totalSeries = all.length;
     const statsEl = document.getElementById('mini50Stats');
