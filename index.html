@@ -9555,7 +9555,10 @@ async function openFOTDSummary() {
   // Refresh rating counts
   try {
     const res = await fetch(`${RTDB}/filmOfDay/${_fotdToday}.json`);
-    if (res.ok) _fotdFilmData = await res.json();
+    if (res.ok) {
+      const fresh = await res.json();
+      if (fresh && fresh.id) _fotdFilmData = fresh;
+    }
   } catch(e) {}
   const seen = localStorage.getItem(lsKey('pmovies_fotd_seen'));
   if (seen !== _fotdToday) {
