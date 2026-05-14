@@ -1042,6 +1042,9 @@
   .mini50-item-hidden { display:none!important; }
   .mini50-evp-overlay { position:fixed; inset:0; background:rgba(0,0,0,.88); z-index:9000; display:none; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(8px); }
   .mini50-evp-overlay.open { display:flex; }
+  .mini50-feature-btns { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin:0 0 20px; }
+  .mini50-week-overlay { position:fixed; inset:0; background:rgba(0,0,0,.82); z-index:9000; display:none; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(6px); }
+  .mini50-week-overlay.open { display:flex; }
 
   /* Challenge Results Card */
   .challenge-results-wrap { border-radius:16px; overflow:hidden; position:relative; min-height:260px; }
@@ -2081,6 +2084,11 @@
         <div class="mini50-stat-lbl">Series Nominated</div>
       </div>
     </div>
+    <div class="mini50-feature-btns">
+      <button class="weekly-card-btn" onclick="openMini50WeekCard()">📋 This Week</button>
+      <button class="fun-hdr-btn" onclick="openMini50ImpactCard()" title="See how your votes shaped the list">📊 My Impact</button>
+    </div>
+
     <div class="mini50-nominate">
       <div class="mini50-nominate-label">🔍 Nominate a mini-series</div>
       <div class="mini50-search-wrap">
@@ -9346,9 +9354,10 @@ async function _castPollVote(chosenId, otherId, weekKey, myPollKey) {
     const key = chosenId;
     const res = await fetch(`${RTDB}/poll/${weekKey}/${key}.json`);
     const cur = res.ok ? (await res.json())||0 : 0;
-    await fetch(`${RTDB}/poll/${weekKey}/${key}.json`, {
+    const wr = await fetch(`${RTDB}/poll/${weekKey}/${key}.json`, {
       method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(cur+1)
     });
+    if (!wr.ok) throw new Error('write failed');
     // Reload to show results
     const res2 = await fetch(`${RTDB}/poll/${weekKey}.json`);
     const d = res2.ok ? await res2.json() : {};
@@ -9358,7 +9367,12 @@ async function _castPollVote(chosenId, otherId, weekKey, myPollKey) {
     if (widget && pickA && pickB) {
       _renderPoll(widget, pickA, pickB, {a:d[chosenId]||0,b:d[otherId]||0}, weekKey, myPollKey);
     }
-  } catch(e) {}
+  } catch(e) {
+    // Undo optimistic local save if write failed
+    localStorage.removeItem(myPollKey);
+    const foot = document.getElementById('pollFoot');
+    if (foot) foot.textContent = 'Could not save vote — please try again.';
+  }
 }
 
 
@@ -10461,6 +10475,25 @@ async function postersReject(key) {
     <div class="taste-modal" id="tasteModal"></div>
   </div>
 
+  <!-- Mini-Series This Week Overlay -->
+  <div class="mini50-week-overlay" id="mini50WeekOverlay" onclick="if(event.target.id==='mini50WeekOverlay')closeMini50WeekCard()">
+    <div class="weekly-modal">
+      <div class="weekly-modal-head">
+        <div>
+          <div class="weekly-modal-title">📋 Mini-Series — This Week</div>
+          <div class="weekly-modal-sub" id="mini50WeekDateLabel"></div>
+        </div>
+        <button class="weekly-close-btn" onclick="closeMini50WeekCard()">✕</button>
+      </div>
+      <div class="weekly-modal-body" id="mini50WeekBody"></div>
+    </div>
+  </div>
+
+  <!-- Mini-Series My Impact Overlay -->
+  <div class="impact-overlay" id="mini50ImpactOverlay" style="display:none" onclick="if(event.target.id==='mini50ImpactOverlay')closeMini50ImpactCard()">
+    <div class="impact-modal" id="mini50ImpactModal"></div>
+  </div>
+
   <!-- Mini-Series Email Verify Overlay -->
   <div class="mini50-evp-overlay" id="miniEvpOverlay">
     <div class="evp-card">
@@ -10829,6 +10862,122 @@ async function miniEvpConfirm() {
     if (btn) { btn.disabled = false; btn.textContent = 'Confirm & Submit'; }
   }
 }
+
+/* ── This Week card ── */
+function openMini50WeekCard() {
+  const ov = document.getElementById('mini50WeekOverlay');
+  if (ov) ov.classList.add('open');
+  _buildMini50WeekCard();
+}
+function closeMini50WeekCard() {
+  const ov = document.getElementById('mini50WeekOverlay');
+  if (ov) ov.classList.remove('open');
+}
+function _buildMini50WeekCard() {
+  const body    = document.getElementById('mini50WeekBody');
+  const dateEl  = document.getElementById('mini50WeekDateLabel');
+  const current = _mini50AllSeries;
+  if (!current.length) {
+    body.innerHTML = '<div style="text-align:center;color:#444;padding:30px">Load the list first</div>';
+    return;
+  }
+  const now = new Date();
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - now.getDay());
+  dateEl.textContent = `${weekStart.toLocaleDateString('en-US',{month:'short',day:'numeric'})} – ${now.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
+
+  const snap = _getMini50WeekSnap();
+  function seriesRow(m, badge, badgeClass, extra) {
+    const poster = m.poster
+      ? `<img class="weekly-film-poster" src="https://image.tmdb.org/t/p/w92${m.poster}" loading="lazy"/>`
+      : `<div class="weekly-film-poster-ph">📺</div>`;
+    return `<div class="weekly-film-row">${poster}<div class="weekly-film-name">${esc(m.title)}</div><div class="weekly-film-meta">${extra||m.year||''}</div><span class="weekly-badge ${badgeClass}">${badge}</span></div>`;
+  }
+
+  let html = '';
+
+  // Top 5 this week
+  html += `<div class="weekly-section-label">🏆 Top 5 This Week</div>`;
+  current.slice(0, 5).forEach((m, i) => { html += seriesRow(m, `#${i+1}`, 'rank'); });
+
+  // Risers & fallers from weekly snapshot
+  if (snap && snap._savedAt) {
+    const risers = [], fallers = [], newEntries = [];
+    current.forEach((m, i) => {
+      const rank = i + 1;
+      const prev = snap[m.id]?.rank;
+      if (!prev) { newEntries.push({ ...m, rank }); }
+      else if (prev > rank) risers.push({ ...m, rank, prev, diff: prev - rank });
+      else if (prev < rank) fallers.push({ ...m, rank, prev, diff: rank - prev });
+    });
+    risers.sort((a, b) => b.diff - a.diff);
+    fallers.sort((a, b) => b.diff - a.diff);
+    if (risers.length) {
+      html += `<div class="weekly-section-label">🚀 Biggest Risers</div>`;
+      risers.slice(0, 3).forEach(m => { html += seriesRow(m, `▲${m.diff}`, 'up', `#${m.prev} → #${m.rank}`); });
+    }
+    if (fallers.length) {
+      html += `<div class="weekly-section-label">📉 Fallers</div>`;
+      fallers.slice(0, 3).forEach(m => { html += seriesRow(m, `▼${m.diff}`, 'down', `#${m.prev} → #${m.rank}`); });
+    }
+    if (newEntries.length) {
+      html += `<div class="weekly-section-label">✨ New Entries</div>`;
+      newEntries.slice(0, 3).forEach(m => { html += seriesRow(m, 'NEW', 'new', `#${m.rank}`); });
+    }
+  }
+
+  html += `<div class="weekly-share-row"><button class="weekly-share-btn" onclick="_shareMini50WeekCard()">Share This Week's List</button></div>`;
+  body.innerHTML = html;
+}
+async function _shareMini50WeekCard() {
+  const lines = _mini50AllSeries.slice(0, 5).map((m, i) => `${i+1}. ${m.title}`).join('\n');
+  const text = `📺 PMovies Top 5 Mini-Series This Week:\n${lines}\n\nhttps://p-movies.com/#series`;
+  try { await navigator.share({ title: 'PMovies Mini-Series – This Week', text }); return; } catch(e) {}
+  try { await navigator.clipboard.writeText(text); showToast('Copied to clipboard!'); } catch(e) {}
+}
+
+/* ── My Impact card ── */
+function openMini50ImpactCard() {
+  document.getElementById('mini50ImpactOverlay').style.display = 'flex';
+  const modal   = document.getElementById('mini50ImpactModal');
+  const myVotes = getMini50Votes();
+  const snap    = getMini50RankSnap();
+  if (!myVotes.length) {
+    modal.innerHTML = `<div class="impact-title">📊 My Impact</div>
+      <div class="impact-empty">You haven't voted yet!<br>Nominate mini-series and see how you're shaping the list.</div>
+      <button class="fun-close-btn secondary" onclick="closeMini50ImpactCard()">Close</button>`;
+    return;
+  }
+  const series = myVotes.map(id => {
+    const m    = _mini50AllSeries.find(x => x.id == id);
+    if (!m) return null;
+    const rank = _mini50AllSeries.indexOf(m) + 1;
+    const prev = snap[id];
+    return { ...m, rank, prev };
+  }).filter(Boolean).sort((a, b) => a.rank - b.rank);
+
+  const rows = series.map(m => {
+    let changeStr = '';
+    if (!m.prev)             changeStr = '<span style="color:var(--orange)">NEW to list</span>';
+    else if (m.prev > m.rank) changeStr = `<span style="color:#4caf50">▲ helped push from #${m.prev} → #${m.rank}</span>`;
+    else if (m.prev < m.rank) changeStr = `<span style="color:#f44336">▼ slipped from #${m.prev} to #${m.rank}</span>`;
+    else                      changeStr = `<span style="color:#555">holding steady at #${m.rank}</span>`;
+    const poster = m.poster ? `<img class="impact-poster" src="https://image.tmdb.org/t/p/w92${m.poster}"/>` : `<div class="impact-poster" style="font-size:1.4rem;display:flex;align-items:center;justify-content:center">📺</div>`;
+    return `<div class="impact-film-row">${poster}
+      <div class="impact-film-info">
+        <div class="impact-film-title">${esc(m.title)}</div>
+        <div class="impact-film-change">${changeStr}</div>
+      </div>
+      <div class="impact-rank-badge">#${m.rank}</div>
+    </div>`;
+  }).join('');
+
+  modal.innerHTML = `<div class="impact-title">📊 My Impact</div>
+    <div class="impact-sub">You voted for ${series.length} mini-series — here's how they're doing</div>
+    ${rows}
+    <button class="fun-close-btn secondary" onclick="closeMini50ImpactCard()">Close</button>`;
+}
+function closeMini50ImpactCard() { document.getElementById('mini50ImpactOverlay').style.display = 'none'; }
 
 async function submitAllMini50Votes(email, hash) {
   const btn     = document.getElementById('miniEvpConfirmBtn');
