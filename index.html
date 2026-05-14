@@ -6921,10 +6921,7 @@ function addPending(id, title, poster, backdrop, year, genresStr) {
 // Monthly rank snapshot (for ↑↓ indicators)
 function getRankSnapshot() { return JSON.parse(localStorage.getItem(lsKey('pmovies_rank_snap')) || '{}'); }
 function maybeSaveRankSnapshot(list) {
-  const key  = `${new Date().getFullYear()}-${new Date().getMonth()}`;
-  const snap = getRankSnapshot();
-  if (snap._month === key) return;
-  const newSnap = { _month: key };
+  const newSnap = { _savedAt: Date.now() };
   list.forEach((m, i) => { newSnap[m.id] = i + 1; });
   localStorage.setItem(lsKey('pmovies_rank_snap'), JSON.stringify(newSnap));
 }
@@ -10529,10 +10526,7 @@ function getMini50RankSnap() {
   try { return JSON.parse(localStorage.getItem(lsKey('pmovies_mini50_rsnap')) || '{}'); } catch(e) { return {}; }
 }
 function maybeSaveMini50RankSnap(list) {
-  const key  = `${new Date().getFullYear()}-${new Date().getMonth()}`;
-  const snap = getMini50RankSnap();
-  if (snap._month === key) return;
-  const s = { _month: key };
+  const s = { _savedAt: Date.now() };
   list.forEach((m, i) => { s[m.id] = i + 1; });
   localStorage.setItem(lsKey('pmovies_mini50_rsnap'), JSON.stringify(s));
 }
