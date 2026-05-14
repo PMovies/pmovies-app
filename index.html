@@ -10491,7 +10491,10 @@ async function postersSubmit() {
     fd.append('folder', 'pmovies_posters');
 
     const cloudRes = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method:'POST', body:fd });
-    if (!cloudRes.ok) throw new Error('Cloudinary upload failed');
+    if (!cloudRes.ok) {
+      const ce = await cloudRes.json().catch(() => ({}));
+      throw new Error('Image upload failed: ' + (ce?.error?.message || cloudRes.status));
+    }
     const cloudData = await cloudRes.json();
 
     // 2. Save metadata to RTDB pending queue
