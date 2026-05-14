@@ -746,6 +746,12 @@
   .evp-cancel:hover { color:#aaa; }
   .evp-votes-preview { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-bottom:20px; }
   .evp-vote-chip { background:#1e1e1e; border:1px solid #2a2a2a; border-radius:20px; padding:4px 12px; font-size:.72rem; color:#ccc; }
+  .evp-chip { display:flex; align-items:center; gap:10px; background:#1a1a1a; border:1px solid #2d2d2d; border-radius:10px; padding:8px 10px; width:100%; box-sizing:border-box; text-align:left; }
+  .evp-chip-rank { font-family:'Bebas Neue',sans-serif; font-size:1.15rem; color:#f5a623; min-width:26px; flex-shrink:0; }
+  .evp-chip-poster { width:38px; height:57px; object-fit:cover; border-radius:5px; flex-shrink:0; background:#111; display:block; }
+  .evp-chip-info { flex:1; min-width:0; }
+  .evp-chip-title { font-size:.85rem; color:#fff; font-weight:600; line-height:1.3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .evp-chip-year { font-size:.72rem; color:#555; margin-top:2px; }
 
   /* ── Picks Card Overlay ── */
   #picksCardOverlay, #reviewCardOverlay { position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:11000; display:none; align-items:center; justify-content:center; padding:20px; flex-direction:column; gap:0; }
@@ -8135,6 +8141,26 @@ function _wrapText(ctx, text, x, y, maxW, lineH) {
   lines.slice(0, 2).forEach((l, i) => ctx.fillText(l, x, y + i * lineH));
 }
 
+function _addFilmGrain(ctx, W, H, intensity) {
+  const imageData = ctx.getImageData(0, 0, W, H);
+  const d = imageData.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const n = (Math.random() - 0.5) * intensity * 255;
+    d[i]   = Math.max(0, Math.min(255, d[i]   + n));
+    d[i+1] = Math.max(0, Math.min(255, d[i+1] + n));
+    d[i+2] = Math.max(0, Math.min(255, d[i+2] + n));
+  }
+  ctx.putImageData(imageData, 0, 0);
+}
+
+function _addVignette(ctx, W, H) {
+  const v = ctx.createRadialGradient(W/2, H/2, H*0.28, W/2, H/2, H*0.78);
+  v.addColorStop(0, 'rgba(0,0,0,0)');
+  v.addColorStop(1, 'rgba(0,0,0,0.55)');
+  ctx.fillStyle = v;
+  ctx.fillRect(0, 0, W, H);
+}
+
 async function generatePicksCard(picks) {
   const canvas = document.getElementById('picksCanvas');
   const ctx    = canvas.getContext('2d');
@@ -8404,12 +8430,214 @@ async function generatePicksCard(picks) {
   ctx.fillStyle = '#f5a623';
   ctx.fillText('p-movies.com', W/2, FOOTER_Y + 62);
 
+  _addFilmGrain(ctx, W, H, 0.035);
+  _addVignette(ctx, W, H);
+
   _picksCardDataUrl = canvas.toDataURL('image/png');
+}
+
+async function generateMiniPicksCard(picks) {
+  const canvas = document.getElementById('picksCanvas');
+  const ctx    = canvas.getContext('2d');
+  const W = 1080, H = 1350;
+  canvas.width = W; canvas.height = H;
+
+  const [backdropImg, ...posterImgs] = await Promise.all([
+    picks[0]?.backdrop ? _loadImg('https://image.tmdb.org/t/p/w1280' + picks[0].backdrop).catch(() => null) : Promise.resolve(null),
+    ...picks.map(p => p.poster ? _loadImg('https://image.tmdb.org/t/p/w342' + p.poster).catch(() => null) : Promise.resolve(null))
+  ]);
+
+  function rr(x,y,w,h,r){ ctx.beginPath(); ctx.roundRect(x,y,w,h,r); }
+  function trunc(text, maxW) {
+    if (ctx.measureText(text).width <= maxW) return text;
+    let t = text;
+    while (t.length > 0 && ctx.measureText(t+'…').width > maxW) t = t.slice(0,-1);
+    return t + '…';
+  }
+  function drawPoster(img, x, y, w, h, rad, featured) {
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 40; ctx.shadowOffsetY = 16;
+    ctx.fillStyle = '#111'; rr(x,y,w,h,rad); ctx.fill();
+    ctx.restore();
+    ctx.save(); rr(x,y,w,h,rad); ctx.clip();
+    if (img) {
+      ctx.drawImage(img, x, y, w, h);
+      if (!featured) {
+        const pv = ctx.createLinearGradient(x, y+h*0.6, x, y+h);
+        pv.addColorStop(0,'rgba(0,0,0,0)'); pv.addColorStop(1,'rgba(0,0,0,0.5)');
+        ctx.fillStyle = pv; ctx.fillRect(x,y,w,h);
+      }
+    } else {
+      ctx.fillStyle = '#1c1c1c'; ctx.fillRect(x,y,w,h);
+    }
+    ctx.restore();
+    ctx.strokeStyle = featured ? 'rgba(245,166,35,0.65)' : 'rgba(255,255,255,0.1)';
+    ctx.lineWidth = featured ? 2.5 : 1;
+    rr(x,y,w,h,rad); ctx.stroke();
+  }
+  function rankBadge(x, y, label, gold) {
+    const bw = 44, bh = 26;
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,0.88)'; rr(x+9,y+9,bw,bh,7); ctx.fill();
+    ctx.strokeStyle = gold ? '#f5a623' : 'rgba(255,255,255,0.3)'; ctx.lineWidth = 1; rr(x+9,y+9,bw,bh,7); ctx.stroke();
+    ctx.font = 'bold 13px Arial, sans-serif'; ctx.fillStyle = gold ? '#f5a623' : '#ccc';
+    ctx.letterSpacing = '0px'; ctx.textAlign = 'center';
+    ctx.fillText(label, x+9+bw/2, y+9+bh-6);
+    ctx.restore();
+  }
+
+  // BACKGROUND
+  ctx.fillStyle = '#06060a'; ctx.fillRect(0,0,W,H);
+
+  // Subtle radial centre glow
+  const bg2 = ctx.createRadialGradient(W/2, 600, 0, W/2, 600, 820);
+  bg2.addColorStop(0,'rgba(40,20,0,0.18)'); bg2.addColorStop(1,'rgba(6,6,10,0)');
+  ctx.fillStyle = bg2; ctx.fillRect(0,0,W,H);
+
+  // HERO BACKDROP
+  const HERO_H = 460;
+  ctx.save(); rr(0,0,W,HERO_H,0); ctx.clip();
+  if (backdropImg) {
+    const br = backdropImg.width/backdropImg.height;
+    const bW = Math.max(W, HERO_H*br), bH = Math.max(HERO_H, W/br);
+    ctx.drawImage(backdropImg, (W-bW)/2, (HERO_H-bH)/2, bW, bH);
+    ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(0,0,W,HERO_H);
+    ctx.fillStyle = 'rgba(15,8,0,0.28)'; ctx.fillRect(0,0,W,HERO_H);
+  } else {
+    const hg = ctx.createLinearGradient(0,0,W,HERO_H);
+    hg.addColorStop(0,'#180e00'); hg.addColorStop(1,'#06060a');
+    ctx.fillStyle = hg; ctx.fillRect(0,0,W,HERO_H);
+  }
+  const hfade = ctx.createLinearGradient(0,HERO_H-260,0,HERO_H);
+  hfade.addColorStop(0,'rgba(6,6,10,0)'); hfade.addColorStop(0.65,'rgba(6,6,10,0.82)'); hfade.addColorStop(1,'rgba(6,6,10,1)');
+  ctx.fillStyle = hfade; ctx.fillRect(0,0,W,HERO_H);
+  ctx.restore();
+
+  // Top accent bar + left edge line
+  ctx.fillStyle = '#f5a623'; ctx.fillRect(0,0,W,4);
+  const ledge = ctx.createLinearGradient(0,4,0,340);
+  ledge.addColorStop(0,'rgba(245,166,35,0.7)'); ledge.addColorStop(1,'rgba(245,166,35,0)');
+  ctx.fillStyle = ledge; ctx.fillRect(0,4,3,336);
+
+  // HEADER
+  const HDR_Y = 64;
+  ctx.save(); ctx.textAlign = 'center';
+  ctx.font = '800 13px Arial, sans-serif'; ctx.letterSpacing = '9px';
+  const bm = ctx.measureText('PMOVIES');
+  const pbw = bm.width+54, pbh = 30, pbx = W/2-pbw/2, pby = HDR_Y-22;
+  ctx.fillStyle = 'rgba(245,166,35,0.1)'; rr(pbx,pby,pbw,pbh,14); ctx.fill();
+  ctx.strokeStyle = 'rgba(245,166,35,0.35)'; ctx.lineWidth = 1; rr(pbx,pby,pbw,pbh,14); ctx.stroke();
+  ctx.fillStyle = '#f5a623'; ctx.fillText('PMOVIES', W/2, HDR_Y);
+  ctx.font = '300 14px Arial, sans-serif'; ctx.letterSpacing = '6px'; ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.fillText('TOP 50 MINI-SERIES', W/2, HDR_Y+38);
+  ctx.font = '600 10px Arial, sans-serif'; ctx.letterSpacing = '5px'; ctx.fillStyle = 'rgba(245,166,35,0.55)';
+  ctx.fillText('MY PICKS', W/2, HDR_Y+64);
+  ctx.restore();
+
+  // DYNAMIC POSTER LAYOUT
+  const n = Math.min(picks.length, 3);
+
+  if (n === 1) {
+    const PW=300, PH=450, PX=(W-PW)/2, PY=306;
+    drawPoster(posterImgs[0], PX, PY, PW, PH, 18, true);
+    rankBadge(PX, PY, '#1', true);
+    ctx.save(); ctx.textAlign = 'center'; ctx.letterSpacing = '0px';
+    ctx.font = 'bold 46px Arial, sans-serif'; ctx.fillStyle = '#fff';
+    ctx.fillText(trunc(picks[0].title||'', W-120), W/2, PY+PH+54);
+    ctx.font = '300 18px Arial, sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.32)'; ctx.letterSpacing = '3px';
+    ctx.fillText(String(picks[0].year||''), W/2, PY+PH+88);
+    ctx.restore();
+
+  } else if (n === 2) {
+    const PW=390, PH=585, GAP=48, PY=310;
+    const sx = (W-PW*2-GAP)/2;
+    for (let i=0; i<2; i++) {
+      const px = sx + i*(PW+GAP);
+      drawPoster(posterImgs[i], px, PY, PW, PH, 16, i===0);
+      rankBadge(px, PY, `#${i+1}`, true);
+      ctx.save(); ctx.textAlign = 'center'; ctx.letterSpacing = '0px';
+      ctx.font = `${i?'500':'bold'} ${i?24:26}px Arial, sans-serif`;
+      ctx.fillStyle = i ? 'rgba(255,255,255,0.72)' : '#fff';
+      ctx.fillText(trunc(picks[i].title||'', PW+12), px+PW/2, PY+PH+38);
+      ctx.font = '300 15px Arial, sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.letterSpacing = '2px';
+      ctx.fillText(String(picks[i].year||''), px+PW/2, PY+PH+60);
+      ctx.restore();
+    }
+
+  } else {
+    // 3 picks: #1 centred, divider, #2+#3 side by side
+    const P1W=250, P1H=375, P1X=(W-P1W)/2, P1Y=310;
+    drawPoster(posterImgs[0], P1X, P1Y, P1W, P1H, 16, true);
+    rankBadge(P1X, P1Y, '#1', true);
+    ctx.save(); ctx.textAlign = 'center'; ctx.letterSpacing = '0px';
+    ctx.font = 'bold 40px Arial, sans-serif'; ctx.fillStyle = '#fff';
+    ctx.fillText(trunc(picks[0].title||'', W-140), W/2, P1Y+P1H+48);
+    ctx.font = '300 16px Arial, sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.32)'; ctx.letterSpacing = '3px';
+    ctx.fillText(String(picks[0].year||''), W/2, P1Y+P1H+74);
+    ctx.restore();
+
+    const DIV_Y = P1Y+P1H+108;
+    const dg = ctx.createLinearGradient(0,0,W,0);
+    dg.addColorStop(0,'rgba(245,166,35,0)'); dg.addColorStop(0.2,'rgba(245,166,35,0.22)');
+    dg.addColorStop(0.8,'rgba(245,166,35,0.22)'); dg.addColorStop(1,'rgba(245,166,35,0)');
+    ctx.fillStyle = dg; ctx.fillRect(0,DIV_Y,W,1);
+    ctx.save(); ctx.textAlign = 'center'; ctx.font = '600 10px Arial, sans-serif';
+    ctx.letterSpacing = '5px'; ctx.fillStyle = 'rgba(245,166,35,0.4)';
+    ctx.fillText('MORE PICKS', W/2, DIV_Y+14); ctx.restore();
+
+    const P2W=215, P2H=322, P2GAP=56, P2Y=DIV_Y+30;
+    const p2sx = (W-P2W*2-P2GAP)/2;
+    for (let i=0; i<2; i++) {
+      const px = p2sx + i*(P2W+P2GAP);
+      drawPoster(posterImgs[i+1], px, P2Y, P2W, P2H, 14, false);
+      rankBadge(px, P2Y, `#${i+2}`, true);
+      ctx.save(); ctx.textAlign = 'center'; ctx.letterSpacing = '0px';
+      ctx.font = 'bold 22px Arial, sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.fillText(trunc(picks[i+1].title||'', P2W+22), px+P2W/2, P2Y+P2H+34);
+      ctx.font = '300 14px Arial, sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.letterSpacing = '2px';
+      ctx.fillText(String(picks[i+1].year||''), px+P2W/2, P2Y+P2H+54);
+      ctx.restore();
+    }
+  }
+
+  // FOOTER
+  const FOOTER_Y = H - 130;
+  const fg = ctx.createLinearGradient(0,0,W,0);
+  fg.addColorStop(0,'rgba(245,166,35,0)'); fg.addColorStop(0.25,'rgba(245,166,35,0.3)');
+  fg.addColorStop(0.75,'rgba(245,166,35,0.3)'); fg.addColorStop(1,'rgba(245,166,35,0)');
+  ctx.fillStyle = fg; ctx.fillRect(0,FOOTER_Y,W,1);
+  ctx.textAlign = 'center';
+  ctx.font = '300 12px Arial, sans-serif'; ctx.letterSpacing = '4px'; ctx.fillStyle = 'rgba(255,255,255,0.18)';
+  ctx.fillText('VOTE NOW AT', W/2, FOOTER_Y+36);
+  ctx.font = 'bold 28px Arial, sans-serif'; ctx.letterSpacing = '1px'; ctx.fillStyle = '#f5a623';
+  ctx.fillText('p-movies.com', W/2, FOOTER_Y+72);
+
+  _addFilmGrain(ctx, W, H, 0.038);
+  _addVignette(ctx, W, H);
+
+  _picksCardDataUrl = canvas.toDataURL('image/png');
+}
+
+async function showMiniPicksCardModal(picks) {
+  _picksCardDataUrl = null;
+  const overlay = document.getElementById('picksCardOverlay');
+  const titleEl = overlay.querySelector('.pco-title');
+  const subEl   = overlay.querySelector('.pco-sub');
+  if (titleEl) titleEl.textContent = '📺 Your Mini-Series Card';
+  if (subEl)   subEl.textContent   = 'Share your picks with the world';
+  overlay.classList.add('open');
+  const shareBtn = document.getElementById('picksShareBtn');
+  if (shareBtn) shareBtn.style.display = navigator.share ? '' : 'none';
+  await generateMiniPicksCard(picks);
 }
 
 async function showPicksCardModal(picks) {
   _picksCardDataUrl = null;
   const overlay = document.getElementById('picksCardOverlay');
+  const titleEl = overlay.querySelector('.pco-title');
+  const subEl   = overlay.querySelector('.pco-sub');
+  if (titleEl) titleEl.textContent = '🎬 Your Picks Card';
+  if (subEl)   subEl.textContent   = 'Share your taste with the world';
   overlay.classList.add('open');
 
   // Hide share button if Web Share API not available
@@ -10791,8 +11019,15 @@ function openMiniEvp() {
   if (!getPendingMini50().length) return;
   _latency.popupOpenAt = Date.now();
   const chips = document.getElementById('miniEvpChips');
-  if (chips) chips.innerHTML = getPendingMini50().map(v =>
-    `<div class="evp-chip">${v.poster ? `<img src="https://image.tmdb.org/t/p/w92${v.poster}" alt=""/>` : '📺'}<span>${esc(v.title)}</span></div>`
+  if (chips) chips.innerHTML = getPendingMini50().map((v, i) =>
+    `<div class="evp-chip">
+      <span class="evp-chip-rank">#${i+1}</span>
+      ${v.poster ? `<img class="evp-chip-poster" src="https://image.tmdb.org/t/p/w92${v.poster}" alt="" onerror="this.style.display='none'"/>` : ''}
+      <div class="evp-chip-info">
+        <div class="evp-chip-title">${esc(v.title)}</div>
+        ${v.year ? `<div class="evp-chip-year">${v.year}</div>` : ''}
+      </div>
+    </div>`
   ).join('');
   const ov = document.getElementById('miniEvpOverlay');
   if (ov) ov.classList.add('open');
@@ -10835,12 +11070,6 @@ async function miniEvpConfirm() {
     if (_mini50PickTimes.length >= 2) {
       const span = _mini50PickTimes.at(-1) - _mini50PickTimes[0];
       if (span < 1000) { if (err) err.textContent = 'Picks made too quickly — please browse the list naturally.'; return; }
-    }
-    /* reading: none of the picks were actually viewed */
-    const pending = getPendingMini50();
-    const unseen  = pending.filter(v => !_seenMovies[v.id] || _seenMovies[v.id] < 300);
-    if (unseen.length === pending.length && pending.length > 0) {
-      if (err) err.textContent = 'Please scroll through the list before voting.'; return;
     }
   }
   if (btn) { btn.disabled = true; btn.textContent = 'Checking…'; }
@@ -10983,6 +11212,7 @@ async function submitAllMini50Votes(email, hash) {
   const btn     = document.getElementById('miniEvpConfirmBtn');
   if (btn) { btn.disabled = true; btn.textContent = 'Submitting…'; }
   const pending = getPendingMini50();
+  const submittedPicks = pending.slice();
   const fp      = await getStableFp().catch(() => null);
   try {
     await Promise.all(pending.map(async v => {
@@ -11025,6 +11255,7 @@ async function submitAllMini50Votes(email, hash) {
     updateMini50VoteBar();
     fireConfetti();
     await loadTop50Mini();
+    showMiniPicksCardModal(submittedPicks);
   } catch(e) {
     const errEl = document.getElementById('miniEvpError');
     if (errEl) errEl.textContent = 'Submit failed — please try again.';
