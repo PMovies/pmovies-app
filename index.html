@@ -1014,6 +1014,35 @@
   .top100-show-more-btn:hover { background:var(--orange); color:#000; }
   .top100-show-more-count { font-size:.68rem; font-weight:600; opacity:.8; letter-spacing:.04em; }
 
+  /* ── TOP 50 MINI-SERIES ── */
+  .mini50-header { text-align:center; padding:8px 0 20px; }
+  .mini50-badge-pill { background:rgba(245,166,35,.12); border:1px solid rgba(245,166,35,.25); color:var(--orange); font-size:.6rem; font-weight:900; padding:4px 12px; border-radius:20px; letter-spacing:.08em; text-transform:uppercase; font-family:'Montserrat',sans-serif; display:inline-block; margin-bottom:10px; }
+  .mini50-header h2 { font-family:'Bebas Neue',sans-serif; font-size:2.1rem; letter-spacing:.12em; color:#fff; line-height:1; }
+  .mini50-header h2 span { color:var(--orange); }
+  .mini50-header p { color:#555; font-size:.78rem; margin-top:6px; letter-spacing:.03em; }
+  .mini50-stats { display:flex; align-items:center; gap:14px; background:#111; border:1px solid #222; border-radius:20px; padding:8px 18px; width:fit-content; margin:0 auto 20px; }
+  .mini50-stat-item { text-align:center; }
+  .mini50-stat-num { font-size:.92rem; font-weight:800; color:#fff; }
+  .mini50-stat-lbl { font-size:.58rem; color:#555; text-transform:uppercase; letter-spacing:.06em; font-weight:700; margin-top:1px; }
+  .mini50-stat-sep { width:1px; height:22px; background:#2a2a2a; }
+  .mini50-nominate { margin:20px 0 10px; }
+  .mini50-nominate-label { font-size:.63rem; color:#555; font-weight:700; text-transform:uppercase; letter-spacing:.08em; margin-bottom:7px; }
+  .mini50-search-wrap { position:relative; }
+  .mini50-search-input { width:100%; background:#111; border:1px solid #2a2a2a; border-radius:12px; color:#fff; padding:11px 16px; font-size:.9rem; outline:none; font-family:'Montserrat',sans-serif; box-sizing:border-box; transition:.15s; }
+  .mini50-search-input:focus { border-color:var(--orange); }
+  .mini50-hint { font-size:.62rem; color:#3a3a3a; margin-top:5px; }
+  .mini50-vote-bar { position:sticky; top:0; z-index:100; background:#0a0a0a; border-bottom:1px solid #181818; padding:10px 16px; display:flex; align-items:center; gap:10px; margin:14px -16px 0; }
+  .mini50-vsb-slots { display:flex; gap:6px; flex:1; }
+  .mini50-vsb-dot { width:10px; height:10px; border-radius:50%; background:#222; transition:.2s; flex-shrink:0; }
+  .mini50-vsb-dot.filled { background:var(--orange); }
+  .mini50-vsb-label { font-size:.7rem; color:#555; font-weight:700; white-space:nowrap; }
+  .mini50-vsb-submit { background:var(--orange); color:#000; border:none; padding:8px 18px; border-radius:20px; font-weight:800; font-size:.76rem; cursor:pointer; transition:.15s; white-space:nowrap; }
+  .mini50-vsb-submit:disabled { background:#1e1e1e; color:#444; cursor:not-allowed; }
+  .mini50-list { display:flex; flex-direction:column; gap:8px; margin-top:14px; }
+  .mini50-item-hidden { display:none!important; }
+  .mini50-evp-overlay { position:fixed; inset:0; background:rgba(0,0,0,.88); z-index:9000; display:none; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(8px); }
+  .mini50-evp-overlay.open { display:flex; }
+
   /* Challenge Results Card */
   .challenge-results-wrap { border-radius:16px; overflow:hidden; position:relative; min-height:260px; }
   .cr-backdrop { position:absolute; inset:0; background-size:cover; background-position:center; filter:brightness(.2); }
@@ -2034,6 +2063,44 @@
     <div id="nowAiringContent"></div>
   </div>
 
+  <!-- TOP 50 MINI-SERIES -->
+  <div id="miniTop50Section" style="margin-top:48px">
+    <div class="mini50-header">
+      <div class="mini50-badge-pill">📺 Community Vote</div>
+      <h2>PMovies Top 50 <span>Mini-Series</span></h2>
+      <p>Mini-series, limited series &amp; anthologies only · Up to 3 votes per person</p>
+    </div>
+    <div class="mini50-stats" id="mini50Stats" style="display:none">
+      <div class="mini50-stat-item">
+        <div class="mini50-stat-num" id="mini50TotalVotes">0</div>
+        <div class="mini50-stat-lbl">Total Votes</div>
+      </div>
+      <div class="mini50-stat-sep"></div>
+      <div class="mini50-stat-item">
+        <div class="mini50-stat-num" id="mini50TotalSeries">0</div>
+        <div class="mini50-stat-lbl">Series Nominated</div>
+      </div>
+    </div>
+    <div class="mini50-nominate">
+      <div class="mini50-nominate-label">🔍 Nominate a mini-series</div>
+      <div class="mini50-search-wrap">
+        <input class="mini50-search-input" id="mini50SearchInput" type="text"
+               placeholder="Search for a mini-series to nominate…" autocomplete="off"
+               oninput="mini50SearchDebounce()" onblur="setTimeout(hideMini50Dropdown,200)"/>
+        <div class="fan-movie-dropdown" id="mini50Dropdown" style="display:none"></div>
+      </div>
+      <div class="mini50-hint">Mini-series, limited series &amp; anthologies only · Community-moderated</div>
+    </div>
+    <div class="mini50-vote-bar" id="mini50VoteBar">
+      <div class="mini50-vsb-slots" id="mini50VsbDots"></div>
+      <span class="mini50-vsb-label" id="mini50VsbLabel">0 / 3 picked</span>
+      <button class="mini50-vsb-submit" id="mini50SubmitBtn" onclick="openMiniEvp()" disabled>Submit Votes</button>
+    </div>
+    <div class="mini50-list" id="mini50List">
+      <div class="yt-loading">Loading mini-series list…</div>
+    </div>
+  </div>
+
   <!-- SERIES FAN REVIEWS -->
   <div class="section-wrap" id="srFanSection" style="margin-top:48px">
     <div class="lb-header">
@@ -2506,6 +2573,7 @@
   let tvPage = 1;
   let nowAiringLoaded  = false;
   let srReviewsLoaded  = false;
+  let mini50Loaded     = false;
   let nowAiringHeroes = []; // backdrop-capable shows for random hero picks
   let lastTvHero = null;
 
@@ -4743,6 +4811,7 @@
       }
       if (!nowAiringLoaded) { loadNowAiring(); nowAiringLoaded = true; }
       if (!srReviewsLoaded) { loadSeriesReviews(); srReviewsLoaded = true; }
+      if (!mini50Loaded)    { loadTop50Mini();     mini50Loaded    = true; }
     } else if (name !== 'backed') {
       loadHeroBackdrop(); // fresh random movie hero — skip on Backed tab
     }
@@ -10395,6 +10464,21 @@ async function postersReject(key) {
     <div class="taste-modal" id="tasteModal"></div>
   </div>
 
+  <!-- Mini-Series Email Verify Overlay -->
+  <div class="mini50-evp-overlay" id="miniEvpOverlay">
+    <div class="evp-card">
+      <div class="evp-icon">📺</div>
+      <h2 class="evp-title">Confirm Your Picks</h2>
+      <p class="evp-sub">Enter your email to lock in your mini-series votes.<br>Each email can vote once per list.</p>
+      <div class="evp-votes-preview" id="miniEvpChips"></div>
+      <input type="email" id="miniEvpEmail" class="evp-input" placeholder="your@email.com"
+             oninput="miniEvpClearError()" onkeydown="if(event.key==='Enter')miniEvpConfirm()"/>
+      <div class="evp-error" id="miniEvpError"></div>
+      <button class="evp-btn" id="miniEvpConfirmBtn" onclick="miniEvpConfirm()">Confirm &amp; Submit</button>
+      <button class="evp-cancel" onclick="closeMiniEvp()">Cancel — go back to editing</button>
+    </div>
+  </div>
+
   <!-- Film of the Day Overlay -->
   <div id="fotdOverlay" class="fotd-overlay" style="display:none" onclick="if(event.target.id==='fotdOverlay')_skipFOTD()">
     <div class="fotd-card">
@@ -10404,5 +10488,407 @@ async function postersReject(key) {
       <div class="fotd-content" id="fotdContent"></div>
     </div>
   </div>
+
+<script>
+/* ══════════════════════════════════════════════════════
+   TOP 50 MINI-SERIES
+══════════════════════════════════════════════════════ */
+const MINI50_MAX_VOTES = 3;
+const MINI50_MIN_VOTES = 2;
+const MINI50_MAX       = 50;
+const MINI50_PREVIEW   = 10;
+
+/* ── Storage helpers ── */
+function getMini50Votes()     { return JSON.parse(localStorage.getItem(lsKey('pmovies_mini50_votes'))   || '[]'); }
+function saveMini50Votes(a)   { localStorage.setItem(lsKey('pmovies_mini50_votes'),   JSON.stringify(a)); }
+function getPendingMini50()   { return JSON.parse(localStorage.getItem(lsKey('pmovies_pending_mini50')) || '[]'); }
+function savePendingMini50(a) { localStorage.setItem(lsKey('pmovies_pending_mini50'), JSON.stringify(a)); }
+function mini50VotesRemaining() {
+  if (IS_DEV) return 999;
+  return Math.max(0, MINI50_MAX_VOTES - getMini50Votes().length - getPendingMini50().length);
+}
+
+/* ── Weekly snapshot (localStorage, refreshed every 7 days) ── */
+function _getMini50WeekSnap() {
+  try { return JSON.parse(localStorage.getItem(lsKey('pmovies_mini50_wsnap')) || 'null'); } catch(e) { return null; }
+}
+function _saveMini50WeekSnap(list) {
+  const snap = {};
+  list.forEach((m, i) => { snap[m.id] = { rank: i+1, title: m.title, poster: m.poster||'', votes: m.votes }; });
+  snap._savedAt = Date.now();
+  localStorage.setItem(lsKey('pmovies_mini50_wsnap'), JSON.stringify(snap));
+}
+function _maybeSaveMini50WeekSnap(list) {
+  const snap = _getMini50WeekSnap();
+  if (!snap || !snap._savedAt || (Date.now() - snap._savedAt) > 7 * 24 * 3600 * 1000)
+    _saveMini50WeekSnap(list);
+}
+
+/* ── Monthly rank snapshot (for ▲▼ indicators) ── */
+function getMini50RankSnap() {
+  try { return JSON.parse(localStorage.getItem(lsKey('pmovies_mini50_rsnap')) || '{}'); } catch(e) { return {}; }
+}
+function maybeSaveMini50RankSnap(list) {
+  const key  = `${new Date().getFullYear()}-${new Date().getMonth()}`;
+  const snap = getMini50RankSnap();
+  if (snap._month === key) return;
+  const s = { _month: key };
+  list.forEach((m, i) => { s[m.id] = i + 1; });
+  localStorage.setItem(lsKey('pmovies_mini50_rsnap'), JSON.stringify(s));
+}
+
+/* ── FP vote sync (restores votes after cleared storage / incognito) ── */
+async function syncMini50FpVotes() {
+  try {
+    const fp  = await getStableFp();
+    const res = await fetch(`${RTDB}/${dbPath('votesByFpMini')}/${fp}.json`);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data) return;
+    const merged = [...new Set([...getMini50Votes(), ...Object.keys(data)])];
+    if (merged.length > getMini50Votes().length) saveMini50Votes(merged);
+  } catch(_) {}
+}
+
+/* ── Vote bar ── */
+function updateMini50VoteBar() {
+  const pending   = getPendingMini50();
+  const submitted = getMini50Votes();
+  const total     = submitted.length + pending.length;
+  const dots  = document.getElementById('mini50VsbDots');
+  const label = document.getElementById('mini50VsbLabel');
+  const btn   = document.getElementById('mini50SubmitBtn');
+  if (dots)  dots.innerHTML = Array.from({length: MINI50_MAX_VOTES}).map((_, i) =>
+    `<div class="mini50-vsb-dot${i < total ? ' filled' : ''}"></div>`).join('');
+  if (label) label.textContent = `${pending.length} / ${MINI50_MAX_VOTES} picked`;
+  if (btn)   btn.disabled = pending.length === 0;
+}
+
+/* ── Add / remove pending pick ── */
+let _mini50LatencyFirst = null;
+let _mini50PickTimes    = [];
+
+function addPendingMini50(id, title, poster, backdrop, year) {
+  const myVotes = getMini50Votes();
+  if (myVotes.includes(id)) return;
+  let pending = getPendingMini50();
+  const idx   = pending.findIndex(v => v.id === id);
+  if (idx >= 0) {
+    pending.splice(idx, 1);
+    _mini50PickTimes.splice(idx, 1);
+  } else {
+    if (!IS_DEV && pending.length + myVotes.length >= MINI50_MAX_VOTES) return;
+    const now = Date.now();
+    if (!_mini50LatencyFirst) _mini50LatencyFirst = now;
+    _mini50PickTimes.push(now);
+    pending.push({ id, title, poster, backdrop, year, pickedAt: now });
+  }
+  savePendingMini50(pending);
+  updateMini50VoteBar();
+
+  /* patch only the affected card button */
+  const item = document.getElementById(`mini50-item-${id}`);
+  if (item) {
+    const right     = item.querySelector('.top100-right');
+    const hasPick   = pending.some(v => v.id === id);
+    const newRem    = mini50VotesRemaining();
+    const btnHtml   = hasPick
+      ? `<button class="top100-vote-btn picked" onclick="event.stopPropagation();addPendingMini50('${id}','${escJs(title)}','${escJs(poster)}','${escJs(backdrop)}',${year})">✓ Picked</button>`
+      : newRem > 0
+        ? `<button class="top100-vote-btn" onclick="event.stopPropagation();addPendingMini50('${id}','${escJs(title)}','${escJs(poster)}','${escJs(backdrop)}',${year})">Vote</button>`
+        : `<button class="top100-vote-btn" disabled>Vote</button>`;
+    const existing = right && right.querySelector('.top100-vote-btn,.top100-voted-badge');
+    if (existing) {
+      existing.outerHTML = btnHtml;
+      if (hasPick) {
+        const nb = right.querySelector('.top100-vote-btn');
+        if (nb) { nb.classList.add('vote-pulse'); nb.addEventListener('animationend', () => nb.classList.remove('vote-pulse'), {once:true}); }
+      }
+    }
+  }
+  const atLimit = !IS_DEV && getPendingMini50().length + getMini50Votes().length >= MINI50_MAX_VOTES;
+  document.querySelectorAll('#mini50List .top100-vote-btn:not(.picked)').forEach(b => { b.disabled = atLimit; });
+}
+
+/* ── Render list ── */
+let _mini50AllSeries = [];
+let _mini50ShowAll   = false;
+const _mini50ReadObs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    const id = e.target.dataset.mid;
+    if (!id) return;
+    if (e.isIntersecting) { e.target._vs = Date.now(); }
+    else if (e.target._vs) { _seenMovies[id] = (_seenMovies[id]||0) + (Date.now()-e.target._vs); e.target._vs = null; }
+  });
+}, { threshold: 0.5 });
+
+function renderMini50(series) {
+  _mini50AllSeries = series;
+  _mini50ShowAll   = false;
+  const list       = document.getElementById('mini50List');
+  const myVotes    = getMini50Votes();
+  const pendingIds = getPendingMini50().map(v => v.id);
+  const snap       = getMini50RankSnap();
+  const rem        = mini50VotesRemaining();
+  updateMini50VoteBar();
+
+  if (!series.length) {
+    list.innerHTML = '<div class="top100-empty"><span>📺</span>No votes yet — nominate the first mini-series!</div>';
+    return;
+  }
+
+  maybeSaveMini50RankSnap(series);
+  _maybeSaveMini50WeekSnap(series);
+
+  list.innerHTML = series.map((m, i) => {
+    const rank      = i + 1;
+    const prevRank  = snap[m.id];
+    const hasVoted  = myVotes.includes(m.id);
+    const isPending = pendingIds.includes(m.id);
+    const canVote   = rem > 0 && !hasVoted && !isPending;
+    let changeHtml  = '';
+    if (!prevRank)            changeHtml = `<div class="top100-rank-change new">NEW</div>`;
+    else if (prevRank > rank) changeHtml = `<div class="top100-rank-change up">▲${prevRank - rank}</div>`;
+    else if (prevRank < rank) changeHtml = `<div class="top100-rank-change down">▼${rank - prevRank}</div>`;
+    const voteBtn = hasVoted
+      ? `<div class="top100-voted-badge">✓ Voted</div>`
+      : isPending
+        ? `<button class="top100-vote-btn picked" onclick="event.stopPropagation();addPendingMini50('${m.id}','${escJs(m.title)}','${escJs(m.poster||'')}','${escJs(m.backdrop||'')}',${m.year||0})">✓ Picked</button>`
+        : `<button class="top100-vote-btn" ${canVote?'':'disabled'} onclick="event.stopPropagation();addPendingMini50('${m.id}','${escJs(m.title)}','${escJs(m.poster||'')}','${escJs(m.backdrop||'')}',${m.year||0})">Vote</button>`;
+    const hidden = i >= MINI50_PREVIEW && !_mini50ShowAll ? ' mini50-item-hidden' : '';
+    return `
+      <div class="top100-item${hidden}" id="mini50-item-${m.id}" data-mid="${m.id}">
+        ${m.backdrop||m.poster ? `<div class="t100-backdrop" style="background-image:url('https://image.tmdb.org/t/p/w780${m.backdrop||m.poster}')"></div>` : ''}
+        <div class="top100-rank"><div class="top100-rank-num">${rank}</div>${changeHtml}</div>
+        ${m.poster ? `<img class="top100-poster" src="https://image.tmdb.org/t/p/w92${m.poster}" loading="lazy" alt="${esc(m.title)}"/>` : '<div class="top100-poster"></div>'}
+        <div class="top100-info">
+          <div class="top100-movie-title">${esc(m.title)}</div>
+          <div class="top100-movie-meta">${m.year||''}${m.year&&m.genres?.length?' · ':''}${(m.genres||[]).slice(0,2).join(', ')}</div>
+          <div>${(m.genres||[]).slice(0,2).map(g=>`<span class="top100-genre-tag">${esc(g)}</span>`).join('')}</div>
+        </div>
+        <div class="top100-right">
+          <div><div class="top100-vote-count">${m.votes}</div><div class="top100-vote-word">vote${m.votes!==1?'s':''}</div></div>
+          ${voteBtn}
+        </div>
+      </div>`;
+  }).join('');
+
+  if (series.length > MINI50_PREVIEW && !_mini50ShowAll) {
+    const rem2 = series.length - MINI50_PREVIEW;
+    list.insertAdjacentHTML('beforeend', `
+      <div class="top100-show-more-wrap" id="mini50ShowMoreWrap">
+        <div class="top100-show-more-fade"></div>
+        <button class="top100-show-more-btn" onclick="showFullMini50()">
+          Show Full List<span class="top100-show-more-count">+${rem2} more</span>
+        </button>
+      </div>`);
+  } else {
+    list.insertAdjacentHTML('beforeend', `<div class="top100-count-chip">${series.length} series · Min. 2 votes to appear</div>`);
+  }
+  document.querySelectorAll('#mini50List .top100-item[data-mid]').forEach(el => _mini50ReadObs.observe(el));
+}
+
+function showFullMini50() {
+  _mini50ShowAll = true;
+  document.querySelectorAll('.mini50-item-hidden').forEach(el => el.classList.remove('mini50-item-hidden'));
+  const wrap = document.getElementById('mini50ShowMoreWrap');
+  if (wrap) wrap.outerHTML = `<div class="top100-count-chip">${_mini50AllSeries.length} series · Min. 2 votes to appear</div>`;
+}
+
+/* ── Load from Firebase ── */
+async function loadTop50Mini() {
+  await syncMini50FpVotes();
+  try {
+    const res  = await fetch(`${RTDB}/${dbPath('miniSeriesVotes')}.json`);
+    const data = res.ok ? await res.json() : null;
+    if (!data) { renderMini50([]); return; }
+    const all = Object.entries(data).map(([id, m]) => ({ id, ...m }));
+    const totalVotes  = all.reduce((s, m) => s + (m.votes||0), 0);
+    const totalSeries = all.length;
+    const statsEl = document.getElementById('mini50Stats');
+    if (statsEl) {
+      document.getElementById('mini50TotalVotes').textContent  = totalVotes.toLocaleString();
+      document.getElementById('mini50TotalSeries').textContent = totalSeries.toLocaleString();
+      statsEl.style.display = 'flex';
+    }
+    const eligible = all
+      .filter(m => m.votes >= MINI50_MIN_VOTES)
+      .sort((a, b) => b.votes - a.votes || a.firstVoted - b.firstVoted);
+    renderMini50(eligible.slice(0, MINI50_MAX));
+  } catch(e) { console.warn('Mini50 load error', e); }
+}
+
+/* ── TMDB search (TV — user nominates mini-series) ── */
+let _mini50SearchTimer = null;
+function hideMini50Dropdown() {
+  const dd = document.getElementById('mini50Dropdown');
+  if (dd) dd.style.display = 'none';
+}
+function mini50SearchDebounce() {
+  clearTimeout(_mini50SearchTimer);
+  const q = (document.getElementById('mini50SearchInput')||{}).value?.trim();
+  if (!q || q.length < 2) { hideMini50Dropdown(); return; }
+  _mini50SearchTimer = setTimeout(() => _mini50DoSearch(q), 300);
+}
+async function _mini50DoSearch(q) {
+  const dd = document.getElementById('mini50Dropdown');
+  if (!dd) return;
+  try {
+    const res  = await fetch(`${TMDB}/search/tv?api_key=${getKey()}&query=${encodeURIComponent(q)}&language=en-US&page=1`);
+    const data = await res.json();
+    const hits = (data.results||[]).slice(0, 6);
+    if (!hits.length) { hideMini50Dropdown(); return; }
+    dd.innerHTML = hits.map(s => {
+      const year  = s.first_air_date ? s.first_air_date.slice(0, 4) : '';
+      const thumb = s.poster_path ? `https://image.tmdb.org/t/p/w92${s.poster_path}` : null;
+      return `<div class="fan-movie-opt" onmousedown="selectMini50('${s.id}','${escJs(s.name||s.original_name)}','${escJs(s.poster_path||'')}','${escJs(s.backdrop_path||'')}',${year||0})">
+        ${thumb ? `<img src="${thumb}" alt="" loading="lazy"/>` : '<div class="fan-movie-opt-no-img">📺</div>'}
+        <div class="fan-movie-opt-info">
+          <div class="fan-movie-opt-title">${esc(s.name||s.original_name)}</div>
+          ${year ? `<div class="fan-movie-opt-year">${year}</div>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+    dd.style.display = 'block';
+  } catch(_) { hideMini50Dropdown(); }
+}
+function selectMini50(id, title, poster, backdrop, year) {
+  hideMini50Dropdown();
+  const inp = document.getElementById('mini50SearchInput');
+  if (inp) inp.value = '';
+  addPendingMini50(String(id), title, poster, backdrop, year);
+}
+
+/* ── Email verification popup ── */
+function openMiniEvp() {
+  if (!getPendingMini50().length) return;
+  _latency.popupOpenAt = Date.now();
+  const chips = document.getElementById('miniEvpChips');
+  if (chips) chips.innerHTML = getPendingMini50().map(v =>
+    `<div class="evp-chip">${v.poster ? `<img src="https://image.tmdb.org/t/p/w92${v.poster}" alt=""/>` : '📺'}<span>${esc(v.title)}</span></div>`
+  ).join('');
+  const ov = document.getElementById('miniEvpOverlay');
+  if (ov) ov.classList.add('open');
+  setTimeout(() => { const inp = document.getElementById('miniEvpEmail'); if (inp) inp.focus(); }, 100);
+}
+function closeMiniEvp() {
+  const ov = document.getElementById('miniEvpOverlay');
+  if (ov) ov.classList.remove('open');
+}
+function miniEvpClearError() {
+  const err = document.getElementById('miniEvpError');
+  const inp = document.getElementById('miniEvpEmail');
+  if (err) err.textContent = '';
+  if (inp) inp.classList.remove('error');
+}
+
+async function miniEvpConfirm() {
+  const inp   = document.getElementById('miniEvpEmail');
+  const err   = document.getElementById('miniEvpError');
+  const btn   = document.getElementById('miniEvpConfirmBtn');
+  const email = inp ? inp.value.trim() : '';
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (inp) inp.classList.add('error');
+    if (err) err.textContent = 'Please enter a valid email address.';
+    return;
+  }
+  _latency.submitAt = Date.now();
+  if (!IS_DEV) {
+    /* behavioral score */
+    if (getBehavioralScore() < 15) {
+      if (err) err.textContent = 'Unusual activity detected. Browse the site a bit before voting.';
+      return;
+    }
+    /* session reuse */
+    if (sessionStorage.getItem(lsKey('pmovies_mini50_session_voted'))) {
+      if (err) err.textContent = 'You have already voted in this session.';
+      return;
+    }
+    /* timing: all picks too fast */
+    if (_mini50PickTimes.length >= 2) {
+      const span = _mini50PickTimes.at(-1) - _mini50PickTimes[0];
+      if (span < 1000) { if (err) err.textContent = 'Picks made too quickly — please browse the list naturally.'; return; }
+    }
+    /* reading: none of the picks were actually viewed */
+    const pending = getPendingMini50();
+    const unseen  = pending.filter(v => !_seenMovies[v.id] || _seenMovies[v.id] < 300);
+    if (unseen.length === pending.length && pending.length > 0) {
+      if (err) err.textContent = 'Please scroll through the list before voting.'; return;
+    }
+  }
+  if (btn) { btn.disabled = true; btn.textContent = 'Checking…'; }
+  try {
+    const hash = await hashEmail(email);
+    if (!IS_DEV) {
+      const check = await fetch(`${RTDB}/${dbPath('voterEmailsMini')}/${hash}.json`);
+      const used  = check.ok ? await check.json() : null;
+      if (used) {
+        if (inp) inp.classList.add('error');
+        if (err) err.textContent = 'This email has already been used to vote for mini-series.';
+        if (btn) { btn.disabled = false; btn.textContent = 'Confirm & Submit'; }
+        return;
+      }
+    }
+    await submitAllMini50Votes(email, hash);
+  } catch(e) {
+    if (err) err.textContent = 'Network error — please try again.';
+    if (btn) { btn.disabled = false; btn.textContent = 'Confirm & Submit'; }
+  }
+}
+
+async function submitAllMini50Votes(email, hash) {
+  const btn     = document.getElementById('miniEvpConfirmBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Submitting…'; }
+  const pending = getPendingMini50();
+  const fp      = await getStableFp().catch(() => null);
+  try {
+    await Promise.all(pending.map(async v => {
+      const url  = `${RTDB}/${dbPath('miniSeriesVotes')}/${v.id}.json`;
+      const res  = await fetch(url);
+      const curr = res.ok ? await res.json() : null;
+      const updated = {
+        title: v.title, poster: v.poster, backdrop: v.backdrop, year: v.year,
+        votes:      (curr?.votes || 0) + 1,
+        firstVoted: curr?.firstVoted || Date.now(),
+        lastVoted:  Date.now()
+      };
+      const writeFp = fp ? fetch(`${RTDB}/${dbPath('votesByFpMini')}/${fp}/${v.id}.json`, {
+        method: 'PUT', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ t: Date.now(), title: v.title })
+      }) : Promise.resolve();
+      return Promise.all([
+        fetch(url, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(updated) }),
+        writeFp
+      ]);
+    }));
+    /* audit trail */
+    await fetch(`${RTDB}/${dbPath('voterEmailsMini')}/${hash}.json`, {
+      method: 'PUT', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        t: Date.now(), bScore: getBehavioralScore(),
+        clientId: _clientId, sessionId: _sessionId,
+        readMs:   Object.fromEntries(pending.map(v => [v.id, _seenMovies[v.id]||0])),
+        pickSpan: _mini50PickTimes.length >= 2 ? _mini50PickTimes.at(-1) - _mini50PickTimes[0] : null
+      })
+    });
+    sessionStorage.setItem(lsKey('pmovies_mini50_session_voted'), '1');
+    const myVotes = getMini50Votes();
+    pending.forEach(v => { if (!myVotes.includes(v.id)) myVotes.push(v.id); });
+    saveMini50Votes(myVotes);
+    savePendingMini50([]);
+    _mini50LatencyFirst = null;
+    _mini50PickTimes    = [];
+    closeMiniEvp();
+    updateMini50VoteBar();
+    fireConfetti();
+    await loadTop50Mini();
+  } catch(e) {
+    const errEl = document.getElementById('miniEvpError');
+    if (errEl) errEl.textContent = 'Submit failed — please try again.';
+    if (btn) { btn.disabled = false; btn.textContent = 'Confirm & Submit'; }
+  }
+}
+</script>
+
 </body>
 </html>
