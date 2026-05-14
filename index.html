@@ -2079,20 +2079,30 @@
       <h2>PMovies Top 50 <span>Mini-Series</span></h2>
       <p>Mini-series, limited series &amp; anthologies only · Up to 3 votes per person</p>
     </div>
-    <div class="mini50-stats" id="mini50Stats" style="display:none">
-      <div class="mini50-stat-item">
-        <div class="mini50-stat-num" id="mini50TotalVotes">0</div>
-        <div class="mini50-stat-lbl">Total Votes</div>
+    <div class="top100-header-right">
+      <div class="mini50-stats" id="mini50Stats" style="display:none">
+        <div class="mini50-stat-item">
+          <div class="mini50-stat-num" id="mini50TotalVotes">0</div>
+          <div class="mini50-stat-lbl">Total Votes</div>
+        </div>
+        <div class="mini50-stat-sep"></div>
+        <div class="mini50-stat-item">
+          <div class="mini50-stat-num" id="mini50TotalSeries">0</div>
+          <div class="mini50-stat-lbl">Series Nominated</div>
+        </div>
       </div>
-      <div class="mini50-stat-sep"></div>
-      <div class="mini50-stat-item">
-        <div class="mini50-stat-num" id="mini50TotalSeries">0</div>
-        <div class="mini50-stat-lbl">Series Nominated</div>
+      <div class="top100-votes-left" id="mini50VotesLeft">
+        <div class="top100-votes-num" id="mini50VotesNum">3</div>
+        <div class="top100-votes-lbl">votes remaining</div>
       </div>
-    </div>
-    <div class="mini50-feature-btns">
       <button class="weekly-card-btn" onclick="openMini50WeekCard()">📋 This Week</button>
       <button class="fun-hdr-btn" onclick="openMini50ImpactCard()" title="See how your votes shaped the list">📊 My Impact</button>
+      <button class="fun-hdr-btn" onclick="openMini50TasteCard()" title="Your mini-series taste breakdown">🎭 My Taste</button>
+      <button class="fun-hdr-btn" onclick="openMini50H2H()" title="Compare two mini-series head-to-head">⚔ VS</button>
+    </div>
+    <div class="vote-feed-bar" id="mini50FeedBar" style="display:none">
+      <div class="vote-feed-live"><div class="vote-feed-dot"></div>LIVE</div>
+      <div class="vote-feed-track" id="mini50FeedTrack"></div>
     </div>
 
     <div class="mini50-nominate">
@@ -10722,6 +10732,16 @@ async function postersReject(key) {
     <div class="impact-modal" id="mini50ImpactModal"></div>
   </div>
 
+  <!-- Mini-Series My Taste Overlay -->
+  <div class="taste-overlay" id="mini50TasteOverlay" style="display:none" onclick="if(event.target.id==='mini50TasteOverlay')closeMini50TasteCard()">
+    <div class="taste-modal" id="mini50TasteModal"></div>
+  </div>
+
+  <!-- Mini-Series VS / H2H Overlay -->
+  <div class="h2h-overlay" id="mini50H2HOverlay" style="display:none" onclick="if(event.target.id==='mini50H2HOverlay')closeMini50H2H()">
+    <div class="h2h-modal" id="mini50H2HModal"></div>
+  </div>
+
   <!-- Mini-Series Email Verify Overlay -->
   <div class="mini50-evp-overlay" id="miniEvpOverlay">
     <div class="evp-card">
@@ -10817,6 +10837,9 @@ function updateMini50VoteBar() {
     `<div class="mini50-vsb-dot${i < total ? ' filled' : ''}"></div>`).join('');
   if (label) label.textContent = `${pending.length} / ${MINI50_MAX_VOTES} picked`;
   if (btn)   btn.disabled = pending.length === 0;
+  const rem = Math.max(0, MINI50_MAX_VOTES - total);
+  const numEl = document.getElementById('mini50VotesNum');
+  if (numEl) numEl.textContent = rem;
 }
 
 /* ── Add / remove pending pick ── */
@@ -10970,7 +10993,168 @@ async function loadTop50Mini() {
       .filter(m => m.votes >= MINI50_MIN_VOTES)
       .sort((a, b) => b.votes - a.votes || a.firstVoted - b.firstVoted);
     renderMini50(eligible.slice(0, MINI50_MAX));
+    loadMini50VoteFeed();
   } catch(e) { console.warn('Mini50 load error', e); }
+}
+
+/* ── Live vote feed ── */
+async function loadMini50VoteFeed() {
+  const bar   = document.getElementById('mini50FeedBar');
+  const track = document.getElementById('mini50FeedTrack');
+  if (!bar || !track) return;
+  bar.style.display = 'flex';
+  track.innerHTML = '<div class="vote-feed-inner"><span class="vote-feed-item" style="opacity:.4">Loading…</span></div>';
+  try {
+    const res  = await fetch(`${RTDB}/${dbPath('miniSeriesVotes')}.json`);
+    const data = res.ok ? await res.json() : null;
+    const events = data
+      ? Object.values(data).filter(e => e && e.lastVoted && e.title)
+          .sort((a, b) => b.lastVoted - a.lastVoted).slice(0, 16)
+      : [];
+    if (!events.length) {
+      track.innerHTML = '<div class="vote-feed-inner"><span class="vote-feed-item" style="opacity:.45">No votes yet — nominate the first series! 📺</span><span class="vote-feed-item" style="opacity:.45">No votes yet — nominate the first series! 📺</span></div>';
+      return;
+    }
+    const now = Date.now();
+    const items = events.map(e => {
+      const mins = Math.round((now - e.lastVoted) / 60000);
+      const ago  = mins < 1 ? 'just now' : mins < 60 ? `${mins}m ago` : mins < 1440 ? `${Math.round(mins/60)}h ago` : `${Math.round(mins/1440)}d ago`;
+      return `<span class="vote-feed-item">📺 <strong>${esc(e.title)}</strong><span class="vote-feed-ago">${ago}</span></span>`;
+    });
+    const inner = items.join('') + items.join('');
+    track.innerHTML = `<div class="vote-feed-inner">${inner}</div>`;
+  } catch(_) {
+    track.innerHTML = '<div class="vote-feed-inner"><span class="vote-feed-item" style="opacity:.35">Live feed unavailable</span></div>';
+  }
+}
+
+/* ── My Taste ── */
+function openMini50TasteCard() {
+  document.getElementById('mini50TasteOverlay').style.display = 'flex';
+  const modal   = document.getElementById('mini50TasteModal');
+  const myVotes = getMini50Votes();
+  if (!myVotes.length) {
+    modal.innerHTML = `<div class="taste-title">🎭 My Series Taste</div>
+      <div style="color:#555;font-size:.83rem;padding:20px 0 10px;text-align:center">Vote for some series first and I'll analyse your taste!</div>
+      <button class="fun-close-btn secondary" onclick="closeMini50TasteCard()">Close</button>`;
+    return;
+  }
+  const series = myVotes.map(id => _mini50AllSeries.find(x => x.id == id)).filter(Boolean);
+  // Era breakdown by decade
+  const eraBuckets = { 'Pre-2000': 0, '2000s': 0, '2010s': 0, '2020s+': 0 };
+  series.forEach(s => {
+    const y = parseInt(s.year) || 0;
+    if (y < 2000) eraBuckets['Pre-2000']++;
+    else if (y < 2010) eraBuckets['2000s']++;
+    else if (y < 2020) eraBuckets['2010s']++;
+    else eraBuckets['2020s+']++;
+  });
+  const topEra    = Object.entries(eraBuckets).sort((a,b) => b[1]-a[1])[0]?.[0] || '2010s';
+  const eraTotal  = series.length || 1;
+  const personas  = { 'Pre-2000':'The Classic Binger','2000s':'The Peak TV Pioneer','2010s':'The Golden Era Devotee','2020s+':'The Modern Streamer' };
+  const persona   = personas[topEra] || 'The Series Aficionado';
+  const eraBars   = Object.entries(eraBuckets).filter(([,c])=>c>0).map(([era,c]) => {
+    const pct = Math.round(c/eraTotal*100);
+    return `<div class="taste-genre-row">
+      <div class="taste-genre-name">${era}</div>
+      <div class="taste-bar-wrap"><div class="taste-bar" style="width:${pct}%"></div></div>
+      <div class="taste-pct">${pct}%</div>
+    </div>`;
+  }).join('');
+  const posters = series.slice(0,6).map(s =>
+    s.poster ? `<img class="taste-pick-img" src="https://image.tmdb.org/t/p/w185${s.poster}" title="${esc(s.title)}"/>` : `<div class="taste-pick-img"></div>`
+  ).join('');
+  modal.innerHTML = `<div class="taste-title">🎭 My Series Taste</div>
+    <div style="color:#555;font-size:.78rem;margin:0 0 14px">Based on your ${series.length} vote${series.length!==1?'s':''}</div>
+    <div style="background:#1a1a1a;border-radius:10px;padding:12px 16px;margin-bottom:16px;text-align:center">
+      <div style="font-size:.7rem;color:#555;margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em">Your binge persona</div>
+      <div style="font-size:1rem;font-weight:800;color:var(--orange)">${persona}</div>
+      <div style="font-size:.72rem;color:#666;margin-top:3px">Favourite era: ${topEra}</div>
+    </div>
+    ${eraBars}
+    <div style="font-size:.7rem;color:#555;margin:12px 0 6px;text-transform:uppercase;letter-spacing:.06em">Your picks</div>
+    <div class="taste-picks">${posters}</div>
+    <button class="fun-close-btn secondary" onclick="closeMini50TasteCard()">Close</button>`;
+}
+function closeMini50TasteCard() { document.getElementById('mini50TasteOverlay').style.display = 'none'; }
+
+/* ── VS Head-to-Head ── */
+function openMini50H2H() {
+  document.getElementById('mini50H2HOverlay').style.display = 'flex';
+  _buildMini50H2HSelects(null, null);
+}
+function closeMini50H2H() { document.getElementById('mini50H2HOverlay').style.display = 'none'; }
+
+function _buildMini50H2HSelects(aId, bId) {
+  const modal  = document.getElementById('mini50H2HModal');
+  const list   = _mini50AllSeries.slice(0, 50);
+  if (list.length < 2) {
+    modal.innerHTML = `<div class="h2h-title">⚔ Head-to-Head</div>
+      <div style="color:#555;font-size:.83rem;padding:20px 0;text-align:center">At least 2 series needed for comparison.</div>
+      <button class="fun-close-btn secondary" onclick="closeMini50H2H()">Close</button>`;
+    return;
+  }
+  const opts  = list.map((m,i) => `<option value="${m.id}" ${String(m.id)===String(aId)?'selected':''}>#${i+1} ${esc(m.title.length>30?m.title.slice(0,28)+'…':m.title)}</option>`).join('');
+  const opts2 = list.map((m,i) => `<option value="${m.id}" ${String(m.id)===String(bId)?'selected':''}>#${i+1} ${esc(m.title.length>30?m.title.slice(0,28)+'…':m.title)}</option>`).join('');
+  modal.innerHTML = `
+    <div class="h2h-title">⚔ Head-to-Head</div>
+    <div class="h2h-selects">
+      <select class="h2h-select" id="m50H2hSelA" onchange="_renderMini50H2H()">${opts}</select>
+      <div class="h2h-vs-lbl">VS</div>
+      <select class="h2h-select" id="m50H2hSelB" onchange="_renderMini50H2H()">${opts2}</select>
+    </div>
+    <div id="m50H2hCompare"></div>
+    <button class="fun-close-btn secondary" onclick="closeMini50H2H()">Close</button>`;
+  _renderMini50H2H();
+}
+
+function _renderMini50H2H() {
+  const aId = document.getElementById('m50H2hSelA')?.value;
+  const bId = document.getElementById('m50H2hSelB')?.value;
+  const wrap = document.getElementById('m50H2hCompare');
+  if (!wrap || !aId || !bId || aId === bId) {
+    if (wrap) wrap.innerHTML = '<div style="text-align:center;color:#444;font-size:.8rem;padding:12px">Pick two different series</div>';
+    return;
+  }
+  const mA = _mini50AllSeries.find(x => String(x.id) === String(aId));
+  const mB = _mini50AllSeries.find(x => String(x.id) === String(bId));
+  if (!mA || !mB) return;
+  const rankA = _mini50AllSeries.indexOf(mA) + 1;
+  const rankB = _mini50AllSeries.indexOf(mB) + 1;
+  const snap  = getMini50RankSnap();
+  function statBlock(m, rank, oRank) {
+    const prev  = snap[m.id];
+    const diff  = prev ? prev - rank : 0;
+    const poster = m.poster
+      ? `<img class="h2h-poster ${rank<oRank?'winner':''}" src="https://image.tmdb.org/t/p/w185${m.poster}"/>`
+      : `<div class="h2h-poster ${rank<oRank?'winner':''}"></div>`;
+    const firstDate = m.firstVoted ? new Date(m.firstVoted).toLocaleDateString('en-US',{month:'short',year:'numeric'}) : '—';
+    return `<div class="h2h-film">
+      ${poster}
+      <div class="h2h-film-name">${esc(m.title)}</div>
+      <div class="h2h-stat ${rank<oRank?'highlight':''}">
+        <div class="h2h-stat-num">#${rank}</div>
+        <div class="h2h-stat-lbl">Current Rank</div>
+      </div>
+      <div class="h2h-stat ${(m.votes||(0)) > ((m===mA?mB:mA).votes||0)?'highlight':''}">
+        <div class="h2h-stat-num">${m.votes||0}</div>
+        <div class="h2h-stat-lbl">Votes</div>
+      </div>
+      <div class="h2h-stat">
+        <div class="h2h-stat-num">${diff>0?'▲'+diff:diff<0?'▼'+Math.abs(diff):'–'}</div>
+        <div class="h2h-stat-lbl">Weekly Change</div>
+      </div>
+      <div class="h2h-stat">
+        <div class="h2h-stat-num">${firstDate}</div>
+        <div class="h2h-stat-lbl">First Voted</div>
+      </div>
+    </div>`;
+  }
+  wrap.innerHTML = `<div class="h2h-compare-grid">
+    ${statBlock(mA, rankA, rankB)}
+    <div class="h2h-divider">${Array(4).fill('<div class="h2h-divider-dot"></div>').join('')}</div>
+    ${statBlock(mB, rankB, rankA)}
+  </div>`;
 }
 
 /* ── TMDB search (TV — user nominates mini-series) ── */
