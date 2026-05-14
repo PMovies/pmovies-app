@@ -2952,7 +2952,7 @@
 
   /* ══ NOW AIRING ══ */
   async function loadNowAiring() {
-    if (_loadingNowAiring) return;
+    if (nowAiringLoaded || _loadingNowAiring) return;
     _loadingNowAiring = true;
     const content = document.getElementById('nowAiringContent');
     content.innerHTML = '<div class="yt-loading">Loading…</div>';
@@ -2989,6 +2989,7 @@
         row.appendChild(card);
       });
       content.innerHTML = ''; content.appendChild(row);
+      nowAiringLoaded = true;
     } catch(e) { content.innerHTML = '<div class="yt-loading">Could not load now airing.</div>'; }
     finally { _loadingNowAiring = false; }
   }
@@ -4671,7 +4672,7 @@
   }
 
   async function loadSeriesReviews() {
-    if (_loadingSeriesReviews) return;
+    if (srReviewsLoaded || _loadingSeriesReviews) return;
     _loadingSeriesReviews = true;
     srFanReviewsShown = FAN_PAGE_SIZE;
     const form = document.getElementById('srFanReviewForm');
@@ -4693,6 +4694,7 @@
       _buildAuthorCounts(reviews, 'series');
       renderSeriesReviews(reviews);
       _applyCmtCounts();
+      srReviewsLoaded = true;
     } finally {
       _loadingSeriesReviews = false;
     }
@@ -4863,9 +4865,9 @@
       } else if (lastTvHero) {
         setHeroBackdrop(lastTvHero);
       }
-      if (!nowAiringLoaded) { loadNowAiring(); nowAiringLoaded = true; }
-      if (!srReviewsLoaded) { loadSeriesReviews(); srReviewsLoaded = true; }
-      if (!mini50Loaded)    { loadTop50Mini();     mini50Loaded    = true; }
+      if (!nowAiringLoaded)  loadNowAiring();
+      if (!srReviewsLoaded)  loadSeriesReviews();
+      if (!mini50Loaded)     loadTop50Mini();
     } else if (name !== 'backed') {
       loadHeroBackdrop(); // fresh random movie hero — skip on Backed tab
     }
@@ -11010,18 +11012,19 @@ function showFullMini50() {
 
 /* ── Load from Firebase ── */
 async function loadTop50Mini() {
-  if (_loadingTop50Mini) return;
+  if (mini50Loaded || _loadingTop50Mini) return;
   _loadingTop50Mini = true;
   try {
-  await syncMini50FpVotes();
-  try {
+    // Don't let the FP sync failure block the whole list from loading
+    await syncMini50FpVotes().catch(() => {});
+
     const res  = await fetch(`${RTDB}/${dbPath('miniSeriesVotes')}.json`);
     const data = res.ok ? await res.json() : null;
-    if (!data) { renderMini50([]); return; }
+    if (!data) { renderMini50([]); mini50Loaded = true; return; }
+
     const all = Object.entries(data).map(([id, m]) => ({ id, ...m }));
 
-    // Auto-heal: if a user voted for a series that has since been removed by an admin,
-    // clear those stale IDs from localStorage so their vote slots are returned.
+    // Auto-heal stale localStorage votes for series removed by admin
     const liveIds = new Set(Object.keys(data));
     const storedVotes = getMini50Votes();
     const cleanedVotes = storedVotes.filter(id => liveIds.has(id));
@@ -11034,17 +11037,24 @@ async function loadTop50Mini() {
     const totalSeries = all.length;
     const statsEl = document.getElementById('mini50Stats');
     if (statsEl) {
-      document.getElementById('mini50TotalVotes').textContent  = totalVotes.toLocaleString();
-      document.getElementById('mini50TotalSeries').textContent = totalSeries.toLocaleString();
+      const tvEl = document.getElementById('mini50TotalVotes');
+      const tsEl = document.getElementById('mini50TotalSeries');
+      if (tvEl) tvEl.textContent = totalVotes.toLocaleString();
+      if (tsEl) tsEl.textContent = totalSeries.toLocaleString();
       statsEl.style.display = 'flex';
     }
     const eligible = all
       .filter(m => m.votes >= MINI50_MIN_VOTES)
       .sort((a, b) => b.votes - a.votes || a.firstVoted - b.firstVoted);
     renderMini50(eligible.slice(0, MINI50_MAX));
+    mini50Loaded = true; // only mark done after a real successful render
     loadMini50VoteFeed();
-  } catch(e) { console.warn('Mini50 load error', e); }
-  } finally { _loadingTop50Mini = false; }
+  } catch(e) {
+    console.warn('Mini50 load error', e);
+    // Leave mini50Loaded = false so the next tab-switch can retry
+  } finally {
+    _loadingTop50Mini = false;
+  }
 }
 
 /* ── Live vote feed ── */
