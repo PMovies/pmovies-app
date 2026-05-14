@@ -4357,11 +4357,15 @@
       btn.textContent = 'Posting…'; btn.disabled = true;
       const reviewData = { name, movie, tmdbId, rating, text, timestamp: Date.now() };
       // Write to RTDB (new path)
-      await fetch(`${RTDB}/fanReviews.json`, {
+      const rtdbRes = await fetch(`${RTDB}/fanReviews.json`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(reviewData)
       });
+      if (!rtdbRes.ok) {
+        const errBody = await rtdbRes.json().catch(() => ({}));
+        throw new Error(errBody.error || `Server error ${rtdbRes.status}`);
+      }
       // Also write to Firestore via SDK if available (for users on cached version)
       if (fbDb) {
         try {
@@ -4380,7 +4384,9 @@
       document.querySelectorAll('.fan-star').forEach(s => s.classList.remove('active'));
       document.querySelector('.fan-star-label').textContent = 'Click to rate';
       btn.textContent = 'POST REVIEW'; btn.disabled = false;
-      loadFanReviews();
+      await loadFanReviews();
+      refreshChallengeResults();
+      if (_currentChallengeTitle) updateChallengeReviewCount(_currentChallengeTitle);
     } catch(e) {
       alert('Could not submit: ' + e.message);
       document.querySelector('.fan-submit-btn').textContent = 'POST REVIEW';
@@ -6125,6 +6131,9 @@
     setTimeout(() => { closeAdmin(); loadWeeklyChallenge(); }, 1200);
   }
 
+  let _currentChallengeTitle = '';
+  let _currentChallengeTmdbId = 0;
+
   async function loadWeeklyChallenge() {
     try {
       const res  = await fetch(`${RTDB}/weeklyChallenge.json`);
@@ -6134,7 +6143,19 @@
     } catch(_) {}
   }
 
+  function prefillChallengeReview(title, tmdbId) {
+    const fm = document.getElementById('fanMovie');
+    if (fm) {
+      fm.value = title;
+      fm.dataset.cleanTitle = title;
+      fm.dataset.tmdbId = tmdbId || '';
+    }
+    document.getElementById('fanSection').scrollIntoView({ behavior: 'smooth' });
+  }
+
   function renderChallenge(c) {
+    _currentChallengeTitle  = c.title || '';
+    _currentChallengeTmdbId = c.id    || 0;
     const sec      = document.getElementById('challengeSection');
     const now      = Date.now();
     const deadline = c.deadline || 0;
@@ -6158,7 +6179,7 @@
             ${c.year ? `<div class="challenge-year">${c.year}</div>` : ''}
             <div class="challenge-countdown" id="challengeCountdown"></div>
             <div class="challenge-cta">
-              <button class="challenge-review-btn" onclick="document.getElementById('fanSection').scrollIntoView({behavior:'smooth'})">Leave Your Review ↓</button>
+              <button class="challenge-review-btn" onclick="prefillChallengeReview('${escJs(c.title)}',${c.id||0})">Leave Your Review ↓</button>
               <span class="challenge-review-count" id="challengeReviewCount"></span>
             </div>
           </div>
@@ -6229,7 +6250,7 @@
             </div>
 
             <div class="cr-cta-row">
-              <button class="challenge-review-btn" onclick="document.getElementById('fanSection').scrollIntoView({behavior:'smooth'})">Read All Reviews ↓</button>
+              <button class="challenge-review-btn" onclick="prefillChallengeReview('${escJs(c.title)}',${c.id||0})">Read All Reviews ↓</button>
               <span class="cr-next">🗓 Next challenge announced Sunday</span>
             </div>
           </div>
