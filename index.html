@@ -2114,6 +2114,7 @@
         <div class="fan-movie-dropdown" id="mini50Dropdown" style="display:none"></div>
       </div>
       <div class="mini50-hint">Mini-series, limited series &amp; anthologies only · Community-moderated</div>
+      <div id="mini50TypeError" style="display:none;color:#f44336;font-size:.75rem;margin-top:6px;text-align:center;line-height:1.5"></div>
     </div>
     <div class="mini50-vote-bar" id="mini50VoteBar">
       <div class="mini50-vsb-slots" id="mini50VsbDots"></div>
@@ -11172,11 +11173,38 @@ function mini50SearchDebounce() {
 async function _mini50DoSearch(q) {
   const dd = document.getElementById('mini50Dropdown');
   if (!dd) return;
+  // Show loading immediately so the user knows something is happening
+  dd.innerHTML = '<div style="padding:10px 14px;color:#555;font-size:.78rem">Searching…</div>';
+  dd.style.display = 'block';
   try {
     const res  = await fetch(`${TMDB}/search/tv?api_key=${getKey()}&query=${encodeURIComponent(q)}&language=en-US&page=1`);
     const data = await res.json();
-    const hits = (data.results||[]).slice(0, 6);
-    if (!hits.length) { hideMini50Dropdown(); return; }
+    const raw  = (data.results||[]).slice(0, 10);
+    if (!raw.length) { hideMini50Dropdown(); return; }
+
+    // Fetch full show details in parallel so we can check the 'type' field.
+    // TMDB search doesn't return type; only the /tv/{id} endpoint does.
+    const details = await Promise.all(
+      raw.map(s =>
+        fetch(`${TMDB}/tv/${s.id}?api_key=${getKey()}&language=en-US`)
+          .then(r => r.ok ? r.json() : null)
+          .catch(() => null)
+      )
+    );
+
+    // Keep only true mini-series / limited series (TMDB type === 'Miniseries')
+    const hits = raw
+      .filter((s, i) => details[i] && details[i].type === 'Miniseries')
+      .slice(0, 6);
+
+    if (!hits.length) {
+      dd.innerHTML = `<div style="padding:12px 14px;color:#666;font-size:.78rem;text-align:center">
+        No mini-series found for this title.<br>
+        <span style="color:#444;font-size:.7rem">Only mini-series &amp; limited series are allowed.<br>Ongoing shows (Scripted) are not eligible.</span>
+      </div>`;
+      return;
+    }
+
     dd.innerHTML = hits.map(s => {
       const year  = s.first_air_date ? s.first_air_date.slice(0, 4) : '';
       const thumb = s.poster_path ? `https://image.tmdb.org/t/p/w92${s.poster_path}` : null;
@@ -11187,14 +11215,31 @@ async function _mini50DoSearch(q) {
           ${year ? `<div class="fan-movie-opt-year">${year}</div>` : ''}
         </div>
       </div>`;
-    }).join('');
+    }).join('') + '<div style="padding:5px 14px;color:#333;font-size:.66rem;border-top:1px solid #1a1a1a">Mini-series &amp; limited series only</div>';
     dd.style.display = 'block';
   } catch(_) { hideMini50Dropdown(); }
 }
-function selectMini50(id, title, poster, backdrop, year) {
+
+// Second validation layer: check TMDB type even on direct selection,
+// in case someone bypasses the dropdown (e.g. from the existing list's vote buttons).
+async function selectMini50(id, title, poster, backdrop, year) {
   hideMini50Dropdown();
-  const inp = document.getElementById('mini50SearchInput');
+  const inp   = document.getElementById('mini50SearchInput');
+  const errEl = document.getElementById('mini50TypeError');
   if (inp) inp.value = '';
+  if (errEl) errEl.style.display = 'none';
+  try {
+    const r = await fetch(`${TMDB}/tv/${id}?api_key=${getKey()}&language=en-US`);
+    const d = r.ok ? await r.json() : null;
+    if (d && d.type && d.type !== 'Miniseries') {
+      if (errEl) {
+        errEl.textContent = `"${title}" is an ongoing ${d.type} series — only mini-series & limited series are allowed.`;
+        errEl.style.display = 'block';
+        setTimeout(() => { errEl.style.display = 'none'; }, 7000);
+      }
+      return;
+    }
+  } catch(_) { /* network error — fail open so valid series aren't blocked */ }
   addPendingMini50(String(id), title, poster, backdrop, year);
 }
 
