@@ -1441,36 +1441,46 @@
     .editor-filter.active,.editor-filter:hover{background:rgba(245,166,35,.12);border-color:rgba(245,166,35,.4);color:#f5a623}
     .editor-loading{color:#555;font-size:.9rem;padding:40px 0;text-align:center}
     .editor-empty{color:#555;font-size:.95rem;padding:60px 0;text-align:center;line-height:1.8}
-    .editor-reviews-grid{display:grid;grid-template-columns:1fr;gap:0}
-    .editor-review-card{position:relative;display:grid;grid-template-columns:120px 1fr;gap:0;border-bottom:1px solid rgba(255,255,255,.07);padding:28px 0;transition:background .2s;cursor:pointer}
-    .editor-review-card:hover{background:rgba(255,255,255,.02)}
-    .editor-review-card:hover .editor-review-title{color:#f5a623}
-    .editor-review-poster{width:120px;height:176px;object-fit:cover;border-radius:6px;flex-shrink:0}
-    .editor-review-poster-ph{width:120px;height:176px;background:#1a1a1a;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#333;font-size:2rem;flex-shrink:0}
-    .editor-review-body{padding:0 0 0 22px;display:flex;flex-direction:column;justify-content:center}
-    .editor-review-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
-    .editor-review-year{font-size:.65rem;font-weight:700;letter-spacing:1.5px;color:#666;text-transform:uppercase}
-    .editor-review-festival{font-size:.62rem;font-weight:700;letter-spacing:1px;color:#000;background:#f5a623;border-radius:10px;padding:2px 9px;text-transform:uppercase}
-    .editor-review-stars{color:#f5a623;font-size:.85rem;letter-spacing:1px}
-    .editor-review-title{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:1px;color:#fff;line-height:1.1;margin-bottom:6px;transition:color .2s}
-    .editor-review-headline{font-size:.88rem;font-style:italic;color:#bbb;line-height:1.5;margin-bottom:10px}
-    .editor-review-excerpt{font-size:.82rem;color:#777;line-height:1.6;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:12px}
-    .editor-review-tags{display:flex;gap:6px;flex-wrap:wrap}
-    .editor-review-tag{font-size:.6rem;font-weight:700;letter-spacing:1px;color:#555;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:2px 8px;text-transform:uppercase}
-    .editor-review-del{position:absolute;top:16px;right:0;background:none;border:none;color:#333;font-size:.85rem;cursor:pointer;padding:4px 8px;transition:color .2s}
-    .editor-review-del:hover{color:#f44}
-    /* Review full-read overlay */
-    .editor-read-overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:3000;overflow-y:auto;display:none;padding:40px 20px}
-    .editor-read-overlay.open{display:block}
-    .editor-read-inner{max-width:720px;margin:0 auto}
-    .editor-read-close{position:fixed;top:20px;right:24px;background:none;border:none;color:#aaa;font-size:1.4rem;cursor:pointer;z-index:3001;transition:color .2s}
-    .editor-read-close:hover{color:#fff}
-    .editor-read-backdrop{width:100%;height:220px;object-fit:cover;border-radius:10px;margin-bottom:28px;display:block}
-    .editor-read-backdrop-ph{width:100%;height:120px;background:#1a1a1a;border-radius:10px;margin-bottom:28px}
-    .editor-read-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
-    .editor-read-title{font-family:'Bebas Neue',sans-serif;font-size:3rem;letter-spacing:2px;color:#fff;line-height:1;margin-bottom:8px}
-    .editor-read-headline{font-size:1.1rem;font-style:italic;color:#ccc;line-height:1.6;margin-bottom:24px;border-left:3px solid #f5a623;padding-left:16px}
-    .editor-read-body{font-size:1rem;color:#bbb;line-height:1.85;white-space:pre-line}
+    /* Cinematic poster card grid */
+    .ec-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:16px;padding:8px 0}
+    .ec-card{cursor:pointer;border-radius:10px;overflow:hidden;background:#111;transition:transform .22s,box-shadow .22s;position:relative}
+    .ec-card:hover{transform:translateY(-5px);box-shadow:0 16px 48px rgba(0,0,0,.7)}
+    .ec-poster{width:100%;aspect-ratio:2/3;object-fit:cover;display:block}
+    .ec-poster-ph{width:100%;aspect-ratio:2/3;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:2.5rem}
+    .ec-info{padding:10px 10px 13px}
+    .ec-title{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.5px;color:#fff;line-height:1.2;margin-bottom:5px}
+    .ec-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:5px}
+    .ec-year{font-size:.6rem;font-weight:700;letter-spacing:1.5px;color:#666;text-transform:uppercase}
+    .ec-stars{font-size:.72rem;color:#f5a623}
+    .ec-festival{font-size:.55rem;font-weight:700;letter-spacing:.8px;color:#000;background:#f5a623;border-radius:8px;padding:1px 7px;text-transform:uppercase}
+    .ec-tagline{font-size:.7rem;color:#888;font-style:italic;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .ec-del{position:absolute;top:7px;right:7px;background:rgba(0,0,0,.75);border:none;color:#777;font-size:.65rem;cursor:pointer;width:22px;height:22px;border-radius:50%;transition:color .2s;line-height:22px;text-align:center;padding:0}
+    .ec-del:hover{color:#f44}
+    /* Full cinematic review page */
+    .er-page{position:fixed;inset:0;z-index:9999;background:#0a0a0a;overflow-y:auto;display:none}
+    .er-page.open{display:block}
+    .er-back{position:fixed;top:16px;left:16px;z-index:10001;background:rgba(0,0,0,.65);border:none;color:#fff;font-size:1.3rem;cursor:pointer;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background .2s;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+    .er-back:hover{background:rgba(245,166,35,.35)}
+    .er-share{position:fixed;top:16px;right:16px;z-index:10001;background:rgba(0,0,0,.65);border:none;color:#ddd;font-size:.62rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;padding:11px 15px;border-radius:20px;transition:background .2s;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);font-family:'Montserrat',sans-serif}
+    .er-share:hover{background:rgba(245,166,35,.35)}
+    .er-backdrop-wrap{position:relative;width:100%;height:52vw;max-height:420px;min-height:200px;overflow:hidden}
+    .er-backdrop-img{width:100%;height:100%;object-fit:cover;display:block}
+    .er-backdrop-ph{width:100%;height:100%;background:#151515}
+    .er-backdrop-grad{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(10,10,10,0) 35%,#0a0a0a 100%)}
+    .er-hero{display:grid;grid-template-columns:115px 1fr;gap:20px;padding:0 22px;margin-top:-65px;position:relative;z-index:2;max-width:720px;margin-left:auto;margin-right:auto}
+    .er-poster{width:115px;height:172px;object-fit:cover;border-radius:9px;box-shadow:0 10px 30px rgba(0,0,0,.8);display:block;flex-shrink:0}
+    .er-poster-ph{width:115px;height:172px;background:#1a1a1a;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:2.2rem;flex-shrink:0}
+    .er-hero-right{display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:6px}
+    .er-h-title{font-family:'Bebas Neue',sans-serif;font-size:2.4rem;letter-spacing:2px;color:#fff;line-height:1;margin-bottom:8px}
+    .er-h-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+    .er-h-year{font-size:.65rem;font-weight:700;letter-spacing:1.5px;color:#888;text-transform:uppercase}
+    .er-h-festival{font-size:.6rem;font-weight:700;letter-spacing:.8px;color:#000;background:#f5a623;border-radius:8px;padding:2px 9px;text-transform:uppercase}
+    .er-h-stars{font-size:.95rem;color:#f5a623}
+    .er-h-tags{display:flex;gap:5px;flex-wrap:wrap}
+    .er-h-tag{font-size:.58rem;font-weight:700;letter-spacing:1px;color:#666;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:2px 8px;text-transform:uppercase}
+    .er-content{max-width:720px;margin:30px auto 70px;padding:0 22px}
+    .er-headline{font-size:1.15rem;font-style:italic;color:#ddd;line-height:1.65;margin-bottom:26px;padding:16px 20px;border-inline-start:3px solid #f5a623;background:rgba(245,166,35,.05);border-radius:0 8px 8px 0}
+    .er-body{font-size:.97rem;color:#aaa;line-height:1.95;white-space:pre-line}
     /* Admin overlay */
     .editor-admin-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99990;display:flex;align-items:flex-start;justify-content:center;padding:30px 16px;overflow-y:auto}
     .editor-admin-modal{background:#111;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:28px;width:100%;max-width:580px}
@@ -1503,10 +1513,12 @@
     .editor-cancel-btn:hover{background:rgba(255,255,255,.1)}
     .editor-admin-msg{margin-top:14px;font-size:.82rem;text-align:center;min-height:20px}
     @media(max-width:600px){
-      .editor-review-card{grid-template-columns:80px 1fr}
-      .editor-review-poster,.editor-review-poster-ph{width:80px;height:118px}
-      .editor-review-title{font-size:1.35rem}
-      .editor-read-title{font-size:2rem}
+      .ec-grid{grid-template-columns:repeat(2,1fr);gap:12px}
+      .er-backdrop-wrap{height:56vw}
+      .er-hero{grid-template-columns:90px 1fr;gap:14px;margin-top:-50px;padding:0 16px}
+      .er-poster{width:90px;height:135px}
+      .er-h-title{font-size:1.7rem}
+      .er-content{padding:0 16px;margin-top:24px}
     }
     .posters-row{grid-template-columns:1fr 80px;}
   }
@@ -5304,6 +5316,22 @@
   // _journeyInit lives in a later script block and would be undefined if called synchronously here.
   setTimeout(function() {
     const hash = location.hash.replace('#', '');
+
+    // Direct review link: #review/FIREBASE_KEY
+    if (hash.startsWith('review/')) {
+      const key = hash.slice(7).split('?')[0];
+      switchTab('editor');
+      if (key) {
+        fetch(`https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app/editorReviews/${encodeURIComponent(key)}.json`)
+          .then(r => r.json())
+          .then(data => {
+            if (data && data.title) { data._key = key; _renderReviewPage(data); }
+          })
+          .catch(() => {});
+      }
+      return;
+    }
+
     const tabName = hash.split('?')[0]; // strip any ?admin=... from the hash before matching
     if (['discover','foryou','community','lists','series','backed','posters','editor'].includes(tabName)) switchTab(tabName);
     // Show Write Review button immediately if admin (button hidden by default via inline style)
@@ -5312,6 +5340,16 @@
       if (wb) wb.style.display = '';
     }
   }, 0);
+
+  // Handle browser back/forward through review pages
+  window.addEventListener('popstate', function() {
+    const hash = location.hash.replace('#', '');
+    if (!hash.startsWith('review/')) {
+      const page = document.getElementById('erPage');
+      if (page) page.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+  });
 
   /* ══ FRIENDS LETTERBOXD REVIEWS ══ */
   const LB_FRIENDS = [
@@ -11788,83 +11826,121 @@ async function loadEditorReviews() {
   }
 }
 
-/* ── Render grid ── */
+/* ── Render grid (cinematic poster cards) ── */
 function renderEditorReviews(reviews) {
   const grid = document.getElementById('editorGrid');
   if (!grid) return;
+  grid.className = 'ec-grid';
   if (!reviews.length) {
-    grid.innerHTML = `<div class="editor-empty">No reviews published yet.</div>`;
+    grid.innerHTML = '<div class="editor-empty">No reviews published yet.</div>';
     return;
   }
   grid.innerHTML = '';
   reviews.forEach(r => {
     const stars = _editorStarsHTML(r.rating||0);
     const posterEl = r.poster
-      ? `<img class="editor-review-poster" src="https://image.tmdb.org/t/p/w154${r.poster}" alt="${esc(r.title)}" loading="lazy"/>`
-      : `<div class="editor-review-poster-ph">🎬</div>`;
-    const festivalBadge = r.festival ? `<span class="editor-review-festival">${esc(r.festival)}</span>` : '';
-    const tags = (r.tags||[]).map(t => `<span class="editor-review-tag">${esc(t)}</span>`).join('');
+      ? `<img class="ec-poster" src="https://image.tmdb.org/t/p/w342${r.poster}" alt="${esc(r.title)}" loading="lazy"/>`
+      : `<div class="ec-poster-ph">🎬</div>`;
+    const festivalBadge = r.festival ? `<span class="ec-festival">${esc(r.festival)}</span>` : '';
     const delBtn = _isEditorAdmin()
-      ? `<button class="editor-review-del" onclick="deleteEditorReview('${r._key}',event)" title="Delete">✕</button>` : '';
+      ? `<button class="ec-del" onclick="deleteEditorReview('${r._key}',event)" title="Delete">✕</button>` : '';
     const card = document.createElement('div');
-    card.className = 'editor-review-card';
+    card.className = 'ec-card';
     card.dataset.rating = r.rating || 0;
     card.dataset.festival = r.festival ? '1' : '0';
     card.innerHTML = `
       ${posterEl}
-      <div class="editor-review-body">
-        <div class="editor-review-meta">
-          <span class="editor-review-year">${r.year||''}</span>
+      <div class="ec-info">
+        <div class="ec-title">${esc(r.title||'')}</div>
+        <div class="ec-meta">
+          <span class="ec-year">${r.year||''}</span>
+          <span class="ec-stars">${stars}</span>
           ${festivalBadge}
-          <span class="editor-review-stars">${stars}</span>
         </div>
-        <div class="editor-review-title">${esc(r.title||'')}</div>
-        ${r.headline ? `<div class="editor-review-headline">"${esc(r.headline)}"</div>` : ''}
-        ${r.review   ? `<div class="editor-review-excerpt">${esc(r.review)}</div>` : ''}
-        <div class="editor-review-tags">${tags}</div>
+        ${r.headline ? `<div class="ec-tagline" dir="auto">${esc(r.headline)}</div>` : ''}
       </div>
       ${delBtn}`;
-    card.addEventListener('click', e => { if (!e.target.classList.contains('editor-review-del')) openEditorRead(r); });
+    card.addEventListener('click', e => {
+      if (!e.target.classList.contains('ec-del')) openEditorRead(r);
+    });
     grid.appendChild(card);
   });
 }
 
-/* ── Full-read overlay ── */
+/* ── Full cinematic review page ── */
 function openEditorRead(r) {
-  let ov = document.getElementById('editorReadOverlay');
-  if (!ov) {
-    ov = document.createElement('div');
-    ov.id = 'editorReadOverlay';
-    ov.className = 'editor-read-overlay';
-    document.body.appendChild(ov);
+  const key = r._key || '';
+  history.pushState({ erKey: key }, '', '#review/' + key);
+  _renderReviewPage(r);
+}
+
+function _renderReviewPage(r) {
+  let page = document.getElementById('erPage');
+  if (!page) {
+    page = document.createElement('div');
+    page.id = 'erPage';
+    page.className = 'er-page';
+    document.body.appendChild(page);
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeEditorRead(); });
   }
   const stars = _editorStarsHTML(r.rating||0);
-  const festivalBadge = r.festival ? `<span class="editor-review-festival">${esc(r.festival)}</span>` : '';
-  const tags = (r.tags||[]).map(t => `<span class="editor-review-tag">${esc(t)}</span>`).join('');
+  const festivalBadge = r.festival ? `<span class="er-h-festival">${esc(r.festival)}</span>` : '';
+  const tags = (r.tags||[]).map(t => `<span class="er-h-tag">${esc(t)}</span>`).join('');
   const backdropEl = r.backdrop
-    ? `<img class="editor-read-backdrop" src="https://image.tmdb.org/t/p/w1280${r.backdrop}" alt="${esc(r.title)}"/>`
-    : `<div class="editor-read-backdrop-ph"></div>`;
-  ov.innerHTML = `
-    <button class="editor-read-close" onclick="closeEditorRead()">✕</button>
-    <div class="editor-read-inner">
+    ? `<img class="er-backdrop-img" src="https://image.tmdb.org/t/p/w1280${r.backdrop}" alt="${esc(r.title)}"/>`
+    : `<div class="er-backdrop-ph"></div>`;
+  const posterEl = r.poster
+    ? `<img class="er-poster" src="https://image.tmdb.org/t/p/w342${r.poster}" alt="${esc(r.title)}"/>`
+    : `<div class="er-poster-ph">🎬</div>`;
+  page.innerHTML = `
+    <button class="er-back" onclick="closeEditorRead()" title="Back">←</button>
+    <button class="er-share" onclick="_erShare()">🔗 Share</button>
+    <div class="er-backdrop-wrap">
       ${backdropEl}
-      <div class="editor-read-meta">
-        <span class="editor-review-year">${r.year||''}</span>
-        ${festivalBadge}
-        <span class="editor-review-stars">${stars}</span>
-        <div class="editor-review-tags">${tags}</div>
+      <div class="er-backdrop-grad"></div>
+    </div>
+    <div class="er-hero">
+      ${posterEl}
+      <div class="er-hero-right">
+        <div class="er-h-title">${esc(r.title||'')}</div>
+        <div class="er-h-meta">
+          <span class="er-h-year">${r.year||''}</span>
+          ${festivalBadge}
+          <span class="er-h-stars">${stars}</span>
+        </div>
+        <div class="er-h-tags">${tags}</div>
       </div>
-      <div class="editor-read-title">${esc(r.title||'')}</div>
-      ${r.headline ? `<div class="editor-read-headline">${esc(r.headline)}</div>` : ''}
-      <div class="editor-read-body">${esc(r.review||'')}</div>
+    </div>
+    <div class="er-content">
+      ${r.headline ? `<div class="er-headline" dir="auto">"${esc(r.headline)}"</div>` : ''}
+      ${r.review   ? `<div class="er-body" dir="auto">${esc(r.review)}</div>` : ''}
     </div>`;
-  ov.classList.add('open');
+  page.classList.add('open');
+  page.scrollTop = 0;
   document.body.style.overflow = 'hidden';
 }
+
 function closeEditorRead() {
-  const ov = document.getElementById('editorReadOverlay');
-  if (ov) { ov.classList.remove('open'); document.body.style.overflow = ''; }
+  const page = document.getElementById('erPage');
+  if (page) page.classList.remove('open');
+  document.body.style.overflow = '';
+  if (location.hash.startsWith('#review/')) {
+    history.pushState(null, '', '#editor');
+  }
+}
+
+function _erShare() {
+  const url = location.href;
+  const btn = document.querySelector('.er-share');
+  if (navigator.share) {
+    navigator.share({ url }).catch(() => {});
+  } else if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(() => {
+      if (btn) { btn.textContent = '✓ Copied!'; setTimeout(() => { btn.textContent = '🔗 Share'; }, 2200); }
+    });
+  } else {
+    prompt('Copy this review link:', url);
+  }
 }
 
 /* ── Filter ── */
