@@ -5317,17 +5317,29 @@
   setTimeout(function() {
     const hash = location.hash.replace('#', '');
 
-    // Direct review link: #review/FIREBASE_KEY
+    // Direct review link: #review/movie-slug  (or legacy #review/FIREBASE_KEY)
     if (hash.startsWith('review/')) {
-      const key = hash.slice(7).split('?')[0];
+      const slug = hash.slice(7).split('?')[0];
       switchTab('editor');
-      if (key) {
-        fetch(`https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app/editorReviews/${encodeURIComponent(key)}.json`)
-          .then(r => r.json())
-          .then(data => {
-            if (data && data.title) { data._key = key; _renderReviewPage(data); }
-          })
-          .catch(() => {});
+      if (slug) {
+        // Wait for reviews to load (switchTab triggers loadEditorReviews async),
+        // then find by slug. Fall back to Firebase key for old-format links.
+        let attempts = 0;
+        const _tryOpenReview = setInterval(() => {
+          if (_editorAllReviews.length > 0 || ++attempts > 50) {
+            clearInterval(_tryOpenReview);
+            // Search by slug field, then by computed title slug, then treat as Firebase key
+            let rev = _editorAllReviews.find(r => r.slug === slug)
+                   || _editorAllReviews.find(r => _editorSlug(r.title||'') === slug);
+            if (rev) { _renderReviewPage(rev); }
+            else if (slug.startsWith('-')) {
+              // Legacy Firebase auto-key
+              fetch(`https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app/editorReviews/${encodeURIComponent(slug)}.json`)
+                .then(r => r.json()).then(data => { if (data && data.title) { data._key = slug; _renderReviewPage(data); } })
+                .catch(() => {});
+            }
+          }
+        }, 150);
       }
       return;
     }
@@ -11877,8 +11889,8 @@ function renderEditorReviews(reviews) {
 
 /* ── Full cinematic review page ── */
 function openEditorRead(r) {
-  const key = r._key || '';
-  try { history.pushState({ erKey: key }, '', '#review/' + key); } catch(e) {}
+  const urlSlug = r.slug || _editorSlug(r.title || '') || r._key || '';
+  try { history.pushState({ erKey: r._key||'' }, '', '#review/' + urlSlug); } catch(e) {}
   _renderReviewPage(r);
 }
 
@@ -11921,6 +11933,7 @@ function _renderReviewPage(r) {
           ${festivalBadge}
           <span style="font-size:.95rem;color:#f5a623">${stars}</span>
         </div>
+        <div style="font-size:.65rem;font-weight:700;letter-spacing:1.5px;color:#888;text-transform:uppercase;margin-bottom:8px">By Ahmed Khaled</div>
         <div style="display:flex;gap:5px;flex-wrap:wrap">${tags}</div>
       </div>
     </div>
@@ -12038,6 +12051,14 @@ function closeEditorAdmin() {
   document.body.style.overflow = '';
 }
 
+/* ── Slug helper ── */
+function _editorSlug(title) {
+  return (title || '').toLowerCase().trim()
+    .replace(/[àáâãäå]/g,'a').replace(/[èéêë]/g,'e').replace(/[ìíîï]/g,'i')
+    .replace(/[òóôõö]/g,'o').replace(/[ùúûü]/g,'u').replace(/[ñ]/g,'n')
+    .replace(/[^a-z0-9\s-]/g,'').replace(/[\s_]+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
+}
+
 /* ── Rating ── */
 function setEditorRating(v) {
   _editorRating = v;
@@ -12133,7 +12154,7 @@ async function submitEditorReview() {
   if (btn) { btn.disabled=true; btn.textContent='Publishing…'; }
   if (msg) msg.textContent = '';
 
-  const record = { title, tmdbId, poster, backdrop, year, rating, festival, headline, review, tags, publishedAt: Date.now() };
+  const record = { title, tmdbId, poster, backdrop, year, rating, festival, headline, review, tags, slug: _editorSlug(title), publishedAt: Date.now() };
   try {
     const res = await fetch(`${RTDB}/editorReviews.json`, {
       method: 'POST',
