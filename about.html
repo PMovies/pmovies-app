@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>About — PMovies</title>
+  <meta name="description" content="PMovies is a film platform built by cinephiles, for cinephiles. Founded by Ahmed Khaled in the UAE." />
+  <link rel="canonical" href="https://p-movies.com/about" />
+  <!-- OG -->
+  <meta property="og:title" content="About — PMovies" />
+  <meta property="og:description" content="The film platform built by cinephiles, for cinephiles." />
+  <meta property="og:image" content="https://p-movies.com/icons/icon-512.png" />
+  <meta property="og:url" content="https://p-movies.com/about" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0a;
+      --card: #111111;
+      --card-alt: #161616;
+      --accent: #f5a623;
+      --accent-dim: rgba(245, 166, 35, 0.12);
+      --text: #e8e8e8;
+      --heading: #ffffff;
+      --muted: #888888;
+      --border: rgba(255,255,255,0.08);
+      --glow: 0 0 30px rgba(245,166,35,0.18);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 400;
+      line-height: 1.75;
+      overflow-x: hidden;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2.5rem;
+      height: 60px;
+      background: rgba(10,10,10,0.92);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.6rem;
+      letter-spacing: 0.08em;
+      color: var(--heading);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .nav-logo span { color: var(--accent); }
+    .nav-logo:hover { color: var(--accent); }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .nav-pill {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 0.3rem 0.9rem;
+      transition: color 0.2s, border-color 0.2s, background 0.2s;
+    }
+    .nav-pill:hover, .nav-pill.active {
+      color: var(--accent);
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+    .nav-home {
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--muted);
+      text-decoration: none;
+      letter-spacing: 0.04em;
+      margin-right: 0.6rem;
+      transition: color 0.2s;
+    }
+    .nav-home:hover { color: var(--accent); }
+
+    /* ── LANG TOGGLE ── */
+    #lang-toggle {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 200;
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: 50px;
+      padding: 0.55rem 1.3rem;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(245,166,35,0.4);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    #lang-toggle:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(245,166,35,0.5);
+    }
+
+    /* ── CONTENT LAYERS ── */
+    #content-en, #content-ar {
+      transition: opacity 0.4s ease;
+    }
+    #content-ar { display: none; opacity: 0; }
+    #content-ar.visible { display: block; opacity: 1; }
+    #content-en.hidden { opacity: 0; pointer-events: none; display: none; }
+
+    /* ── HERO ── */
+    .hero {
+      position: relative;
+      min-height: 72vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 6rem 2.5rem 5rem;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 80%, rgba(245,166,35,0.07) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 80% at 80% 20%, rgba(245,166,35,0.04) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    /* Film grain via SVG filter */
+    .hero::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.35;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
+      background-size: 200px 200px;
+      mix-blend-mode: overlay;
+    }
+    .hero-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1.2rem;
+      position: relative;
+    }
+    .hero-heading {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(5rem, 12vw, 9rem);
+      line-height: 0.9;
+      letter-spacing: 0.02em;
+      color: var(--heading);
+      position: relative;
+      margin-bottom: 1.6rem;
+    }
+    .hero-sub {
+      font-size: clamp(1rem, 2vw, 1.25rem);
+      font-weight: 300;
+      font-style: italic;
+      color: var(--muted);
+      max-width: 600px;
+      position: relative;
+    }
+    .hero-line {
+      width: 60px;
+      height: 2px;
+      background: var(--accent);
+      margin: 2rem 0;
+      position: relative;
+    }
+
+    /* ── SECTIONS ── */
+    .section {
+      padding: 6rem 2.5rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .section-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 0 2.5rem;
+    }
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 2.5rem;
+    }
+    .section-label::before { content: '◆ '; }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 4rem;
+      align-items: start;
+    }
+    .col-label {
+      position: sticky;
+      top: 80px;
+    }
+
+    h2.section-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(2.8rem, 5vw, 4.5rem);
+      line-height: 1;
+      color: var(--heading);
+      letter-spacing: 0.03em;
+      margin-bottom: 1.5rem;
+    }
+    h3.person-name {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.2rem;
+      letter-spacing: 0.05em;
+      color: var(--heading);
+      margin-bottom: 0.3rem;
+    }
+    .person-title {
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1.8rem;
+    }
+    p.body-text {
+      font-size: 1rem;
+      font-weight: 300;
+      color: var(--text);
+      line-height: 1.85;
+      max-width: 640px;
+    }
+    p.body-text + p.body-text { margin-top: 1.2rem; }
+
+    /* ── EDITOR CARD ── */
+    .editor-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 3rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    .editor-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), transparent);
+    }
+    .editor-card:hover {
+      border-color: rgba(245,166,35,0.3);
+      box-shadow: var(--glow);
+    }
+    .editor-initial {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: var(--accent-dim);
+      border: 2px solid var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem;
+      color: var(--accent);
+      margin-bottom: 1.8rem;
+    }
+
+    /* ── MISSION / FESTIVAL CARDS ── */
+    .highlight-card {
+      background: var(--card-alt);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 3rem;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    .highlight-card:hover {
+      border-color: rgba(245,166,35,0.25);
+      box-shadow: var(--glow);
+    }
+    .big-quote {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 6rem;
+      line-height: 0.8;
+      color: var(--accent);
+      opacity: 0.15;
+      display: block;
+      margin-bottom: -1rem;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 3rem 2.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .footer-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.4rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+    }
+    .footer-logo span { color: var(--accent); }
+    .footer-copy {
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+    }
+
+    /* ── RTL ARABIC ── */
+    [dir="rtl"] .hero-sub,
+    [dir="rtl"] p.body-text {
+      font-size: 1.05rem;
+      line-height: 2;
+    }
+    [dir="rtl"] .hero-line { margin-right: 0; }
+    [dir="rtl"] .editor-card::before {
+      background: linear-gradient(270deg, var(--accent), transparent);
+    }
+    [dir="rtl"] .col-label { text-align: right; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      nav { padding: 0 1.2rem; }
+      .nav-home { display: none; }
+      .hero { padding: 4rem 1.5rem 3.5rem; min-height: 60vh; }
+      .section { padding: 4rem 1.5rem; }
+      .section-divider { margin: 0 1.5rem; }
+      .two-col { grid-template-columns: 1fr; gap: 2rem; }
+      .col-label { position: static; }
+      .editor-card { padding: 2rem 1.5rem; }
+      .highlight-card { padding: 2rem 1.5rem; }
+      footer { padding: 2rem 1.5rem; flex-direction: column; align-items: flex-start; }
+      #lang-toggle { bottom: 1.2rem; right: 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="https://p-movies.com" class="nav-logo">P<span>M</span>OVIES</a>
+    <div class="nav-links">
+      <a href="https://p-movies.com" class="nav-home">← p-movies.com</a>
+      <a href="https://p-movies.com/about" class="nav-pill active">About</a>
+      <a href="https://p-movies.com/press" class="nav-pill">Press</a>
+    </div>
+  </nav>
+
+  <!-- LANGUAGE TOGGLE -->
+  <button id="lang-toggle" onclick="toggleLang()" aria-label="Switch language">عربي</button>
+
+  <!-- ══════════════════════════ ENGLISH CONTENT ══════════════════════════ -->
+  <div id="content-en" lang="en">
+
+    <!-- HERO -->
+    <section class="hero">
+      <span class="hero-label">◆ PMovies — Est. 2023</span>
+      <h1 class="hero-heading">ABOUT</h1>
+      <div class="hero-line"></div>
+      <p class="hero-sub">The film platform built by cinephiles, for cinephiles.</p>
+    </section>
+
+    <hr class="section-divider" />
+
+    <!-- THE EDITOR -->
+    <section class="section">
+      <div class="two-col">
+        <div class="col-label">
+          <p class="section-label">The Editor</p>
+        </div>
+        <div>
+          <div class="editor-card">
+            <div class="editor-initial">AK</div>
+            <h3 class="person-name">Ahmed Khaled</h3>
+            <p class="person-title">Founder &amp; Editor-in-Chief, PMovies</p>
+            <p class="body-text">Ahmed Khaled is a film critic and cinephile based in the UAE. He founded PMovies to create a space where film lovers can discover, discuss, and document their relationship with cinema — free from algorithm, free from noise.</p>
+            <p class="body-text">His editorial focus centres on world cinema, independent film, and the international festival circuit: Cannes, Venice, TIFF, and beyond.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="section-divider" />
+
+    <!-- ABOUT PMOVIES -->
+    <section class="section">
+      <div class="two-col">
+        <div class="col-label">
+          <p class="section-label">About PMovies</p>
+        </div>
+        <div>
+          <h2 class="section-title">WHERE FILM LOVERS MEET.</h2>
+          <div class="highlight-card">
+            <span class="big-quote">"</span>
+            <p class="body-text">PMovies began as a community voting platform — a place where real film lovers could shape a definitive list of the greatest films ever made. It has since evolved into a full editorial destination: weekly newsletters, editor's reviews, curated lists, fan art, and a growing community of cinephiles.</p>
+            <p class="body-text" style="margin-top:1.2rem;">Every feature on this platform is built around one question: <em>what makes a film worth remembering?</em></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="section-divider" />
+
+    <!-- OUR MISSION -->
+    <section class="section">
+      <div class="two-col">
+        <div class="col-label">
+          <p class="section-label">Our Mission</p>
+        </div>
+        <div>
+          <h2 class="section-title">UNCOMPROMISING IN QUALITY.</h2>
+          <div class="highlight-card">
+            <p class="body-text">To make film discovery personal, communal, and uncompromising in quality. We believe the best films are the ones that stay with you — that shift something.</p>
+            <p class="body-text" style="margin-top:1.2rem;font-weight:500;color:#fff;">PMovies is the place to find them.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="section-divider" />
+
+    <!-- FESTIVAL COVERAGE -->
+    <section class="section">
+      <div class="two-col">
+        <div class="col-label">
+          <p class="section-label">Festival Coverage</p>
+        </div>
+        <div>
+          <h2 class="section-title">ON THE CIRCUIT.</h2>
+          <div class="highlight-card">
+            <p class="body-text">Starting with Cannes 2025, PMovies will bring independent editorial coverage of the international festival circuit — reviews, dispatches, and curator picks from the world's most important film events.</p>
+            <p class="body-text" style="margin-top:1.8rem;font-size:0.78rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);">
+              Cannes &nbsp;·&nbsp; Venice &nbsp;·&nbsp; TIFF &nbsp;·&nbsp; Berlinale &nbsp;·&nbsp; DIFF
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /content-en -->
+
+
+  <!-- ══════════════════════════ ARABIC CONTENT ══════════════════════════ -->
+  <div id="content-ar" dir="rtl" lang="ar">
+
+    <!-- HERO -->
+    <section class="hero">
+      <span class="hero-label">◆ بي موفيز — منذ ٢٠٢٣</span>
+      <h1 class="hero-heading">عن بي موفيز</h1>
+      <div class="hero-line"></div>
+      <p class="hero-sub">منصة الأفلام التي بناها عشاق السينما، لعشاق السينما.</p>
+    </section>
+
+    <hr class="section-divider" />
+
+    <!-- المحرر -->
+    <section class="section">
+      <div class="two-col">
+        <div class="col-label">
+          <p class="section-label">المحرر</p>
+        </div>
+        <div>
+          <div class="editor-card">
+            <div class="editor-initial">أخ</div>
+            <h3 class="person-name">أحمد خالد</h3>
+            <p class="person-title">المؤسس ورئيس التحرير، بي موفيز</p>
+            <p class="body-text">أحمد خالد ناقد سينمائي وعاشق للأفلام مقيم في الإمارات العربية المتحدة. أسّس بي موفيز ليخلق مساحة يستطيع فيها محبو الأفلام اكتشاف السينما ومناقشتها وتوثيق علاقتهم بها — بعيدًا عن الخوارزميات، بعيدًا عن الضجيج.</p>
+            <p class="body-text">تتمحور رؤيته التحريرية حول السينما العالمية، والأفلام المستقلة، ومهرجانات الأفلام الدولية: كان، فينيسيا، تورنتو، وما هو أبعد من ذلك.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="section-divider" />
+
+    <!-- عن بي موفيز -->
+    <section class="section">
+      <div class="two-col">
+        <div class="col-label">
+          <p class="section-label">عن بي موفيز</p>
+        </div>
+        <div>
+          <h2 class="section-title">حيث يلتقي عشاق الأفلام.</h2>
+          <div class="highlight-card">
+            <span class="big-quote">"</span>
+            <p class="body-text">بدأت بي موفيز كمنصة تصويت مجتمعية — مكان يستطيع فيه عشاق الأفلام تشكيل قائمة أعظم أفلام في التاريخ. ومنذ ذلك الحين، تطورت لتصبح وجهة تحريرية متكاملة: نشرات أسبوعية، ومراجعات المحرر، وقوائم منتقاة، وفنون المشجعين، ومجتمع متنامٍ من عشاق السينما.</p>
+            <p class="body-text" style="margin-top:1.2rem;">كل ميزة في هذه المنصة مبنية على سؤال واحد: <em>ما الذي يجعل الفيلم يستحق التذكر؟</em></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="section-divider" />
+
+    <!-- رسالتنا -->
+    <section class="section">
+      <div class="two-col">
+        <div class="col-label">
+          <p class="section-label">رسالتنا</p>
+        </div>
+        <div>
+          <h2 class="section-title">بلا تنازل في الجودة.</h2>
+          <div class="highlight-card">
+            <p class="body-text">جعل اكتشاف الأفلام شخصيًا ومجتمعيًا وراقيًا في مستواه. نؤمن بأن أفضل الأفلام هي تلك التي تبقى معك — التي تغيّر شيئًا ما.</p>
+            <p class="body-text" style="margin-top:1.2rem;font-weight:500;color:#fff;">بي موفيز هو المكان الذي ستجدها فيه.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="section-divider" />
+
+    <!-- تغطية المهرجانات -->
+    <section class="section">
+      <div class="two-col">
+        <div class="col-label">
+          <p class="section-label">تغطية المهرجانات</p>
+        </div>
+        <div>
+          <h2 class="section-title">على دائرة المهرجانات.</h2>
+          <div class="highlight-card">
+            <p class="body-text">ابتداءً من مهرجان كان 2025، ستقدم بي موفيز تغطية تحريرية مستقلة للدورة الدولية لمهرجانات الأفلام — مراجعات، ومستجدات، واختيارات المحرر من أهم فعاليات الأفلام في العالم.</p>
+            <p class="body-text" style="margin-top:1.8rem;font-size:0.78rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent);">
+              كان &nbsp;·&nbsp; فينيسيا &nbsp;·&nbsp; تورنتو &nbsp;·&nbsp; برلين &nbsp;·&nbsp; دبي
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /content-ar -->
+
+  <!-- FOOTER -->
+  <footer>
+    <span class="footer-logo">P<span>M</span>OVIES</span>
+    <span class="footer-copy">© 2025 PMovies. All rights reserved.</span>
+    <a href="https://p-movies.com" style="font-size:0.72rem;color:var(--muted);text-decoration:none;letter-spacing:0.06em;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">p-movies.com ↗</a>
+  </footer>
+
+  <script>
+    let isArabic = false;
+
+    function toggleLang() {
+      const btn = document.getElementById('lang-toggle');
+      const en = document.getElementById('content-en');
+      const ar = document.getElementById('content-ar');
+
+      isArabic = !isArabic;
+
+      if (isArabic) {
+        en.classList.add('hidden');
+        ar.classList.remove('hidden');
+        ar.classList.add('visible');
+        btn.textContent = 'English';
+        document.documentElement.lang = 'ar';
+      } else {
+        ar.classList.remove('visible');
+        ar.classList.add('hidden');
+        en.classList.remove('hidden');
+        btn.textContent = 'عربي';
+        document.documentElement.lang = 'en';
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  </script>
+
+</body>
+</html>
