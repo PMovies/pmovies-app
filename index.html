@@ -2317,16 +2317,9 @@
 </div><!-- /tab-panel-posters -->
 
 <div class="tab-panel" id="tab-panel-editor">
-  <!-- Editor header -->
-  <div class="editor-hero">
-    <div class="editor-hero-label">◆ EDITOR'S COLUMN</div>
-    <div class="editor-hero-title">Ahmed Khaled</div>
-    <div class="editor-hero-sub">Founder &amp; Editor-in-Chief · Film Critic · PMovies</div>
-    <p class="editor-hero-bio">Independent cinema coverage from the UAE — world film, festival circuit, and the films that stay with you.</p>
-    <div class="editor-hero-actions">
-      <a href="about.html" class="editor-about-link">About the Editor →</a>
-      <button class="editor-write-btn" id="editorWriteBtn" style="display:none" onclick="openEditorAdmin()">✍️ Write Review</button>
-    </div>
+  <!-- Admin write button (only visible to admin) -->
+  <div style="display:flex;justify-content:flex-end;padding:18px 0 4px">
+    <button class="editor-write-btn" id="editorWriteBtn" style="display:none" onclick="openEditorAdmin()">✍️ Write Review</button>
   </div>
 
   <!-- Filter bar -->
@@ -5044,7 +5037,10 @@
     if (name === 'foryou' && !foryouWasActive) { _journeyInit(); }
     if (name === 'backed') { renderBackedTab(); }
     if (name === 'posters') { postersInit(); }
-    if (name === 'editor') { if (!editorLoaded) loadEditorReviews(); }
+    if (name === 'editor') {
+      if (_isEditorAdmin()) { const wb = document.getElementById('editorWriteBtn'); if (wb) wb.style.display = ''; }
+      if (!editorLoaded) loadEditorReviews();
+    }
     if (name === 'series') {
       if (nowAiringHeroes.length) {
         const pick   = nowAiringHeroes[Math.floor(Math.random() * nowAiringHeroes.length)];
