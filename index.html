@@ -2349,11 +2349,15 @@
   </div>
 
   <!-- Filter bar -->
-  <div class="editor-filter-bar" id="editorFilterBar" style="display:none">
-    <button class="editor-filter active" data-filter="all" onclick="filterEditorReviews('all',this)">All</button>
-    <button class="editor-filter" data-filter="festival" onclick="filterEditorReviews('festival',this)">Festival</button>
-    <button class="editor-filter" data-filter="5" onclick="filterEditorReviews('5',this)">★ Essential</button>
-    <button class="editor-filter" data-filter="4" onclick="filterEditorReviews('4',this)">★ Recommended</button>
+  <div id="editorFilterBar" style="display:none;flex-wrap:wrap;gap:10px;margin-bottom:28px;align-items:center">
+    <button class="editor-filter" data-filter="all" onclick="filterEditorReviews('all',this)"
+      style="background:rgba(245,166,35,.15);border:1px solid rgba(245,166,35,.5);color:#f5a623;border-radius:20px;padding:8px 22px;font-family:Montserrat,sans-serif;font-size:.72rem;font-weight:700;letter-spacing:1.5px;cursor:pointer;text-transform:uppercase;transition:background .2s,border-color .2s,color .2s;outline:none">All</button>
+    <button class="editor-filter" data-filter="festival" onclick="filterEditorReviews('festival',this)"
+      style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#777;border-radius:20px;padding:8px 22px;font-family:Montserrat,sans-serif;font-size:.72rem;font-weight:700;letter-spacing:1.5px;cursor:pointer;text-transform:uppercase;transition:background .2s,border-color .2s,color .2s;outline:none">Festival</button>
+    <button class="editor-filter" data-filter="5" onclick="filterEditorReviews('5',this)"
+      style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#777;border-radius:20px;padding:8px 22px;font-family:Montserrat,sans-serif;font-size:.72rem;font-weight:700;letter-spacing:1.5px;cursor:pointer;text-transform:uppercase;transition:background .2s,border-color .2s,color .2s;outline:none">★ Essential</button>
+    <button class="editor-filter" data-filter="4" onclick="filterEditorReviews('4',this)"
+      style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#777;border-radius:20px;padding:8px 22px;font-family:Montserrat,sans-serif;font-size:.72rem;font-weight:700;letter-spacing:1.5px;cursor:pointer;text-transform:uppercase;transition:background .2s,border-color .2s,color .2s;outline:none">★ Recommended</button>
   </div>
 
   <!-- Reviews grid -->
@@ -12047,8 +12051,18 @@ function _erShare() {
 
 /* ── Filter ── */
 function filterEditorReviews(filter, btn) {
-  document.querySelectorAll('.editor-filter').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
+  // Reset all buttons to inactive state via inline styles (immune to CSS cache)
+  document.querySelectorAll('.editor-filter').forEach(b => {
+    b.style.background = 'rgba(255,255,255,.05)';
+    b.style.borderColor = 'rgba(255,255,255,.12)';
+    b.style.color = '#777';
+  });
+  // Highlight the active button
+  if (btn) {
+    btn.style.background = 'rgba(245,166,35,.15)';
+    btn.style.borderColor = 'rgba(245,166,35,.5)';
+    btn.style.color = '#f5a623';
+  }
   let filtered = _editorAllReviews;
   if (filter === 'festival') filtered = _editorAllReviews.filter(r => r.festival);
   else if (filter === '5')   filtered = _editorAllReviews.filter(r => r.rating >= 5);
