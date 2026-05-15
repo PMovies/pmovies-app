@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Press &amp; Accreditation — PMovies</title>
+  <meta name="description" content="PMovies press kit and festival accreditation information. Independent film journalism from the UAE." />
+  <link rel="canonical" href="https://p-movies.com/press" />
+  <!-- OG -->
+  <meta property="og:title" content="Press &amp; Accreditation — PMovies" />
+  <meta property="og:description" content="Independent film journalism from the UAE — covering the international festival circuit." />
+  <meta property="og:image" content="https://p-movies.com/icons/icon-512.png" />
+  <meta property="og:url" content="https://p-movies.com/press" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0a;
+      --card: #111111;
+      --card-alt: #161616;
+      --accent: #f5a623;
+      --accent-dim: rgba(245, 166, 35, 0.12);
+      --text: #e8e8e8;
+      --heading: #ffffff;
+      --muted: #888888;
+      --border: rgba(255,255,255,0.08);
+      --border-gold: rgba(245,166,35,0.25);
+      --glow: 0 0 30px rgba(245,166,35,0.18);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 400;
+      line-height: 1.75;
+      overflow-x: hidden;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2.5rem;
+      height: 60px;
+      background: rgba(10,10,10,0.92);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.6rem;
+      letter-spacing: 0.08em;
+      color: var(--heading);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .nav-logo span { color: var(--accent); }
+    .nav-logo:hover { color: var(--accent); }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .nav-pill {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 0.3rem 0.9rem;
+      transition: color 0.2s, border-color 0.2s, background 0.2s;
+    }
+    .nav-pill:hover, .nav-pill.active {
+      color: var(--accent);
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+    .nav-home {
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--muted);
+      text-decoration: none;
+      letter-spacing: 0.04em;
+      margin-right: 0.6rem;
+      transition: color 0.2s;
+    }
+    .nav-home:hover { color: var(--accent); }
+
+    /* ── HERO ── */
+    .hero {
+      position: relative;
+      min-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 6rem 2.5rem 5rem;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 90% 70% at 10% 90%, rgba(245,166,35,0.08) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 70% at 90% 10%, rgba(245,166,35,0.05) 0%, transparent 55%),
+        linear-gradient(180deg, transparent 60%, rgba(10,10,10,0.8) 100%);
+      pointer-events: none;
+    }
+    .hero::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.3;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
+      background-size: 200px 200px;
+      mix-blend-mode: overlay;
+    }
+    /* Large decorative text background */
+    .hero-bg-text {
+      position: absolute;
+      bottom: -2rem;
+      right: -1rem;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(8rem, 20vw, 18rem);
+      line-height: 1;
+      color: rgba(245,166,35,0.03);
+      letter-spacing: 0.02em;
+      pointer-events: none;
+      user-select: none;
+    }
+    .hero-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1.4rem;
+      position: relative;
+    }
+    .hero-heading {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(4.5rem, 11vw, 8.5rem);
+      line-height: 0.9;
+      letter-spacing: 0.02em;
+      color: var(--heading);
+      position: relative;
+      margin-bottom: 1.8rem;
+    }
+    .hero-sub {
+      font-size: clamp(0.95rem, 2vw, 1.2rem);
+      font-weight: 300;
+      font-style: italic;
+      color: var(--muted);
+      max-width: 640px;
+      position: relative;
+    }
+    .hero-line {
+      width: 60px;
+      height: 2px;
+      background: var(--accent);
+      margin: 2rem 0;
+      position: relative;
+    }
+    .hero-badges {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      margin-top: 2rem;
+      position: relative;
+    }
+    .badge {
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid var(--border-gold);
+      border-radius: 2px;
+      padding: 0.3rem 0.8rem;
+      background: var(--accent-dim);
+    }
+
+    /* ── SECTIONS ── */
+    .section {
+      padding: 6rem 2.5rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .section-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 0 2.5rem;
+    }
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 2.5rem;
+    }
+    .section-label::before { content: '◆ '; }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 4rem;
+      align-items: start;
+    }
+    .col-label { position: sticky; top: 80px; }
+
+    h2.section-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(2.8rem, 5vw, 4.5rem);
+      line-height: 1;
+      color: var(--heading);
+      letter-spacing: 0.03em;
+      margin-bottom: 2rem;
+    }
+    h3.sub-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.8rem;
+      letter-spacing: 0.05em;
+      color: var(--heading);
+      margin-bottom: 1rem;
+    }
+    p.body-text {
+      font-size: 1rem;
+      font-weight: 300;
+      color: var(--text);
+      line-height: 1.85;
+    }
+    p.body-text + p.body-text { margin-top: 1.2rem; }
+
+    /* ── STAT GRID ── */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1px;
+      background: var(--border-gold);
+      border: 1px solid var(--border-gold);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .stat-cell {
+      background: var(--card);
+      padding: 1.6rem 1.8rem;
+      transition: background 0.2s;
+    }
+    .stat-cell:hover { background: var(--card-alt); }
+    .stat-icon {
+      font-size: 0.9rem;
+      margin-bottom: 0.6rem;
+    }
+    .stat-value {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.5rem;
+      color: var(--heading);
+      letter-spacing: 0.04em;
+      display: block;
+      line-height: 1.1;
+      margin-bottom: 0.3rem;
+    }
+    .stat-label {
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    /* ── EDITOR CARD ── */
+    .editor-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 3rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    .editor-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), transparent);
+    }
+    .editor-card:hover {
+      border-color: rgba(245,166,35,0.3);
+      box-shadow: var(--glow);
+    }
+    .editor-initial {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: var(--accent-dim);
+      border: 2px solid var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem;
+      color: var(--accent);
+      margin-bottom: 1.8rem;
+    }
+    h3.person-name {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.2rem;
+      letter-spacing: 0.05em;
+      color: var(--heading);
+      margin-bottom: 0.3rem;
+    }
+    .person-title {
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1.8rem;
+    }
+    .contact-btn {
+      display: inline-block;
+      margin-top: 2rem;
+      background: var(--accent);
+      color: #000;
+      text-decoration: none;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.75rem 1.8rem;
+      border-radius: 2px;
+      transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+    }
+    .contact-btn:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(245,166,35,0.4);
+    }
+
+    /* ── FOCUS CARDS (editorial) ── */
+    .focus-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+    .focus-card {
+      background: var(--card-alt);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1.8rem 1.6rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    .focus-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), transparent);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.3s;
+    }
+    .focus-card:hover {
+      border-color: var(--border-gold);
+      box-shadow: var(--glow);
+    }
+    .focus-card:hover::after { transform: scaleX(1); }
+    .focus-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 3rem;
+      line-height: 1;
+      color: rgba(245,166,35,0.12);
+      display: block;
+      margin-bottom: 0.8rem;
+    }
+    .focus-title {
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--heading);
+      line-height: 1.4;
+    }
+
+    /* ── ACCREDITATION CARD ── */
+    .accred-card {
+      background: var(--card);
+      border: 1px solid var(--border-gold);
+      border-radius: 4px;
+      padding: 3rem;
+      margin-bottom: 2rem;
+      transition: box-shadow 0.3s;
+    }
+    .accred-card:hover {
+      box-shadow: var(--glow);
+    }
+    .email-cta {
+      background: var(--card-alt);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .email-cta::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    }
+    .email-address {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.8rem;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      display: block;
+      margin: 1rem 0;
+    }
+    .email-subject {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+    }
+
+    /* ── PRESS KIT BANNER ── */
+    .presskit-banner {
+      background: var(--card-alt);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 3rem 2.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 2rem;
+      flex-wrap: wrap;
+      transition: border-color 0.3s;
+    }
+    .presskit-banner:hover { border-color: var(--border-gold); }
+    .presskit-text h3 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem;
+      color: var(--heading);
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+    .presskit-text p {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .outline-btn {
+      display: inline-block;
+      text-decoration: none;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      padding: 0.75rem 1.8rem;
+      border-radius: 2px;
+      white-space: nowrap;
+      transition: background 0.2s, color 0.2s, transform 0.15s;
+    }
+    .outline-btn:hover {
+      background: var(--accent);
+      color: #000;
+      transform: translateY(-2px);
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 3rem 2.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .footer-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.4rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+    }
+    .footer-logo span { color: var(--accent); }
+    .footer-copy {
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .focus-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 768px) {
+      nav { padding: 0 1.2rem; }
+      .nav-home { display: none; }
+      .hero { padding: 4rem 1.5rem 3.5rem; min-height: 65vh; }
+      .hero-bg-text { font-size: 8rem; }
+      .section { padding: 4rem 1.5rem; }
+      .section-divider { margin: 0 1.5rem; }
+      .two-col { grid-template-columns: 1fr; gap: 2rem; }
+      .col-label { position: static; }
+      .stat-grid { grid-template-columns: 1fr; }
+      .focus-grid { grid-template-columns: 1fr; }
+      .editor-card { padding: 2rem 1.5rem; }
+      .accred-card { padding: 2rem 1.5rem; }
+      .email-cta { padding: 2rem 1.2rem; }
+      .email-address { font-size: 1.3rem; }
+      .presskit-banner { flex-direction: column; align-items: flex-start; padding: 2rem 1.5rem; }
+      footer { padding: 2rem 1.5rem; flex-direction: column; align-items: flex-start; }
+    }
+    @media (max-width: 480px) {
+      .focus-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="https://p-movies.com" class="nav-logo">P<span>M</span>OVIES</a>
+    <div class="nav-links">
+      <a href="https://p-movies.com" class="nav-home">← p-movies.com</a>
+      <a href="https://p-movies.com/about" class="nav-pill">About</a>
+      <a href="https://p-movies.com/press" class="nav-pill active">Press</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-bg-text" aria-hidden="true">PRESS</div>
+    <span class="hero-label">◆ Press &amp; Media — PMovies</span>
+    <h1 class="hero-heading">PRESS &amp;<br/>ACCREDITATION</h1>
+    <div class="hero-line"></div>
+    <p class="hero-sub">Independent film journalism from the UAE — covering the international festival circuit.</p>
+    <div class="hero-badges">
+      <span class="badge">Cannes 2025</span>
+      <span class="badge">Venice</span>
+      <span class="badge">TIFF</span>
+      <span class="badge">Berlinale</span>
+      <span class="badge">DIFF</span>
+    </div>
+  </section>
+
+  <hr class="section-divider" />
+
+  <!-- ABOUT PMOVIES (publication stats) -->
+  <section class="section">
+    <div class="two-col">
+      <div class="col-label">
+        <p class="section-label">The Publication</p>
+      </div>
+      <div>
+        <h2 class="section-title">ABOUT PMOVIES</h2>
+        <div class="stat-grid">
+          <div class="stat-cell">
+            <span class="stat-icon">🎬</span>
+            <span class="stat-value">UAE-Based</span>
+            <span class="stat-label">Independent Digital Platform</span>
+          </div>
+          <div class="stat-cell">
+            <span class="stat-icon">🏆</span>
+            <span class="stat-value">Top 100</span>
+            <span class="stat-label">Community-Voted Films of All Time</span>
+          </div>
+          <div class="stat-cell">
+            <span class="stat-icon">📰</span>
+            <span class="stat-value">Weekly</span>
+            <span class="stat-label">Editorial Newsletter (PMovies Weekly)</span>
+          </div>
+          <div class="stat-cell">
+            <span class="stat-icon">✍️</span>
+            <span class="stat-value">Editor's Reviews</span>
+            <span class="stat-label">World Cinema &amp; Festival Releases</span>
+          </div>
+          <div class="stat-cell">
+            <span class="stat-icon">👥</span>
+            <span class="stat-value">Growing</span>
+            <span class="stat-label">Monthly Readership — Dedicated Cinephiles</span>
+          </div>
+          <div class="stat-cell">
+            <span class="stat-icon">🔗</span>
+            <span class="stat-value">Multi-Platform</span>
+            <span class="stat-label">p-movies.com · YouTube · Instagram · X</span>
+          </div>
+        </div>
+        <p class="body-text" style="margin-top:1.8rem;font-size:0.82rem;color:var(--muted);">
+          YouTube: <a href="https://www.youtube.com/@PMovies155" style="color:var(--accent);text-decoration:none;" target="_blank" rel="noopener">@PMovies155</a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-divider" />
+
+  <!-- EDITOR-IN-CHIEF -->
+  <section class="section">
+    <div class="two-col">
+      <div class="col-label">
+        <p class="section-label">Editor-in-Chief</p>
+      </div>
+      <div>
+        <div class="editor-card">
+          <div class="editor-initial">AK</div>
+          <h3 class="person-name">Ahmed Khaled</h3>
+          <p class="person-title">Founder &amp; Editor-in-Chief, PMovies</p>
+          <p class="body-text">Ahmed Khaled is a film critic and cinephile based in the UAE. He founded PMovies to create a space where film lovers can discover, discuss, and document their relationship with cinema — free from algorithm, free from noise.</p>
+          <p class="body-text" style="margin-top:1.2rem;">His editorial focus centres on world cinema, independent film, and the international festival circuit: Cannes, Venice, TIFF, and beyond.</p>
+          <p class="body-text" style="margin-top:1.8rem;font-size:0.82rem;color:var(--muted);">
+            Contact: <a href="mailto:p.movies155@gmail.com" style="color:var(--accent);text-decoration:none;">p.movies155@gmail.com</a>
+          </p>
+          <a href="mailto:p.movies155@gmail.com" class="contact-btn">Contact the Editor</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-divider" />
+
+  <!-- EDITORIAL FOCUS -->
+  <section class="section">
+    <div class="two-col">
+      <div class="col-label">
+        <p class="section-label">Editorial Focus</p>
+      </div>
+      <div>
+        <h2 class="section-title">COVERAGE AREAS</h2>
+        <div class="focus-grid">
+          <div class="focus-card">
+            <span class="focus-num" aria-hidden="true">01</span>
+            <span class="focus-title">World Cinema &amp; Art House</span>
+          </div>
+          <div class="focus-card">
+            <span class="focus-num" aria-hidden="true">02</span>
+            <span class="focus-title">International Film Festivals</span>
+          </div>
+          <div class="focus-card">
+            <span class="focus-num" aria-hidden="true">03</span>
+            <span class="focus-title">Independent Film</span>
+          </div>
+          <div class="focus-card">
+            <span class="focus-num" aria-hidden="true">04</span>
+            <span class="focus-title">Community Film Culture</span>
+          </div>
+          <div class="focus-card">
+            <span class="focus-num" aria-hidden="true">05</span>
+            <span class="focus-title">UAE &amp; Arab Cinema</span>
+          </div>
+        </div>
+        <p class="body-text" style="margin-top:2rem;font-size:0.82rem;color:var(--muted);">
+          Festival circuit: Cannes &nbsp;·&nbsp; Venice &nbsp;·&nbsp; TIFF &nbsp;·&nbsp; Berlinale &nbsp;·&nbsp; DIFF
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-divider" />
+
+  <!-- FESTIVAL ACCREDITATION -->
+  <section class="section">
+    <div class="two-col">
+      <div class="col-label">
+        <p class="section-label">Accreditation</p>
+      </div>
+      <div>
+        <h2 class="section-title">FESTIVAL ACCREDITATION</h2>
+
+        <div class="accred-card">
+          <p class="body-text">PMovies is seeking press accreditation for major international film festivals beginning with Cannes 2025. We cover the festival circuit with independent editorial perspective, publishing reviews, dispatches, and curated selections for our growing audience of cinephiles.</p>
+          <p class="body-text" style="margin-top:1.2rem;">Our coverage combines rigorous criticism with community engagement — reviews are shared with a dedicated readership that takes film seriously.</p>
+        </div>
+
+        <div class="email-cta">
+          <p class="body-text" style="color:var(--muted);font-size:0.82rem;">To apply for press accreditation, please email</p>
+          <span class="email-address">p.movies155@gmail.com</span>
+          <p class="email-subject">Subject: Press Accreditation — [Festival Name]</p>
+          <a href="mailto:p.movies155@gmail.com?subject=Press%20Accreditation%20%E2%80%94%20" class="contact-btn">Apply for Accreditation</a>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-divider" />
+
+  <!-- PRESS KIT DOWNLOAD -->
+  <section class="section">
+    <div class="presskit-banner">
+      <div class="presskit-text">
+        <h3>PRESS KIT</h3>
+        <p>Logos, bio, editorial guidelines, and publication stats — available on request.</p>
+      </div>
+      <a href="mailto:p.movies155@gmail.com?subject=Press%20Kit%20Request%20%E2%80%94%20PMovies" class="outline-btn">Request Press Kit</a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <span class="footer-logo">P<span>M</span>OVIES</span>
+    <span class="footer-copy">© 2025 PMovies. All rights reserved.</span>
+    <a href="https://p-movies.com" style="font-size:0.72rem;color:var(--muted);text-decoration:none;letter-spacing:0.06em;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">p-movies.com ↗</a>
+  </footer>
+
+</body>
+</html>
