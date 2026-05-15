@@ -11830,36 +11830,44 @@ async function loadEditorReviews() {
 function renderEditorReviews(reviews) {
   const grid = document.getElementById('editorGrid');
   if (!grid) return;
+  // Inline styles: immune to any CSS cache issues
   grid.className = 'ec-grid';
+  grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:16px;padding:8px 0';
   if (!reviews.length) {
-    grid.innerHTML = '<div class="editor-empty">No reviews published yet.</div>';
+    grid.innerHTML = '<div style="color:#555;font-size:.9rem;padding:60px 0;text-align:center;grid-column:1/-1">No reviews published yet.</div>';
     return;
   }
   grid.innerHTML = '';
   reviews.forEach(r => {
     const stars = _editorStarsHTML(r.rating||0);
     const posterEl = r.poster
-      ? `<img class="ec-poster" src="https://image.tmdb.org/t/p/w342${r.poster}" alt="${esc(r.title)}" loading="lazy"/>`
-      : `<div class="ec-poster-ph">🎬</div>`;
-    const festivalBadge = r.festival ? `<span class="ec-festival">${esc(r.festival)}</span>` : '';
+      ? `<img style="width:100%;aspect-ratio:2/3;object-fit:cover;display:block" src="https://image.tmdb.org/t/p/w342${r.poster}" alt="${esc(r.title)}" loading="lazy"/>`
+      : `<div style="width:100%;aspect-ratio:2/3;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:2.5rem">🎬</div>`;
+    const festivalBadge = r.festival
+      ? `<span style="font-size:.55rem;font-weight:700;letter-spacing:.8px;color:#000;background:#f5a623;border-radius:8px;padding:1px 7px;text-transform:uppercase">${esc(r.festival)}</span>`
+      : '';
     const delBtn = _isEditorAdmin()
-      ? `<button class="ec-del" onclick="deleteEditorReview('${r._key}',event)" title="Delete">✕</button>` : '';
+      ? `<button class="ec-del" style="position:absolute;top:7px;right:7px;background:rgba(0,0,0,.75);border:none;color:#777;font-size:.65rem;cursor:pointer;width:22px;height:22px;border-radius:50%;line-height:22px;text-align:center;padding:0" onclick="deleteEditorReview('${r._key}',event)" title="Delete">✕</button>`
+      : '';
     const card = document.createElement('div');
     card.className = 'ec-card';
+    card.style.cssText = 'cursor:pointer;border-radius:10px;overflow:hidden;background:#111;position:relative;transition:transform .22s,box-shadow .22s';
     card.dataset.rating = r.rating || 0;
     card.dataset.festival = r.festival ? '1' : '0';
     card.innerHTML = `
       ${posterEl}
-      <div class="ec-info">
-        <div class="ec-title">${esc(r.title||'')}</div>
-        <div class="ec-meta">
-          <span class="ec-year">${r.year||''}</span>
-          <span class="ec-stars">${stars}</span>
+      <div style="padding:10px 10px 13px">
+        <div style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;letter-spacing:.5px;color:#fff;line-height:1.2;margin-bottom:5px">${esc(r.title||'')}</div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:5px">
+          <span style="font-size:.6rem;font-weight:700;letter-spacing:1.5px;color:#666;text-transform:uppercase">${r.year||''}</span>
+          <span style="font-size:.72rem;color:#f5a623">${stars}</span>
           ${festivalBadge}
         </div>
-        ${r.headline ? `<div class="ec-tagline" dir="auto">${esc(r.headline)}</div>` : ''}
+        ${r.headline ? `<div dir="auto" style="font-size:.7rem;color:#888;font-style:italic;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc(r.headline)}</div>` : ''}
       </div>
       ${delBtn}`;
+    card.addEventListener('mouseenter', () => { card.style.transform='translateY(-5px)'; card.style.boxShadow='0 16px 48px rgba(0,0,0,.7)'; });
+    card.addEventListener('mouseleave', () => { card.style.transform=''; card.style.boxShadow=''; });
     card.addEventListener('click', e => {
       if (!e.target.classList.contains('ec-del')) openEditorRead(r);
     });
@@ -11870,7 +11878,7 @@ function renderEditorReviews(reviews) {
 /* ── Full cinematic review page ── */
 function openEditorRead(r) {
   const key = r._key || '';
-  history.pushState({ erKey: key }, '', '#review/' + key);
+  try { history.pushState({ erKey: key }, '', '#review/' + key); } catch(e) {}
   _renderReviewPage(r);
 }
 
@@ -11879,43 +11887,47 @@ function _renderReviewPage(r) {
   if (!page) {
     page = document.createElement('div');
     page.id = 'erPage';
-    page.className = 'er-page';
     document.body.appendChild(page);
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeEditorRead(); });
   }
+  // All critical styles inline — never rely on CSS sheet (could be cached old version)
+  page.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:#0a0a0a;overflow-y:auto;display:block';
   const stars = _editorStarsHTML(r.rating||0);
-  const festivalBadge = r.festival ? `<span class="er-h-festival">${esc(r.festival)}</span>` : '';
-  const tags = (r.tags||[]).map(t => `<span class="er-h-tag">${esc(t)}</span>`).join('');
+  const festivalBadge = r.festival
+    ? `<span style="font-size:.6rem;font-weight:700;letter-spacing:.8px;color:#000;background:#f5a623;border-radius:8px;padding:2px 9px;text-transform:uppercase">${esc(r.festival)}</span>`
+    : '';
+  const tags = (r.tags||[]).map(t =>
+    `<span style="font-size:.58rem;font-weight:700;letter-spacing:1px;color:#666;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:2px 8px;text-transform:uppercase">${esc(t)}</span>`
+  ).join('');
   const backdropEl = r.backdrop
-    ? `<img class="er-backdrop-img" src="https://image.tmdb.org/t/p/w1280${r.backdrop}" alt="${esc(r.title)}"/>`
-    : `<div class="er-backdrop-ph"></div>`;
+    ? `<img style="width:100%;height:100%;object-fit:cover;display:block" src="https://image.tmdb.org/t/p/w1280${r.backdrop}" alt="${esc(r.title)}"/>`
+    : `<div style="width:100%;height:100%;background:#151515"></div>`;
   const posterEl = r.poster
-    ? `<img class="er-poster" src="https://image.tmdb.org/t/p/w342${r.poster}" alt="${esc(r.title)}"/>`
-    : `<div class="er-poster-ph">🎬</div>`;
+    ? `<img style="width:115px;height:172px;object-fit:cover;border-radius:9px;box-shadow:0 10px 30px rgba(0,0,0,.8);display:block;flex-shrink:0" src="https://image.tmdb.org/t/p/w342${r.poster}" alt="${esc(r.title)}"/>`
+    : `<div style="width:115px;height:172px;background:#1a1a1a;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:2.2rem;flex-shrink:0">🎬</div>`;
   page.innerHTML = `
-    <button class="er-back" onclick="closeEditorRead()" title="Back">←</button>
-    <button class="er-share" onclick="_erShare()">🔗 Share</button>
-    <div class="er-backdrop-wrap">
+    <button onclick="closeEditorRead()" title="Back" style="position:fixed;top:16px;left:16px;z-index:10001;background:rgba(0,0,0,.65);border:none;color:#fff;font-size:1.3rem;cursor:pointer;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)">←</button>
+    <button id="erShareBtn" onclick="_erShare()" style="position:fixed;top:16px;right:16px;z-index:10001;background:rgba(0,0,0,.65);border:none;color:#ddd;font-size:.62rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;padding:11px 15px;border-radius:20px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font-family:Montserrat,sans-serif">🔗 Share</button>
+    <div style="position:relative;width:100%;height:52vw;max-height:420px;min-height:200px;overflow:hidden">
       ${backdropEl}
-      <div class="er-backdrop-grad"></div>
+      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(10,10,10,0) 35%,#0a0a0a 100%)"></div>
     </div>
-    <div class="er-hero">
+    <div style="display:grid;grid-template-columns:115px 1fr;gap:20px;padding:0 22px;margin-top:-65px;position:relative;z-index:2;max-width:720px;margin-left:auto;margin-right:auto">
       ${posterEl}
-      <div class="er-hero-right">
-        <div class="er-h-title">${esc(r.title||'')}</div>
-        <div class="er-h-meta">
-          <span class="er-h-year">${r.year||''}</span>
+      <div style="display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:6px">
+        <div style="font-family:Bebas Neue,sans-serif;font-size:2.4rem;letter-spacing:2px;color:#fff;line-height:1;margin-bottom:8px">${esc(r.title||'')}</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+          <span style="font-size:.65rem;font-weight:700;letter-spacing:1.5px;color:#888;text-transform:uppercase">${r.year||''}</span>
           ${festivalBadge}
-          <span class="er-h-stars">${stars}</span>
+          <span style="font-size:.95rem;color:#f5a623">${stars}</span>
         </div>
-        <div class="er-h-tags">${tags}</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap">${tags}</div>
       </div>
     </div>
-    <div class="er-content">
-      ${r.headline ? `<div class="er-headline" dir="auto">"${esc(r.headline)}"</div>` : ''}
-      ${r.review   ? `<div class="er-body" dir="auto">${esc(r.review)}</div>` : ''}
+    <div style="max-width:720px;margin:30px auto 70px;padding:0 22px">
+      ${r.headline ? `<div dir="auto" style="font-size:1.15rem;font-style:italic;color:#ddd;line-height:1.65;margin-bottom:26px;padding:16px 20px;border-inline-start:3px solid #f5a623;background:rgba(245,166,35,.05);border-radius:0 8px 8px 0">"${esc(r.headline)}"</div>` : ''}
+      ${r.review   ? `<div dir="auto" style="font-size:.97rem;color:#aaa;line-height:1.95;white-space:pre-line">${esc(r.review)}</div>` : ''}
     </div>`;
-  page.classList.add('open');
   page.scrollTop = 0;
   document.body.style.overflow = 'hidden';
 }
