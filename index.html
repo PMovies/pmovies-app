@@ -5321,33 +5321,10 @@
     if (hash.startsWith('review/')) {
       const slug = hash.slice(7).split('?')[0];
       switchTab('editor');
-      if (slug) {
-        // Self-contained slug normaliser — no dependency on _editorSlug being loaded yet
-        const _sl = t => (t||'').toLowerCase().trim()
-          .replace(/[^a-z0-9\s-]/g,'').replace(/[\s_]+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
-
-        // Fetch ALL reviews directly — one request, no polling, works on first ever load
-        fetch('https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app/editorReviews.json')
-          .then(r => r.json())
-          .then(data => {
-            if (!data) return;
-            const entries = Object.entries(data);
-            // Match slug field first, then fall back to computing slug from title
-            let found = entries.find(([,r]) => r.slug === slug)
-                     || entries.find(([,r]) => _sl(r.title||'') === slug);
-            // Legacy: slug is actually a Firebase key (starts with -)
-            if (!found && slug.startsWith('-') && data[slug]) found = [slug, data[slug]];
-            if (!found) return;
-            const [key, rev] = found;
-            rev._key = key;
-            // _renderReviewPage is in a later <script> block; call it once scripts finish
-            const _show = () => typeof _renderReviewPage === 'function'
-              ? _renderReviewPage(rev)
-              : setTimeout(_show, 80);
-            _show();
-          })
-          .catch(() => {});
-      }
+      // CRITICAL: switchTab() calls history.replaceState('#editor') which clobbers our
+      // #review/slug URL. Restore it immediately so any page refresh re-triggers this routing.
+      try { history.replaceState(null, '', '#review/' + slug); } catch(e) {}
+      if (slug) _loadAndShowReview(slug);
       return;
     }
 
@@ -5360,10 +5337,59 @@
     }
   }, 0);
 
+  // Shared helper: fetch editorReviews and render the matching review page.
+  // Called both from the initial hash-routing setTimeout and from the hashchange listener.
+  function _loadAndShowReview(slug) {
+    if (!slug) return;
+    const _sl = t => (t||'').toLowerCase().trim()
+      .replace(/[^a-z0-9\s-]/g,'').replace(/[\s_]+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
+    fetch('https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app/editorReviews.json')
+      .then(r => r.json())
+      .then(data => {
+        if (!data) return;
+        const entries = Object.entries(data);
+        let found = entries.find(([,r]) => r.slug === slug)
+                 || entries.find(([,r]) => _sl(r.title||'') === slug);
+        if (!found && slug.startsWith('-') && data[slug]) found = [slug, data[slug]];
+        if (!found) return;
+        const [key, rev] = found;
+        rev._key = key;
+        const _show = () => typeof _renderReviewPage === 'function'
+          ? _renderReviewPage(rev)
+          : setTimeout(_show, 80);
+        _show();
+      })
+      .catch(() => {});
+  }
+
+  // Handle same-page hash navigation to a review URL (e.g. clicking a shared link
+  // while already on the site, or using the address bar without a full page reload).
+  window.addEventListener('hashchange', function() {
+    const hash = location.hash.replace('#', '');
+    if (hash.startsWith('review/')) {
+      const slug = hash.slice(7).split('?')[0];
+      switchTab('editor');
+      // Restore URL immediately after switchTab clobbers it
+      try { history.replaceState(null, '', '#review/' + slug); } catch(e) {}
+      _loadAndShowReview(slug);
+    } else {
+      // Navigated away from a review — hide the review page
+      const page = document.getElementById('erPage');
+      if (page) page.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+  });
+
   // Handle browser back/forward through review pages
   window.addEventListener('popstate', function() {
     const hash = location.hash.replace('#', '');
-    if (!hash.startsWith('review/')) {
+    if (hash.startsWith('review/')) {
+      // Back/forward landed on a review URL — show it
+      const slug = hash.slice(7).split('?')[0];
+      switchTab('editor');
+      try { history.replaceState(null, '', '#review/' + slug); } catch(e) {}
+      _loadAndShowReview(slug);
+    } else {
       const page = document.getElementById('erPage');
       if (page) page.style.display = 'none';
       document.body.style.overflow = '';
