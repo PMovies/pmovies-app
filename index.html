@@ -2335,6 +2335,61 @@
     <div class="editor-loading">Loading reviews…</div>
   </div>
 
+  <!-- Admin overlay — kept in HTML so any cached JS version can find it;
+       new JS removes this and creates a fresh one at body level on open. -->
+  <div class="editor-admin-overlay" id="editorAdminOverlay" style="display:none" onclick="if(event.target===this)closeEditorAdmin()">
+    <div class="editor-admin-modal">
+      <div class="editor-admin-header">
+        <div class="editor-admin-title">✍️ Write a Review</div>
+        <button class="editor-admin-close" onclick="closeEditorAdmin()">✕</button>
+      </div>
+      <div class="editor-form-row">
+        <label class="editor-form-label">Film</label>
+        <div class="editor-search-wrap">
+          <input id="editorFilmInput" class="editor-form-input" placeholder="Search film title…" oninput="editorFilmSearch(this.value)" autocomplete="off"/>
+          <div class="editor-search-results" id="editorSearchResults"></div>
+        </div>
+        <input type="hidden" id="editorTmdbId"/>
+        <input type="hidden" id="editorPoster"/>
+        <input type="hidden" id="editorBackdrop"/>
+        <input type="hidden" id="editorYear"/>
+        <div class="editor-selected-film" id="editorSelectedFilm"></div>
+      </div>
+      <div class="editor-form-row">
+        <label class="editor-form-label">Rating</label>
+        <div class="editor-star-row" id="editorStarRow">
+          <span class="editor-star" data-v="1" onclick="setEditorRating(1)">★</span>
+          <span class="editor-star" data-v="2" onclick="setEditorRating(2)">★</span>
+          <span class="editor-star" data-v="3" onclick="setEditorRating(3)">★</span>
+          <span class="editor-star" data-v="4" onclick="setEditorRating(4)">★</span>
+          <span class="editor-star" data-v="5" onclick="setEditorRating(5)">★</span>
+        </div>
+        <input type="hidden" id="editorRatingInput" value="0"/>
+      </div>
+      <div class="editor-form-row">
+        <label class="editor-form-label">Festival badge <span style="color:#666">(optional)</span></label>
+        <input id="editorFestival" class="editor-form-input" placeholder="e.g. Cannes 2025, TIFF 2025"/>
+      </div>
+      <div class="editor-form-row">
+        <label class="editor-form-label">Headline</label>
+        <input id="editorHeadline" class="editor-form-input" placeholder="One powerful sentence about this film"/>
+      </div>
+      <div class="editor-form-row">
+        <label class="editor-form-label">Review</label>
+        <textarea id="editorReviewBody" class="editor-form-textarea" placeholder="Your full review…" rows="8"></textarea>
+      </div>
+      <div class="editor-form-row">
+        <label class="editor-form-label">Tags <span style="color:#666">(comma separated)</span></label>
+        <input id="editorTags" class="editor-form-input" placeholder="Drama, World Cinema, Coming-of-age"/>
+      </div>
+      <div class="editor-admin-actions">
+        <button class="editor-publish-btn" onclick="submitEditorReview()">Publish Review</button>
+        <button class="editor-cancel-btn" onclick="closeEditorAdmin()">Cancel</button>
+      </div>
+      <div class="editor-admin-msg" id="editorAdminMsg"></div>
+    </div>
+  </div>
+
 </div><!-- /tab-panel-editor -->
 
 <!-- UPLOAD MODAL -->
