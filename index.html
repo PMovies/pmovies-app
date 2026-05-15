@@ -12049,5 +12049,67 @@ async function deleteEditorReview(key, e) {
 }
 </script>
 
+<script>
+/* ── Admin write-button failsafe ──────────────────────────────────────────
+   Runs after ALL other scripts. Directly wires the button click so it works
+   regardless of which cached version of openEditorAdmin() the browser has.
+   Also shows the button immediately if admin key is present (any mechanism).
+──────────────────────────────────────────────────────────────────────────── */
+(function() {
+  function _showAdminOverlay() {
+    var ov = document.getElementById('editorAdminOverlay');
+    if (!ov) return;
+    // Always ensure it lives at body level (defeats any stacking context)
+    if (ov.parentElement !== document.body) document.body.appendChild(ov);
+    // Explicit inline styles in case CSS class is overridden by any cached sheet
+    ov.style.cssText = 'position:fixed!important;top:0!important;left:0!important;right:0!important;bottom:0!important;background:rgba(0,0,0,.88)!important;z-index:999999!important;display:flex!important;align-items:flex-start!important;justify-content:center!important;padding:30px 16px!important;overflow-y:auto!important';
+    // Reset text fields
+    ['editorFilmInput','editorFestival','editorHeadline','editorReviewBody','editorTags','editorTmdbId','editorPoster','editorBackdrop','editorYear'].forEach(function(id) {
+      var el = document.getElementById(id); if (el) el.value = '';
+    });
+    var sf = document.getElementById('editorSelectedFilm'); if (sf) sf.textContent = '';
+    var msg = document.getElementById('editorAdminMsg'); if (msg) msg.textContent = '';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function _isAdmin() {
+    try {
+      if (localStorage.getItem('pmovies_admin') === '1') return true;
+    } catch(e) {}
+    var hq = location.hash.includes('?') ? location.hash.split('?')[1] : location.search.slice(1);
+    var ok = new URLSearchParams(hq).get('admin') === 'pmovies2024';
+    if (ok) { try { localStorage.setItem('pmovies_admin', '1'); } catch(e) {} }
+    return ok;
+  }
+
+  function _wireButton() {
+    var btn = document.getElementById('editorWriteBtn');
+    if (!btn) return;
+    // Show button if admin
+    if (_isAdmin()) btn.style.display = '';
+    // Replace onclick with direct listener (works even if openEditorAdmin() is broken)
+    btn.onclick = null;
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      _showAdminOverlay();
+    });
+  }
+
+  // Wire up on load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _wireButton);
+  } else {
+    _wireButton();
+  }
+
+  // Also re-wire whenever editor tab becomes active (switchTab may reset things)
+  var _origSwitch = window.switchTab;
+  window.switchTab = function(name) {
+    if (_origSwitch) _origSwitch.apply(this, arguments);
+    if (name === 'editor') setTimeout(_wireButton, 0);
+  };
+})();
+</script>
+
 </body>
 </html>
