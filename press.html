@@ -451,6 +451,37 @@
       margin-bottom: 1.5rem;
     }
 
+    /* ── REACH TABLE ── */
+    .reach-table { width:100%; border-collapse:collapse; margin-top:.5rem; }
+    .reach-table thead tr { border-bottom:1px solid rgba(245,166,35,.3); }
+    .reach-table thead th { font-size:.62rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--accent); padding:.8rem 1rem .8rem 0; text-align:left; }
+    .reach-table tbody tr { border-bottom:1px solid var(--border); transition:background .15s; }
+    .reach-table tbody tr:hover { background:rgba(255,255,255,.025); }
+    .reach-table tbody td { padding:1.1rem 1rem 1.1rem 0; font-size:.85rem; color:var(--text); line-height:1.5; vertical-align:top; }
+    .reach-table tbody td:first-child { font-weight:700; color:var(--heading); white-space:nowrap; }
+    .reach-audience { margin-top:1.6rem; padding:1.2rem 1.4rem; background:rgba(245,166,35,.06); border:1px solid rgba(245,166,35,.2); border-radius:4px; font-size:.78rem; font-weight:600; letter-spacing:.04em; color:var(--text); line-height:1.7; }
+    /* ── OUTPUT LIST ── */
+    .output-list { list-style:none; margin:0; padding:0; }
+    .output-list li { padding:1.1rem 0; border-bottom:1px solid var(--border); font-size:.88rem; color:var(--text); line-height:1.65; padding-left:1.2rem; position:relative; }
+    .output-list li::before { content:'◆'; position:absolute; left:0; top:1.15rem; font-size:.45rem; color:var(--accent); }
+    .output-list li:last-child { border-bottom:none; }
+    /* ── FILMMAKER TABLE ── */
+    .filmmaker-table { width:100%; border-collapse:collapse; margin-top:.5rem; }
+    .filmmaker-table thead tr { border-bottom:1px solid rgba(245,166,35,.3); }
+    .filmmaker-table thead th { font-size:.62rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--accent); padding:.8rem 1rem .8rem 0; text-align:left; }
+    .filmmaker-table tbody tr { border-bottom:1px solid var(--border); transition:background .15s; }
+    .filmmaker-table tbody tr:last-child { border-bottom:none; }
+    .filmmaker-table tbody tr:hover { background:rgba(255,255,255,.025); }
+    .filmmaker-table tbody td { padding:1.2rem 1rem 1.2rem 0; font-size:.84rem; color:var(--text); vertical-align:top; line-height:1.5; }
+    .filmmaker-table tbody td:first-child { font-weight:700; color:var(--heading); }
+    .filmmaker-table tbody td em { font-size:.76rem; font-style:normal; color:var(--muted); display:block; margin-top:.2rem; }
+    /* ── CONTACT BLOCK ── */
+    .contact-block { background:var(--card); border:1px solid var(--border-gold); border-radius:4px; padding:2.8rem 3rem; }
+    .contact-name { font-family:'Bebas Neue',sans-serif; font-size:1.9rem; letter-spacing:.05em; color:var(--heading); margin-bottom:.3rem; }
+    .contact-role { font-size:.7rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--accent); margin-bottom:1.8rem; }
+    .contact-row { display:flex; align-items:center; gap:.8rem; margin-bottom:.8rem; font-size:.88rem; color:var(--text); }
+    .contact-row a { color:var(--accent); text-decoration:none; transition:opacity .2s; }
+    .contact-row a:hover { opacity:.7; }
     /* ── PRESS KIT BANNER ── */
     .presskit-banner {
       background: var(--card-alt);
@@ -562,86 +593,152 @@
   <!-- HERO -->
   <section class="hero">
     <div class="hero-bg-text" aria-hidden="true">PRESS</div>
-    <span class="hero-label">◆ Press &amp; Media — PMovies</span>
+    <span class="hero-label">◆ Press &amp; Accreditation</span>
     <h1 class="hero-heading">PRESS &amp;<br/>ACCREDITATION</h1>
     <div class="hero-line"></div>
-    <p class="hero-sub">Independent film journalism from the UAE — covering the international festival circuit.</p>
-    <div class="hero-badges">
-      <span class="badge">Cannes 2025</span>
-      <span class="badge">Venice</span>
-      <span class="badge">TIFF</span>
-      <span class="badge">Berlinale</span>
-      <span class="badge">DIFF</span>
-    </div>
+    <p class="hero-sub">PMovies — Independent Arabic Cinema Media</p>
   </section>
 
   <hr class="section-divider" />
 
-  <!-- ABOUT PMOVIES (publication stats) -->
+  <!-- THE OUTLET -->
   <section class="section">
     <div class="two-col">
       <div class="col-label">
-        <p class="section-label">The Publication</p>
+        <p class="section-label">The Outlet</p>
       </div>
       <div>
-        <h2 class="section-title">ABOUT PMOVIES</h2>
-        <div class="stat-grid">
-          <div class="stat-cell">
-            <span class="stat-icon">🎬</span>
-            <span class="stat-value">UAE-Based</span>
-            <span class="stat-label">Independent Digital Platform</span>
-          </div>
-          <div class="stat-cell">
-            <span class="stat-icon">🏆</span>
-            <span class="stat-value">Top 100</span>
-            <span class="stat-label">Community-Voted Films of All Time</span>
-          </div>
-          <div class="stat-cell">
-            <span class="stat-icon">📰</span>
-            <span class="stat-value">Weekly</span>
-            <span class="stat-label">Editorial Newsletter (PMovies Weekly)</span>
-          </div>
-          <div class="stat-cell">
-            <span class="stat-icon">✍️</span>
-            <span class="stat-value">Editor's Reviews</span>
-            <span class="stat-label">World Cinema &amp; Festival Releases</span>
-          </div>
-          <div class="stat-cell">
-            <span class="stat-icon">👥</span>
-            <span class="stat-value">Growing</span>
-            <span class="stat-label">Monthly Readership — Dedicated Cinephiles</span>
-          </div>
-          <div class="stat-cell">
-            <span class="stat-icon">🔗</span>
-            <span class="stat-value">Multi-Platform</span>
-            <span class="stat-label">p-movies.com · YouTube · Instagram · X</span>
-          </div>
+        <h2 class="section-title">THE OUTLET</h2>
+        <div class="accred-card">
+          <p class="body-text">PMovies is an independent Arabic-language cinema publication and community platform. It began in December 2022 as a Twitter-based film community and launched as a fully built web platform at p-movies.com in 2026. It covers Egyptian and Arab film alongside international cinema — through editorial reviews, long-form filmmaker interviews, podcast programming, and community features including curated lists, fan art, and weekly digests.</p>
         </div>
-        <p class="body-text" style="margin-top:1.8rem;font-size:0.82rem;color:var(--muted);">
-          YouTube: <a href="https://www.youtube.com/@PMovies155" style="color:var(--accent);text-decoration:none;" target="_blank" rel="noopener">@PMovies155</a>
-        </p>
       </div>
     </div>
   </section>
 
   <hr class="section-divider" />
 
-  <!-- EDITOR-IN-CHIEF -->
+  <!-- EDITORIAL REACH -->
   <section class="section">
     <div class="two-col">
       <div class="col-label">
-        <p class="section-label">Editor-in-Chief</p>
+        <p class="section-label">Editorial Reach</p>
+      </div>
+      <div>
+        <h2 class="section-title">EDITORIAL REACH — MAY 2026</h2>
+        <table class="reach-table">
+          <thead>
+            <tr>
+              <th>Platform</th>
+              <th>Metric</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Twitter/X @PMovies155</td>
+              <td>8,300 followers · 21M impressions/year · 562,800 total engagements</td>
+            </tr>
+            <tr>
+              <td>YouTube</td>
+              <td>895 subscribers · 66,000 views · 1.05M impressions</td>
+            </tr>
+            <tr>
+              <td>Letterboxd</td>
+              <td>3,154 films logged · 2,006 followers</td>
+            </tr>
+            <tr>
+              <td>p-movies.com</td>
+              <td>2,100+ active users · 46% engagement rate</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="reach-audience">Combined audience: 71% aged 18–34 &nbsp;·&nbsp; Egypt, Saudi Arabia, Iraq, Qatar, UAE, Kuwait</div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-divider" />
+
+  <!-- EDITORIAL OUTPUT -->
+  <section class="section">
+    <div class="two-col">
+      <div class="col-label">
+        <p class="section-label">Editorial Output</p>
+      </div>
+      <div>
+        <h2 class="section-title">EDITORIAL OUTPUT</h2>
+        <ul class="output-list">
+          <li>Long-form written film reviews published on Letterboxd and Twitter/X, covering Egyptian, Arab, and international cinema — nearly every film watched since December 2022</li>
+          <li>Video film reviews and short-form criticism on YouTube — 47 videos and 45 shorts published since June 2025</li>
+          <li>Monthly video podcast series <strong>هنتفرج على إيه</strong> — 11 confirmed episodes in 2026, 60–80 minutes each, featuring guests from the Arabic film community</li>
+          <li>Filmmaker and industry interviews conducted via Twitter/X Spaces and YouTube</li>
+          <li>Twitter/X Spaces programming — 34 Spaces hosted over two years, 34,000+ total listeners</li>
+          <li>Weekly editorial digest — PMovies Weekly</li>
+          <li>Community programming including PMovies Game Nights and the annual PMovies Awards</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-divider" />
+
+  <!-- FILMMAKER ACCESS -->
+  <section class="section">
+    <div class="two-col">
+      <div class="col-label">
+        <p class="section-label">Filmmaker Access</p>
+      </div>
+      <div>
+        <h2 class="section-title">FILMMAKER ACCESS &amp; INTERVIEWS</h2>
+        <table class="filmmaker-table">
+          <thead>
+            <tr>
+              <th>Subject</th>
+              <th>Role</th>
+              <th>Format</th>
+              <th>Audience</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Wael Hamdy</td>
+              <td>Screenwriter, ٦ أيام (2025)</td>
+              <td>Twitter/X Space + YouTube podcast</td>
+              <td>10,000+ listeners</td>
+            </tr>
+            <tr>
+              <td>Rasha Hosney</td>
+              <td>Producer, البحث عن منفذ لخروج السيد رامبو (2024)</td>
+              <td>Twitter/X Space</td>
+              <td>586 listeners</td>
+            </tr>
+            <tr>
+              <td>Faissal Sam Shaib</td>
+              <td>Writer &amp; Producer, Arze (2024)</td>
+              <td>هنتفرج على إيه episode</td>
+              <td>—</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-divider" />
+
+  <!-- ABOUT THE EDITOR -->
+  <section class="section">
+    <div class="two-col">
+      <div class="col-label">
+        <p class="section-label">The Editor</p>
       </div>
       <div>
         <div class="editor-card">
           <div class="editor-initial">AK</div>
           <h3 class="person-name">Ahmed Khaled</h3>
           <p class="person-title">Founder &amp; Editor-in-Chief, PMovies</p>
-          <p class="body-text">Ahmed Khaled is a film critic and cinephile based in the UAE. He founded PMovies to create a space where film lovers can discover, discuss, and document their relationship with cinema — free from algorithm, free from noise.</p>
-          <p class="body-text" style="margin-top:1.2rem;">His editorial focus centres on world cinema, independent film, and the international festival circuit: Cannes, Venice, TIFF, and beyond.</p>
-          <p class="body-text" style="margin-top:1.8rem;font-size:0.82rem;color:var(--muted);">
-            Contact: <a href="mailto:p.movies155@gmail.com" style="color:var(--accent);text-decoration:none;">p.movies155@gmail.com</a>
-          </p>
+          <p class="body-text">Egyptian, based in Doha, Qatar. He has written about cinema since 2022, covering nearly every film he watches across Letterboxd, Twitter/X, and p-movies.com. He hosts long-form filmmaker conversations, produces the monthly series هنتفرج على إيه, and built the PMovies platform independently.</p>
+          <p class="body-text" style="margin-top:1.2rem;font-style:italic;color:#ccc;">He writes from feeling first — and believes honesty about cinema is more valuable than authority over it.</p>
           <a href="mailto:p.movies155@gmail.com" class="contact-btn">Contact the Editor</a>
         </div>
       </div>
@@ -650,87 +747,59 @@
 
   <hr class="section-divider" />
 
-  <!-- EDITORIAL FOCUS -->
+  <!-- MEDIA KIT + CONTACT -->
   <section class="section">
     <div class="two-col">
       <div class="col-label">
-        <p class="section-label">Editorial Focus</p>
+        <p class="section-label">Media Kit</p>
       </div>
       <div>
-        <h2 class="section-title">COVERAGE AREAS</h2>
-        <div class="focus-grid">
-          <div class="focus-card">
-            <span class="focus-num" aria-hidden="true">01</span>
-            <span class="focus-title">World Cinema &amp; Art House</span>
+        <div class="presskit-banner">
+          <div class="presskit-text">
+            <h3>MEDIA KIT</h3>
+            <p>Full media kit available on request — logos, bios, stats, and editorial guidelines.</p>
           </div>
-          <div class="focus-card">
-            <span class="focus-num" aria-hidden="true">02</span>
-            <span class="focus-title">International Film Festivals</span>
-          </div>
-          <div class="focus-card">
-            <span class="focus-num" aria-hidden="true">03</span>
-            <span class="focus-title">Independent Film</span>
-          </div>
-          <div class="focus-card">
-            <span class="focus-num" aria-hidden="true">04</span>
-            <span class="focus-title">Community Film Culture</span>
-          </div>
-          <div class="focus-card">
-            <span class="focus-num" aria-hidden="true">05</span>
-            <span class="focus-title">UAE &amp; Arab Cinema</span>
-          </div>
+          <a href="mailto:p.movies155@gmail.com?subject=Media%20Kit%20Request%20%E2%80%94%20PMovies" class="outline-btn">Request Media Kit</a>
         </div>
-        <p class="body-text" style="margin-top:2rem;font-size:0.82rem;color:var(--muted);">
-          Festival circuit: Cannes &nbsp;·&nbsp; Venice &nbsp;·&nbsp; TIFF &nbsp;·&nbsp; Berlinale &nbsp;·&nbsp; DIFF
-        </p>
       </div>
     </div>
   </section>
 
   <hr class="section-divider" />
 
-  <!-- FESTIVAL ACCREDITATION -->
-  <section class="section">
+  <!-- CONTACT -->
+  <section class="section" style="padding-bottom:60px">
     <div class="two-col">
       <div class="col-label">
-        <p class="section-label">Accreditation</p>
+        <p class="section-label">Contact</p>
       </div>
       <div>
-        <h2 class="section-title">FESTIVAL ACCREDITATION</h2>
-
-        <div class="accred-card">
-          <p class="body-text">PMovies is seeking press accreditation for major international film festivals beginning with Cannes 2025. We cover the festival circuit with independent editorial perspective, publishing reviews, dispatches, and curated selections for our growing audience of cinephiles.</p>
-          <p class="body-text" style="margin-top:1.2rem;">Our coverage combines rigorous criticism with community engagement — reviews are shared with a dedicated readership that takes film seriously.</p>
+        <div class="contact-block">
+          <div class="contact-name">Ahmed Khaled</div>
+          <div class="contact-role">Founder &amp; Editor-in-Chief, PMovies</div>
+          <div class="contact-row">
+            <span style="color:var(--accent)">✉</span>
+            <a href="mailto:p.movies155@gmail.com">p.movies155@gmail.com</a>
+          </div>
+          <div class="contact-row">
+            <span style="color:var(--accent)">✆</span>
+            <a href="tel:+97433983964">+974 339 839 64</a>
+          </div>
+          <div class="contact-row">
+            <span style="color:var(--accent)">↗</span>
+            <a href="https://p-movies.com" target="_blank" rel="noopener">p-movies.com</a>
+            <span style="color:var(--muted)">·</span>
+            <a href="https://twitter.com/pmovies155" target="_blank" rel="noopener">@pmovies155</a>
+          </div>
         </div>
-
-        <div class="email-cta">
-          <p class="body-text" style="color:var(--muted);font-size:0.82rem;">To apply for press accreditation, please email</p>
-          <span class="email-address">p.movies155@gmail.com</span>
-          <p class="email-subject">Subject: Press Accreditation — [Festival Name]</p>
-          <a href="mailto:p.movies155@gmail.com?subject=Press%20Accreditation%20%E2%80%94%20" class="contact-btn">Apply for Accreditation</a>
-        </div>
-
       </div>
-    </div>
-  </section>
-
-  <hr class="section-divider" />
-
-  <!-- PRESS KIT DOWNLOAD -->
-  <section class="section">
-    <div class="presskit-banner">
-      <div class="presskit-text">
-        <h3>PRESS KIT</h3>
-        <p>Logos, bio, editorial guidelines, and publication stats — available on request.</p>
-      </div>
-      <a href="mailto:p.movies155@gmail.com?subject=Press%20Kit%20Request%20%E2%80%94%20PMovies" class="outline-btn">Request Press Kit</a>
     </div>
   </section>
 
   <!-- FOOTER -->
   <footer>
     <span class="footer-logo">P<span>M</span>OVIES</span>
-    <span class="footer-copy">© 2025 PMovies. All rights reserved.</span>
+    <span class="footer-copy">© 2026 PMovies. All rights reserved.</span>
     <a href="https://p-movies.com" style="font-size:0.72rem;color:var(--muted);text-decoration:none;letter-spacing:0.06em;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">p-movies.com ↗</a>
   </footer>
 
