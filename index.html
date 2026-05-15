@@ -5337,29 +5337,57 @@
     }
   }, 0);
 
-  // Shared helper: fetch editorReviews and render the matching review page.
-  // Called both from the initial hash-routing setTimeout and from the hashchange listener.
+  // Shared helper: show the review page overlay IMMEDIATELY (with a spinner),
+  // then fetch the review data and fill it in. Works on first visit, any browser.
   function _loadAndShowReview(slug) {
     if (!slug) return;
-    const _sl = t => (t||'').toLowerCase().trim()
-      .replace(/[^a-z0-9\s-]/g,'').replace(/[\s_]+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
+
+    // ── 1. Show overlay right away so the user sees something ──────────────
+    var page = document.getElementById('erPage');
+    if (!page) {
+      page = document.createElement('div');
+      page.id = 'erPage';
+      document.body.appendChild(page);
+      document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeEditorRead(); });
+    }
+    page.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:#0a0a0a;overflow-y:auto;display:block';
+    page.innerHTML =
+      '<button onclick="closeEditorRead()" style="position:fixed;top:16px;left:16px;z-index:10001;background:rgba(0,0,0,.65);border:none;color:#fff;font-size:1.3rem;cursor:pointer;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)">←</button>' +
+      '<div id="_rplSpinner" style="display:flex;align-items:center;justify-content:center;height:100vh;color:#555;font-size:.85rem;letter-spacing:2px;font-family:Montserrat,sans-serif">LOADING…</div>';
+    document.body.style.overflow = 'hidden';
+
+    // ── 2. Fetch data and fill in the page ──────────────────────────────────
+    var _sl = function(t) {
+      return (t||'').toLowerCase().trim()
+        .replace(/[^a-z0-9\s-]/g,'').replace(/[\s_]+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
+    };
     fetch('https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app/editorReviews.json')
-      .then(r => r.json())
-      .then(data => {
-        if (!data) return;
-        const entries = Object.entries(data);
-        let found = entries.find(([,r]) => r.slug === slug)
-                 || entries.find(([,r]) => _sl(r.title||'') === slug);
-        if (!found && slug.startsWith('-') && data[slug]) found = [slug, data[slug]];
-        if (!found) return;
-        const [key, rev] = found;
-        rev._key = key;
-        const _show = () => typeof _renderReviewPage === 'function'
-          ? _renderReviewPage(rev)
-          : setTimeout(_show, 80);
-        _show();
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (!data) {
+          page.innerHTML = '<div style="color:#555;text-align:center;padding:80px 20px;font-family:Montserrat,sans-serif;font-size:.85rem;letter-spacing:1px">REVIEW NOT FOUND</div>';
+          return;
+        }
+        var entries = Object.entries(data);
+        var found = entries.find(function(e) { return e[1].slug === slug; })
+                 || entries.find(function(e) { return _sl(e[1].title||'') === slug; });
+        if (!found && data[slug]) found = [slug, data[slug]];
+        if (!found) {
+          page.innerHTML = '<div style="color:#555;text-align:center;padding:80px 20px;font-family:Montserrat,sans-serif;font-size:.85rem;letter-spacing:1px">REVIEW NOT FOUND</div>';
+          return;
+        }
+        var rev = found[1];
+        rev._key = found[0];
+        // _renderReviewPage is always defined by now (async fetch completes after all scripts)
+        if (typeof _renderReviewPage === 'function') {
+          _renderReviewPage(rev);
+        } else {
+          page.innerHTML = '<div style="color:#555;text-align:center;padding:80px 20px">Could not load review.</div>';
+        }
       })
-      .catch(() => {});
+      .catch(function() {
+        page.innerHTML = '<div style="color:#555;text-align:center;padding:80px 20px;font-family:Montserrat,sans-serif;font-size:.85rem;letter-spacing:1px">COULD NOT LOAD REVIEW. PLEASE TRY AGAIN.</div>';
+      });
   }
 
   // Handle same-page hash navigation to a review URL (e.g. clicking a shared link
