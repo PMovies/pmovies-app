@@ -5358,7 +5358,7 @@
     const hash = location.hash.replace('#', '');
     if (!hash.startsWith('review/')) {
       const page = document.getElementById('erPage');
-      if (page) page.classList.remove('open');
+      if (page) page.style.display = 'none';
       document.body.style.overflow = '';
     }
   });
@@ -11947,11 +11947,9 @@ function _renderReviewPage(r) {
 
 function closeEditorRead() {
   const page = document.getElementById('erPage');
-  if (page) page.classList.remove('open');
+  if (page) page.style.display = 'none';
   document.body.style.overflow = '';
-  if (location.hash.startsWith('#review/')) {
-    history.pushState(null, '', '#editor');
-  }
+  try { history.pushState(null, '', '#editor'); } catch(e) {}
 }
 
 function _erShare() {
