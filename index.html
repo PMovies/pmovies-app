@@ -2,6 +2,20 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
+  <!-- Cache-busting redirect for direct review links.
+       Runs synchronously before any other script so old cached HTML cannot
+       intercept it. Redirects #review/slug to /?_t=TIMESTAMP#review/slug —
+       a URL the browser has never cached — forcing a fresh fetch every time. -->
+  <script>
+  (function(){
+    try {
+      var h = location.hash || '';
+      if (h.indexOf('#review/') === 0 && location.search.indexOf('_t=') === -1) {
+        location.replace('/?_t=' + Date.now() + h);
+      }
+    } catch(e) {}
+  })();
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <meta http-equiv="Cache-Control" content="no-cache, must-revalidate"/>
   <meta http-equiv="Pragma" content="no-cache"/>
@@ -5320,11 +5334,15 @@
     // Direct review link: #review/movie-slug  (or legacy #review/FIREBASE_KEY)
     if (hash.startsWith('review/')) {
       const slug = hash.slice(7).split('?')[0];
-      switchTab('editor');
-      // CRITICAL: switchTab() calls history.replaceState('#editor') which clobbers our
-      // #review/slug URL. Restore it immediately so any page refresh re-triggers this routing.
+      if (!slug) return;
+      // Show the full-screen overlay FIRST — before anything else runs.
+      // The overlay is position:fixed z-index:9999 so it covers the screen regardless
+      // of which tab is active underneath. This avoids any switchTab() errors in Safari.
+      _loadAndShowReview(slug);
+      // Switch the editor tab in the background (best-effort, errors ignored)
+      try { switchTab('editor'); } catch(e) {}
+      // Restore the review URL that switchTab() just clobbered to '#editor'
       try { history.replaceState(null, '', '#review/' + slug); } catch(e) {}
-      if (slug) _loadAndShowReview(slug);
       return;
     }
 
@@ -5393,33 +5411,32 @@
   // Handle same-page hash navigation to a review URL (e.g. clicking a shared link
   // while already on the site, or using the address bar without a full page reload).
   window.addEventListener('hashchange', function() {
-    const hash = location.hash.replace('#', '');
+    var hash = location.hash.replace('#', '');
     if (hash.startsWith('review/')) {
-      const slug = hash.slice(7).split('?')[0];
-      switchTab('editor');
-      // Restore URL immediately after switchTab clobbers it
-      try { history.replaceState(null, '', '#review/' + slug); } catch(e) {}
+      var slug = hash.slice(7).split('?')[0];
+      if (!slug) return;
       _loadAndShowReview(slug);
+      try { switchTab('editor'); } catch(e) {}
+      try { history.replaceState(null, '', '#review/' + slug); } catch(e) {}
     } else {
-      // Navigated away from a review — hide the review page
-      const page = document.getElementById('erPage');
-      if (page) page.style.display = 'none';
+      var pg = document.getElementById('erPage');
+      if (pg) pg.style.display = 'none';
       document.body.style.overflow = '';
     }
   });
 
   // Handle browser back/forward through review pages
   window.addEventListener('popstate', function() {
-    const hash = location.hash.replace('#', '');
+    var hash = location.hash.replace('#', '');
     if (hash.startsWith('review/')) {
-      // Back/forward landed on a review URL — show it
-      const slug = hash.slice(7).split('?')[0];
-      switchTab('editor');
-      try { history.replaceState(null, '', '#review/' + slug); } catch(e) {}
+      var slug = hash.slice(7).split('?')[0];
+      if (!slug) return;
       _loadAndShowReview(slug);
+      try { switchTab('editor'); } catch(e) {}
+      try { history.replaceState(null, '', '#review/' + slug); } catch(e) {}
     } else {
-      const page = document.getElementById('erPage');
-      if (page) page.style.display = 'none';
+      var pg = document.getElementById('erPage');
+      if (pg) pg.style.display = 'none';
       document.body.style.overflow = '';
     }
   });
@@ -6863,10 +6880,11 @@ function _bfpEntropy() {
    sessionId is fresh per page-load so we can detect
    same device submitting multiple times in one session.
 ═══════════════════════════════════════════════════════ */
-let _clientId = localStorage.getItem(lsKey('pmovies_cid'));
+let _clientId = null;
+try { _clientId = localStorage.getItem(lsKey('pmovies_cid')); } catch(e) {}
 if (!_clientId) {
   _clientId = 'cid_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
-  localStorage.setItem(lsKey('pmovies_cid'), _clientId);
+  try { localStorage.setItem(lsKey('pmovies_cid'), _clientId); } catch(e) {}
 }
 const _sessionId = 'sid_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
 const _pageLoadMs = Date.now();
