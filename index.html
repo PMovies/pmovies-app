@@ -11794,7 +11794,7 @@ function renderEditorReviews(reviews) {
   const grid = document.getElementById('editorGrid');
   if (!grid) return;
   if (!reviews.length) {
-    grid.innerHTML = `<div class="editor-empty">No reviews published yet.<br><span style="font-size:.8rem">First Cannes dispatch coming soon.</span></div>`;
+    grid.innerHTML = `<div class="editor-empty">No reviews published yet.</div>`;
     return;
   }
   grid.innerHTML = '';
@@ -11883,6 +11883,8 @@ function filterEditorReviews(filter, btn) {
 function openEditorAdmin() {
   const ov = document.getElementById('editorAdminOverlay');
   if (!ov) return;
+  // Move to body so position:fixed works regardless of stacking context
+  if (ov.parentElement !== document.body) document.body.appendChild(ov);
   // Reset form
   ['editorFilmInput','editorFestival','editorHeadline','editorReviewBody','editorTags'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
