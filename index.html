@@ -1472,7 +1472,7 @@
     .editor-read-headline{font-size:1.1rem;font-style:italic;color:#ccc;line-height:1.6;margin-bottom:24px;border-left:3px solid #f5a623;padding-left:16px}
     .editor-read-body{font-size:1rem;color:#bbb;line-height:1.85;white-space:pre-line}
     /* Admin overlay */
-    .editor-admin-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:4000;display:flex;align-items:flex-start;justify-content:center;padding:30px 16px;overflow-y:auto}
+    .editor-admin-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99990;display:flex;align-items:flex-start;justify-content:center;padding:30px 16px;overflow-y:auto}
     .editor-admin-modal{background:#111;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:28px;width:100%;max-width:580px}
     .editor-admin-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}
     .editor-admin-title{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:1px;color:#f5a623}
@@ -5041,6 +5041,7 @@
       if (_isEditorAdmin()) { const wb = document.getElementById('editorWriteBtn'); if (wb) wb.style.display = ''; }
       if (!editorLoaded) loadEditorReviews();
     }
+
     if (name === 'series') {
       if (nowAiringHeroes.length) {
         const pick   = nowAiringHeroes[Math.floor(Math.random() * nowAiringHeroes.length)];
@@ -5066,10 +5067,10 @@
       ? 'Let\'s discover together &nbsp;·&nbsp; who are you today?'
       : 'Your Cinema &nbsp;·&nbsp; Your Mood &nbsp;·&nbsp; Your Film';
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    // Preserve ?admin= (or any hash query param) when staying on the same tab
-    const existingHashQuery = location.hash.includes('?') ? '?' + location.hash.split('?')[1] : '';
-    const hashSuffix = (name === 'posters' && existingHashQuery) ? existingHashQuery : '';
-    history.replaceState(null, '', '#' + name + hashSuffix);
+    // Preserve ?admin= across ALL tab switches so admin key survives navigation
+    const existingHashQuery = location.hash.includes('?') ? '?' + location.hash.split('?')[1]
+      : (location.search.includes('admin=') ? location.search : '');
+    history.replaceState(null, '', '#' + name + (existingHashQuery || ''));
   }
   /* ══ BACKED — CREATOR SPOTLIGHT ══ */
   // Base Monday: 2026-05-04. Each entry = one week's 3 creators.
@@ -5316,6 +5317,11 @@
     const hash = location.hash.replace('#', '');
     const tabName = hash.split('?')[0]; // strip any ?admin=... from the hash before matching
     if (['discover','foryou','community','lists','series','backed','posters','editor'].includes(tabName)) switchTab(tabName);
+    // Show Write Review button immediately if admin (button hidden by default via inline style)
+    if (_isEditorAdmin()) {
+      const wb = document.getElementById('editorWriteBtn');
+      if (wb) wb.style.display = '';
+    }
   }, 0);
 
   /* ══ FRIENDS LETTERBOXD REVIEWS ══ */
@@ -11757,8 +11763,12 @@ let _editorSearchTimer = null;
 
 /* ── Check admin access ── */
 function _isEditorAdmin() {
+  // Once unlocked in a session, stays unlocked regardless of URL changes
+  if (sessionStorage.getItem('pmovies_admin') === '1') return true;
   const hq = location.hash.includes('?') ? location.hash.split('?')[1] : location.search.slice(1);
-  return new URLSearchParams(hq).get('admin') === EDITOR_ADMIN_KEY;
+  const ok = new URLSearchParams(hq).get('admin') === EDITOR_ADMIN_KEY;
+  if (ok) sessionStorage.setItem('pmovies_admin', '1');
+  return ok;
 }
 
 /* ── Load ── */
