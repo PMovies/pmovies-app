@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pmovies-v123';
+const CACHE_NAME = 'pmovies-v124';
 
 const APP_SHELL = [
   '/',
@@ -11,7 +11,10 @@ const APP_SHELL = [
 /* ───────── INSTALL ───────── */
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL))
+    // Use no-cache so install always fetches the latest files, bypassing HTTP cache
+    caches.open(CACHE_NAME).then(cache =>
+      cache.addAll(APP_SHELL.map(url => new Request(url, { cache: 'no-cache' })))
+    )
   );
   self.skipWaiting();
 });
@@ -75,10 +78,10 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  /* ── 2. HTML navigation: network-first ── */
+  /* ── 2. HTML navigation: true network-first, bypassing HTTP cache ── */
   if (event.request.mode === 'navigate') {
     event.respondWith(
-      fetch(event.request)
+      fetch(event.request, { cache: 'no-cache' })   // always go to origin, not HTTP cache
         .then(res => {
           const clone = res.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
