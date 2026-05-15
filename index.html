@@ -1493,13 +1493,9 @@
     .editor-search-item-info{font-size:.82rem;color:#e8e8e8}
     .editor-search-item-year{font-size:.72rem;color:#666}
     .editor-selected-film{margin-top:10px;font-size:.82rem;color:#f5a623;font-weight:600}
-    .editor-star-row{display:flex;gap:4px;font-size:1.6rem;user-select:none;-webkit-user-select:none}
-    .hs{position:relative;display:inline-block;cursor:pointer;color:#555;user-select:none;-webkit-user-select:none}
-    .hs.full{color:#f5a623}
-    .hs.half::after{content:'★';position:absolute;top:0;left:0;color:#f5a623;-webkit-clip-path:polygon(0 0,50% 0,50% 100%,0 100%);clip-path:polygon(0 0,50% 0,50% 100%,0 100%)}
-    .hs-l,.hs-r{position:absolute;top:0;height:100%;z-index:2;cursor:pointer;user-select:none;-webkit-user-select:none}
-    .hs-l{left:0;width:50%}
-    .hs-r{right:0;width:50%}
+    .editor-star-row{display:flex;gap:6px;font-size:1.8rem;user-select:none;-webkit-user-select:none;line-height:1}
+    .hs{position:relative;display:inline-block;cursor:pointer;user-select:none;-webkit-user-select:none;line-height:1}
+    .hs-h{position:absolute;top:0;left:0;pointer-events:none;display:none;-webkit-clip-path:polygon(0 0,50% 0,50% 100%,0 100%);clip-path:polygon(0 0,50% 0,50% 100%,0 100%)}
     .editor-admin-actions{display:flex;gap:10px;margin-top:24px}
     .editor-publish-btn{flex:1;background:#f5a623;color:#000;border:none;border-radius:20px;padding:11px 0;font-family:'Montserrat',sans-serif;font-size:.8rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:background .2s}
     .editor-publish-btn:hover{background:#e8981a}
@@ -2362,11 +2358,11 @@
       <div class="editor-form-row">
         <label class="editor-form-label">Rating</label>
         <div class="editor-star-row" id="editorStarRow">
-          <span class="hs" data-full="1">★<span class="hs-l" data-v="0.5"></span><span class="hs-r" data-v="1"></span></span>
-          <span class="hs" data-full="2">★<span class="hs-l" data-v="1.5"></span><span class="hs-r" data-v="2"></span></span>
-          <span class="hs" data-full="3">★<span class="hs-l" data-v="2.5"></span><span class="hs-r" data-v="3"></span></span>
-          <span class="hs" data-full="4">★<span class="hs-l" data-v="3.5"></span><span class="hs-r" data-v="4"></span></span>
-          <span class="hs" data-full="5">★<span class="hs-l" data-v="4.5"></span><span class="hs-r" data-v="5"></span></span>
+          <span class="hs" data-full="1">★<span class="hs-h">★</span></span>
+          <span class="hs" data-full="2">★<span class="hs-h">★</span></span>
+          <span class="hs" data-full="3">★<span class="hs-h">★</span></span>
+          <span class="hs" data-full="4">★<span class="hs-h">★</span></span>
+          <span class="hs" data-full="5">★<span class="hs-h">★</span></span>
         </div>
         <input type="hidden" id="editorRatingInput" value="0"/>
       </div>
@@ -11914,11 +11910,11 @@ function openEditorAdmin() {
       <div class="editor-form-row">
         <label class="editor-form-label">Rating</label>
         <div class="editor-star-row" id="editorStarRow">
-          <span class="hs" data-full="1">★<span class="hs-l" data-v="0.5"></span><span class="hs-r" data-v="1"></span></span>
-          <span class="hs" data-full="2">★<span class="hs-l" data-v="1.5"></span><span class="hs-r" data-v="2"></span></span>
-          <span class="hs" data-full="3">★<span class="hs-l" data-v="2.5"></span><span class="hs-r" data-v="3"></span></span>
-          <span class="hs" data-full="4">★<span class="hs-l" data-v="3.5"></span><span class="hs-r" data-v="4"></span></span>
-          <span class="hs" data-full="5">★<span class="hs-l" data-v="4.5"></span><span class="hs-r" data-v="5"></span></span>
+          <span class="hs" data-full="1">★<span class="hs-h">★</span></span>
+          <span class="hs" data-full="2">★<span class="hs-h">★</span></span>
+          <span class="hs" data-full="3">★<span class="hs-h">★</span></span>
+          <span class="hs" data-full="4">★<span class="hs-h">★</span></span>
+          <span class="hs" data-full="5">★<span class="hs-h">★</span></span>
         </div>
         <input type="hidden" id="editorRatingInput" value="0"/>
       </div>
@@ -11961,9 +11957,17 @@ function setEditorRating(v) {
   if (ri) ri.value = v;
   document.querySelectorAll('#editorStarRow .hs').forEach(s => {
     const full = +s.dataset.full;
-    s.classList.remove('full','half');
-    if (v >= full) s.classList.add('full');
-    else if (v >= full - 0.5) s.classList.add('half');
+    const h = s.querySelector('.hs-h');
+    if (v >= full) {
+      s.style.color = '#f5a623';
+      if (h) h.style.display = 'none';
+    } else if (v >= full - 0.5) {
+      s.style.color = '#555';
+      if (h) { h.style.color = '#f5a623'; h.style.display = 'block'; }
+    } else {
+      s.style.color = '#555';
+      if (h) h.style.display = 'none';
+    }
   });
 }
 
@@ -12092,28 +12096,43 @@ async function deleteEditorReview(key, e) {
     var sf = document.getElementById('editorSelectedFilm'); if (sf) sf.textContent = '';
     var msg = document.getElementById('editorAdminMsg'); if (msg) msg.textContent = '';
     document.body.style.overflow = 'hidden';
-    // Wire half-star click zones (use addEventListener — never rely on inline onclick)
-    ov.querySelectorAll('.hs-l,.hs-r').forEach(function(h) {
-      h.onclick = null;
-      h.addEventListener('click', function() {
-        var v = parseFloat(h.dataset.v);
-        if (typeof setEditorRating === 'function') { setEditorRating(v); }
-        else {
-          var ri = document.getElementById('editorRatingInput');
-          if (ri) ri.value = v;
-          ov.querySelectorAll('.hs').forEach(function(s) {
-            var full = +s.dataset.full;
-            s.classList.remove('full','half');
-            if (v >= full) s.classList.add('full');
-            else if (v >= full - 0.5) s.classList.add('half');
-          });
-        }
+    // Force initial star styles inline (immune to any CSS cache/inheritance issues)
+    ov.querySelectorAll('.hs').forEach(function(s) {
+      s.style.cssText = 'position:relative;display:inline-block;cursor:pointer;color:#555;user-select:none;-webkit-user-select:none;line-height:1';
+      var hh = s.querySelector('.hs-h');
+      if (hh) hh.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;display:none;color:#f5a623;-webkit-clip-path:polygon(0 0,50% 0,50% 100%,0 100%);clip-path:polygon(0 0,50% 0,50% 100%,0 100%)';
+    });
+    // Wire click on whole star — detect half vs full by mouse X position
+    ov.querySelectorAll('.hs').forEach(function(s) {
+      s.onclick = null;
+      s.addEventListener('click', function(e) {
+        var rect = s.getBoundingClientRect();
+        var isLeft = (e.clientX - rect.left) < (rect.width / 2);
+        var full = parseFloat(s.dataset.full);
+        var v = isLeft ? full - 0.5 : full;
+        // Update all stars inline — no CSS class dependency
+        ov.querySelectorAll('.hs').forEach(function(st) {
+          var f = parseFloat(st.dataset.full);
+          var hh = st.querySelector('.hs-h');
+          if (v >= f) {
+            st.style.color = '#f5a623';
+            if (hh) hh.style.display = 'none';
+          } else if (v >= f - 0.5) {
+            st.style.color = '#555';
+            if (hh) hh.style.display = 'block';
+          } else {
+            st.style.color = '#555';
+            if (hh) hh.style.display = 'none';
+          }
+        });
+        var ri = document.getElementById('editorRatingInput');
+        if (ri) ri.value = v;
+        if (typeof setEditorRating === 'function') setEditorRating(v);
       });
     });
-    // Reset star display
+    // Reset rating
     var ri = document.getElementById('editorRatingInput');
     if (ri) ri.value = '0';
-    ov.querySelectorAll('.hs').forEach(function(s) { s.classList.remove('full','half'); });
   }
 
   function _isAdmin() {
