@@ -1493,9 +1493,15 @@
     .editor-search-item-info{font-size:.82rem;color:#e8e8e8}
     .editor-search-item-year{font-size:.72rem;color:#666}
     .editor-selected-film{margin-top:10px;font-size:.82rem;color:#f5a623;font-weight:600}
-    .editor-star-row{display:flex;gap:6px;font-size:1.6rem}
-    .editor-star{color:#333;cursor:pointer;transition:color .15s}
-    .editor-star.active{color:#f5a623}
+    .editor-star-row{display:flex;gap:4px;font-size:1.6rem;user-select:none;-webkit-user-select:none}
+    .hs{position:relative;display:inline-block;cursor:pointer;line-height:1;user-select:none;-webkit-user-select:none}
+    .hs-b{display:block;color:#555;pointer-events:none}
+    .hs-f{position:absolute;top:0;left:0;color:#f5a623;overflow:hidden;width:0;white-space:nowrap;pointer-events:none}
+    .hs.half .hs-f{width:50%}
+    .hs.full .hs-f{width:100%}
+    .hs-l,.hs-r{position:absolute;top:0;height:100%;z-index:2;cursor:pointer;user-select:none;-webkit-user-select:none}
+    .hs-l{left:0;width:50%}
+    .hs-r{right:0;width:50%}
     .editor-admin-actions{display:flex;gap:10px;margin-top:24px}
     .editor-publish-btn{flex:1;background:#f5a623;color:#000;border:none;border-radius:20px;padding:11px 0;font-family:'Montserrat',sans-serif;font-size:.8rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:background .2s}
     .editor-publish-btn:hover{background:#e8981a}
@@ -2358,11 +2364,11 @@
       <div class="editor-form-row">
         <label class="editor-form-label">Rating</label>
         <div class="editor-star-row" id="editorStarRow">
-          <span class="editor-star" data-v="1" onclick="setEditorRating(1)">★</span>
-          <span class="editor-star" data-v="2" onclick="setEditorRating(2)">★</span>
-          <span class="editor-star" data-v="3" onclick="setEditorRating(3)">★</span>
-          <span class="editor-star" data-v="4" onclick="setEditorRating(4)">★</span>
-          <span class="editor-star" data-v="5" onclick="setEditorRating(5)">★</span>
+          <span class="hs" data-full="1"><span class="hs-b">★</span><span class="hs-f">★</span><span class="hs-l" data-v="0.5"></span><span class="hs-r" data-v="1"></span></span>
+          <span class="hs" data-full="2"><span class="hs-b">★</span><span class="hs-f">★</span><span class="hs-l" data-v="1.5"></span><span class="hs-r" data-v="2"></span></span>
+          <span class="hs" data-full="3"><span class="hs-b">★</span><span class="hs-f">★</span><span class="hs-l" data-v="2.5"></span><span class="hs-r" data-v="3"></span></span>
+          <span class="hs" data-full="4"><span class="hs-b">★</span><span class="hs-f">★</span><span class="hs-l" data-v="3.5"></span><span class="hs-r" data-v="4"></span></span>
+          <span class="hs" data-full="5"><span class="hs-b">★</span><span class="hs-f">★</span><span class="hs-l" data-v="4.5"></span><span class="hs-r" data-v="5"></span></span>
         </div>
         <input type="hidden" id="editorRatingInput" value="0"/>
       </div>
@@ -11798,7 +11804,7 @@ function renderEditorReviews(reviews) {
   }
   grid.innerHTML = '';
   reviews.forEach(r => {
-    const stars = '★'.repeat(Math.min(5, r.rating||0)) + '<span style="color:#333">★</span>'.repeat(5 - Math.min(5, r.rating||0));
+    const stars = _editorStarsHTML(r.rating||0);
     const posterEl = r.poster
       ? `<img class="editor-review-poster" src="https://image.tmdb.org/t/p/w154${r.poster}" alt="${esc(r.title)}" loading="lazy"/>`
       : `<div class="editor-review-poster-ph">🎬</div>`;
@@ -11839,7 +11845,7 @@ function openEditorRead(r) {
     document.body.appendChild(ov);
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeEditorRead(); });
   }
-  const stars = '★'.repeat(Math.min(5, r.rating||0)) + '<span style="color:#333">★</span>'.repeat(5 - Math.min(5,r.rating||0));
+  const stars = _editorStarsHTML(r.rating||0);
   const festivalBadge = r.festival ? `<span class="editor-review-festival">${esc(r.festival)}</span>` : '';
   const tags = (r.tags||[]).map(t => `<span class="editor-review-tag">${esc(t)}</span>`).join('');
   const backdropEl = r.backdrop
@@ -11910,11 +11916,11 @@ function openEditorAdmin() {
       <div class="editor-form-row">
         <label class="editor-form-label">Rating</label>
         <div class="editor-star-row" id="editorStarRow">
-          <span class="editor-star" data-v="1" onclick="setEditorRating(1)">★</span>
-          <span class="editor-star" data-v="2" onclick="setEditorRating(2)">★</span>
-          <span class="editor-star" data-v="3" onclick="setEditorRating(3)">★</span>
-          <span class="editor-star" data-v="4" onclick="setEditorRating(4)">★</span>
-          <span class="editor-star" data-v="5" onclick="setEditorRating(5)">★</span>
+          <span class="hs" data-full="1"><span class="hs-b">★</span><span class="hs-f">★</span><span class="hs-l" data-v="0.5"></span><span class="hs-r" data-v="1"></span></span>
+          <span class="hs" data-full="2"><span class="hs-b">★</span><span class="hs-f">★</span><span class="hs-l" data-v="1.5"></span><span class="hs-r" data-v="2"></span></span>
+          <span class="hs" data-full="3"><span class="hs-b">★</span><span class="hs-f">★</span><span class="hs-l" data-v="2.5"></span><span class="hs-r" data-v="3"></span></span>
+          <span class="hs" data-full="4"><span class="hs-b">★</span><span class="hs-f">★</span><span class="hs-l" data-v="3.5"></span><span class="hs-r" data-v="4"></span></span>
+          <span class="hs" data-full="5"><span class="hs-b">★</span><span class="hs-f">★</span><span class="hs-l" data-v="4.5"></span><span class="hs-r" data-v="5"></span></span>
         </div>
         <input type="hidden" id="editorRatingInput" value="0"/>
       </div>
@@ -11955,9 +11961,27 @@ function setEditorRating(v) {
   _editorRating = v;
   const ri = document.getElementById('editorRatingInput');
   if (ri) ri.value = v;
-  document.querySelectorAll('.editor-star').forEach(s => {
-    s.classList.toggle('active', +s.dataset.v <= v);
+  document.querySelectorAll('#editorStarRow .hs').forEach(s => {
+    const full = +s.dataset.full;
+    s.classList.remove('full','half');
+    if (v >= full) s.classList.add('full');
+    else if (v >= full - 0.5) s.classList.add('half');
   });
+}
+
+/* ── Half-star display helper ── */
+function _editorStarsHTML(rating) {
+  let html = '';
+  for (let i = 1; i <= 5; i++) {
+    if (rating >= i) {
+      html += '<span style="color:#f5a623">★</span>';
+    } else if (rating >= i - 0.5) {
+      html += '<span style="position:relative;display:inline-block"><span style="color:#555">★</span><span style="position:absolute;top:0;left:0;overflow:hidden;width:50%;color:#f5a623">★</span></span>';
+    } else {
+      html += '<span style="color:#555">★</span>';
+    }
+  }
+  return html;
 }
 
 /* ── Film search ── */
@@ -12070,6 +12094,28 @@ async function deleteEditorReview(key, e) {
     var sf = document.getElementById('editorSelectedFilm'); if (sf) sf.textContent = '';
     var msg = document.getElementById('editorAdminMsg'); if (msg) msg.textContent = '';
     document.body.style.overflow = 'hidden';
+    // Wire half-star click zones (use addEventListener — never rely on inline onclick)
+    ov.querySelectorAll('.hs-l,.hs-r').forEach(function(h) {
+      h.onclick = null;
+      h.addEventListener('click', function() {
+        var v = parseFloat(h.dataset.v);
+        if (typeof setEditorRating === 'function') { setEditorRating(v); }
+        else {
+          var ri = document.getElementById('editorRatingInput');
+          if (ri) ri.value = v;
+          ov.querySelectorAll('.hs').forEach(function(s) {
+            var full = +s.dataset.full;
+            s.classList.remove('full','half');
+            if (v >= full) s.classList.add('full');
+            else if (v >= full - 0.5) s.classList.add('half');
+          });
+        }
+      });
+    });
+    // Reset star display
+    var ri = document.getElementById('editorRatingInput');
+    if (ri) ri.value = '0';
+    ov.querySelectorAll('.hs').forEach(function(s) { s.classList.remove('full','half'); });
   }
 
   function _isAdmin() {
