@@ -5322,24 +5322,31 @@
       const slug = hash.slice(7).split('?')[0];
       switchTab('editor');
       if (slug) {
-        // Wait for reviews to load (switchTab triggers loadEditorReviews async),
-        // then find by slug. Fall back to Firebase key for old-format links.
-        let attempts = 0;
-        const _tryOpenReview = setInterval(() => {
-          if (_editorAllReviews.length > 0 || ++attempts > 50) {
-            clearInterval(_tryOpenReview);
-            // Search by slug field, then by computed title slug, then treat as Firebase key
-            let rev = _editorAllReviews.find(r => r.slug === slug)
-                   || _editorAllReviews.find(r => _editorSlug(r.title||'') === slug);
-            if (rev) { _renderReviewPage(rev); }
-            else if (slug.startsWith('-')) {
-              // Legacy Firebase auto-key
-              fetch(`https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app/editorReviews/${encodeURIComponent(slug)}.json`)
-                .then(r => r.json()).then(data => { if (data && data.title) { data._key = slug; _renderReviewPage(data); } })
-                .catch(() => {});
-            }
-          }
-        }, 150);
+        // Self-contained slug normaliser — no dependency on _editorSlug being loaded yet
+        const _sl = t => (t||'').toLowerCase().trim()
+          .replace(/[^a-z0-9\s-]/g,'').replace(/[\s_]+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
+
+        // Fetch ALL reviews directly — one request, no polling, works on first ever load
+        fetch('https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app/editorReviews.json')
+          .then(r => r.json())
+          .then(data => {
+            if (!data) return;
+            const entries = Object.entries(data);
+            // Match slug field first, then fall back to computing slug from title
+            let found = entries.find(([,r]) => r.slug === slug)
+                     || entries.find(([,r]) => _sl(r.title||'') === slug);
+            // Legacy: slug is actually a Firebase key (starts with -)
+            if (!found && slug.startsWith('-') && data[slug]) found = [slug, data[slug]];
+            if (!found) return;
+            const [key, rev] = found;
+            rev._key = key;
+            // _renderReviewPage is in a later <script> block; call it once scripts finish
+            const _show = () => typeof _renderReviewPage === 'function'
+              ? _renderReviewPage(rev)
+              : setTimeout(_show, 80);
+            _show();
+          })
+          .catch(() => {});
       }
       return;
     }
