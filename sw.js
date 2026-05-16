@@ -1,9 +1,11 @@
-const CACHE_NAME = 'pmovies-v138';
+const CACHE_NAME = 'pmovies-v139';
 
 const APP_SHELL = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/robots.txt',
+  '/sitemap.xml',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
 ];

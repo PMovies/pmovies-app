@@ -1,16 +1,74 @@
 {
-  "name": "PMovies",
+  "id": "/",
+  "name": "PMovies – Top 100 Films & Movie Recommendations",
   "short_name": "PMovies",
-  "description": "Mood-based movie recommendations by the PMovies channel",
-  "start_url": "/pmovies-app/",
-  "scope": "/pmovies-app/",
+  "description": "Community-voted top 100 films of all time, mood-based movie recommendations, trailers and what's now in cinemas.",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#0a0a0a",
-  "theme_color": "#f5a623",
   "orientation": "portrait-primary",
+  "theme_color": "#f5a623",
+  "background_color": "#0a0a0a",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["entertainment", "lifestyle"],
   "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "icons/social.png",
+      "sizes": "1200x630",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "PMovies – Top 100 Films & Movie Recommendations"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Discover",
+      "short_name": "Discover",
+      "description": "Discover movies now in cinemas and trending",
+      "url": "/#discover",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Top 100 Films",
+      "short_name": "Top 100",
+      "description": "Community-voted top 100 films of all time",
+      "url": "/#lists",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Editor Reviews",
+      "short_name": "Reviews",
+      "description": "Read curated editor film reviews",
+      "url": "/#editor",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "For You",
+      "short_name": "For You",
+      "description": "Mood-based personalised movie recommendations",
+      "url": "/#foryou",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
   ]
 }
