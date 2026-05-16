@@ -12075,14 +12075,25 @@ function _erShare() {
     ? 'https://p-movies.com/review/' + slug
     : 'https://p-movies.com/';
   var btn  = document.getElementById('erShareBtn');
+
+  function _copyFallback() {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(function() {
+        if (btn) { btn.textContent = '✓ Copied!'; setTimeout(function() { btn.textContent = '🔗 Share'; }, 2200); }
+      });
+    } else {
+      prompt('Copy this review link:', url);
+    }
+  }
+
+  // On mobile: native share sheet. On desktop: share also tried but falls back to copy on failure/cancel.
   if (navigator.share) {
-    navigator.share({ url: url }).catch(function() {});
-  } else if (navigator.clipboard) {
-    navigator.clipboard.writeText(url).then(function() {
-      if (btn) { btn.textContent = '✓ Copied!'; setTimeout(function() { btn.textContent = '🔗 Share'; }, 2200); }
+    navigator.share({ url: url }).catch(function(err) {
+      // AbortError = user cancelled — don't copy. Any other error = fall back to clipboard.
+      if (err && err.name !== 'AbortError') _copyFallback();
     });
   } else {
-    prompt('Copy this review link:', url);
+    _copyFallback();
   }
 }
 
