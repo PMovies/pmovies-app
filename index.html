@@ -12002,7 +12002,10 @@ function _renderReviewPage(r) {
     : `<div style="width:115px;height:172px;background:#1a1a1a;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:2.2rem;flex-shrink:0">🎬</div>`;
   page.innerHTML = `
     <button onclick="closeEditorRead()" title="Back" style="position:fixed;top:16px;left:16px;z-index:10001;background:rgba(0,0,0,.65);border:none;color:#fff;font-size:1.3rem;cursor:pointer;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)">←</button>
-    <button id="erShareBtn" onclick="_erShare()" style="position:fixed;top:16px;right:16px;z-index:10001;background:rgba(0,0,0,.65);border:none;color:#ddd;font-size:.62rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;padding:11px 15px;border-radius:20px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font-family:Montserrat,sans-serif">🔗 Share</button>
+    <div style="position:fixed;top:16px;right:16px;z-index:10001;display:flex;gap:8px">
+      <button id="erTranslateBtn" onclick="_erTranslate()" style="background:rgba(0,0,0,.65);border:none;color:#ddd;font-size:.62rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;padding:11px 15px;border-radius:20px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font-family:Montserrat,sans-serif">🌐 Translate</button>
+      <button id="erShareBtn" onclick="_erShare()" style="background:rgba(0,0,0,.65);border:none;color:#ddd;font-size:.62rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;padding:11px 15px;border-radius:20px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font-family:Montserrat,sans-serif">🔗 Share</button>
+    </div>
     <div style="position:relative;width:100%;height:52vw;max-height:420px;min-height:200px;overflow:hidden">
       ${backdropEl}
       <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(10,10,10,0) 35%,#0a0a0a 100%)"></div>
@@ -12021,8 +12024,8 @@ function _renderReviewPage(r) {
       </div>
     </div>
     <div style="max-width:720px;margin:30px auto 70px;padding:0 22px">
-      ${r.headline ? `<div dir="auto" style="font-size:1.15rem;font-style:italic;color:#ddd;line-height:1.65;margin-bottom:26px;padding:16px 20px;border-inline-start:3px solid #f5a623;background:rgba(245,166,35,.05);border-radius:0 8px 8px 0">"${esc(r.headline)}"</div>` : ''}
-      ${r.review   ? `<div dir="auto" style="font-size:.97rem;color:#aaa;line-height:1.95;white-space:pre-line">${esc(r.review)}</div>` : ''}
+      ${r.headline ? `<div id="erHeadline" dir="auto" style="font-size:1.15rem;font-style:italic;color:#ddd;line-height:1.65;margin-bottom:26px;padding:16px 20px;border-inline-start:3px solid #f5a623;background:rgba(245,166,35,.05);border-radius:0 8px 8px 0">"${esc(r.headline)}"</div>` : ''}
+      ${r.review   ? `<div id="erBody" dir="auto" style="font-size:.97rem;color:#aaa;line-height:1.95;white-space:pre-line">${esc(r.review)}</div>` : ''}
     </div>`;
   page.scrollTop = 0;
   document.body.style.overflow = 'hidden';
@@ -12047,6 +12050,62 @@ function _erShare() {
   } else {
     prompt('Copy this review link:', url);
   }
+}
+
+/* ── Translate review in-place via Google Translate (no API key needed) ── */
+function _erTranslate() {
+  const btn      = document.getElementById('erTranslateBtn');
+  const headline = document.getElementById('erHeadline');
+  const body     = document.getElementById('erBody');
+  if (!headline && !body) return;
+
+  // Toggle back to original
+  if (btn && btn.dataset.translated === '1') {
+    if (headline && headline.dataset.orig !== undefined) headline.innerHTML = headline.dataset.orig;
+    if (body     && body.dataset.orig     !== undefined) body.innerHTML     = body.dataset.orig;
+    if (headline) headline.dir = 'auto';
+    if (body)     body.dir     = 'auto';
+    btn.dataset.translated = '0';
+    btn.textContent = '🌐 Translate';
+    return;
+  }
+
+  if (btn) { btn.textContent = '⏳ Translating…'; btn.disabled = true; }
+
+  // Build a single string with a unique separator so one request covers both fields
+  const SEP = '\n\n||||SPLIT||||\n\n';
+  const origHeadline = headline ? headline.innerHTML : '';
+  const origBody     = body     ? body.innerHTML     : '';
+  const combined     = [headline ? headline.innerText : '', body ? body.innerText : ''].join(SEP);
+
+  fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=' + encodeURIComponent(combined))
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      // Response: data[0] is array of [translated_chunk, original_chunk]
+      const translated = data[0].map(function(c) { return c[0]; }).join('');
+      const parts = translated.split(/\|\|\|\|SPLIT\|\|\|\|/);
+
+      if (headline) {
+        headline.dataset.orig = origHeadline;
+        // Wrap in quotes like the original, preserve the blockquote feel
+        headline.textContent = '"' + (parts[0] || '').trim() + '"';
+        headline.dir = 'ltr';
+      }
+      if (body) {
+        body.dataset.orig = origBody;
+        body.textContent  = (parts[1] || parts[0] || '').trim();
+        body.dir = 'ltr';
+      }
+
+      if (btn) {
+        btn.dataset.translated = '1';
+        btn.disabled = false;
+        btn.textContent = '↩ Original';
+      }
+    })
+    .catch(function() {
+      if (btn) { btn.disabled = false; btn.textContent = '🌐 Translate'; }
+    });
 }
 
 /* ── Filter ── */
