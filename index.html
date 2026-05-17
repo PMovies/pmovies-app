@@ -1486,7 +1486,11 @@
     /* Full cinematic review page */
     .er-page{position:fixed;inset:0;z-index:9999;background:#0a0a0a;overflow-y:auto;display:none}
     .er-page.open{display:block}
-    .er-back{position:fixed;top:16px;left:16px;z-index:10001;background:rgba(0,0,0,.65);border:none;color:#fff;font-size:1.3rem;cursor:pointer;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background .2s;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+    .er-back{position:fixed;top:calc(env(safe-area-inset-top,0px) + 16px);left:16px;z-index:10001;background:rgba(0,0,0,.65);border:none;color:#fff;font-size:1.3rem;cursor:pointer;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background .2s;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+    @media(max-width:600px){
+      .er-back{top:calc(env(safe-area-inset-top,44px) + 20px)}
+      .er-action-bar{top:calc(env(safe-area-inset-top,44px) + 20px) !important}
+    }
     .er-back:hover{background:rgba(245,166,35,.35)}
     .er-share{position:fixed;top:16px;right:16px;z-index:10001;background:rgba(0,0,0,.65);border:none;color:#ddd;font-size:.62rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;padding:11px 15px;border-radius:20px;transition:background .2s;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);font-family:'Montserrat',sans-serif}
     .er-share:hover{background:rgba(245,166,35,.35)}
@@ -5404,7 +5408,7 @@
     }
     page.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:#0a0a0a;overflow-y:auto;display:block';
     page.innerHTML =
-      '<button onclick="closeEditorRead()" style="position:fixed;top:16px;left:16px;z-index:10001;background:rgba(0,0,0,.65);border:none;color:#fff;font-size:1.3rem;cursor:pointer;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)">←</button>' +
+      '<button onclick="closeEditorRead()" class="er-back">←</button>' +
       '<div id="_rplSpinner" style="display:flex;align-items:center;justify-content:center;height:100vh;color:#555;font-size:.85rem;letter-spacing:2px;font-family:Montserrat,sans-serif">LOADING…</div>';
     document.body.style.overflow = 'hidden';
 
@@ -12031,8 +12035,8 @@ function _renderReviewPage(r) {
     ? `<img style="width:115px;height:172px;object-fit:cover;border-radius:9px;box-shadow:0 10px 30px rgba(0,0,0,.8);display:block;flex-shrink:0" src="https://image.tmdb.org/t/p/w342${r.poster}" alt="${esc(r.title)}"/>`
     : `<div style="width:115px;height:172px;background:#1a1a1a;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:2.2rem;flex-shrink:0">🎬</div>`;
   page.innerHTML = `
-    <button onclick="closeEditorRead()" title="Back" style="position:fixed;top:16px;left:16px;z-index:10001;background:rgba(0,0,0,.65);border:none;color:#fff;font-size:1.3rem;cursor:pointer;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)">←</button>
-    <div style="position:fixed;top:16px;right:16px;z-index:10001;display:flex;gap:8px">
+    <button onclick="closeEditorRead()" title="Back" class="er-back">←</button>
+    <div style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 16px);right:16px;z-index:10001;display:flex;gap:8px;transition:top .2s" class="er-action-bar">
       <button id="erTranslateBtn" onclick="_erTranslate()" style="background:rgba(0,0,0,.65);border:none;color:#ddd;font-size:.62rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;padding:11px 15px;border-radius:20px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font-family:Montserrat,sans-serif">🌐 Translate</button>
       <button id="erShareBtn" onclick="_erShare()" style="background:rgba(0,0,0,.65);border:none;color:#ddd;font-size:.62rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;padding:11px 15px;border-radius:20px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font-family:Montserrat,sans-serif">🔗 Share</button>
     </div>
