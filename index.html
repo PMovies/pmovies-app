@@ -1159,6 +1159,9 @@
   .fan-review-card-reviewer { font-size:.68rem; font-weight:700; color:#888; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
   .fan-review-card-headline { font-size:.67rem; color:#777; font-style:italic; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
   .fan-type-badge { position:absolute; top:7px; left:7px; font-size:.58rem; font-weight:700; letter-spacing:.5px; background:rgba(0,0,0,.78); color:#f5a623; border-radius:20px; padding:2px 8px; -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); }
+  /* ── Fan edit form inputs ── */
+  .fe-input { width:100%; box-sizing:border-box; background:#111; border:1px solid #333; border-radius:8px; padding:10px 14px; color:#fff; font-size:.83rem; font-family:inherit; outline:none; transition:border-color .2s; }
+  .fe-input:focus { border-color:var(--orange); }
   /* ── Fan review actions (used inside full-page overlay) ── */
   .fan-review-actions { display:flex; align-items:center; gap:10px; margin-top:10px; padding-top:10px; border-top:1px solid #1e1e1e; }
   .fan-like-btn { display:flex; align-items:center; gap:5px; font-size:.75rem; color:#555; cursor:pointer; border:none; background:none; padding:0; font-family:'Montserrat',sans-serif; font-weight:700; transition:color .2s; }
@@ -4602,6 +4605,7 @@
     page.innerHTML = `
       <button onclick="closeFanReviewPage()" style="position:fixed;top:calc(env(safe-area-inset-top,0px)+16px);left:16px;z-index:10001;background:rgba(0,0,0,.65);border:none;color:#fff;font-size:1.3rem;cursor:pointer;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)">←</button>
       <div style="position:fixed;top:calc(env(safe-area-inset-top,0px)+16px);right:16px;z-index:10001;display:flex;gap:8px">
+        ${_isMyReview(fp) ? `<button onclick="_openFanEditMode('${fp}')" style="background:rgba(0,0,0,.65);border:none;color:#ddd;font-size:.62rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;padding:11px 15px;border-radius:20px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);font-family:'Montserrat',sans-serif">✏️ Edit</button>` : ''}
         <div style="position:relative">
           <button onclick="toggleShareMenu('frShareMenu-${fp}',event)" style="background:rgba(0,0,0,.65);border:none;color:#ddd;font-size:.62rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;padding:11px 15px;border-radius:20px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);font-family:'Montserrat',sans-serif">🔗 Share</button>
           <div class="card-share-menu" id="frShareMenu-${fp}"
@@ -4676,6 +4680,115 @@
     const page = document.getElementById('frPage');
     if (page) page.style.display = 'none';
     document.body.style.overflow = '';
+  }
+
+  // ── Edit review helpers ───────────────────────────────────────────
+  function _isMyReview(fp) {
+    try {
+      const myMap = JSON.parse(localStorage.getItem('myReviewKeys') || '{}');
+      return !!myMap[fp];
+    } catch(_) { return false; }
+  }
+
+  function _openFanEditMode(fp) {
+    const r = _reviewCardRegistry.get(fp) || _srReviewCardRegistry.get(fp);
+    if (!r) return;
+    _closeAllShareMenus();
+    const isTV   = r._mediaType === 'tv' || r.mediaType === 'tv';
+    // Build a temporary star rating tracker
+    let _editRating = r.rating || 0;
+    const starsHTML = v => [1,2,3,4,5].map(i =>
+      `<span data-v="${i}" onclick="_editSetStar(${i},'${fp}')" style="cursor:pointer;font-size:1.6rem;color:${i<=v?'#f5a623':'#333'};transition:color .15s" id="festar-${fp}-${i}">★</span>`
+    ).join('');
+
+    const page = document.getElementById('frPage');
+    if (!page) return;
+    page.innerHTML = `
+      <button onclick="openFanReviewPage('${fp}')" style="position:fixed;top:calc(env(safe-area-inset-top,0px)+16px);left:16px;z-index:10001;background:rgba(0,0,0,.65);border:none;color:#fff;font-size:1.3rem;cursor:pointer;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)" title="Cancel">←</button>
+      <div style="max-width:640px;margin:90px auto 60px;padding:0 22px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:2px;color:#fff;margin-bottom:4px">${esc(r.movie||'')}</div>
+        <div style="font-size:.7rem;font-weight:700;letter-spacing:1px;color:#555;text-transform:uppercase;margin-bottom:28px">${isTV ? 'Series' : 'Film'} · Editing your review</div>
+
+        <div style="margin-bottom:20px">
+          <div style="font-size:.65rem;font-weight:700;letter-spacing:1px;color:#666;text-transform:uppercase;margin-bottom:8px">Rating</div>
+          <div id="feStarRow-${fp}" style="display:flex;gap:4px">${starsHTML(_editRating)}</div>
+          <input type="hidden" id="feRating-${fp}" value="${_editRating}"/>
+        </div>
+
+        <div style="margin-bottom:16px">
+          <div style="font-size:.65rem;font-weight:700;letter-spacing:1px;color:#666;text-transform:uppercase;margin-bottom:8px">Headline <span style="color:#444;font-size:.6rem;text-transform:none">(optional)</span></div>
+          <input id="feHeadline-${fp}" class="fe-input" type="text" maxlength="120" value="${esc(r.headline||'')}" placeholder="One-line summary…"/>
+        </div>
+
+        <div style="margin-bottom:24px">
+          <div style="font-size:.65rem;font-weight:700;letter-spacing:1px;color:#666;text-transform:uppercase;margin-bottom:8px">Review</div>
+          <textarea id="feText-${fp}" class="fe-input" maxlength="1500" rows="7" dir="auto" placeholder="Your review…" style="resize:vertical;min-height:120px;line-height:1.6">${esc(r.text||'')}</textarea>
+        </div>
+
+        <div style="display:flex;gap:10px">
+          <button onclick="_saveFanEdit('${fp}')" id="feSaveBtn-${fp}" style="flex:1;background:#f5a623;border:none;color:#000;font-family:'Montserrat',sans-serif;font-size:.8rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding:13px;border-radius:10px;cursor:pointer">Save Changes</button>
+          <button onclick="openFanReviewPage('${fp}')" style="background:#1a1a1a;border:1px solid #333;color:#aaa;font-family:'Montserrat',sans-serif;font-size:.8rem;font-weight:700;padding:13px 20px;border-radius:10px;cursor:pointer">Cancel</button>
+        </div>
+        <div id="feError-${fp}" style="color:#e53935;font-size:.78rem;margin-top:12px;display:none"></div>
+      </div>`;
+    page.scrollTop = 0;
+  }
+
+  // Called by inline onclick on each star in the edit form
+  function _editSetStar(v, fp) {
+    document.getElementById(`feRating-${fp}`).value = v;
+    for (let i = 1; i <= 5; i++) {
+      const s = document.getElementById(`festar-${fp}-${i}`);
+      if (s) s.style.color = i <= v ? '#f5a623' : '#333';
+    }
+  }
+
+  async function _saveFanEdit(fp) {
+    const r = _reviewCardRegistry.get(fp) || _srReviewCardRegistry.get(fp);
+    if (!r) return;
+    const headline = (document.getElementById(`feHeadline-${fp}`)?.value || '').trim();
+    const text     = (document.getElementById(`feText-${fp}`)?.value    || '').trim();
+    const rating   = +(document.getElementById(`feRating-${fp}`)?.value  || 0);
+    const errEl    = document.getElementById(`feError-${fp}`);
+    const saveBtn  = document.getElementById(`feSaveBtn-${fp}`);
+    if (!text) { if (errEl) { errEl.textContent = 'Review text cannot be empty.'; errEl.style.display = 'block'; } return; }
+
+    saveBtn.textContent = 'Saving…'; saveBtn.disabled = true;
+    if (errEl) errEl.style.display = 'none';
+
+    try {
+      // Find RTDB key from localStorage (preferred) or fall back to _rtdbKey on the review object
+      let rtdbPath = null, rtdbKey = null;
+      try {
+        const myMap = JSON.parse(localStorage.getItem('myReviewKeys') || '{}');
+        if (myMap[fp]) { rtdbPath = myMap[fp].path; rtdbKey = myMap[fp].key; }
+      } catch(_) {}
+      if (!rtdbKey && r._rtdbKey) {
+        rtdbKey  = r._rtdbKey;
+        rtdbPath = (r._mediaType === 'tv' || r.mediaType === 'tv') ? 'seriesFanReviews' : 'fanReviews';
+      }
+      if (!rtdbKey) throw new Error('Could not locate the original review record.');
+
+      const patch = { headline, text, rating, _edited: Date.now() };
+      const res = await fetch(`${RTDB}/${rtdbPath}/${rtdbKey}.json`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch)
+      });
+      if (!res.ok) throw new Error(`Server error ${res.status}`);
+
+      // Update in-memory review objects
+      Object.assign(r, patch);
+      if (_reviewCardRegistry.has(fp))   Object.assign(_reviewCardRegistry.get(fp),   patch);
+      if (_srReviewCardRegistry.has(fp)) Object.assign(_srReviewCardRegistry.get(fp), patch);
+      // Refresh the card in the grid (re-render community)
+      _renderCommunityGrid();
+      // Re-open the reading overlay with updated data
+      openFanReviewPage(fp);
+    } catch(e) {
+      saveBtn.textContent = 'Save Changes'; saveBtn.disabled = false;
+      if (errEl) { errEl.textContent = 'Could not save: ' + e.message; errEl.style.display = 'block'; }
+    }
   }
 
   function buildRecordsGrid(reviews) {
@@ -4760,11 +4873,11 @@
 
     let rtdbReviews = [], fsReviews = [], seriesReviews = [];
 
-    // 1. Load movies from RTDB
+    // 1. Load movies from RTDB (preserve key so edits can PATCH the right record)
     try {
       const rtdbRes  = await fetch(`${RTDB}/fanReviews.json`);
       const rtdbData = rtdbRes.ok ? await rtdbRes.json() : null;
-      if (rtdbData) rtdbReviews = Object.values(rtdbData);
+      if (rtdbData) rtdbReviews = Object.entries(rtdbData).map(([k, r]) => ({ ...r, _rtdbKey: k }));
     } catch(_) {}
 
     // 2. Load movies from Firestore REST API
@@ -4786,11 +4899,11 @@
       }
     } catch(_) {}
 
-    // 3. Load series from RTDB
+    // 3. Load series from RTDB (preserve key so edits can PATCH the right record)
     try {
       const res  = await fetch(`${RTDB}/seriesFanReviews.json`);
       const data = res.ok ? await res.json() : null;
-      if (data) seriesReviews = Object.values(data).map(r => ({ ...r, _mediaType: 'tv' }));
+      if (data) seriesReviews = Object.entries(data).map(([k, r]) => ({ ...r, _mediaType: 'tv', _rtdbKey: k }));
     } catch(_) {}
 
     // 4. Merge movies — deduplicate by name+movie+text fingerprint
@@ -4851,6 +4964,14 @@
         const errBody = await rtdbRes.json().catch(() => ({}));
         throw new Error(errBody.error || `Server error ${rtdbRes.status}`);
       }
+      // Store fp → RTDB key in localStorage so the author can edit later
+      try {
+        const { name: rtdbKey } = await rtdbRes.clone().json(); // Firebase POST returns { name: "-KEY" }
+        const fp = fanReviewFp(reviewData);
+        const myMap = JSON.parse(localStorage.getItem('myReviewKeys') || '{}');
+        myMap[fp] = { key: rtdbKey, path: 'fanReviews' };
+        localStorage.setItem('myReviewKeys', JSON.stringify(myMap));
+      } catch(_) {}
       // Also write to Firestore via SDK if available (for users on cached version)
       if (fbDb) {
         try {
@@ -5087,11 +5208,19 @@
       const btn = document.querySelector('#srFanSection .fan-submit-btn');
       btn.textContent = 'Posting…'; btn.disabled = true;
       const reviewData = { name, movie: series, tmdbId: srTmdbId, rating, text, timestamp: Date.now(), mediaType: 'tv' };
-      await fetch(`${RTDB}/seriesFanReviews.json`, {
+      const srRes = await fetch(`${RTDB}/seriesFanReviews.json`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(reviewData)
       });
+      // Store fp → RTDB key so the author can edit later
+      try {
+        const { name: rtdbKey } = await srRes.clone().json();
+        const fp = fanReviewFp(reviewData);
+        const myMap = JSON.parse(localStorage.getItem('myReviewKeys') || '{}');
+        myMap[fp] = { key: rtdbKey, path: 'seriesFanReviews' };
+        localStorage.setItem('myReviewKeys', JSON.stringify(myMap));
+      } catch(_) {}
       document.getElementById('srFanName').value = '';
       seriesEl.value = ''; seriesEl.dataset.cleanTitle = ''; seriesEl.dataset.tmdbId = '';
       document.getElementById('srFanText').value = '';
