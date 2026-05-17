@@ -646,6 +646,8 @@
   .fan-review-stars .s-empty { color:#333; }
   .fan-submit-btn { background:var(--orange); color:#000; border:none; padding:10px 28px; border-radius:8px; font-weight:700; font-size:.85rem; cursor:pointer; letter-spacing:.05em; }
   .fan-submit-btn:hover { background:#e0940f; }
+  .fan-write-btn { display:inline-flex; align-items:center; gap:8px; background:transparent; border:1.5px solid var(--orange); color:var(--orange); font-family:'Montserrat',sans-serif; font-size:.78rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; padding:10px 22px; border-radius:24px; cursor:pointer; margin-bottom:20px; transition:background .2s,color .2s; }
+  .fan-write-btn:hover, .fan-write-btn.open { background:var(--orange); color:#000; }
   .fan-load-more-wrap { text-align:center; margin-top:24px; }
   .fan-load-more-btn { background:#111; border:1px solid #333; border-radius:14px; color:#888; cursor:pointer; font-family:'Montserrat',sans-serif; font-size:.78rem; font-weight:700; letter-spacing:.06em; padding:13px 28px; text-transform:uppercase; transition:all .2s; display:inline-flex; flex-direction:column; align-items:center; gap:4px; }
   .fan-load-more-btn:hover { border-color:var(--orange); color:var(--orange); }
@@ -1160,7 +1162,7 @@
   .fan-review-card-reviewer span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .fan-review-card-headline { font-size:.67rem; color:#777; font-style:italic; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
   .fan-type-badge { position:absolute; top:7px; left:7px; font-size:.58rem; font-weight:700; letter-spacing:.5px; background:rgba(0,0,0,.78); color:#f5a623; border-radius:20px; padding:2px 8px; -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); }
-  .fan-card-likes { position:absolute; top:8px; left:8px; font-size:.6rem; font-weight:800; background:rgba(0,0,0,.72); color:#f5a623; border-radius:20px; padding:2px 8px; -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); letter-spacing:.02em; }
+  .fan-card-likes { position:absolute; top:8px; left:8px; z-index:2; font-size:.6rem; font-weight:800; background:rgba(0,0,0,.72); color:#f5a623; border-radius:20px; padding:2px 8px; -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); letter-spacing:.02em; }
   /* ── Fan edit form inputs ── */
   .fe-input { width:100%; box-sizing:border-box; background:#111; border:1px solid #333; border-radius:8px; padding:10px 14px; color:#fff; font-size:.83rem; font-family:inherit; outline:none; transition:border-color .2s; }
   .fe-input:focus { border-color:var(--orange); }
@@ -1214,6 +1216,7 @@
   .fan-record-name { font-weight:700; color:#fff; font-size:.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .fan-record-count { color:var(--orange); font-size:.78rem; font-weight:600; }
   .fan-record-avg { color:#aaa; font-size:.75rem; }
+  .fan-record-likes { color:#f5a623; font-size:.73rem; font-weight:700; margin-top:2px; }
   .fan-record-movies { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
   .fan-record-tag { background:#1e1e1e; color:#888; font-size:.65rem; padding:2px 7px; border-radius:20px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
 
@@ -2034,7 +2037,7 @@
     <div class="lb-header">
       <div class="lb-title-block">
         <h2>COMMUNITY <em>REVIEWS</em></h2>
-        <p>What the community thinks — films &amp; series</p>
+        <p>What the community is watching</p>
       </div>
     </div>
     <div class="community-filter-bar" id="communityFilterBar">
@@ -2042,6 +2045,7 @@
       <button class="cfb-btn"        data-filter="top"    onclick="filterCommunityReviews('top')">Top Rated</button>
       <button class="cfb-btn"        data-filter="recent" onclick="filterCommunityReviews('recent')">Recent</button>
     </div>
+    <button class="fan-write-btn" id="fanWriteBtn" onclick="toggleFanForm()">✍️ Write a Review</button>
     <div id="fanSetup" style="display:none">
       <div class="fan-setup-card">
         <div class="fan-setup-icon">🔥</div>
@@ -2307,9 +2311,10 @@
     <div class="lb-header">
       <div class="lb-title-block">
         <h2>SERIES <em>REVIEWS</em></h2>
-        <p>Post your series review below — all reviews appear in the Community tab</p>
+        <p>What the community is watching</p>
       </div>
     </div>
+    <button class="fan-write-btn" id="srFanWriteBtn" onclick="toggleSrFanForm()">✍️ Write a Review</button>
     <div id="srFanReviewForm" style="display:none">
       <div class="fan-form-wrap">
         <h3 class="fan-form-title">Leave a review</h3>
@@ -4287,6 +4292,32 @@
     return posterCache[key];
   }
 
+  const backdropCache = {};
+  function fetchBackdrop(title, mediaType = 'movie', tmdbId = null) {
+    const key = tmdbId
+      ? `id:${mediaType}:${tmdbId}`
+      : `q:${mediaType}:${title.toLowerCase().trim()}`;
+    if (backdropCache[key]) return backdropCache[key];
+
+    if (tmdbId) {
+      const endpoint = mediaType === 'tv' ? `tv/${tmdbId}` : `movie/${tmdbId}`;
+      backdropCache[key] = fetch(`${TMDB}/${endpoint}?api_key=${getKey()}`)
+        .then(r => r.json())
+        .then(data => data.backdrop_path ? `https://image.tmdb.org/t/p/w1280${data.backdrop_path}` : null)
+        .catch(() => null);
+    } else {
+      const endpoint = mediaType === 'tv' ? 'search/tv' : 'search/movie';
+      backdropCache[key] = fetch(`${TMDB}/${endpoint}?api_key=${getKey()}&query=${encodeURIComponent(title)}&language=en-US&page=1`)
+        .then(r => r.json())
+        .then(data => {
+          const hit = (data.results || []).find(m => m.backdrop_path);
+          return hit ? `https://image.tmdb.org/t/p/w1280${hit.backdrop_path}` : null;
+        })
+        .catch(() => null);
+    }
+    return backdropCache[key];
+  }
+
   let allReviews = [];
   const _reviewCardRegistry = new Map(); // fp → review object
   const FAN_PAGE_SIZE = 6;
@@ -4536,6 +4567,7 @@
       const isChallenge = !isTV && challengeTitle && (r.movie||'').toLowerCase().trim() === challengeTitle;
       const posterId   = `cr-poster-${idx}-${fp.slice(0,6)}`;
       const likes      = getFanLikes(fp, isTV ? 'tv' : 'movie');
+      const localR     = r; // pin to closure — prevents registry collision opening wrong review
 
       const card = document.createElement('div');
       card.className = 'fan-review-card';
@@ -4557,9 +4589,10 @@
           ${r.headline ? `<div class="fan-review-card-headline" dir="auto">${esc(r.headline)}</div>` : ''}
         </div>`;
 
-      card.addEventListener('click', () => openFanReviewPage(fp));
-
-      _reviewCardRegistry.set(fp, r);
+      card.addEventListener('click', () => {
+        _reviewCardRegistry.set(fp, localR); // always write the pinned review before opening
+        openFanReviewPage(fp);
+      });
       grid.appendChild(card);
 
       fetchPoster(r.movie, isTV ? 'tv' : 'movie', r.tmdbId || null).then(url => {
@@ -4679,6 +4712,17 @@
       if (pw && posterUrl) pw.innerHTML = `<img src="${posterUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:9px" alt="${esc(r.movie)}"/>`;
     });
 
+    fetchBackdrop(r.movie, isTV ? 'tv' : 'movie', r.tmdbId || null).then(backdropUrl => {
+      const bw = document.getElementById(`frBackdropWrap-${fp}`);
+      if (bw && backdropUrl) {
+        const img = document.createElement('img');
+        img.src = backdropUrl;
+        img.alt = r.movie || '';
+        img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;display:block';
+        bw.insertBefore(img, bw.firstChild);
+      }
+    });
+
     page.scrollTop = 0;
     document.body.style.overflow = 'hidden';
     _applyCmtCounts();
@@ -4691,6 +4735,24 @@
     const newCount = getFanLikes(fp, likeType);
     const countEl  = btn.querySelector('.like-count');
     if (countEl) countEl.textContent = newCount > 0 ? newCount : '';
+  }
+
+  // ── Write a Review toggle buttons ────────────────────────────────
+  function toggleFanForm() {
+    const form = document.getElementById('fanReviewForm');
+    const btn  = document.getElementById('fanWriteBtn');
+    const open = form.style.display === 'block';
+    form.style.display = open ? 'none' : 'block';
+    btn?.classList.toggle('open', !open);
+    if (!open) form.querySelector('input,textarea')?.focus();
+  }
+  function toggleSrFanForm() {
+    const form = document.getElementById('srFanReviewForm');
+    const btn  = document.getElementById('srFanWriteBtn');
+    const open = form.style.display === 'block';
+    form.style.display = open ? 'none' : 'block';
+    btn?.classList.toggle('open', !open);
+    if (!open) { setupSrFanStars(); form.querySelector('input,textarea')?.focus(); }
   }
 
   function closeFanReviewPage() {
@@ -4814,10 +4876,11 @@
     const map = {};
     reviews.forEach(r => {
       const key = (r.name || 'Anonymous').trim().toLowerCase();
-      if (!map[key]) map[key] = { name: (r.name || 'Anonymous').trim(), count: 0, totalRating: 0, movies: new Set() };
+      if (!map[key]) map[key] = { name: (r.name || 'Anonymous').trim(), count: 0, totalRating: 0, movies: new Set(), totalLikes: 0 };
       map[key].count++;
       map[key].totalRating += (r.rating || 0);
       if (r.movie) map[key].movies.add(r.movie.trim());
+      map[key].totalLikes += getFanLikes(fanReviewFp(r), r._mediaType === 'tv' ? 'tv' : 'movie');
     });
     const fans = Object.values(map).sort((a, b) =>
       // 1. Most reviews
@@ -4839,6 +4902,7 @@
         <div class="fan-record-name">${esc(f.name)}</div>${_authorBadge(f.name) ? `<div class="fan-record-badge">${_authorBadge(f.name)}</div>` : ''}
         <div class="fan-record-count">${f.count} review${f.count>1?'s':''}</div>
         <div class="fan-record-avg">★ ${avg} avg rating</div>
+        ${f.totalLikes > 0 ? `<div class="fan-record-likes">♥ ${f.totalLikes} like${f.totalLikes!==1?'s':''}</div>` : ''}
         <div class="fan-record-movies">${movies}</div>
       </div>`;
     }).join('')}</div>`;
@@ -4885,7 +4949,7 @@
     const form  = document.getElementById('fanReviewForm');
     const list  = document.getElementById('fanReviewsList');
     setup.style.display = 'none';
-    form.style.display  = 'block';
+    // Form stays hidden — user opens it via the Write a Review button
     setupFanStars();
     list.innerHTML = '<div class="yt-loading">Loading community reviews…</div>';
 
@@ -5042,89 +5106,44 @@
 
     visible.forEach((r, idx) => {
       const starsHtml = _starsHtml(r.rating);
-      const starsTxt  = _starShareStr(r.rating);
-      const ts    = r.timestamp ? new Date(r.timestamp) : null;
-      const date  = ts ? ts.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
-      const fp    = fanReviewFp(r);
-      const likes = getFanLikes(fp, 'tv');
-      const liked = hasFanLiked(fp);
-      const card  = document.createElement('div'); card.className = 'fan-review-card';
-      const posterId = `sr-poster-${idx}`;
+      const fp        = fanReviewFp(r);
+      const likes     = getFanLikes(fp, 'tv');
+      const posterId  = `sr-poster-${idx}-${fp.slice(0,6)}`;
+      const localR    = r; // pin to closure — prevents registry-collision bug
+
+      const card = document.createElement('div'); card.className = 'fan-review-card';
       card.innerHTML = `
         <div class="fan-review-poster" id="${posterId}">
           <div class="fan-review-poster-ph">📺</div>
         </div>
-        <div class="fan-review-content">
-          <div class="fan-review-top">
-            <div>
-              <div class="fan-reviewer">${esc(r.name || 'Anonymous')}${_authorBadge(r.name)}</div>
-              <div class="fan-review-movie">📺 ${esc(r.movie || '')}</div>
-            </div>
-            <div style="text-align:right">
-              <div class="fan-review-stars">${starsHtml}</div>
-              <div class="fan-review-date">${date}</div>
-            </div>
+        ${likes > 0 ? `<span class="fan-card-likes">♥ ${likes}</span>` : ''}
+        <div class="fan-review-card-info">
+          <div class="fan-review-card-title" dir="auto">${esc(r.movie || '')}</div>
+          <div class="fan-review-card-meta">
+            <span class="fan-review-stars" style="font-size:.75rem">${starsHtml}</span>
           </div>
-          <div class="fan-review-body" dir="auto">${esc(r.text || '')}</div>
-          <div class="fan-review-actions">
-            <button class="fan-like-btn${liked ? ' liked' : ''}" data-fp="${fp}" data-type="tv" onclick="toggleFanLike(this)">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-              <span class="like-count">${likes > 0 ? likes : ''}</span>
-            </button>
-            <button class="fan-comment-toggle" data-fp="${fp}" data-type="tv" onclick="toggleComments(this)">
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z"/></svg>
-              <span class="cmt-lbl">Comment</span>
-            </button>
-            <div style="position:relative">
-              <button class="fan-action-btn" onclick="toggleShareMenu('srsm-${fp}',event)">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
-                Share
-              </button>
-              <div class="card-share-menu" id="srsm-${fp}"
-                   data-title="${esc(r.name||'Anonymous')} on ${esc(r.movie||'')}"
-                   data-text="${esc(starsTxt + (starsTxt?' ':'') + (r.name||'Anonymous') + ' watched ' + (r.movie||'') + (r.text ? ' — ' + r.text.slice(0,140) + (r.text.length>140?'…':'') : ''))}"
-                   data-url="https://p-movies.com/#series">
-                <button class="card-share-opt" onclick="pmShareFromMenu(this,'whatsapp')">
-                  <svg viewBox="0 0 24 24" width="15" height="15" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.862L.054 23.625a.75.75 0 00.92.92l5.733-1.487A11.955 11.955 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/></svg>
-                  WhatsApp
-                </button>
-                <button class="card-share-opt" onclick="pmShareFromMenu(this,'x')">
-                  <svg viewBox="0 0 24 24" width="15" height="15" fill="#fff"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.259 5.631 5.905-5.631zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-                  X / Twitter
-                </button>
-                <button class="card-share-opt" onclick="pmShareFromMenu(this,'instagram')">
-                  <svg viewBox="0 0 24 24" width="15" height="15" fill="#E1306C"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-                  Instagram
-                </button>
-                <button class="card-share-opt" onclick="pmShareFromMenu(this,'copy')">
-                  <svg viewBox="0 0 24 24" width="15" height="15" fill="#aaa"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
-                  Copy link
-                </button>
-                <button class="card-share-opt" onclick="_openSrReviewCard('${fp}')">
-                  <svg viewBox="0 0 24 24" width="15" height="15" fill="#f5a623"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
-                  Save Card
-                </button>
-              </div>
-            </div>
+          <div class="fan-review-card-reviewer">
+            <span dir="auto">${esc(r.name || 'Anonymous')}</span>
+            ${_authorBadge(r.name)}
           </div>
-          <div class="fan-comments-panel" id="cmt-${fp}">
-            <div class="fan-comment-list"></div>
-            <div class="fan-comment-form">
-              <input class="cmt-name-input" placeholder="Your name" maxlength="60"/>
-              <textarea class="cmt-text-input" placeholder="Add a comment…" maxlength="500" dir="auto"></textarea>
-              <button class="fan-comment-submit" onclick="submitComment('${fp}','tv',this)">Post Comment</button>
-            </div>
-          </div>
-        </div>
-      `;
-      _srReviewCardRegistry.set(fp, r);
+          ${r.headline ? `<div class="fan-review-card-headline" dir="auto">${esc(r.headline)}</div>` : ''}
+        </div>`;
+
+      card.addEventListener('mouseenter', () => { card.style.transform='translateY(-5px)'; card.style.boxShadow='0 16px 48px rgba(0,0,0,.7)'; });
+      card.addEventListener('mouseleave', () => { card.style.transform=''; card.style.boxShadow=''; });
+      card.addEventListener('click', () => {
+        // Tag as TV and ensure registry has this exact review
+        localR._mediaType = 'tv';
+        _srReviewCardRegistry.set(fp, localR);
+        _reviewCardRegistry.set(fp, localR);
+        openFanReviewPage(fp);
+      });
+
       grid.appendChild(card);
-      if (r.movie) {
-        fetchPoster(r.movie, 'tv').then(url => {
-          const ph = document.getElementById(posterId);
-          if (ph && url) ph.innerHTML = `<img src="${url}" alt="${esc(r.movie)}" loading="lazy"/>`;
-        });
-      }
+      fetchPoster(r.movie, 'tv', r.tmdbId || null).then(url => {
+        const ph = document.getElementById(posterId);
+        if (ph && url) ph.innerHTML = `<img src="${url}" alt="${esc(r.movie)}" loading="lazy"/>`;
+      });
     });
     list.appendChild(grid);
 
@@ -5173,10 +5192,8 @@
     if (srReviewsLoaded || _loadingSeriesReviews) return;
     _loadingSeriesReviews = true;
     srFanReviewsShown = FAN_PAGE_SIZE;
-    const form = document.getElementById('srFanReviewForm');
     const list = document.getElementById('srFanReviewsList');
-    form.style.display = 'block';
-    setupSrFanStars();
+    setupSrFanStars(); // sets up stars; form stays hidden until user clicks Write a Review
     list.innerHTML = '<div class="yt-loading">Loading series reviews…</div>';
 
     try {
