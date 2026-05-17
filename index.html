@@ -6386,16 +6386,16 @@
           });
         }).catch(e => console.warn('[PWA] SW failed', e));
 
-        // When the new SW activates and broadcasts SW_UPDATED, silently reload
-        // so the user always gets the latest version without manual refresh.
-        // Safe because the new SW is already controlling by this point —
-        // it won't send SW_UPDATED again on the reloaded page.
-        let reloading = false;
+        // When the new SW activates, show the update toast so the user can
+        // choose when to refresh. Auto-reloading caused an infinite loop when
+        // Cloudflare edge-caches sw.js and alternates between old/new versions.
         navigator.serviceWorker.addEventListener('message', e => {
           if (e.data?.type !== 'SW_UPDATED') return;
-          if (reloading) return;
-          reloading = true;
-          location.reload();
+          const toast = document.getElementById('swUpdateToast');
+          if (!toast) return;
+          // Drive visibility via inline style (toast uses inline bottom, not CSS class)
+          toast.style.transition = 'bottom .4s cubic-bezier(.34,1.56,.64,1)';
+          toast.style.bottom = 'calc(20px + env(safe-area-inset-bottom, 0px))';
         });
       });
     }
