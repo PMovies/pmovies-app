@@ -887,11 +887,16 @@
   .fan-record-badge { margin-top:2px; line-height:1; }
   .fan-record-badge .reviewer-badge { margin-left:0; }
   .reviewer-badge-label { display:inline-block; font-size:.58rem; font-weight:800; letter-spacing:.06em; padding:2px 7px; border-radius:20px; text-transform:uppercase; }
-  .rb-newcomer .reviewer-badge-label { background:rgba(120,120,120,.18); color:#888; border:1px solid rgba(120,120,120,.25); }
-  .rb-buff .reviewer-badge-label     { background:rgba(245,166,35,.18); color:#f5a623; border:1px solid rgba(245,166,35,.35); box-shadow:0 0 7px rgba(245,166,35,.25); }
-  .rb-critic .reviewer-badge-label   { background:rgba(76,175,80,.18); color:#66bb6a; border:1px solid rgba(76,175,80,.35); box-shadow:0 0 7px rgba(76,175,80,.25); }
-  .rb-top .reviewer-badge-label      { background:rgba(33,150,243,.18); color:#64b5f6; border:1px solid rgba(33,150,243,.35); box-shadow:0 0 7px rgba(33,150,243,.3); }
-  .rb-legend .reviewer-badge-label   { background:rgba(186,104,200,.22); color:#ce93d8; border:1px solid rgba(186,104,200,.4); box-shadow:0 0 10px rgba(186,104,200,.35); }
+  /* Newcomer — muted grey */
+  .rb-newcomer .reviewer-badge-label   { background:rgba(120,120,120,.15); color:#999; border:1px solid rgba(150,150,150,.25); }
+  /* Cinephile — warm amber */
+  .rb-cinephile .reviewer-badge-label  { background:rgba(245,166,35,.18); color:#f5a623; border:1px solid rgba(245,166,35,.35); box-shadow:0 0 7px rgba(245,166,35,.2); }
+  /* Critic — teal/green */
+  .rb-critic .reviewer-badge-label     { background:rgba(76,175,80,.18); color:#66bb6a; border:1px solid rgba(76,175,80,.35); box-shadow:0 0 7px rgba(76,175,80,.22); }
+  /* Trusted Voice — electric blue */
+  .rb-trusted .reviewer-badge-label    { background:rgba(33,150,243,.18); color:#64b5f6; border:1px solid rgba(33,150,243,.35); box-shadow:0 0 8px rgba(33,150,243,.28); }
+  /* Legend — royal purple glow */
+  .rb-legend .reviewer-badge-label     { background:rgba(186,104,200,.22); color:#ce93d8; border:1px solid rgba(186,104,200,.4); box-shadow:0 0 12px rgba(186,104,200,.4); }
 
 
   /* ── Hover Backdrop ── */
@@ -10973,11 +10978,11 @@ function _authorBadge(name) {
   if (reviews <= 0) return '';
   const score = (reviews * 2) + ((data.likes || 0) * 3);
   let cls, icon, label;
-  if      (score >= 80) { cls='rb-legend';  icon='👑'; label='Legend';     }
-  else if (score >= 50) { cls='rb-top';     icon='🏆'; label='Top Critic'; }
-  else if (score >= 25) { cls='rb-critic';  icon='🎭'; label='Critic';     }
-  else if (score >= 10) { cls='rb-buff';    icon='⭐'; label='Film Buff';  }
-  else                  { cls='rb-newcomer';icon='🎬'; label='Newcomer';   }
+  if      (score >= 80) { cls='rb-legend';   icon='👑'; label='Legend';        }
+  else if (score >= 50) { cls='rb-trusted';  icon='🏆'; label='Trusted Voice'; }
+  else if (score >= 25) { cls='rb-critic';   icon='🎭'; label='Critic';        }
+  else if (score >= 10) { cls='rb-cinephile';icon='🎬'; label='Cinephile';     }
+  else                  { cls='rb-newcomer'; icon='🎫'; label='Newcomer';      }
   return `<span class="reviewer-badge ${cls}" title="${label}: ${reviews} review${reviews!==1?'s':''}, ${data.likes||0} likes">${icon}<span class="reviewer-badge-label">${label}</span></span>`;
 }
 
