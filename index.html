@@ -881,15 +881,15 @@
   .fotd-day-btn .fotd-day-dot { width:6px; height:6px; border-radius:50%; background:#f5a623; opacity:.7; flex-shrink:0; }
 
   /* ── Achievement Badges ── */
-  .reviewer-badge { display:inline-flex; align-items:center; font-size:.8rem; cursor:default; }
-  .fan-record-badge { margin-top:-2px; line-height:1; }
+  .reviewer-badge { display:inline-flex; align-items:center; gap:3px; font-size:.8rem; cursor:default; }
+  .fan-record-badge { margin-top:2px; line-height:1; }
   .fan-record-badge .reviewer-badge { margin-left:0; }
-  .reviewer-badge-label { display:inline-block; font-size:.6rem; font-weight:700; letter-spacing:.05em; padding:1px 5px; border-radius:6px; margin-left:5px; vertical-align:middle; text-transform:uppercase; }
-  .rb-newcomer .reviewer-badge-label { background:rgba(100,100,100,.2); color:#777; }
-  .rb-buff .reviewer-badge-label     { background:rgba(245,166,35,.15); color:#f5a623; }
-  .rb-critic .reviewer-badge-label   { background:rgba(76,175,80,.15); color:#4caf50; }
-  .rb-top .reviewer-badge-label      { background:rgba(33,150,243,.15); color:#2196f3; }
-  .rb-legend .reviewer-badge-label   { background:rgba(156,39,176,.2); color:#ce93d8; }
+  .reviewer-badge-label { display:inline-block; font-size:.58rem; font-weight:800; letter-spacing:.06em; padding:2px 7px; border-radius:20px; text-transform:uppercase; }
+  .rb-newcomer .reviewer-badge-label { background:rgba(120,120,120,.18); color:#888; border:1px solid rgba(120,120,120,.25); }
+  .rb-buff .reviewer-badge-label     { background:rgba(245,166,35,.18); color:#f5a623; border:1px solid rgba(245,166,35,.35); box-shadow:0 0 7px rgba(245,166,35,.25); }
+  .rb-critic .reviewer-badge-label   { background:rgba(76,175,80,.18); color:#66bb6a; border:1px solid rgba(76,175,80,.35); box-shadow:0 0 7px rgba(76,175,80,.25); }
+  .rb-top .reviewer-badge-label      { background:rgba(33,150,243,.18); color:#64b5f6; border:1px solid rgba(33,150,243,.35); box-shadow:0 0 7px rgba(33,150,243,.3); }
+  .rb-legend .reviewer-badge-label   { background:rgba(186,104,200,.22); color:#ce93d8; border:1px solid rgba(186,104,200,.4); box-shadow:0 0 10px rgba(186,104,200,.35); }
 
 
   /* ── Hover Backdrop ── */
@@ -1156,9 +1156,11 @@
   .fan-review-card-info { padding:10px 10px 13px; }
   .fan-review-card-title { font-family:'Bebas Neue',sans-serif; font-size:1.05rem; letter-spacing:.5px; color:#fff; line-height:1.2; margin-bottom:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .fan-review-card-meta { display:flex; align-items:center; gap:5px; flex-wrap:wrap; margin-bottom:4px; }
-  .fan-review-card-reviewer { font-size:.68rem; font-weight:700; color:#888; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+  .fan-review-card-reviewer { font-size:.68rem; font-weight:700; color:#888; display:flex; flex-direction:column; gap:4px; }
+  .fan-review-card-reviewer span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .fan-review-card-headline { font-size:.67rem; color:#777; font-style:italic; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
   .fan-type-badge { position:absolute; top:7px; left:7px; font-size:.58rem; font-weight:700; letter-spacing:.5px; background:rgba(0,0,0,.78); color:#f5a623; border-radius:20px; padding:2px 8px; -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); }
+  .fan-card-likes { position:absolute; top:8px; left:8px; font-size:.6rem; font-weight:800; background:rgba(0,0,0,.72); color:#f5a623; border-radius:20px; padding:2px 8px; -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); letter-spacing:.02em; }
   /* ── Fan edit form inputs ── */
   .fe-input { width:100%; box-sizing:border-box; background:#111; border:1px solid #333; border-radius:8px; padding:10px 14px; color:#fff; font-size:.83rem; font-family:inherit; outline:none; transition:border-color .2s; }
   .fe-input:focus { border-color:var(--orange); }
@@ -2037,8 +2039,6 @@
     </div>
     <div class="community-filter-bar" id="communityFilterBar">
       <button class="cfb-btn active" data-filter="all"    onclick="filterCommunityReviews('all')">All</button>
-      <button class="cfb-btn"        data-filter="films"  onclick="filterCommunityReviews('films')">Films</button>
-      <button class="cfb-btn"        data-filter="series" onclick="filterCommunityReviews('series')">Series</button>
       <button class="cfb-btn"        data-filter="top"    onclick="filterCommunityReviews('top')">Top Rated</button>
       <button class="cfb-btn"        data-filter="recent" onclick="filterCommunityReviews('recent')">Recent</button>
     </div>
@@ -4259,17 +4259,31 @@
   }
 
   const posterCache = {};
-  function fetchPoster(title, mediaType = 'movie') {
-    const key = (mediaType + ':' + title).toLowerCase().trim();
+  function fetchPoster(title, mediaType = 'movie', tmdbId = null) {
+    // Use tmdbId as cache key when available — avoids wrong-movie collisions
+    const key = tmdbId
+      ? `id:${mediaType}:${tmdbId}`
+      : `q:${mediaType}:${title.toLowerCase().trim()}`;
     if (posterCache[key]) return posterCache[key];
-    const endpoint = mediaType === 'tv' ? 'search/tv' : 'search/movie';
-    posterCache[key] = fetch(`${TMDB}/${endpoint}?api_key=${getKey()}&query=${encodeURIComponent(title)}&language=en-US&page=1`)
-      .then(r => r.json())
-      .then(data => {
-        const hit = (data.results || []).find(m => m.poster_path);
-        return hit ? `https://image.tmdb.org/t/p/w92${hit.poster_path}` : null;
-      })
-      .catch(() => null);
+
+    if (tmdbId) {
+      // Direct lookup by ID — accurate and uses w342 for crisp quality
+      const endpoint = mediaType === 'tv' ? `tv/${tmdbId}` : `movie/${tmdbId}`;
+      posterCache[key] = fetch(`${TMDB}/${endpoint}?api_key=${getKey()}`)
+        .then(r => r.json())
+        .then(data => data.poster_path ? `https://image.tmdb.org/t/p/w342${data.poster_path}` : null)
+        .catch(() => null);
+    } else {
+      // Title search fallback — w342 for same quality
+      const endpoint = mediaType === 'tv' ? 'search/tv' : 'search/movie';
+      posterCache[key] = fetch(`${TMDB}/${endpoint}?api_key=${getKey()}&query=${encodeURIComponent(title)}&language=en-US&page=1`)
+        .then(r => r.json())
+        .then(data => {
+          const hit = (data.results || []).find(m => m.poster_path);
+          return hit ? `https://image.tmdb.org/t/p/w342${hit.poster_path}` : null;
+        })
+        .catch(() => null);
+    }
     return posterCache[key];
   }
 
@@ -4292,8 +4306,6 @@
 
   function _getFilteredReviews() {
     let reviews = _allCommunityReviews.slice();
-    if (_communityFilter === 'films')  reviews = reviews.filter(r => r._mediaType !== 'tv');
-    if (_communityFilter === 'series') reviews = reviews.filter(r => r._mediaType === 'tv');
     if (_communityFilter === 'top') {
       reviews.sort((a, b) => {
         const scoreA = getFanLikes(fanReviewFp(a), a._mediaType === 'tv' ? 'tv' : 'movie') * 3 + (a.rating || 0) * 10;
@@ -4523,22 +4535,26 @@
       const isTV       = mediaType === 'tv';
       const isChallenge = !isTV && challengeTitle && (r.movie||'').toLowerCase().trim() === challengeTitle;
       const posterId   = `cr-poster-${idx}-${fp.slice(0,6)}`;
+      const likes      = getFanLikes(fp, isTV ? 'tv' : 'movie');
 
       const card = document.createElement('div');
       card.className = 'fan-review-card';
       card.innerHTML = `
         <div class="fan-review-poster" id="${posterId}">
-          <div class="fan-review-poster-ph">${isTV ? '📺' : '🎬'}</div>
+          <div class="fan-review-poster-ph">🎬</div>
         </div>
-        <span class="fan-type-badge">${isTV ? '📺 Series' : '🎬 Film'}</span>
         ${isChallenge ? '<span style="position:absolute;top:7px;right:7px;font-size:.58rem;font-weight:700;background:rgba(245,100,0,.85);color:#fff;border-radius:20px;padding:2px 8px">⚡ Challenge</span>' : ''}
+        ${likes > 0 ? `<span class="fan-card-likes">♥ ${likes}</span>` : ''}
         <div class="fan-review-card-info">
-          <div class="fan-review-card-title">${esc(r.movie || '')}</div>
+          <div class="fan-review-card-title" dir="auto">${esc(r.movie || '')}</div>
           <div class="fan-review-card-meta">
             <span class="fan-review-stars" style="font-size:.75rem">${starsHtml}</span>
           </div>
-          <div class="fan-review-card-reviewer">${esc(r.name || 'Anonymous')}${_authorBadge(r.name)}</div>
-          ${r.headline ? `<div class="fan-review-card-headline">${esc(r.headline)}</div>` : ''}
+          <div class="fan-review-card-reviewer">
+            <span dir="auto">${esc(r.name || 'Anonymous')}</span>
+            ${_authorBadge(r.name)}
+          </div>
+          ${r.headline ? `<div class="fan-review-card-headline" dir="auto">${esc(r.headline)}</div>` : ''}
         </div>`;
 
       card.addEventListener('click', () => openFanReviewPage(fp));
@@ -4546,7 +4562,7 @@
       _reviewCardRegistry.set(fp, r);
       grid.appendChild(card);
 
-      fetchPoster(r.movie, isTV ? 'tv' : 'movie').then(url => {
+      fetchPoster(r.movie, isTV ? 'tv' : 'movie', r.tmdbId || null).then(url => {
         const ph = document.getElementById(posterId);
         if (ph && url) ph.innerHTML = `<img src="${url}" alt="${esc(r.movie)}" loading="lazy"/>`;
       });
@@ -4625,12 +4641,12 @@
       <div style="display:grid;grid-template-columns:115px 1fr;gap:20px;padding:0 22px;margin-top:-65px;position:relative;z-index:2;max-width:720px;margin-left:auto;margin-right:auto">
         <div id="frPosterWrap-${fp}" style="width:115px;height:172px;background:#1a1a1a;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:2.2rem;flex-shrink:0;overflow:hidden">${isTV ? '📺' : '🎬'}</div>
         <div style="display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:6px">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:2px;color:#fff;line-height:1;margin-bottom:8px">${esc(r.movie||'')}</div>
+          <div dir="auto" style="font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:2px;color:#fff;line-height:1;margin-bottom:8px">${esc(r.movie||'')}</div>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
             <span style="font-size:.95rem;color:#f5a623">${starsHtml}</span>
             <span style="font-size:.6rem;font-weight:700;letter-spacing:1px;color:#888;text-transform:uppercase">${isTV ? 'Series' : 'Film'}</span>
           </div>
-          <div style="font-size:.75rem;font-weight:700;color:#aaa;margin-bottom:4px">${esc(r.name||'Anonymous')}${_authorBadge(r.name)}</div>
+          <div style="font-size:.75rem;font-weight:700;color:#aaa;margin-bottom:4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span dir="auto">${esc(r.name||'Anonymous')}</span>${_authorBadge(r.name)}</div>
           <div style="font-size:.62rem;color:#555">${date}</div>
         </div>
       </div>
@@ -4658,7 +4674,7 @@
         </div>
       </div>`;
 
-    fetchPoster(r.movie, isTV ? 'tv' : 'movie').then(posterUrl => {
+    fetchPoster(r.movie, isTV ? 'tv' : 'movie', r.tmdbId || null).then(posterUrl => {
       const pw = document.getElementById(`frPosterWrap-${fp}`);
       if (pw && posterUrl) pw.innerHTML = `<img src="${posterUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:9px" alt="${esc(r.movie)}"/>`;
     });
@@ -4666,6 +4682,7 @@
     page.scrollTop = 0;
     document.body.style.overflow = 'hidden';
     _applyCmtCounts();
+    try { history.pushState({ frFp: fp }, '', '#fan-review/' + fp); } catch(e) {}
   }
 
   function _updateFrLikeBtn(fp, likeType) {
@@ -4680,6 +4697,7 @@
     const page = document.getElementById('frPage');
     if (page) page.style.display = 'none';
     document.body.style.overflow = '';
+    try { history.pushState(null, '', '#community'); } catch(e) {}
   }
 
   // ── Edit review helpers ───────────────────────────────────────────
@@ -4871,7 +4889,7 @@
     setupFanStars();
     list.innerHTML = '<div class="yt-loading">Loading community reviews…</div>';
 
-    let rtdbReviews = [], fsReviews = [], seriesReviews = [];
+    let rtdbReviews = [], fsReviews = [];
 
     // 1. Load movies from RTDB (preserve key so edits can PATCH the right record)
     try {
@@ -4899,14 +4917,7 @@
       }
     } catch(_) {}
 
-    // 3. Load series from RTDB (preserve key so edits can PATCH the right record)
-    try {
-      const res  = await fetch(`${RTDB}/seriesFanReviews.json`);
-      const data = res.ok ? await res.json() : null;
-      if (data) seriesReviews = Object.entries(data).map(([k, r]) => ({ ...r, _mediaType: 'tv', _rtdbKey: k }));
-    } catch(_) {}
-
-    // 4. Merge movies — deduplicate by name+movie+text fingerprint
+    // 3. Merge movies — deduplicate by name+movie+text fingerprint
     const seen = new Set();
     const movieMerged = [...rtdbReviews, ...fsReviews].filter(r => {
       const key = `${(r.name||'').toLowerCase()}|${(r.movie||'').toLowerCase()}|${(r.text||'').slice(0,40).toLowerCase()}`;
@@ -4915,19 +4926,15 @@
       return true;
     }).map(r => ({ ...r, _mediaType: 'movie' }));
 
-    // 5. Merge all and sort by recency
-    const allMerged = [...movieMerged, ...seriesReviews]
-      .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    const allMerged = movieMerged.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-    await Promise.all([loadFanLikeCounts(), loadSrLikeCounts(), loadCommentCounts('movie'), loadCommentCounts('tv')]);
+    await Promise.all([loadFanLikeCounts(), loadCommentCounts('movie')]);
 
     _reviewAuthorCounts = {}; // reset before building
     _buildAuthorCounts(movieMerged, 'movie');
-    _buildAuthorCounts(seriesReviews, 'series');
 
     // Store in unified state
     allReviews = movieMerged;
-    allSeriesReviews = seriesReviews;
     _pmReviewsCache = movieMerged;
     _allCommunityReviews = allMerged;
 
@@ -5726,9 +5733,14 @@
       _loadAndShowReview(slug);
       try { switchTab('editor'); } catch(e) {}
       try { history.replaceState(null, '', '#review/' + slug); } catch(e) {}
+    } else if (hash.startsWith('fan-review/')) {
+      var fp = hash.slice(11).split('?')[0];
+      if (fp) _deepLinkFanReview(fp);
     } else {
       var pg = document.getElementById('erPage');
       if (pg) pg.style.display = 'none';
+      var frPg = document.getElementById('frPage');
+      if (frPg) frPg.style.display = 'none';
       document.body.style.overflow = '';
     }
   });
@@ -5742,12 +5754,32 @@
       _loadAndShowReview(slug);
       try { switchTab('editor'); } catch(e) {}
       try { history.replaceState(null, '', '#review/' + slug); } catch(e) {}
+    } else if (hash.startsWith('fan-review/')) {
+      var fp = hash.slice(11).split('?')[0];
+      if (fp) _deepLinkFanReview(fp);
     } else {
       var pg = document.getElementById('erPage');
       if (pg) pg.style.display = 'none';
+      var frPg = document.getElementById('frPage');
+      if (frPg) frPg.style.display = 'none';
       document.body.style.overflow = '';
     }
   });
+
+  // Open a fan review from a URL fp — loads reviews first if needed
+  async function _deepLinkFanReview(fp) {
+    try { switchTab('community'); } catch(e) {}
+    // If review is already in registry (tab was open), open directly
+    if (_reviewCardRegistry.has(fp) || _srReviewCardRegistry.has(fp)) {
+      openFanReviewPage(fp);
+      return;
+    }
+    // Otherwise load reviews first, then open
+    await loadFanReviews();
+    if (_reviewCardRegistry.has(fp) || _srReviewCardRegistry.has(fp)) {
+      openFanReviewPage(fp);
+    }
+  }
 
   /* ══ FRIENDS LETTERBOXD REVIEWS ══ */
   const LB_FRIENDS = [
@@ -6362,6 +6394,17 @@
     setInterval(loadFriendsReviews, 60 * 60 * 1000); // rotate every hour
     renderWatchlist();
     renderTvRv();
+    // Deep-link: open a fan review directly from URL
+    (function() {
+      var h = location.hash.replace('#', '');
+      if (h.startsWith('fan-review/')) {
+        var fp = h.slice(11).split('?')[0];
+        if (fp) {
+          // loadFanReviews() is already called above; wait for it then open
+          setTimeout(function() { _deepLinkFanReview(fp); }, 1200);
+        }
+      }
+    })();
   });
 
   /* ══════════════════════════════════════════════════════
