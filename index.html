@@ -1239,7 +1239,11 @@
   .card-share-opt { display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:7px; cursor:pointer; transition:.15s; border:none; background:none; width:100%; text-align:left; color:#fff; font-size:.78rem; font-weight:500; }
   .card-share-opt:hover { background:rgba(255,255,255,.1); }
 
-  
+  /* Fan review overlay — share/edit bar: push down on mobile for thumb reach */
+  @media (max-width: 600px) {
+    [id^="frActionsBar-"] { top: calc(env(safe-area-inset-top, 0px) + 72px) !important; }
+  }
+
   /* ── MODAL SHARE ── */
   .modal-share-wrap { position:relative; }
   .modal-share-btn { display:flex; align-items:center; gap:6px; background:transparent; border:1px solid rgba(255,255,255,.25); border-radius:8px; padding:10px 18px; color:#fff; font-size:.82rem; font-weight:700; letter-spacing:.05em; cursor:pointer; transition:.15s; white-space:nowrap; }
@@ -4686,7 +4690,7 @@
 
     page.innerHTML = `
       <button onclick="closeFanReviewPage()" style="position:fixed;top:calc(env(safe-area-inset-top,0px)+16px);left:16px;z-index:10001;background:rgba(0,0,0,.65);border:none;color:#fff;font-size:1.3rem;cursor:pointer;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)">←</button>
-      <div style="position:fixed;top:calc(env(safe-area-inset-top,0px)+16px);right:16px;z-index:10001;display:flex;gap:8px">
+      <div id="frActionsBar-${fp}" style="position:fixed;top:calc(env(safe-area-inset-top,0px)+16px);right:16px;z-index:10001;display:flex;gap:8px">
         ${_isMyReview(fp) ? `<button onclick="_openFanEditMode('${fp}')" style="background:rgba(0,0,0,.65);border:none;color:#ddd;font-size:.62rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;padding:11px 15px;border-radius:20px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);font-family:'Montserrat',sans-serif">✏️ Edit</button>` : ''}
         <div style="position:relative">
           <button onclick="toggleShareMenu('frShareMenu-${fp}',event)" style="background:rgba(0,0,0,.65);border:none;color:#ddd;font-size:.62rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;padding:11px 15px;border-radius:20px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);font-family:'Montserrat',sans-serif">🔗 Share</button>
@@ -5106,12 +5110,20 @@
         throw new Error(errBody.error || `Server error ${rtdbRes.status}`);
       }
       // Store fp → RTDB key in localStorage so the author can edit later
+      // Also write OG metadata immediately so share cards work right away
       try {
         const { name: rtdbKey } = await rtdbRes.clone().json(); // Firebase POST returns { name: "-KEY" }
         const fp = fanReviewFp(reviewData);
         const myMap = JSON.parse(localStorage.getItem('myReviewKeys') || '{}');
         myMap[fp] = { key: rtdbKey, path: 'fanReviews' };
         localStorage.setItem('myReviewKeys', JSON.stringify(myMap));
+        // Write OG meta — fetch backdrop async then write (backdrop=null if unavailable)
+        fetchBackdrop(movie, 'movie', tmdbId).then(backdropUrl => {
+          const backdropPath = backdropUrl
+            ? backdropUrl.replace('https://image.tmdb.org/t/p/w1280', '')
+            : null;
+          _writeReviewMeta(fp, reviewData, backdropPath);
+        }).catch(() => _writeReviewMeta(fp, reviewData, null));
       } catch(_) {}
       // Also write to Firestore via SDK if available (for users on cached version)
       if (fbDb) {
