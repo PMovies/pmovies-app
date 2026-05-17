@@ -4385,6 +4385,23 @@
   // _fpKey replaces '/' with '_' so the key is always a safe flat RTDB key.
   function _fpKey(fp) { return (fp || '').replace(/\//g, '_'); }
 
+  // Generate a clean, human-readable slug for share URLs: "the-drama-c2hlcmJp"
+  // Movie title (slugified, max 40 chars) + first 8 alphanum chars of fp for uniqueness.
+  function _reviewSlug(fp, movie) {
+    const movieSlug = (movie || 'film')
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 40) || 'film';
+    const fpPart = (fp || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 8);
+    return `${movieSlug}-${fpPart}`;
+  }
+
+  // Slug → fp map: populated when a review is opened so popstate can re-open without Firebase
+  const _slugRegistry = new Map();
+
   async function loadFanLikeCounts() {
     try {
       const res = await fetch(`${RTDB}/fanReviewLikes.json`);
@@ -4698,7 +4715,7 @@
           <div class="card-share-menu" id="frShareMenu-${fp}"
                data-title="${esc((r.name||'Anonymous') + ' on ' + (r.movie||''))}"
                data-text="${shareText}"
-               data-url="https://p-movies.com/fan-review/${fp}">
+               data-url="https://p-movies.com/fan/${_reviewSlug(fp, r.movie)}">
             <button class="card-share-opt" onclick="pmShareFromMenu(this,'whatsapp')"><svg viewBox="0 0 24 24" width="15" height="15" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.862L.054 23.625a.75.75 0 00.92.92l5.733-1.487A11.955 11.955 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/></svg>WhatsApp</button>
             <button class="card-share-opt" onclick="pmShareFromMenu(this,'x')"><svg viewBox="0 0 24 24" width="15" height="15" fill="#fff"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.259 5.631 5.905-5.631zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>X / Twitter</button>
             <button class="card-share-opt" onclick="pmShareFromMenu(this,'copy')"><svg viewBox="0 0 24 24" width="15" height="15" fill="#aaa"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>Copy link</button>
@@ -4774,22 +4791,25 @@
     page.scrollTop = 0;
     document.body.style.overflow = 'hidden';
     _applyCmtCounts();
-    // Use a real path URL so address-bar copies are also shareable with OG support.
-    // The Cloudflare Worker intercepts /fan-review/{fp}, serves OG tags to crawlers,
-    // and redirects real browsers to /#fan-review/{fp} which the app handles.
-    try { history.pushState({ frFp: fp }, '', '/fan-review/' + fp); } catch(e) {}
+    // Clean slug URL: p-movies.com/fan/the-drama-c2hlcmJp
+    // CF Worker serves OG tags to crawlers, redirects real browsers to /#fan-review/{fp}
+    const _openSlug = _reviewSlug(fp, r.movie);
+    _slugRegistry.set(_openSlug, fp);
+    try { history.pushState({ frFp: fp, frSlug: _openSlug }, '', '/fan/' + _openSlug); } catch(e) {}
   }
 
   // Write per-review OG metadata to Firebase so the CF Worker can build the share card.
   // Called lazily when a review is opened (backfills existing reviews) and on submit (new reviews).
   async function _writeReviewMeta(fp, r, backdropPath) {
     try {
-      const safeKey = _fpKey(fp);
+      const slug  = _reviewSlug(fp, r.movie);
       const stars = '★'.repeat(Math.round(r.rating || 0));
-      await fetch(`${RTDB}/fanReviewMeta/${encodeURIComponent(safeKey)}.json`, {
+      await fetch(`${RTDB}/fanReviewMeta/${encodeURIComponent(slug)}.json`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          fp,                          // stored so Worker can redirect browsers to /#fan-review/{fp}
+          slug,
           movie:     r.movie     || '',
           name:      r.name      || 'Anonymous',
           rating:    r.rating    || 0,
@@ -4833,7 +4853,7 @@
     const page = document.getElementById('frPage');
     if (page) page.style.display = 'none';
     document.body.style.overflow = '';
-    // Return address bar to root — avoids leaving /fan-review/{fp} in the URL after close
+    // Return address bar to root — avoids leaving /fan/{slug} in the URL after close
     try { history.pushState(null, '', '/#community'); } catch(e) {}
   }
 
@@ -5889,8 +5909,12 @@
     } else if (hash.startsWith('fan-review/')) {
       var fp = hash.slice(11).split('?')[0];
       if (fp) _deepLinkFanReview(fp);
+    } else if (pathname.startsWith('/fan/')) {
+      // Clean slug URL (from pushState in openFanReviewPage)
+      var slug2 = pathname.slice(5).split('?')[0];
+      if (slug2) _deepLinkFanSlug(slug2);
     } else if (pathname.startsWith('/fan-review/')) {
-      // Path-format URL (from pushState in openFanReviewPage)
+      // Legacy path format — still supported
       var fp2 = pathname.slice(12).split('?')[0];
       if (fp2) _deepLinkFanReview(fp2);
     } else {
@@ -5927,6 +5951,37 @@
         openFanReviewPage(fp);
       }
     } catch(e) {}
+  }
+
+  // Open a fan review from a clean slug URL (/fan/the-drama-c2hlcmJp).
+  // Checks local _slugRegistry first (set when review was opened this session),
+  // then falls back to Firebase lookup to get the fp.
+  async function _deepLinkFanSlug(slug) {
+    // Fast path: already seen this slug in this session
+    if (_slugRegistry.has(slug)) {
+      _deepLinkFanReview(_slugRegistry.get(slug)); return;
+    }
+    // Firebase lookup: fanReviewMeta/{slug} contains the fp
+    try {
+      const res = await fetch(`${RTDB}/fanReviewMeta/${encodeURIComponent(slug)}.json`);
+      if (res.ok) {
+        const meta = await res.json();
+        if (meta && meta.fp) {
+          _slugRegistry.set(slug, meta.fp);
+          _deepLinkFanReview(meta.fp); return;
+        }
+      }
+    } catch(_) {}
+    // If meta not found yet, fall back to loading all reviews and matching by slug
+    try {
+      await loadFanReviews();
+      for (const [fp] of _reviewCardRegistry) {
+        const r = _reviewCardRegistry.get(fp);
+        if (r && _reviewSlug(fp, r.movie) === slug) {
+          _deepLinkFanReview(fp); return;
+        }
+      }
+    } catch(_) {}
   }
 
   /* ══ FRIENDS LETTERBOXD REVIEWS ══ */
@@ -6542,15 +6597,17 @@
     setInterval(loadFriendsReviews, 60 * 60 * 1000); // rotate every hour
     renderWatchlist();
     renderTvRv();
-    // Deep-link: open a fan review directly from URL
+    // Deep-link: open a fan review directly from URL (hash or clean-slug path)
     (function() {
-      var h = location.hash.replace('#', '');
+      var h  = location.hash.replace('#', '');
+      var pn = location.pathname;
       if (h.startsWith('fan-review/')) {
         var fp = h.slice(11).split('?')[0];
-        if (fp) {
-          // loadFanReviews() is already called above; wait for it then open
-          setTimeout(function() { _deepLinkFanReview(fp); }, 1200);
-        }
+        if (fp) setTimeout(function() { _deepLinkFanReview(fp); }, 1200);
+      } else if (pn.startsWith('/fan/')) {
+        // Clean slug URL — CF Worker redirects crawlers, real browsers land here
+        var slug = pn.slice(5).split('?')[0];
+        if (slug) setTimeout(function() { _deepLinkFanSlug(slug); }, 1200);
       }
     })();
   });
