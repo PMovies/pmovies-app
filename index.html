@@ -6410,14 +6410,28 @@
     const DISMISS_KEY = 'pmovies_install_dismissed';
     const DISMISS_DAYS = 7;
 
+    /* Safe localStorage wrappers — private browsing on iOS throws SecurityError */
+    function lsGet(key) { try { return localStorage.getItem(key); } catch(e) { return null; } }
+    function lsSet(key, val) { try { localStorage.setItem(key, val); } catch(e) {} }
+
     function wasDismissedRecently() {
-      const ts = localStorage.getItem(DISMISS_KEY);
+      const ts = lsGet(DISMISS_KEY);
       if (!ts) return false;
-      return (Date.now() - parseInt(ts)) < DISMISS_DAYS * 864e5;
+      return (Date.now() - parseInt(ts, 10)) < DISMISS_DAYS * 864e5;
+    }
+
+    /* ── Only ever show ONE banner at a time ── */
+    const ALL_BANNERS = ['installBanner', 'iosTip'];
+    function showOnlyBanner(el) {
+      ALL_BANNERS.forEach(id => {
+        const other = document.getElementById(id);
+        if (other && other !== el) other.classList.remove('show');
+      });
+      el.classList.add('show');
     }
     function dismiss(el) {
       el.classList.remove('show');
-      localStorage.setItem(DISMISS_KEY, Date.now());
+      lsSet(DISMISS_KEY, Date.now());
     }
 
     const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
@@ -6426,16 +6440,16 @@
     /* ── iOS Safari: show tip after 3s ── */
     if (isIOS && isSafari && !wasDismissedRecently()) {
       // Only show once per browser session (handles private browsing)
-      if (sessionStorage.getItem('ios_tip_shown')) return;
+      try { if (sessionStorage.getItem('ios_tip_shown')) return; } catch(e) { return; }
       const tip = document.getElementById('iosTip');
       setTimeout(() => {
-        tip.classList.add('show');
-        sessionStorage.setItem('ios_tip_shown', '1');
+        showOnlyBanner(tip);
+        try { sessionStorage.setItem('ios_tip_shown', '1'); } catch(e) {}
         // Auto-dismiss after 8s if user doesn't interact
         setTimeout(() => { if (tip.classList.contains('show')) dismiss(tip); }, 8000);
       }, 3000);
       document.getElementById('iosTipClose').addEventListener('click', () => dismiss(tip));
-      return;
+      return; // ← prevents installBanner listener from being wired
     }
 
     /* ── Android/Chrome: intercept beforeinstallprompt ── */
@@ -6447,10 +6461,14 @@
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
-      if (!wasDismissedRecently() && !sessionStorage.getItem('install_banner_shown')) {
+      // Guard: don't show if iOS tip is already visible
+      const tipVisible = document.getElementById('iosTip').classList.contains('show');
+      if (tipVisible) return;
+      try { if (sessionStorage.getItem('install_banner_shown')) return; } catch(e) {}
+      if (!wasDismissedRecently()) {
         setTimeout(() => {
-          banner.classList.add('show');
-          sessionStorage.setItem('install_banner_shown', '1');
+          showOnlyBanner(banner);
+          try { sessionStorage.setItem('install_banner_shown', '1'); } catch(e) {}
           // Auto-dismiss after 8s if ignored
           setTimeout(() => { if (banner.classList.contains('show')) dismiss(banner); }, 8000);
         }, 2500);
@@ -10655,7 +10673,9 @@ async function postersLoadGallery() {
       if (img) img.addEventListener('click', () => postersOpenLightbox(key));
     });
   } catch(e) {
-    loading.innerHTML = `<p style="color:#555">Failed to load gallery.</p>`;
+    // Reset flag so switching away and back to Fan Art tab triggers a fresh retry
+    _postersLoaded = false;
+    loading.innerHTML = `<p style="color:#555">Failed to load gallery. <button onclick="_postersLoaded=false;postersInit()" style="background:transparent;border:1px solid #444;color:#aaa;border-radius:20px;padding:5px 16px;font-size:.75rem;cursor:pointer;margin-left:8px">↺ Retry</button></p>`;
   }
 }
 
@@ -11939,8 +11959,8 @@ async function loadEditorReviews() {
       ? Object.entries(data).map(([k,v]) => ({...v, _key:k}))
           .sort((a,b) => (b.publishedAt||0) - (a.publishedAt||0))
       : [];
-    editorLoaded = true;
     renderEditorReviews(_editorAllReviews);
+    editorLoaded = true; // set AFTER successful render so failures allow retry
     // Show filter bar + write button for admin
     const fb = document.getElementById('editorFilterBar');
     if (fb && _editorAllReviews.length > 3) fb.style.display = 'flex';
@@ -11949,7 +11969,8 @@ async function loadEditorReviews() {
       if (wb) wb.style.display = '';
     }
   } catch(e) {
-    if (grid) grid.innerHTML = '<div class="editor-empty">Could not load reviews.</div>';
+    // Don't set editorLoaded — leaves the door open for retry on next tab switch
+    if (grid) grid.innerHTML = '<div class="editor-empty" style="text-align:center;padding:60px 0">Could not load reviews.<br><button onclick="loadEditorReviews()" style="margin-top:14px;background:transparent;border:1px solid #444;color:#aaa;border-radius:20px;padding:7px 20px;font-size:.78rem;cursor:pointer">↺ Retry</button></div>';
   } finally {
     _loadingEditor = false;
   }
