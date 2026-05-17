@@ -4613,8 +4613,12 @@
           ${r.headline ? `<div class="fan-review-card-headline" dir="auto">${esc(r.headline)}</div>` : ''}
         </div>`;
 
+      // Set at render time so deep-links (_deepLinkFanReview) can find the review
+      // without waiting for a card click. The click handler pins localR again to
+      // win over any later render that may have overwritten the same fp key.
+      _reviewCardRegistry.set(fp, localR);
       card.addEventListener('click', () => {
-        _reviewCardRegistry.set(fp, localR); // always write the pinned review before opening
+        _reviewCardRegistry.set(fp, localR); // re-pin at click — collision safety
         openFanReviewPage(fp);
       });
       grid.appendChild(card);
@@ -5166,9 +5170,12 @@
 
       card.addEventListener('mouseenter', () => { card.style.transform='translateY(-5px)'; card.style.boxShadow='0 16px 48px rgba(0,0,0,.7)'; });
       card.addEventListener('mouseleave', () => { card.style.transform=''; card.style.boxShadow=''; });
+      // Set at render time so deep-links can find the review without a click
+      localR._mediaType = 'tv';
+      _srReviewCardRegistry.set(fp, localR);
+      _reviewCardRegistry.set(fp, localR);
       card.addEventListener('click', () => {
-        // Tag as TV and ensure registry has this exact review
-        localR._mediaType = 'tv';
+        // Re-pin at click time — collision safety
         _srReviewCardRegistry.set(fp, localR);
         _reviewCardRegistry.set(fp, localR);
         openFanReviewPage(fp);
@@ -5822,19 +5829,31 @@
     }
   });
 
-  // Open a fan review from a URL fp — loads reviews first if needed
+  // Open a fan review from a URL fp — loads reviews first if needed.
+  // Registries are now populated at render time (not just on click), so
+  // after loadFanReviews() / loadSeriesReviews() the fp is always findable.
   async function _deepLinkFanReview(fp) {
+    // Switch tab so the grid renders underneath the overlay
     try { switchTab('community'); } catch(e) {}
-    // If review is already in registry (tab was open), open directly
+
+    // Already in registry from a previous render → open immediately
     if (_reviewCardRegistry.has(fp) || _srReviewCardRegistry.has(fp)) {
-      openFanReviewPage(fp);
-      return;
+      openFanReviewPage(fp); return;
     }
-    // Otherwise load reviews first, then open
+
+    // Load film reviews first (most common case)
     await loadFanReviews();
     if (_reviewCardRegistry.has(fp) || _srReviewCardRegistry.has(fp)) {
-      openFanReviewPage(fp);
+      openFanReviewPage(fp); return;
     }
+
+    // Not a film review — try series reviews
+    try {
+      await loadSeriesReviews();
+      if (_reviewCardRegistry.has(fp) || _srReviewCardRegistry.has(fp)) {
+        openFanReviewPage(fp);
+      }
+    } catch(e) {}
   }
 
   /* ══ FRIENDS LETTERBOXD REVIEWS ══ */
