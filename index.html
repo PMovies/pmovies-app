@@ -4772,6 +4772,8 @@
       if (yrEl && yr) yrEl.textContent = yr;
     });
 
+    // Write meta immediately (no backdrop) so the slug key exists in Firebase right away
+    _writeReviewMeta(fp, r, null);
     fetchBackdrop(r.movie, isTV ? 'tv' : 'movie', r.tmdbId || null).then(backdropUrl => {
       const bw = document.getElementById(`frBackdropWrap-${fp}`);
       if (bw && backdropUrl) {
@@ -4781,11 +4783,11 @@
         img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;display:block';
         bw.insertBefore(img, bw.firstChild);
       }
-      // Write OG metadata (lazy backfill + new reviews) — backdrop path without base URL
+      // Update meta with real backdrop once it loads
       const backdropPath = backdropUrl
         ? backdropUrl.replace('https://image.tmdb.org/t/p/w1280', '')
         : null;
-      _writeReviewMeta(fp, r, backdropPath);
+      if (backdropPath) _writeReviewMeta(fp, r, backdropPath);
     });
 
     page.scrollTop = 0;
@@ -5159,13 +5161,15 @@
         const myMap = JSON.parse(localStorage.getItem('myReviewKeys') || '{}');
         myMap[fp] = { key: rtdbKey, path: 'fanReviews' };
         localStorage.setItem('myReviewKeys', JSON.stringify(myMap));
-        // Write OG meta — fetch backdrop async then write (backdrop=null if unavailable)
+        // Write OG meta immediately (no backdrop yet) so Twitter can scrape right away,
+        // then update with the real backdrop once the TMDB fetch completes.
+        _writeReviewMeta(fp, reviewData, null);
         fetchBackdrop(movie, 'movie', tmdbId).then(backdropUrl => {
           const backdropPath = backdropUrl
             ? backdropUrl.replace('https://image.tmdb.org/t/p/w1280', '')
             : null;
-          _writeReviewMeta(fp, reviewData, backdropPath);
-        }).catch(() => _writeReviewMeta(fp, reviewData, null));
+          if (backdropPath) _writeReviewMeta(fp, reviewData, backdropPath);
+        }).catch(() => {});
       } catch(_) {}
       // Also write to Firestore via SDK if available (for users on cached version)
       if (fbDb) {
