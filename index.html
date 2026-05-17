@@ -1239,9 +1239,10 @@
   .card-share-opt { display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:7px; cursor:pointer; transition:.15s; border:none; background:none; width:100%; text-align:left; color:#fff; font-size:.78rem; font-weight:500; }
   .card-share-opt:hover { background:rgba(255,255,255,.1); }
 
-  /* Fan review overlay — share/edit bar: push down on mobile for thumb reach */
+  /* Fan review overlay — both buttons sit just below the status bar on mobile */
   @media (max-width: 600px) {
-    [id^="frActionsBar-"] { top: calc(env(safe-area-inset-top, 0px) + 72px) !important; }
+    [id^="frBackBtn-"],
+    [id^="frActionsBar-"] { top: calc(env(safe-area-inset-top, 44px) + 8px) !important; }
   }
 
   /* ── MODAL SHARE ── */
@@ -4689,7 +4690,7 @@
     const shareText = esc(starsTxt + (starsTxt?' ':'') + (r.name||'Anonymous') + ' watched ' + (r.movie||'') + (r.text ? ' — ' + r.text.slice(0,140) + (r.text.length>140?'…':'') : ''));
 
     page.innerHTML = `
-      <button onclick="closeFanReviewPage()" style="position:fixed;top:calc(env(safe-area-inset-top,0px)+16px);left:16px;z-index:10001;background:rgba(0,0,0,.65);border:none;color:#fff;font-size:1.3rem;cursor:pointer;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)">←</button>
+      <button id="frBackBtn-${fp}" onclick="closeFanReviewPage()" style="position:fixed;top:calc(env(safe-area-inset-top,0px)+16px);left:16px;z-index:10001;background:rgba(0,0,0,.65);border:none;color:#fff;font-size:1.3rem;cursor:pointer;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)">←</button>
       <div id="frActionsBar-${fp}" style="position:fixed;top:calc(env(safe-area-inset-top,0px)+16px);right:16px;z-index:10001;display:flex;gap:8px">
         ${_isMyReview(fp) ? `<button onclick="_openFanEditMode('${fp}')" style="background:rgba(0,0,0,.65);border:none;color:#ddd;font-size:.62rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;padding:11px 15px;border-radius:20px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);font-family:'Montserrat',sans-serif">✏️ Edit</button>` : ''}
         <div style="position:relative">
@@ -4968,7 +4969,10 @@
     );
     const medals = ['🥇', '🥈', '🥉'];
     const rankClass = ['rank-1', 'rank-2', 'rank-3'];
-    return `<div class="fan-records-grid">${fans.map((f, i) => {
+    const TOP = 4;
+    const visible = fans.slice(0, TOP);
+    const hidden  = fans.slice(TOP);
+    const renderCard = (f, i) => {
       const avg    = (f.totalRating / f.count).toFixed(1);
       const movies = [...f.movies].slice(0, 3).map(m => `<span class="fan-record-tag">🎬 ${esc(m)}</span>`).join('');
       return `<div class="fan-record-card ${rankClass[i]||''}">
@@ -4979,7 +4983,25 @@
         ${f.totalLikes > 0 ? `<div class="fan-record-likes">♥ ${f.totalLikes} like${f.totalLikes!==1?'s':''}</div>` : ''}
         <div class="fan-record-movies">${movies}</div>
       </div>`;
-    }).join('')}</div>`;
+    };
+    const hiddenHTML = hidden.length
+      ? `<div id="fanRecordsExtra" style="display:none">${hidden.map((f, j) => renderCard(f, TOP + j)).join('')}</div>
+         <div id="fanRecordsMoreWrap" style="grid-column:1/-1;text-align:center;margin-top:4px">
+           <button onclick="_showAllFanRecords()" style="background:none;border:1px solid rgba(255,255,255,.15);color:#888;font-size:.75rem;font-weight:600;letter-spacing:.06em;padding:7px 20px;border-radius:20px;cursor:pointer;font-family:'Montserrat',sans-serif">+${hidden.length} more</button>
+         </div>`
+      : '';
+    return `<div class="fan-records-grid">${visible.map((f, i) => renderCard(f, i)).join('')}${hiddenHTML}</div>`;
+  }
+
+  function _showAllFanRecords() {
+    const extra = document.getElementById('fanRecordsExtra');
+    const moreWrap = document.getElementById('fanRecordsMoreWrap');
+    if (!extra) return;
+    const grid = extra.closest('.fan-records-grid');
+    // Move hidden cards into the grid before the "more" button wrapper
+    while (extra.firstChild) grid.insertBefore(extra.firstChild, moreWrap);
+    extra.remove();
+    moreWrap.remove();
   }
 
   function renderFanRecords(reviews, tab) {
