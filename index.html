@@ -6275,7 +6275,7 @@
       background:var(--orange);color:#000;border:none;border-radius:20px;
       padding:6px 16px;font-weight:800;font-size:.75rem;cursor:pointer;white-space:nowrap;
     ">Refresh</button>
-    <button onclick="this.closest('#swUpdateToast').style.bottom='-80px'" style="
+    <button onclick="this.closest('#swUpdateToast').style.bottom='-80px';window._swUpdateToastVisible=false;" style="
       background:transparent;border:none;color:#666;font-size:.9rem;cursor:pointer;padding:2px 4px;
     ">✕</button>
   </div>
@@ -6391,10 +6391,15 @@
         // Cloudflare edge-caches sw.js and alternates between old/new versions.
         navigator.serviceWorker.addEventListener('message', e => {
           if (e.data?.type !== 'SW_UPDATED') return;
+          // Dismiss any install banners so nothing stacks with the toast
+          ['installBanner', 'iosTip'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('show');
+          });
+          window._swUpdateToastVisible = true;
           const toast = document.getElementById('swUpdateToast');
           if (!toast) return;
           // Drive visibility via inline style (toast uses inline bottom, not CSS class)
-          toast.style.transition = 'bottom .4s cubic-bezier(.34,1.56,.64,1)';
           toast.style.bottom = 'calc(20px + env(safe-area-inset-bottom, 0px))';
         });
       });
@@ -6423,6 +6428,8 @@
     /* ── Only ever show ONE banner at a time ── */
     const ALL_BANNERS = ['installBanner', 'iosTip'];
     function showOnlyBanner(el) {
+      // Don't stack with the SW update toast if it's already visible
+      if (window._swUpdateToastVisible) return;
       ALL_BANNERS.forEach(id => {
         const other = document.getElementById(id);
         if (other && other !== el) other.classList.remove('show');
