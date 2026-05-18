@@ -1748,9 +1748,222 @@
     .journey-or { padding:0; width:100%; order:3; margin-top:-8px; font-size:.65rem; }
     .journey-films-grid { grid-template-columns:repeat(2,1fr); }
   }
+
+  /* ── LANDING SCREEN ──────────────────────────────────── */
+  #pmLandingScreen {
+    position: fixed; inset: 0; z-index: 99999;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: linear-gradient(170deg, #080808 0%, #100b00 60%, #080808 100%);
+    padding: 32px 24px; padding-bottom: max(32px, env(safe-area-inset-bottom, 32px));
+    text-align: center; overflow-y: auto;
+  }
+  #pmLandingScreen::before {
+    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  }
+  #pmLandingScreen > * { position: relative; z-index: 1; }
+  .pm-landing-logowrap {
+    width: 88px; height: 88px; border-radius: 18px;
+    border: 3px solid var(--orange);
+    box-shadow: 0 0 28px rgba(245,166,35,.55), 0 0 80px rgba(245,166,35,.12);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 20px; background: #0f0a00; overflow: hidden;
+  }
+  .pm-landing-logowrap img { width: 100%; height: 100%; object-fit: cover; border-radius: 15px; }
+  .pm-landing-wordmark {
+    font-family: 'Bebas Neue', sans-serif; font-size: 3.8rem; letter-spacing: 8px;
+    color: #f0f0f0; line-height: 1; margin-bottom: 10px;
+  }
+  .pm-landing-wordmark span { color: var(--orange); }
+  .pm-landing-tagline {
+    font-family: 'Montserrat', sans-serif; font-size: .68rem;
+    letter-spacing: 4px; text-transform: uppercase; color: #666; margin-bottom: 44px;
+  }
+  .pm-landing-btn-google {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    width: 100%; max-width: 320px; background: #fff; color: #1a1a1a;
+    border: none; border-radius: 50px; padding: 14px 24px;
+    font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: .9rem;
+    cursor: pointer; transition: transform .15s, box-shadow .15s; margin-bottom: 14px;
+  }
+  .pm-landing-btn-google:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,0,0,.6); }
+  .pm-landing-btn-google svg { flex-shrink: 0; }
+  .pm-landing-btn-guest {
+    background: transparent; border: 1px solid #2a2a2a; border-radius: 50px;
+    color: #777; padding: 11px 28px; font-family: 'Montserrat', sans-serif;
+    font-size: .78rem; font-weight: 600; cursor: pointer;
+    transition: border-color .2s, color .2s;
+    width: 100%; max-width: 320px; margin-bottom: 44px;
+  }
+  .pm-landing-btn-guest:hover { border-color: #444; color: #aaa; }
+  .pm-landing-benefits {
+    list-style: none; padding: 0; margin: 0; max-width: 268px; text-align: left;
+  }
+  .pm-landing-benefits li {
+    font-family: 'Open Sans', sans-serif; font-size: .77rem; color: #666;
+    padding: 5px 0; display: flex; align-items: center; gap: 10px;
+  }
+  .pm-landing-benefits li .pm-bi { font-size: .95rem; flex-shrink: 0; width: 20px; text-align: center; }
+
+  /* ── NICKNAME SETUP OVERLAY ──────────────────────────── */
+  #pmNicknameOverlay {
+    position: fixed; inset: 0; z-index: 99998;
+    background: rgba(0,0,0,.88); display: none;
+    align-items: center; justify-content: center; padding: 24px;
+    backdrop-filter: blur(6px);
+  }
+  .pm-nickname-card {
+    background: #141414; border: 1px solid #252525;
+    border-radius: 20px; padding: 32px 28px; max-width: 380px; width: 100%; text-align: center;
+  }
+  .pm-nickname-title {
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.9rem;
+    letter-spacing: 3px; color: #f0f0f0; margin-bottom: 8px;
+  }
+  .pm-nickname-sub { font-size: .8rem; color: #666; margin-bottom: 24px; line-height: 1.6; }
+  .pm-nickname-input {
+    width: 100%; background: #111; border: 1px solid #333; border-radius: 10px;
+    color: #f0f0f0; font-family: 'Montserrat', sans-serif;
+    font-size: .95rem; font-weight: 600; padding: 13px 16px;
+    box-sizing: border-box; outline: none; text-align: center;
+    margin-bottom: 8px; transition: border-color .2s;
+  }
+  .pm-nickname-input:focus { border-color: var(--orange); }
+  .pm-nickname-hint { font-size: .7rem; color: #444; margin-bottom: 22px; }
+  .pm-nickname-submit {
+    width: 100%; background: var(--orange); color: #000;
+    border: none; border-radius: 50px; padding: 13px;
+    font-family: 'Montserrat', sans-serif; font-weight: 800;
+    font-size: .85rem; letter-spacing: 1px; cursor: pointer;
+    transition: background .2s, opacity .2s;
+  }
+  .pm-nickname-submit:hover { background: var(--orange2); }
+  .pm-nickname-submit:disabled { opacity: .6; cursor: default; }
+  .pm-nickname-error { font-size: .74rem; color: #f55; margin-top: 10px; display: none; }
+
+  /* ── WELCOME STRIP ───────────────────────────────────── */
+  #pmWelcomeStrip {
+    display: none;
+    background: linear-gradient(135deg, rgba(245,166,35,.07) 0%, rgba(245,166,35,.03) 100%);
+    border: 1px solid rgba(245,166,35,.14); border-radius: 14px;
+    padding: 14px 18px; margin-bottom: 20px;
+  }
+  .pm-welcome-greeting {
+    font-family: 'Montserrat', sans-serif; font-weight: 700;
+    font-size: .88rem; color: #f0f0f0; margin-bottom: 4px;
+    display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+  }
+  .pm-welcome-badge {
+    display: inline-block; background: rgba(245,166,35,.14);
+    color: var(--orange); font-size: .62rem; font-weight: 700;
+    letter-spacing: 1px; padding: 2px 8px; border-radius: 20px;
+  }
+  .pm-welcome-quote { font-size: .73rem; color: #555; font-style: italic; margin-top: 4px; line-height: 1.5; }
+
+  /* ── SIGN-IN PROMPT (gated actions) ──────────────────── */
+  #pmSignInPrompt {
+    position: fixed; inset: 0; z-index: 99997;
+    background: rgba(0,0,0,.82); display: none;
+    align-items: center; justify-content: center; padding: 24px;
+    backdrop-filter: blur(4px);
+  }
+  .pm-sip-card {
+    background: #141414; border: 1px solid #252525;
+    border-radius: 20px; padding: 32px 28px; max-width: 340px; width: 100%; text-align: center;
+  }
+  .pm-sip-icon { font-size: 2rem; margin-bottom: 12px; }
+  .pm-sip-title {
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.7rem;
+    letter-spacing: 2px; color: #f0f0f0; margin-bottom: 8px;
+  }
+  .pm-sip-sub { font-size: .78rem; color: #666; margin-bottom: 24px; line-height: 1.6; }
+  .pm-sip-btn {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    width: 100%; background: #fff; color: #1a1a1a;
+    border: none; border-radius: 50px; padding: 13px;
+    font-family: 'Montserrat', sans-serif; font-weight: 700;
+    font-size: .85rem; cursor: pointer; margin-bottom: 10px;
+    transition: transform .15s;
+  }
+  .pm-sip-btn:hover { transform: translateY(-1px); }
+  .pm-sip-cancel {
+    background: transparent; border: none; color: #555;
+    font-family: 'Montserrat', sans-serif; font-size: .78rem;
+    cursor: pointer; padding: 8px; display: block; width: 100%;
+  }
+  .pm-sip-cancel:hover { color: #888; }
 </style>
 </head>
 <body>
+
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!-- ║  LANDING SCREEN — shown every visit until signed in     ║ -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<div id="pmLandingScreen">
+  <div class="pm-landing-logowrap">
+    <img id="pmLandingLogo" src="" alt="PMovies" style="display:none"/>
+    <span id="pmLandingLogoFallback" style="font-family:'Bebas Neue',sans-serif;font-size:2.4rem;color:var(--orange);letter-spacing:2px">P</span>
+  </div>
+  <div class="pm-landing-wordmark">P<span>Movies</span></div>
+  <div class="pm-landing-tagline">Cinema lives here</div>
+
+  <button class="pm-landing-btn-google" onclick="pmSignInWithGoogle()">
+    <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+    </svg>
+    Sign in with Google
+  </button>
+
+  <button class="pm-landing-btn-guest" onclick="pmEnterAsGuest()">Enter as Guest</button>
+
+  <ul class="pm-landing-benefits">
+    <li><span class="pm-bi">♥</span><span>Like and engage with reviews</span></li>
+    <li><span class="pm-bi">✍️</span><span>Write reviews that live on your profile</span></li>
+    <li><span class="pm-bi">🏆</span><span>Build your badge through contribution</span></li>
+    <li><span class="pm-bi">🎬</span><span>A home experience built around you</span></li>
+  </ul>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!-- ║  NICKNAME SETUP — first sign-in only                    ║ -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<div id="pmNicknameOverlay">
+  <div class="pm-nickname-card">
+    <div style="font-size:2rem;margin-bottom:14px">🎬</div>
+    <div class="pm-nickname-title">One Last Thing</div>
+    <div class="pm-nickname-sub">What should we call you on PMovies?<br>You can change this once every 30 days.</div>
+    <input class="pm-nickname-input" id="pmNicknameInput" type="text"
+           placeholder="Your nickname…" maxlength="30"
+           onkeydown="if(event.key==='Enter')pmSubmitNickname()"/>
+    <div class="pm-nickname-hint">2–30 characters · Letters, numbers and spaces</div>
+    <button class="pm-nickname-submit" id="pmNicknameSubmitBtn" onclick="pmSubmitNickname()">JOIN PMOVIES</button>
+    <div class="pm-nickname-error" id="pmNicknameError"></div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!-- ║  SIGN-IN PROMPT — shown when guest taps gated actions   ║ -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<div id="pmSignInPrompt" onclick="if(event.target===this)pmCloseSignInPrompt()">
+  <div class="pm-sip-card">
+    <div class="pm-sip-icon">🎬</div>
+    <div class="pm-sip-title">Join PMovies</div>
+    <div class="pm-sip-sub">Sign in to like, review, and build your profile.<br>It only takes a second.</div>
+    <button class="pm-sip-btn" onclick="pmSignInWithGoogle()">
+      <svg width="18" height="18" viewBox="0 0 24 24">
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+      </svg>
+      Sign in with Google
+    </button>
+    <button class="pm-sip-cancel" onclick="pmCloseSignInPrompt()">Maybe later</button>
+  </div>
+</div>
 
 <!-- CINEMATIC PAGE BACKDROP (fixed, behind everything) -->
 <div class="page-backdrop" id="pageBackdrop"></div>
@@ -1829,6 +2042,11 @@
 </nav>
 <div class="tab-panel active" id="tab-panel-discover">
 
+  <!-- ── SIGNED-IN WELCOME STRIP (hidden until auth resolves) ── -->
+  <div id="pmWelcomeStrip">
+    <div class="pm-welcome-greeting" id="pmWelcomeGreeting"></div>
+    <div class="pm-welcome-quote" id="pmWelcomeQuote"></div>
+  </div>
 
   <!-- RECENTLY VIEWED -->
   <div class="rv-section" id="rvSection" style="display:none">
@@ -6831,6 +7049,7 @@
 <!-- Firebase SDK (compat v9) -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
   <!-- INSTALL BANNER (Android/Chrome) -->
   <!-- SW UPDATE TOAST -->
@@ -13084,6 +13303,310 @@ async function deleteEditorReview(key, e) {
     if (_origSwitch) _origSwitch.apply(this, arguments);
     if (name === 'editor') setTimeout(_wireButton, 0);
   };
+})();
+</script>
+
+
+<!-- ╔══════════════════════════════════════════════════════════════╗ -->
+<!-- ║  PMOVIES AUTH — Session 1                                   ║ -->
+<!-- ╚══════════════════════════════════════════════════════════════╝ -->
+<script>
+(function() {
+  'use strict';
+
+  const RTDB = 'https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app';
+  const FB_CONFIG = {
+    apiKey:            'AIzaSyDiQAYe-25hqZJxH-2RQosDHyotUH_XuVM',
+    authDomain:        'pmovies-f0ddc.firebaseapp.com',
+    projectId:         'pmovies-f0ddc',
+    appId:             '1:887168953314:web:87d5338a4907d12745a7bb',
+    messagingSenderId: '887168953314',
+    storageBucket:     'pmovies-f0ddc.firebasestorage.app',
+    databaseURL:       RTDB
+  };
+
+  let _pmUser = null;
+
+  // Ensure Firebase App is initialized (may already be done by existing code)
+  if (!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
+
+  // Mirror logo into landing screen once the main logo loads
+  (function syncLandingLogo() {
+    const main = document.getElementById('channelLogo');
+    const landing = document.getElementById('pmLandingLogo');
+    const fallback = document.getElementById('pmLandingLogoFallback');
+    if (!landing) return;
+    function trySync() {
+      if (main && main.src && main.src !== window.location.href && main.complete && main.naturalWidth > 0) {
+        landing.src = main.src;
+        landing.style.display = '';
+        if (fallback) fallback.style.display = 'none';
+      }
+    }
+    trySync();
+    if (main) main.addEventListener('load', trySync);
+    setTimeout(trySync, 1500);
+  })();
+
+  // ── Auth State Listener ──────────────────────────────────────────
+  firebase.auth().onAuthStateChanged(function(user) {
+    _pmUser = user;
+    if (user) {
+      _hideLanding();
+      _checkNickname(user);
+      _checkEditorRole(user.uid);
+    } else if (sessionStorage.getItem('pmovies_guest') === '1') {
+      _hideLanding();
+    } else {
+      _showLanding();
+    }
+  });
+
+  // ── Landing Screen ───────────────────────────────────────────────
+  function _showLanding() {
+    var el = document.getElementById('pmLandingScreen');
+    if (el) { el.style.display = 'flex'; el.style.opacity = '1'; }
+  }
+
+  function _hideLanding() {
+    var el = document.getElementById('pmLandingScreen');
+    if (!el || el.style.display === 'none') return;
+    el.style.transition = 'opacity .35s';
+    el.style.opacity = '0';
+    setTimeout(function() { el.style.display = 'none'; el.style.opacity = ''; el.style.transition = ''; }, 360);
+  }
+
+  // ── Google Sign-In ────────────────────────────────────────────────
+  window.pmSignInWithGoogle = function() {
+    if (!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
+    var provider = new firebase.auth.GoogleAuthProvider();
+    // If called from the sign-in prompt, close it after success
+    firebase.auth().signInWithPopup(provider).then(function() {
+      document.getElementById('pmSignInPrompt').style.display = 'none';
+    }).catch(function(err) {
+      if (err.code !== 'auth/popup-closed-by-user' &&
+          err.code !== 'auth/cancelled-popup-request') {
+        console.error('[PMovies Auth] Sign-in error:', err.message);
+        alert('Sign-in failed. Please try again.');
+      }
+    });
+  };
+
+  // ── Guest Entry ──────────────────────────────────────────────────
+  window.pmEnterAsGuest = function() {
+    sessionStorage.setItem('pmovies_guest', '1');
+    _hideLanding();
+  };
+
+  // ── Sign-Out ─────────────────────────────────────────────────────
+  window.pmSignOut = function() {
+    firebase.auth().signOut().then(function() {
+      localStorage.removeItem('pmovies_admin');
+      sessionStorage.removeItem('pmovies_guest');
+      window._pmEditorAuthVerified = false;
+      var strip = document.getElementById('pmWelcomeStrip');
+      if (strip) strip.style.display = 'none';
+    });
+  };
+
+  // ── Auth guard — call before any gated action ────────────────────
+  window.pmRequireAuth = function() {
+    if (_pmUser) return true;
+    document.getElementById('pmSignInPrompt').style.display = 'flex';
+    return false;
+  };
+  window.pmCloseSignInPrompt = function() {
+    document.getElementById('pmSignInPrompt').style.display = 'none';
+  };
+  window.pmGetUser   = function() { return _pmUser; };
+  window.pmIsSignedIn = function() { return !!_pmUser; };
+
+  // ── Nickname Check ───────────────────────────────────────────────
+  async function _checkNickname(user) {
+    try {
+      var token = await user.getIdToken();
+      var res = await fetch(RTDB + '/users/' + user.uid + '/nickname.json?auth=' + token);
+      var nickname = res.ok ? await res.json() : null;
+      if (!nickname) {
+        _showNicknameOverlay(user);
+      } else {
+        _showWelcomeStrip(nickname, user.uid);
+      }
+    } catch(e) {
+      // Network error — fall back gracefully
+      _showWelcomeStrip(user.displayName || 'Cinephile', user.uid);
+    }
+  }
+
+  function _showNicknameOverlay(user) {
+    var input = document.getElementById('pmNicknameInput');
+    if (input && user.displayName) input.value = user.displayName;
+    var ov = document.getElementById('pmNicknameOverlay');
+    if (ov) ov.style.display = 'flex';
+  }
+
+  window.pmSubmitNickname = async function() {
+    var input   = document.getElementById('pmNicknameInput');
+    var errEl   = document.getElementById('pmNicknameError');
+    var btn     = document.getElementById('pmNicknameSubmitBtn');
+    var nickname = (input ? input.value : '').trim();
+
+    errEl.style.display = 'none';
+
+    if (!nickname || nickname.length < 2) {
+      errEl.textContent = 'Nickname must be at least 2 characters.';
+      errEl.style.display = 'block'; return;
+    }
+    if (nickname.length > 30) {
+      errEl.textContent = 'Nickname must be 30 characters or fewer.';
+      errEl.style.display = 'block'; return;
+    }
+    if (!/^[\w\s\-\.]+$/.test(nickname)) {
+      errEl.textContent = 'Letters, numbers, spaces, hyphens and dots only.';
+      errEl.style.display = 'block'; return;
+    }
+
+    var user = _pmUser;
+    if (!user) return;
+
+    btn.textContent = 'Joining…';
+    btn.disabled = true;
+
+    var profile = {
+      nickname:            nickname,
+      photoURL:            user.photoURL || null,
+      joinedAt:            Date.now(),
+      nicknameLastChanged: Date.now(),
+      bio:                 '',
+      reviewCount:         0,
+      likesReceived:       0,
+      likesGiven:          0,
+      commentCount:        0,
+      contributionScore:   0
+    };
+
+    try {
+      var token = await user.getIdToken();
+      var res = await fetch(RTDB + '/users/' + user.uid + '.json?auth=' + token, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profile)
+      });
+      if (!res.ok) throw new Error('Write failed: ' + res.status);
+      document.getElementById('pmNicknameOverlay').style.display = 'none';
+      _showWelcomeStrip(nickname, user.uid);
+    } catch(e) {
+      btn.textContent = 'JOIN PMOVIES';
+      btn.disabled = false;
+      errEl.textContent = 'Something went wrong. Please try again.';
+      errEl.style.display = 'block';
+    }
+  };
+
+  // ── Welcome Strip ─────────────────────────────────────────────────
+  async function _showWelcomeStrip(nickname, uid) {
+    var strip    = document.getElementById('pmWelcomeStrip');
+    var greeting = document.getElementById('pmWelcomeGreeting');
+    var quoteEl  = document.getElementById('pmWelcomeQuote');
+    if (!strip) return;
+
+    var hr = new Date().getHours();
+    var word = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
+
+    // Show immediately with Newcomer badge, then update badge from score
+    var badge = _getBadge(0);
+    greeting.innerHTML = word + ', <strong>' + _esc(nickname) + '</strong>'
+      + ' <span class="pm-welcome-badge" id="pmWelcomeBadge">' + badge.icon + ' ' + badge.label + '</span>';
+    quoteEl.textContent = _getDailyQuote();
+    strip.style.display = 'block';
+
+    // Load real contribution score in background
+    try {
+      var user = _pmUser;
+      if (user && uid) {
+        var token = await user.getIdToken();
+        var res = await fetch(RTDB + '/users/' + uid + '/contributionScore.json?auth=' + token);
+        var score = res.ok ? (await res.json() || 0) : 0;
+        var b = _getBadge(score);
+        var badgeEl = document.getElementById('pmWelcomeBadge');
+        if (badgeEl) badgeEl.textContent = b.icon + ' ' + b.label;
+      }
+    } catch(_) {}
+  }
+
+  function _getBadge(score) {
+    if (score >= 300) return { icon: '👑', label: 'Legend' };
+    if (score >= 150) return { icon: '🏆', label: 'Trusted Voice' };
+    if (score >= 75)  return { icon: '🎭', label: 'Critic' };
+    if (score >= 25)  return { icon: '🎬', label: 'Cinephile' };
+    return { icon: '🎫', label: 'Newcomer' };
+  }
+
+  var _dailyQuotes = [
+    '"Cinema is a mirror by which we look at ourselves." — Martin Scorsese',
+    '"Film is not the art of scholars but of illiterates." — Werner Herzog',
+    '"Every film should have its own world." — Tim Burton',
+    '"A story should have a beginning, a middle and an end — but not necessarily in that order." — Jean-Luc Godard',
+    '"Making a film is like going down a mine — you cannot see the end." — Alan Parker',
+    '"A film is never really good unless the camera is an eye in the head of a poet." — Orson Welles',
+    '"The most honest form of filmmaking is to make a film for yourself." — Peter Jackson',
+    '"Cinema is a matter of what\'s in the frame and what\'s out." — Martin Scorsese',
+    '"A story is a machine that generates empathy." — Roger Ebert',
+    '"Life is what happens between the cuts." — Anonymous',
+  ];
+
+  function _getDailyQuote() {
+    var day = Math.floor(Date.now() / 86400000);
+    return _dailyQuotes[day % _dailyQuotes.length];
+  }
+
+  function _esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ── Editor Role ───────────────────────────────────────────────────
+  async function _checkEditorRole(uid) {
+    try {
+      var user = _pmUser;
+      var token = await user.getIdToken();
+      var res = await fetch(RTDB + '/admins/' + uid + '.json?auth=' + token);
+      var data = res.ok ? await res.json() : null;
+      if (data === true) {
+        localStorage.setItem('pmovies_admin', '1');
+        window._pmEditorAuthVerified = true;
+      }
+    } catch(_) {}
+  }
+
+  // Override openAdmin + checkAdminPw to auto-bypass password for auth-verified editor
+  setTimeout(function() {
+    var _origOpen = window.openAdmin;
+    if (_origOpen) {
+      window.openAdmin = function() {
+        _origOpen.apply(this, arguments);
+        if (window._pmEditorAuthVerified) {
+          var pw   = document.getElementById('adminPwWrap');
+          var form = document.getElementById('adminForm');
+          if (pw)   pw.style.display   = 'none';
+          if (form) form.style.display = 'block';
+        }
+      };
+    }
+    var _origCheck = window.checkAdminPw;
+    if (_origCheck) {
+      window.checkAdminPw = function() {
+        if (window._pmEditorAuthVerified) {
+          var pw   = document.getElementById('adminPwWrap');
+          var form = document.getElementById('adminForm');
+          if (pw)   pw.style.display   = 'none';
+          if (form) form.style.display = 'block';
+          return;
+        }
+        _origCheck.apply(this, arguments);
+      };
+    }
+  }, 0);
+
 })();
 </script>
 
