@@ -4925,6 +4925,21 @@
     if (isOpen) { panel.classList.remove('open'); return; }
     panel.classList.add('open');
     if (!panel.dataset.loaded) await loadComments(fp, type, panel, btn);
+    // Pre-fill and lock name input for signed-in users
+    const nickname = window.pmGetNickname ? window.pmGetNickname() : null;
+    const nameInput = panel.querySelector('.cmt-name-input');
+    if (nameInput) {
+      if (nickname) {
+        nameInput.value = nickname;
+        nameInput.disabled = true;
+        nameInput.style.opacity = '.45';
+        nameInput.title = 'Posting as ' + nickname;
+      } else {
+        nameInput.disabled = false;
+        nameInput.style.opacity = '';
+        nameInput.title = '';
+      }
+    }
   }
   async function loadComments(fp, type, panel, toggleBtn) {
     const path  = type === 'tv' ? 'seriesReviewComments' : 'fanReviewComments';
@@ -4952,46 +4967,70 @@
     }
     listEl.innerHTML = comments.map(c => {
       const ts = c.timestamp ? new Date(c.timestamp).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) : '';
+      const nameHtml = c.uid
+        ? `<span class="pm-profile-link fan-comment-author" onclick="pmOpenProfile('${c.uid}')">${esc(c.name || 'Anonymous')}</span>`
+        : `<div class="fan-comment-author">${esc(c.name || 'Anonymous')}</div>`;
       return `<div class="fan-comment-item">
-        <div class="fan-comment-author">${esc(c.name || 'Anonymous')}</div>
+        ${nameHtml}
         <div class="fan-comment-body" dir="auto">${esc(c.text || '')}</div>
         ${ts ? `<div class="fan-comment-date">${ts}</div>` : ''}
       </div>`;
     }).join('');
   }
   async function submitComment(fp, type, btn) {
+    // Auth gate — show sign-in prompt for guests
+    if (window.pmRequireAuth && !window.pmRequireAuth()) return;
+
+    const user      = window.pmGetUser ? window.pmGetUser() : null;
     const panel     = document.getElementById('cmt-' + fp);
     const nameInput = panel.querySelector('.cmt-name-input');
     const textInput = panel.querySelector('.cmt-text-input');
-    const name = nameInput.value.trim();
-    const text = textInput.value.trim();
-    if (!name || !text) { alert('Please enter your name and a comment.'); return; }
+
+    const authedName = (window.pmGetNickname ? window.pmGetNickname() : null)
+      || (user && user.displayName ? user.displayName : null);
+    const name = (authedName || (nameInput ? nameInput.value.trim() : '')).trim();
+    const text = textInput ? textInput.value.trim() : '';
+
+    if (!name) { alert('Please enter your name.'); return; }
+    if (!text) { alert('Please add a comment.'); return; }
+
     btn.textContent = 'Posting…'; btn.disabled = true;
     const path = type === 'tv' ? 'seriesReviewComments' : 'fanReviewComments';
+
     try {
       const commentData = { name, text, timestamp: Date.now() };
-      await fetch(`${RTDB}/${path}/${encodeURIComponent(fp)}.json`, {
+      if (user) { commentData.uid = user.uid; commentData.photoURL = user.photoURL || null; }
+
+      let url = `${RTDB}/${path}/${encodeURIComponent(fp)}.json`;
+      if (user) { const token = await user.getIdToken(); url += '?auth=' + token; }
+
+      const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(commentData)
       });
-      nameInput.value = '';
-      textInput.value = '';
+      if (!res.ok) throw new Error('Server error ' + res.status);
+
+      if (textInput) textInput.value = '';
       btn.textContent = 'Post Comment';
       btn.disabled = false;
-      // Append new comment directly — no need to reload from Firebase
+
+      // Optimistic append
       const listEl = panel.querySelector('.fan-comment-list');
-      // Remove "no comments" placeholder if present
       const empty = listEl.querySelector('.fan-comment-empty');
       if (empty) empty.remove();
-      const ts = new Date(commentData.timestamp).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+      const ts = new Date().toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
       const item = document.createElement('div');
       item.className = 'fan-comment-item';
-      item.innerHTML = `<div class="fan-comment-author">${esc(name)}</div>
-        <div class="fan-comment-body" dir="auto">${esc(text)}</div>
-        <div class="fan-comment-date">${ts}</div>`;
+      const nameHtml = user
+        ? `<span class="pm-profile-link fan-comment-author" onclick="pmOpenProfile('${user.uid}')">${esc(name)}</span>`
+        : `<div class="fan-comment-author">${esc(name)}</div>`;
+      item.innerHTML = nameHtml
+        + `<div class="fan-comment-body" dir="auto">${esc(text)}</div>`
+        + `<div class="fan-comment-date">${ts}</div>`;
       listEl.appendChild(item);
-      // Update toggle button count
+
+      // Update toggle button label
       const toggleBtn = document.querySelector(`.fan-comment-toggle[data-fp="${fp}"]`);
       if (toggleBtn) {
         const currentCount = listEl.querySelectorAll('.fan-comment-item').length;
@@ -4999,10 +5038,18 @@
         if (lbl) lbl.textContent = currentCount + ' comment' + (currentCount !== 1 ? 's' : '');
         toggleBtn.classList.add('has-comments');
       }
-      // Update bulk cache count
       _cmtCountCache[fp] = (_cmtCountCache[fp] || 0) + 1;
+
+      // Contribution scores
+      if (user && window._pmUpdateScore) {
+        window._pmUpdateScore(user.uid, 1, { commentCount: 1 });
+        const authorUid = panel.dataset.authorUid;
+        if (authorUid && authorUid !== user.uid) {
+          window._pmUpdateScore(authorUid, 1, {});
+        }
+      }
     } catch(e) {
-      alert('Could not post comment: ' + e.message);
+      alert('Could not post comment. Please try again.');
       btn.textContent = 'Post Comment';
       btn.disabled = false;
     }
@@ -5189,7 +5236,7 @@
             <span class="cmt-lbl">Comment</span>
           </button>
         </div>
-        <div class="fan-comments-panel" id="cmt-${fp}">
+        <div class="fan-comments-panel" id="cmt-${fp}" data-author-uid="${r.uid||''}">
           <div class="fan-comment-list"></div>
           <div class="fan-comment-form">
             <input class="cmt-name-input" placeholder="Your name" maxlength="60"/>
@@ -13902,6 +13949,26 @@ async function deleteEditorReview(key, e) {
     '"Cinema is a matter of what\'s in the frame and what\'s out." — Martin Scorsese',
     '"A story is a machine that generates empathy." — Roger Ebert',
     '"Life is what happens between the cuts." — Anonymous',
+    '"The cinema is not a craft. It is an art." — François Truffaut',
+    '"Movies are a fad. Audiences really want to see live actors on a stage." — Charlie Chaplin',
+    '"No art passes our conscience in the way film does, and goes directly to our feelings." — Ingmar Bergman',
+    '"What I\'ve learned is that real love is not based on romance and candlelight. It\'s based on respect, compromise, care, and trust." — Unknown',
+    '"Film is the art of illusion." — David Lynch',
+    '"Every great film should seem new every time you see it." — Roger Ebert',
+    '"A good film is when the price of the dinner, the theatre admission and the babysitter were worth it." — Alfred Hitchcock',
+    '"Cinema should make you forget you are sitting in a theatre." — Roman Polanski',
+    '"The most personal is the most creative." — Martin Scorsese',
+    '"Film is a disease. When it infects your bloodstream, it takes over as the number-one hormone." — Frank Capra',
+    '"Cinema is a language that can say things — big, ineffable, poetic things." — David Lynch',
+    '"The secret to film is that it\'s an illusion." — George Lucas',
+    '"I don\'t dream at night, I dream all day; I dream for a living." — Steven Spielberg',
+    '"You can\'t do it unless you can imagine it." — George Lucas',
+    '"Film editing is now something almost everyone can do and think they can do well — which is terrifying." — Walter Murch',
+    '"A film is a petrified fountain of thought." — Jean Cocteau',
+    '"Movies are about people doing things." — Martin Scorsese',
+    '"The truth is, we all know things about ourselves that we\'ll never say out loud. That\'s what cinema is for." — Anonymous',
+    '"In film, you can portray a character\'s entire life in two hours." — Cate Blanchett',
+    '"Every movie I make teaches me something. That\'s why I keep making them." — Clint Eastwood',
   ];
 
   function _getDailyQuote() {
