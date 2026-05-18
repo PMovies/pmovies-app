@@ -2662,13 +2662,18 @@
   </div>
 </footer>
 <script>
-  // Visitor counter via CountAPI
+  // Visitor counter via Firebase RTDB — atomic server-side increment
   (function(){
-    fetch('https://api.counterapi.dev/v1/pmovies-app/visits/up')
+    const RTDB_STATS = 'https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app';
+    fetch(`${RTDB_STATS}/siteStats.json`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ visits: { '.sv': { increment: 1 } } })
+    })
       .then(r => r.json())
       .then(d => {
         const el = document.getElementById('visitCount');
-        if (el && d && d.count) el.textContent = Number(d.count).toLocaleString();
+        if (el && d && typeof d.visits === 'number') el.textContent = Number(d.visits).toLocaleString();
       })
       .catch(() => {});
   })();
