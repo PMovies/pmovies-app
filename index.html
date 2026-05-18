@@ -1893,17 +1893,20 @@
   }
   .pm-sip-cancel:hover { color: #888; }
 
-  /* ─── Profile Overlay — Full Screen ─── */
+  /* ─── Profile Overlay — Letterboxd-style ─── */
   #pmProfileOverlay {
     display: none; position: fixed; inset: 0; z-index: 99990;
-    background: #080808; overflow-y: auto; overflow-x: hidden;
+    background: #0a0a0a; overflow-y: auto; overflow-x: hidden;
   }
   #pmProfileModal {
-    min-height: 100vh; width: 100%; background: #080808;
+    min-height: 100vh; width: 100%; background: #0a0a0a;
     position: relative; padding-bottom: 80px;
+    max-width: 900px; margin: 0 auto;
   }
   .pm-prof-close-btn {
-    position: fixed; top: 16px; left: 16px; z-index: 99991;
+    position: fixed; top: 16px; left: 50%;
+    transform: translateX(calc(-450px - 20px));
+    z-index: 99991;
     background: rgba(0,0,0,.75); border: 1px solid rgba(255,255,255,.14);
     color: #fff; width: 42px; height: 42px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
@@ -1912,184 +1915,182 @@
     transition: background .15s;
   }
   .pm-prof-close-btn:hover { background: rgba(255,255,255,.12); }
-  /* Hero backdrop */
+
+  /* Hero */
   .pm-prof-hero {
-    position: relative; width: 100%; height: 46vh;
-    min-height: 240px; max-height: 400px;
+    position: relative; width: 100%; height: 36vh;
+    min-height: 180px; max-height: 300px;
     background: linear-gradient(135deg,#0a0500 0%,#1a0e00 50%,#060012 100%);
     overflow: hidden;
   }
   .pm-prof-hero-img {
     position: absolute; inset: 0; width: 100%; height: 100%;
-    object-fit: cover; opacity: .45; display: block;
+    object-fit: cover; opacity: .5; display: block;
   }
   .pm-prof-hero-gradient {
     position: absolute; inset: 0;
-    background: linear-gradient(to bottom,rgba(0,0,0,.15) 0%,rgba(8,8,8,1) 100%);
+    background: linear-gradient(to bottom, rgba(0,0,0,.1) 0%, rgba(10,10,10,.95) 100%);
   }
   .pm-prof-hero-change {
-    position: absolute; bottom: 14px; right: 14px;
+    position: absolute; top: 14px; right: 14px;
     background: rgba(0,0,0,.7); border: 1px solid rgba(255,255,255,.2);
-    color: #ddd; font-size: .62rem; font-weight: 700; letter-spacing: .08em;
-    text-transform: uppercase; padding: 7px 13px; border-radius: 20px;
-    cursor: pointer; transition: all .15s;
+    color: #ddd; font-size: .58rem; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; padding: 6px 12px; border-radius: 20px;
+    cursor: pointer; transition: all .15s; z-index: 10;
     -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
-    z-index: 10;
   }
   .pm-prof-hero-change:hover { background: rgba(245,166,35,.2); border-color: rgba(245,166,35,.4); color: #f5a623; }
-  /* Identity row */
+
+  /* Identity — Letterboxd style */
   .pm-prof-identity {
-    display: flex; align-items: flex-end; gap: 20px;
-    padding: 0 28px; margin-top: -52px; position: relative; z-index: 2;
+    display: flex; align-items: flex-end; gap: 22px;
+    padding: 0 28px 22px; margin-top: -54px;
+    position: relative; z-index: 2;
+    border-bottom: 1px solid rgba(255,255,255,.07);
   }
   .pm-prof-avatar-wrap { position: relative; flex-shrink: 0; }
   .pm-prof-avatar {
-    width: 108px; height: 108px; border-radius: 50%;
+    width: 100px; height: 100px; border-radius: 50%;
     background: linear-gradient(135deg,#2a1800,#4a3000);
     border: 3px solid #f5a623; object-fit: cover; display: block;
-    box-shadow: 0 8px 32px rgba(0,0,0,.8);
+    box-shadow: 0 6px 24px rgba(0,0,0,.9);
   }
   .pm-prof-avatar-fallback {
-    width: 108px; height: 108px; border-radius: 50%;
+    width: 100px; height: 100px; border-radius: 50%;
     background: linear-gradient(135deg,#2a1800,#4a3000);
     display: flex; align-items: center; justify-content: center;
-    font-size: 2.6rem; border: 3px solid #f5a623; color: #f5a623;
+    font-size: 2.4rem; border: 3px solid #f5a623; color: #f5a623;
     font-family: 'Bebas Neue', sans-serif;
-    box-shadow: 0 8px 32px rgba(0,0,0,.8);
+    box-shadow: 0 6px 24px rgba(0,0,0,.9);
   }
   .pm-prof-avatar-change {
     position: absolute; bottom: 2px; right: 2px;
-    width: 28px; height: 28px; border-radius: 50%;
-    background: #f5a623; border: 2px solid #080808;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: #f5a623; border: 2px solid #0a0a0a;
     display: flex; align-items: center; justify-content: center;
-    font-size: .72rem; cursor: pointer; transition: transform .15s;
-    color: #000;
+    font-size: .68rem; cursor: pointer; transition: transform .15s; color: #000;
   }
   .pm-prof-avatar-change:hover { transform: scale(1.1); }
-  .pm-prof-name-col { padding-bottom: 10px; flex: 1; min-width: 0; }
+
+  /* Info column */
+  .pm-prof-info-col { flex: 1; min-width: 0; padding-bottom: 4px; }
+  .pm-prof-name-row {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 5px;
+  }
   .pm-prof-nickname {
-    font-family: 'Bebas Neue', sans-serif; font-size: 2.6rem;
-    letter-spacing: 2px; color: #fff; line-height: 1; margin-bottom: 8px;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-family: 'Bebas Neue', sans-serif; font-size: 2rem;
+    letter-spacing: 2px; color: #fff; line-height: 1;
   }
   .pm-prof-badge {
-    font-size: .65rem; font-weight: 700; letter-spacing: .1em;
-    text-transform: uppercase; padding: 4px 12px; border-radius: 20px;
+    font-size: .6rem; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; padding: 3px 10px; border-radius: 20px;
     background: rgba(245,166,35,.12); color: #f5a623;
-    border: 1px solid rgba(245,166,35,.35); display: inline-block;
+    border: 1px solid rgba(245,166,35,.35); display: inline-block; flex-shrink: 0;
   }
-  .pm-prof-joined { font-size: .63rem; color: #444; margin-top: 6px; }
-  /* Stats */
+  .pm-prof-joined { font-size: .6rem; color: #444; margin-bottom: 12px; }
+  .pm-prof-bio {
+    font-size: .82rem; color: #666; line-height: 1.6; margin-bottom: 10px;
+    white-space: pre-wrap; max-width: 520px;
+  }
+
+  /* Stats — compact inline row */
   .pm-prof-stats {
-    display: flex; margin: 24px 28px 0;
-    border: 1px solid rgba(255,255,255,.06); border-radius: 14px;
-    overflow: hidden; background: rgba(255,255,255,.02);
+    display: flex; gap: 18px; flex-wrap: wrap;
+    margin: 0; padding: 0; border: none; background: none; border-radius: 0;
   }
-  .pm-prof-stat {
-    flex: 1; padding: 16px 8px; text-align: center;
-    border-right: 1px solid rgba(255,255,255,.06);
-  }
-  .pm-prof-stat:last-child { border-right: none; }
+  .pm-prof-stat { flex: 0 0 auto; padding: 0; text-align: left; border: none; }
   .pm-prof-stat-val {
-    font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem;
-    color: #f5a623; line-height: 1;
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem;
+    color: #f5a623; line-height: 1; display: block;
   }
   .pm-prof-stat-lbl {
-    font-size: .5rem; font-weight: 700; color: #444;
-    letter-spacing: .1em; text-transform: uppercase; margin-top: 4px;
+    font-size: .44rem; font-weight: 700; color: #444;
+    letter-spacing: .1em; text-transform: uppercase; margin-top: 2px; display: block;
   }
-  /* Bio */
-  .pm-prof-bio {
-    padding: 6px 28px 0; font-size: .88rem; color: #777;
-    line-height: 1.7; white-space: pre-wrap;
+
+  /* Edit profile button */
+  .pm-prof-edit-btn {
+    display: block; margin: 24px 28px 0;
+    background: rgba(245,166,35,.08); border: 1px solid rgba(245,166,35,.22);
+    color: #f5a623; font-family: 'Montserrat', sans-serif; font-weight: 700;
+    font-size: .78rem; letter-spacing: .08em; text-transform: uppercase;
+    padding: 13px; border-radius: 10px; cursor: pointer;
+    width: calc(100% - 56px); transition: background .15s;
   }
+  .pm-prof-edit-btn:hover { background: rgba(245,166,35,.16); }
+
   /* Section title */
   .pm-prof-section-title {
-    font-size: .56rem; font-weight: 700; letter-spacing: .14em;
+    font-size: .54rem; font-weight: 700; letter-spacing: .14em;
     text-transform: uppercase; color: #444; padding: 26px 28px 12px;
   }
-  /* Taste card grid — 2×2 */
+
+  /* Taste card — 4 col desktop, 2 col mobile */
   .pm-prof-taste {
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: 14px; padding: 0 28px;
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 10px; padding: 0 28px;
   }
-  /* Genre themed square */
-  .pm-prof-taste-genre {
-    border-radius: 14px; overflow: hidden; cursor: default;
-    aspect-ratio: 1; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 5px;
-    border: 1px solid transparent; transition: transform .18s;
-    position: relative; padding: 10px;
-  }
-  .pm-prof-taste-genre.editable { cursor: pointer; }
-  .pm-prof-taste-genre.editable:hover { transform: scale(1.04); }
-  .pm-prof-taste-genre .pm-prof-taste-icon { font-size: 1.8rem; }
-  .pm-prof-taste-genre .pm-prof-taste-lbl {
-    font-size: .48rem; font-weight: 700; letter-spacing: .1em;
-    text-transform: uppercase; opacity: .6; color: currentColor;
-  }
-  .pm-prof-taste-genre .pm-prof-taste-val {
-    font-size: .78rem; font-weight: 700; text-align: center;
-    line-height: 1.3; color: currentColor;
-  }
-  /* Director / Film items */
+  /* Taste card item — aspect ratio 2:3, image fills entirely */
   .pm-prof-taste-item {
-    background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07);
-    border-radius: 14px; overflow: hidden; position: relative;
-    transition: border-color .18s;
+    border-radius: 12px; overflow: hidden; position: relative;
+    aspect-ratio: 2/3; background: #111;
+    border: 1px solid rgba(255,255,255,.06);
+    transition: transform .18s, box-shadow .18s; cursor: default;
   }
   .pm-prof-taste-item.editable { cursor: pointer; }
-  .pm-prof-taste-item.editable:hover { border-color: rgba(245,166,35,.4); }
-  .pm-prof-taste-img {
-    width: 100%; height: 180px; object-fit: cover; display: block;
+  .pm-prof-taste-item.editable:hover {
+    transform: scale(1.03); box-shadow: 0 16px 40px rgba(0,0,0,.7);
+    border-color: rgba(245,166,35,.3);
   }
-  .pm-prof-taste-img.person { height: 200px; object-position: center top; }
-  .pm-prof-taste-img.poster { height: 220px; object-fit: cover; }
-  .pm-prof-taste-bottom { padding: 8px 10px 10px; }
-  .pm-prof-taste-icon { font-size: 1rem; margin-bottom: 3px; }
+  /* Image fills the full card */
+  .pm-prof-taste-img-wrap {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pm-prof-taste-img-wrap img {
+    width: 100%; height: 100%; object-fit: cover;
+    object-position: center top; display: block;
+  }
+  .pm-prof-taste-placeholder { font-size: 2.2rem; color: #2a2a2a; }
+  /* Gradient + label overlay at bottom */
+  .pm-prof-taste-bottom {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,.96) 0%, rgba(0,0,0,.65) 55%, transparent 100%);
+    padding: 44px 12px 12px;
+  }
   .pm-prof-taste-lbl {
-    font-size: .48rem; color: #555; text-transform: uppercase;
+    font-size: .44rem; color: #888; text-transform: uppercase;
     letter-spacing: .1em; margin-bottom: 3px;
   }
-  .pm-prof-taste-val { font-size: .78rem; color: #ccc; font-weight: 600; line-height: 1.3; }
+  .pm-prof-taste-val { font-size: .82rem; color: #fff; font-weight: 700; line-height: 1.3; }
   .pm-prof-taste-edit-hint {
-    font-size: .5rem; color: #f5a623; margin-top: 2px; opacity: 0;
-    transition: opacity .15s;
+    font-size: .48rem; color: #f5a623; margin-top: 5px; opacity: 0; transition: opacity .15s;
   }
   .pm-prof-taste-item.editable:hover .pm-prof-taste-edit-hint { opacity: 1; }
-  .pm-prof-taste-genre.editable:hover .pm-prof-taste-edit-hint { opacity: 1; }
+
   /* Reviews grid */
   .pm-prof-reviews-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(110px,1fr));
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(100px,1fr));
     gap: 10px; padding: 0 28px;
   }
   .pm-prof-rev-card {
-    background: #111; border-radius: 10px; overflow: hidden; cursor: pointer;
+    background: #111; border-radius: 8px; overflow: hidden; cursor: pointer;
     transition: transform .18s; border: 1px solid rgba(255,255,255,.05);
   }
   .pm-prof-rev-card:hover { transform: translateY(-3px); }
   .pm-prof-rev-poster {
     width: 100%; aspect-ratio: 2/3; background: #1a1a1a;
     display: flex; align-items: center; justify-content: center;
-    font-size: 1.5rem; overflow: hidden;
+    font-size: 1.4rem; overflow: hidden;
   }
   .pm-prof-rev-poster img { width:100%; height:100%; object-fit:cover; }
-  .pm-prof-rev-meta { padding: 8px; }
+  .pm-prof-rev-meta { padding: 7px; }
   .pm-prof-rev-title {
-    font-size: .7rem; color: #ddd; font-weight: 600; line-height: 1.3;
+    font-size: .66rem; color: #ddd; font-weight: 600; line-height: 1.3;
     margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  .pm-prof-rev-stars { font-size: .68rem; color: #f5a623; }
-  /* Edit profile button */
-  .pm-prof-edit-btn {
-    display: block; margin: 24px 28px 0;
-    background: rgba(245,166,35,.1); border: 1px solid rgba(245,166,35,.25);
-    color: #f5a623; font-family: 'Montserrat', sans-serif; font-weight: 700;
-    font-size: .8rem; letter-spacing: .08em; text-transform: uppercase;
-    padding: 14px; border-radius: 12px; cursor: pointer;
-    width: calc(100% - 56px); transition: background .15s;
-  }
-  .pm-prof-edit-btn:hover { background: rgba(245,166,35,.18); }
+  .pm-prof-rev-stars { font-size: .64rem; color: #f5a623; }
+
   /* Profile link */
   .pm-profile-link {
     cursor: pointer; color: inherit;
@@ -2097,6 +2098,23 @@
     transition: color .15s, border-color .15s;
   }
   .pm-profile-link:hover { color: #f5a623; border-color: #f5a623; }
+
+  /* Mobile responsive */
+  @media(max-width: 640px) {
+    .pm-prof-close-btn {
+      position: fixed; top: auto; left: 14px; bottom: auto;
+      top: 76px; transform: none;
+    }
+    .pm-prof-identity { padding: 0 16px 18px; gap: 16px; }
+    .pm-prof-section-title { padding: 22px 16px 10px; }
+    .pm-prof-taste { grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 16px; }
+    .pm-prof-reviews-grid { padding: 0 16px; }
+    .pm-prof-edit-btn { margin: 20px 16px 0; width: calc(100% - 32px); }
+    .pm-prof-nickname { font-size: 1.7rem; }
+    .pm-prof-avatar { width: 84px; height: 84px; }
+    .pm-prof-avatar-fallback { width: 84px; height: 84px; font-size: 2rem; }
+    .pm-prof-identity { margin-top: -42px; }
+  }
 
   /* ─── Edit Profile Overlay ─── */
   #pmEditProfileOverlay {
@@ -2371,19 +2389,6 @@
   @media(max-width:480px) {
     #pmUserChip { top: 72px; right: 12px; }
     #pmHomeToggleBtn { top: 72px; left: 12px; }
-    .pm-prof-identity { padding: 0 16px; }
-    .pm-prof-stats { margin: 20px 16px 0; }
-    .pm-prof-section-title { padding: 22px 16px 10px; }
-    .pm-prof-bio { padding: 4px 16px 0; }
-    .pm-prof-taste { gap: 10px; padding: 0 16px; }
-    .pm-prof-reviews-grid { padding: 0 16px; }
-    .pm-prof-edit-btn { margin: 20px 16px 0; width: calc(100% - 32px); }
-    .pm-prof-wl-scroll { padding: 0 16px 8px; }
-    .pm-prof-nickname { font-size: 2rem; }
-    .pm-prof-avatar { width: 88px; height: 88px; }
-    .pm-prof-avatar-fallback { width: 88px; height: 88px; font-size: 2.1rem; }
-    .pm-prof-identity { margin-top: -42px; }
-    .pm-prof-close-btn { top: 76px; left: 12px; }
   }
 
   /* ─── Taste Picker Overlay ─── */
@@ -14746,21 +14751,7 @@ async function deleteEditorReview(key, e) {
         + (isOwn ? '<button class="pm-prof-hero-change" onclick="pmOpenBackdropPicker(\'' + uid + '\')">🖼 Change Cover</button>' : '')
         + '</div>';
 
-      // Avatar
-      var avatarHtml = profile.photoURL
-        ? '<img class="pm-prof-avatar" src="' + _esc(profile.photoURL) + '" alt="' + _esc(nickname) + '" onerror="this.style.display=\'none\';this.nextSibling.style.display=\'flex\'"/><div class="pm-prof-avatar-fallback" style="display:none">' + _esc(nickname.charAt(0).toUpperCase()) + '</div>'
-        : '<div class="pm-prof-avatar-fallback">' + _esc(nickname.charAt(0).toUpperCase()) + '</div>';
-      var avatarChangeHtml = isOwn ? '<div class="pm-prof-avatar-change" onclick="pmOpenAvatarPicker()" title="Change avatar">✏️</div>' : '';
-
-      var identityHtml = '<div class="pm-prof-identity">'
-        + '<div class="pm-prof-avatar-wrap">' + avatarHtml + avatarChangeHtml + '</div>'
-        + '<div class="pm-prof-name-col">'
-        + '<div class="pm-prof-nickname">' + _esc(nickname) + '</div>'
-        + '<span class="pm-prof-badge">' + badge.icon + ' ' + badge.label + '</span>'
-        + (joined ? '<div class="pm-prof-joined">Member since ' + joined + '</div>' : '')
-        + '</div></div>';
-
-      // Stats
+      // Stats — must be built before identityHtml
       var statsHtml = [
         { val: profile.reviewCount   || 0, lbl: 'Reviews'  },
         { val: profile.likesReceived || 0, lbl: 'Likes'    },
@@ -14770,19 +14761,35 @@ async function deleteEditorReview(key, e) {
         return '<div class="pm-prof-stat"><div class="pm-prof-stat-val">' + s.val + '</div><div class="pm-prof-stat-lbl">' + s.lbl + '</div></div>';
       }).join('');
 
-      // Bio
-      var bioHtml = profile.bio ? '<div class="pm-prof-bio">' + _esc(profile.bio) + '</div>' : '';
+      // Avatar
+      var avatarHtml = profile.photoURL
+        ? '<img class="pm-prof-avatar" src="' + _esc(profile.photoURL) + '" alt="' + _esc(nickname) + '" onerror="this.style.display=\'none\';this.nextSibling.style.display=\'flex\'"/><div class="pm-prof-avatar-fallback" style="display:none">' + _esc(nickname.charAt(0).toUpperCase()) + '</div>'
+        : '<div class="pm-prof-avatar-fallback">' + _esc(nickname.charAt(0).toUpperCase()) + '</div>';
+      var avatarChangeHtml = isOwn ? '<div class="pm-prof-avatar-change" onclick="pmOpenAvatarPicker()" title="Change avatar">✏️</div>' : '';
+
+      var identityHtml = '<div class="pm-prof-identity">'
+        + '<div class="pm-prof-avatar-wrap">' + avatarHtml + avatarChangeHtml + '</div>'
+        + '<div class="pm-prof-info-col">'
+        + '<div class="pm-prof-name-row">'
+        + '<div class="pm-prof-nickname">' + _esc(nickname) + '</div>'
+        + '<span class="pm-prof-badge">' + badge.icon + ' ' + badge.label + '</span>'
+        + '</div>'
+        + (joined ? '<div class="pm-prof-joined">Member since ' + joined + '</div>' : '')
+        + (profile.bio ? '<div class="pm-prof-bio">' + _esc(profile.bio) + '</div>' : '')
+        + '<div class="pm-prof-stats">' + statsHtml + '</div>'
+        + '</div></div>';
 
       // Taste card — 2×2 grid: Director | Childhood Crush | Film of All Time | Best of 2026
       var hasAnyTaste = profile.favDirector || profile.favActress || profile.favFilmAllTime || profile.favFilm2026;
       var tasteHtml = '';
-      var _buildTasteCard = function(id, field, label, placeholder, isOwn, uid) {
+      var _buildTasteCard = function(field, label, placeholder, isOwn, uid) {
         var val = profile[field];
         var onc = isOwn ? ' onclick="pmOpenTastePicker(\'' + field + '\',\'' + uid + '\')"' : '';
         var edCls = isOwn ? ' editable' : '';
-        var imgId = 'tpImg_' + field;
         return '<div class="pm-prof-taste-item' + edCls + '"' + onc + '>'
-          + '<div id="' + imgId + '" style="background:#111;display:flex;align-items:center;justify-content:center;font-size:2rem">' + placeholder + '</div>'
+          + '<div class="pm-prof-taste-img-wrap" id="tpImg_' + field + '">'
+          + '<div class="pm-prof-taste-placeholder">' + placeholder + '</div>'
+          + '</div>'
           + '<div class="pm-prof-taste-bottom">'
           + '<div class="pm-prof-taste-lbl">' + label + '</div>'
           + '<div class="pm-prof-taste-val">' + _esc(val || (isOwn ? '+ Add' : '—')) + '</div>'
@@ -14792,10 +14799,10 @@ async function deleteEditorReview(key, e) {
       if (hasAnyTaste || isOwn) {
         tasteHtml = '<div class="pm-prof-section-title">Taste Card</div>'
           + '<div class="pm-prof-taste">'
-          + _buildTasteCard('tpImg_dir',  'favDirector',   'Favourite Director',  '👤', isOwn, uid)
-          + _buildTasteCard('tpImg_act',  'favActress',    'Childhood Crush',     '🌟', isOwn, uid)
-          + _buildTasteCard('tpImg_fat',  'favFilmAllTime','Film of All Time',    '🎞️', isOwn, uid)
-          + _buildTasteCard('tpImg_f26',  'favFilm2026',   'Best of 2026',        '🏆', isOwn, uid)
+          + _buildTasteCard('favDirector',   'Favourite Director', '👤', isOwn, uid)
+          + _buildTasteCard('favActress',    'Childhood Crush',    '🌟', isOwn, uid)
+          + _buildTasteCard('favFilmAllTime','Film of All Time',   '🎞️', isOwn, uid)
+          + _buildTasteCard('favFilm2026',   'Best of 2026',       '🏆', isOwn, uid)
           + '</div>';
       }
 
@@ -14863,8 +14870,6 @@ async function deleteEditorReview(key, e) {
 
       content.innerHTML = heroHtml
         + identityHtml
-        + '<div class="pm-prof-stats">' + statsHtml + '</div>'
-        + bioHtml
         + tasteHtml
         + watchlistHtml
         + listsHtml
@@ -14900,7 +14905,7 @@ async function deleteEditorReview(key, e) {
       }
 
       // Async: load Director portrait
-      var _loadPerson = function(field, elId) {
+      var _loadPerson = function(field) {
         var name = profile[field];
         if (!name || !apiKey) return;
         fetch('https://api.themoviedb.org/3/search/person?api_key=' + apiKey + '&query=' + encodeURIComponent(name) + '&language=en-US&page=1')
@@ -14908,30 +14913,31 @@ async function deleteEditorReview(key, e) {
           .then(function(data) {
             var hit = data && data.results && data.results[0];
             if (hit && hit.profile_path) {
-              var tEl = document.getElementById(elId);
-              if (tEl) tEl.innerHTML = '<img class="pm-prof-taste-img person" src="https://image.tmdb.org/t/p/w342' + hit.profile_path + '" alt=""/>';
+              var tEl = document.getElementById('tpImg_' + field);
+              if (tEl) tEl.innerHTML = '<img src="https://image.tmdb.org/t/p/w342' + hit.profile_path + '" alt="' + _esc(name) + '" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block"/>';
             }
           }).catch(function(){});
       };
-      var _loadFilmPoster = function(field, elId, year2026) {
+
+      var _loadFilmPoster = function(field, year2026) {
         var title = profile[field];
         if (!title || !apiKey) return;
-        var qs = 'https://api.themoviedb.org/3/search/movie?api_key=' + apiKey + '&query=' + encodeURIComponent(title) + '&language=en-US&page=1';
-        if (year2026) qs += '&primary_release_year=2026';
+        var qs = 'https://api.themoviedb.org/3/search/movie?api_key=' + apiKey + '&query=' + encodeURIComponent(title) + '&language=en-US&page=1' + (year2026 ? '&primary_release_year=2026' : '');
         fetch(qs)
           .then(function(r){ return r.ok ? r.json() : null; })
           .then(function(data) {
             var hit = data && data.results && data.results[0];
             if (hit && hit.poster_path) {
-              var tEl = document.getElementById(elId);
-              if (tEl) tEl.innerHTML = '<img class="pm-prof-taste-img poster" src="https://image.tmdb.org/t/p/w342' + hit.poster_path + '" alt=""/>';
+              var tEl = document.getElementById('tpImg_' + field);
+              if (tEl) tEl.innerHTML = '<img src="https://image.tmdb.org/t/p/w342' + hit.poster_path + '" alt="' + _esc(title) + '" style="width:100%;height:100%;object-fit:cover;display:block"/>';
             }
           }).catch(function(){});
       };
-      _loadPerson('favDirector', 'tpImg_favDirector');
-      _loadPerson('favActress',  'tpImg_favActress');
-      _loadFilmPoster('favFilmAllTime', 'tpImg_favFilmAllTime', false);
-      _loadFilmPoster('favFilm2026',    'tpImg_favFilm2026',    true);
+
+      _loadPerson('favDirector');
+      _loadPerson('favActress');
+      _loadFilmPoster('favFilmAllTime', false);
+      _loadFilmPoster('favFilm2026', true);
 
       // Lazy-load review posters + pre-register
       reviews.forEach(function(r) {
