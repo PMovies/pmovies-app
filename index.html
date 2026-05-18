@@ -13542,7 +13542,7 @@ async function deleteEditorReview(key, e) {
         var score = res.ok ? (await res.json() || 0) : 0;
         var b = _getBadge(score);
         var badgeEl = document.getElementById('pmWelcomeBadge');
-        if (badgeEl) badgeEl.textContent = b.icon + ' ' + b.label;
+        if (badgeEl && !window._pmEditorAuthVerified) badgeEl.textContent = b.icon + ' ' + b.label;
       }
     } catch(_) {}
   }
