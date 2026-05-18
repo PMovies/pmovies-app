@@ -1892,6 +1892,182 @@
     cursor: pointer; padding: 8px; display: block; width: 100%;
   }
   .pm-sip-cancel:hover { color: #888; }
+
+  /* ─── Profile Overlay ─── */
+  #pmProfileOverlay {
+    display: none; position: fixed; inset: 0; z-index: 99990;
+    background: rgba(0,0,0,.88); overflow-y: auto;
+    -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+  }
+  #pmProfileModal {
+    max-width: 680px; margin: 0 auto; min-height: 100vh;
+    background: #0e0e0e; padding-bottom: 60px;
+  }
+  .pm-prof-back {
+    position: sticky; top: 0; z-index: 10; background: rgba(14,14,14,.94);
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,.07);
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  }
+  .pm-prof-back-btn {
+    background: none; border: none; color: #aaa; font-size: 1.3rem;
+    cursor: pointer; width: 36px; height: 36px; display: flex;
+    align-items: center; justify-content: center; border-radius: 50%;
+    transition: background .15s;
+  }
+  .pm-prof-back-btn:hover { background: rgba(255,255,255,.08); color: #fff; }
+  .pm-prof-header {
+    display: flex; align-items: flex-start; gap: 20px;
+    padding: 28px 22px 18px;
+  }
+  .pm-prof-avatar {
+    width: 76px; height: 76px; border-radius: 50%; flex-shrink: 0;
+    background: #1a1a1a; object-fit: cover;
+    border: 3px solid rgba(245,166,35,.4);
+  }
+  .pm-prof-avatar-fallback {
+    width: 76px; height: 76px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg,#2a1800,#4a3000);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.9rem; border: 3px solid rgba(245,166,35,.4);
+    color: #f5a623; font-family: 'Bebas Neue', sans-serif;
+  }
+  .pm-prof-info { flex: 1; min-width: 0; }
+  .pm-prof-nickname {
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.9rem;
+    letter-spacing: 2px; color: #fff; line-height: 1; margin-bottom: 7px;
+  }
+  .pm-prof-badge {
+    font-size: .66rem; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; padding: 3px 10px; border-radius: 20px;
+    background: rgba(245,166,35,.12); color: #f5a623;
+    border: 1px solid rgba(245,166,35,.3); display: inline-block;
+  }
+  .pm-prof-joined { font-size: .68rem; color: #555; margin-top: 6px; }
+  .pm-prof-stats {
+    display: flex; margin: 0 22px;
+    border: 1px solid rgba(255,255,255,.07); border-radius: 12px;
+    overflow: hidden; background: rgba(255,255,255,.02);
+  }
+  .pm-prof-stat {
+    flex: 1; padding: 14px 8px; text-align: center;
+    border-right: 1px solid rgba(255,255,255,.07);
+  }
+  .pm-prof-stat:last-child { border-right: none; }
+  .pm-prof-stat-val {
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem;
+    color: #f5a623; line-height: 1;
+  }
+  .pm-prof-stat-lbl {
+    font-size: .55rem; font-weight: 700; color: #555;
+    letter-spacing: .08em; text-transform: uppercase; margin-top: 3px;
+  }
+  .pm-prof-bio {
+    padding: 16px 22px 0; font-size: .88rem; color: #888;
+    line-height: 1.7; white-space: pre-wrap;
+  }
+  .pm-prof-section-title {
+    font-size: .6rem; font-weight: 700; letter-spacing: .12em;
+    text-transform: uppercase; color: #555; padding: 22px 22px 10px;
+  }
+  .pm-prof-taste {
+    display: grid; grid-template-columns: repeat(3,1fr);
+    gap: 10px; padding: 0 22px;
+  }
+  .pm-prof-taste-item {
+    background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07);
+    border-radius: 10px; padding: 12px; text-align: center;
+  }
+  .pm-prof-taste-icon { font-size: 1.3rem; margin-bottom: 5px; }
+  .pm-prof-taste-lbl {
+    font-size: .54rem; color: #555; text-transform: uppercase;
+    letter-spacing: .08em; margin-bottom: 4px;
+  }
+  .pm-prof-taste-val { font-size: .8rem; color: #ccc; font-weight: 600; line-height: 1.3; }
+  .pm-prof-reviews-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(130px,1fr));
+    gap: 12px; padding: 0 22px;
+  }
+  .pm-prof-rev-card {
+    background: #151515; border-radius: 10px; overflow: hidden; cursor: pointer;
+    transition: transform .18s, box-shadow .18s;
+  }
+  .pm-prof-rev-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,.6); }
+  .pm-prof-rev-poster {
+    width: 100%; aspect-ratio: 2/3; background: #1a1a1a;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; overflow: hidden;
+  }
+  .pm-prof-rev-poster img { width:100%; height:100%; object-fit:cover; }
+  .pm-prof-rev-meta { padding: 8px; }
+  .pm-prof-rev-title {
+    font-size: .72rem; color: #ddd; font-weight: 600; line-height: 1.3;
+    margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .pm-prof-rev-stars { font-size: .7rem; color: #f5a623; }
+  .pm-prof-edit-btn {
+    display: block; margin: 24px 22px 0;
+    background: rgba(245,166,35,.1); border: 1px solid rgba(245,166,35,.3);
+    color: #f5a623; font-family: 'Montserrat', sans-serif; font-weight: 700;
+    font-size: .8rem; letter-spacing: .08em; text-transform: uppercase;
+    padding: 13px; border-radius: 10px; cursor: pointer;
+    width: calc(100% - 44px); transition: background .15s;
+  }
+  .pm-prof-edit-btn:hover { background: rgba(245,166,35,.18); }
+  .pm-profile-link {
+    cursor: pointer; color: inherit;
+    border-bottom: 1px dotted rgba(245,166,35,.4);
+    transition: color .15s, border-color .15s;
+  }
+  .pm-profile-link:hover { color: #f5a623; border-color: #f5a623; }
+
+  /* ─── Edit Profile Overlay ─── */
+  #pmEditProfileOverlay {
+    display: none; position: fixed; inset: 0; z-index: 99995;
+    align-items: center; justify-content: center; padding: 20px;
+    background: rgba(0,0,0,.88);
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  }
+  .pm-edit-card {
+    background: #141414; border: 1px solid rgba(255,255,255,.1);
+    border-radius: 18px; padding: 28px 24px; width: 100%; max-width: 440px;
+    max-height: 90vh; overflow-y: auto;
+  }
+  .pm-edit-title {
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem;
+    letter-spacing: 2px; color: #fff; margin-bottom: 20px;
+  }
+  .pm-edit-row { margin-bottom: 16px; }
+  .pm-edit-label {
+    font-size: .62rem; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; color: #666; margin-bottom: 6px; display: block;
+  }
+  .pm-edit-input, .pm-edit-textarea {
+    width: 100%; background: #1a1a1a; border: 1px solid rgba(255,255,255,.1);
+    border-radius: 8px; padding: 10px 13px; color: #eee;
+    font-family: 'Montserrat', sans-serif; font-size: .88rem; box-sizing: border-box;
+  }
+  .pm-edit-input:focus, .pm-edit-textarea:focus {
+    outline: none; border-color: rgba(245,166,35,.5);
+  }
+  .pm-edit-textarea { resize: vertical; min-height: 80px; }
+  .pm-edit-hint { font-size: .65rem; color: #555; margin-top: 4px; }
+  .pm-edit-cooldown { font-size: .68rem; color: #f5a623; margin-top: 4px; }
+  .pm-edit-save {
+    width: 100%; background: #f5a623; color: #000;
+    font-family: 'Montserrat', sans-serif; font-weight: 800;
+    font-size: .88rem; letter-spacing: .08em; text-transform: uppercase;
+    border: none; border-radius: 50px; padding: 13px; cursor: pointer; margin-top: 8px;
+    transition: background .15s;
+  }
+  .pm-edit-save:hover { background: #e09400; }
+  .pm-edit-cancel {
+    width: 100%; background: transparent; border: none; color: #555;
+    font-family: 'Montserrat', sans-serif; font-size: .78rem;
+    cursor: pointer; padding: 10px; margin-top: 4px;
+  }
+  .pm-edit-cancel:hover { color: #888; }
+  .pm-edit-msg { font-size: .78rem; text-align: center; margin-top: 8px; min-height: 20px; }
 </style>
 </head>
 <body>
@@ -4891,7 +5067,7 @@
             <span class="fan-review-card-year" id="${posterId}-year"></span>
           </div>
           <div class="fan-review-card-reviewer">
-            <span dir="auto">${esc(r.name || 'Anonymous')}</span>
+            ${r.uid ? `<span class="pm-profile-link" dir="auto" onclick="event.stopPropagation();pmOpenProfile('${r.uid}')">${esc(r.name || 'Anonymous')}</span>` : `<span dir="auto">${esc(r.name || 'Anonymous')}</span>`}
             ${_reviewBadge(r)}
           </div>
           ${r.headline ? `<div class="fan-review-card-headline" dir="auto">${esc(r.headline)}</div>` : ''}
@@ -4995,7 +5171,7 @@
             <span style="font-size:.95rem;color:#f5a623">${starsHtml}</span>
             <span id="frYearLabel-${fp}" style="font-size:.6rem;font-weight:700;letter-spacing:1px;color:#666"></span>
           </div>
-          <div style="font-size:.75rem;font-weight:700;color:#aaa;margin-bottom:4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span dir="auto">${esc(r.name||'Anonymous')}</span>${_reviewBadge(r)}</div>
+          <div style="font-size:.75rem;font-weight:700;color:#aaa;margin-bottom:4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">${r.uid ? `<span class="pm-profile-link" dir="auto" onclick="pmOpenProfile('${r.uid}')">${esc(r.name||'Anonymous')}</span>` : `<span dir="auto">${esc(r.name||'Anonymous')}</span>`}${_reviewBadge(r)}</div>
           <div style="font-size:.62rem;color:#555">${date}</div>
         </div>
       </div>
@@ -5475,6 +5651,13 @@
   let srRating = 0;
   const _srReviewCardRegistry = new Map();
 
+  // Expose helpers for the auth IIFE (cross-closure access)
+  window._pmGetCommunityReviews = function() { return _allCommunityReviews; };
+  window._pmRegisterReview = function(fp, r) {
+    _reviewCardRegistry.set(fp, r);
+    _srReviewCardRegistry.set(fp, r);
+  };
+
   function setupSrFanStars() {
     const picker = document.getElementById('srFanStarPicker');
     _initStarPicker(picker, '.sr-star', 'srFanRating',
@@ -5517,7 +5700,7 @@
             <span class="fan-review-card-year" id="${posterId}-year"></span>
           </div>
           <div class="fan-review-card-reviewer">
-            <span dir="auto">${esc(r.name || 'Anonymous')}</span>
+            ${r.uid ? `<span class="pm-profile-link" dir="auto" onclick="event.stopPropagation();pmOpenProfile('${r.uid}')">${esc(r.name || 'Anonymous')}</span>` : `<span dir="auto">${esc(r.name || 'Anonymous')}</span>`}
             ${_reviewBadge(r)}
           </div>
           ${r.headline ? `<div class="fan-review-card-headline" dir="auto">${esc(r.headline)}</div>` : ''}
@@ -13367,6 +13550,50 @@ async function deleteEditorReview(key, e) {
 
 
 <!-- ╔══════════════════════════════════════════════════════════════╗ -->
+<!-- ║  PMOVIES AUTH — Session 3 — Profile Overlay                 ║ -->
+<!-- ╚══════════════════════════════════════════════════════════════╝ -->
+<div id="pmProfileOverlay" onclick="if(event.target===this)pmCloseProfile()">
+  <div id="pmProfileModal">
+    <div class="pm-prof-back">
+      <button class="pm-prof-back-btn" onclick="pmCloseProfile()">←</button>
+      <span id="pmProfBackLabel" style="font-size:.75rem;font-weight:700;color:#888;letter-spacing:.06em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+    </div>
+    <div id="pmProfContent"></div>
+  </div>
+</div>
+
+<div id="pmEditProfileOverlay" onclick="if(event.target===this)pmCloseEditProfile()">
+  <div class="pm-edit-card">
+    <div class="pm-edit-title">Edit Profile</div>
+    <div class="pm-edit-row">
+      <label class="pm-edit-label">Bio</label>
+      <textarea class="pm-edit-textarea" id="pmEditBio" maxlength="200" placeholder="Tell the community about your cinema taste…"></textarea>
+      <div class="pm-edit-hint">Max 200 characters</div>
+    </div>
+    <div class="pm-edit-row">
+      <label class="pm-edit-label">Favourite Genre</label>
+      <input class="pm-edit-input" id="pmEditGenre" maxlength="40" placeholder="e.g. Sci-Fi, Drama, Thriller"/>
+    </div>
+    <div class="pm-edit-row">
+      <label class="pm-edit-label">Favourite Director</label>
+      <input class="pm-edit-input" id="pmEditDirector" maxlength="60" placeholder="e.g. Stanley Kubrick"/>
+    </div>
+    <div class="pm-edit-row">
+      <label class="pm-edit-label">Favourite Film</label>
+      <input class="pm-edit-input" id="pmEditFilm" maxlength="80" placeholder="e.g. 2001: A Space Odyssey"/>
+    </div>
+    <div class="pm-edit-row">
+      <label class="pm-edit-label">Nickname</label>
+      <input class="pm-edit-input" id="pmEditNickname" maxlength="30" placeholder="Your nickname"/>
+      <div id="pmEditNicknameHint" class="pm-edit-hint"></div>
+    </div>
+    <button class="pm-edit-save" onclick="pmSaveProfile()">Save Changes</button>
+    <button class="pm-edit-cancel" onclick="pmCloseEditProfile()">Cancel</button>
+    <div class="pm-edit-msg" id="pmEditMsg"></div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════════════╗ -->
 <!-- ║  PMOVIES AUTH — Session 1                                   ║ -->
 <!-- ╚══════════════════════════════════════════════════════════════╝ -->
 <script>
@@ -13637,7 +13864,7 @@ async function deleteEditorReview(key, e) {
 
     // Show immediately with Newcomer badge, then update badge from score
     var badge = _getBadge(0);
-    greeting.innerHTML = word + ', <strong>' + _esc(nickname) + '</strong>'
+    greeting.innerHTML = word + ', <strong><span class="pm-profile-link" onclick="pmOpenProfile(\'' + uid + '\')">' + _esc(nickname) + '</span></strong>'
       + ' <span class="pm-welcome-badge" id="pmWelcomeBadge">' + badge.icon + ' ' + badge.label + '</span>';
     quoteEl.textContent = _getDailyQuote();
     strip.style.display = 'block';
@@ -13708,6 +13935,239 @@ async function deleteEditorReview(key, e) {
       }
     } catch(_) {}
   }
+
+  // ── Profile Page ──────────────────────────────────────────────────
+  var _profileUid  = null;
+  var _profileData = null;
+
+  window.pmOpenProfile = async function(uid) {
+    if (!uid) return;
+    _profileUid = uid;
+    var overlay = document.getElementById('pmProfileOverlay');
+    var content = document.getElementById('pmProfContent');
+    if (!overlay || !content) return;
+    overlay.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    content.innerHTML = '<div style="padding:60px 22px;text-align:center;color:#555;font-size:.88rem">Loading…</div>';
+
+    try {
+      var token = _pmUser ? await _pmUser.getIdToken() : null;
+      var url = RTDB + '/users/' + uid + '.json' + (token ? '?auth=' + token : '');
+      var res = await fetch(url);
+      var profile = res.ok ? await res.json() : null;
+      if (!profile) {
+        content.innerHTML = '<div style="padding:60px 22px;text-align:center;color:#555">Profile not found.</div>';
+        return;
+      }
+      _profileData = profile;
+
+      var isOwn    = _pmUser && _pmUser.uid === uid;
+      var nickname = profile.nickname || 'Cinephile';
+      var score    = profile.contributionScore || 0;
+      var badge    = _getBadge(score);
+      var joined   = profile.joinedAt
+        ? new Date(profile.joinedAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+        : '';
+      var bio      = profile.bio || '';
+
+      var allRevs = window._pmGetCommunityReviews ? window._pmGetCommunityReviews() : [];
+      var reviews = allRevs.filter(function(r) { return r.uid === uid; });
+
+      var labelEl = document.getElementById('pmProfBackLabel');
+      if (labelEl) labelEl.textContent = nickname;
+
+      var avatarHtml = profile.photoURL
+        ? '<img class="pm-prof-avatar" src="' + _esc(profile.photoURL) + '" alt="' + _esc(nickname) + '" onerror="this.style.display=\'none\';this.nextSibling.style.display=\'flex\'"/><div class="pm-prof-avatar-fallback" style="display:none">' + _esc(nickname.charAt(0).toUpperCase()) + '</div>'
+        : '<div class="pm-prof-avatar-fallback">' + _esc(nickname.charAt(0).toUpperCase()) + '</div>';
+
+      var statsHtml = [
+        { val: profile.reviewCount  || 0, lbl: 'Reviews' },
+        { val: profile.likesReceived || 0, lbl: 'Likes'   },
+        { val: score,                       lbl: 'Score'   }
+      ].map(function(s) {
+        return '<div class="pm-prof-stat"><div class="pm-prof-stat-val">' + s.val + '</div><div class="pm-prof-stat-lbl">' + s.lbl + '</div></div>';
+      }).join('');
+
+      var tasteHtml = '';
+      if (profile.favGenre || profile.favDirector || profile.favFilm) {
+        var items = [];
+        if (profile.favGenre)    items.push('<div class="pm-prof-taste-item"><div class="pm-prof-taste-icon">🎭</div><div class="pm-prof-taste-lbl">Genre</div><div class="pm-prof-taste-val">'    + _esc(profile.favGenre)    + '</div></div>');
+        if (profile.favDirector) items.push('<div class="pm-prof-taste-item"><div class="pm-prof-taste-icon">🎬</div><div class="pm-prof-taste-lbl">Director</div><div class="pm-prof-taste-val">' + _esc(profile.favDirector) + '</div></div>');
+        if (profile.favFilm)     items.push('<div class="pm-prof-taste-item"><div class="pm-prof-taste-icon">🎞️</div><div class="pm-prof-taste-lbl">Film</div><div class="pm-prof-taste-val">'    + _esc(profile.favFilm)     + '</div></div>');
+        tasteHtml = '<div class="pm-prof-section-title">Taste Card</div><div class="pm-prof-taste">' + items.join('') + '</div>';
+      }
+
+      var reviewsHtml = '';
+      if (reviews.length) {
+        var cards = reviews.map(function(r) {
+          var fp   = typeof fanReviewFp === 'function' ? fanReviewFp(r) : '';
+          var stars = typeof _starsHtml === 'function' ? _starsHtml(r.rating || 0) : '';
+          var safeFp = (fp || '').replace(/"/g, '');
+          return '<div class="pm-prof-rev-card" onclick="pmCloseProfile();_pmOpenReviewFromProfile(\'' + safeFp + '\')">'
+            + '<div class="pm-prof-rev-poster" id="ppRvPoster-' + safeFp + '">🎬</div>'
+            + '<div class="pm-prof-rev-meta">'
+            + '<div class="pm-prof-rev-title" title="' + _esc(r.movie || '') + '">' + _esc(r.movie || 'Unknown') + '</div>'
+            + '<div class="pm-prof-rev-stars">' + stars + '</div>'
+            + '</div></div>';
+        });
+        reviewsHtml = '<div class="pm-prof-section-title">' + reviews.length + ' Review' + (reviews.length !== 1 ? 's' : '') + '</div>'
+          + '<div class="pm-prof-reviews-grid">' + cards.join('') + '</div>';
+      }
+
+      var editBtn = isOwn
+        ? '<button class="pm-prof-edit-btn" onclick="pmOpenEditProfile()">✏️ Edit Profile</button>'
+        : '';
+
+      content.innerHTML = '<div class="pm-prof-header"><div>' + avatarHtml + '</div>'
+        + '<div class="pm-prof-info">'
+        + '<div class="pm-prof-nickname">' + _esc(nickname) + '</div>'
+        + '<span class="pm-prof-badge">' + badge.icon + ' ' + badge.label + '</span>'
+        + (joined ? '<div class="pm-prof-joined">Member since ' + joined + '</div>' : '')
+        + '</div></div>'
+        + '<div class="pm-prof-stats">' + statsHtml + '</div>'
+        + (bio ? '<div class="pm-prof-bio">' + _esc(bio) + '</div>' : '')
+        + tasteHtml + reviewsHtml + editBtn;
+
+      // Lazy-load review posters
+      reviews.forEach(function(r) {
+        var fp  = typeof fanReviewFp === 'function' ? fanReviewFp(r) : '';
+        if (!fp) return;
+        var el  = document.getElementById('ppRvPoster-' + fp);
+        if (!el) return;
+        var isTV = r._mediaType === 'tv' || r.mediaType === 'tv';
+        if (typeof fetchPoster === 'function') {
+          fetchPoster(r.movie, isTV ? 'tv' : 'movie', r.tmdbId || null).then(function(url) {
+            if (url && el) el.innerHTML = '<img src="' + url + '" alt="' + _esc(r.movie || '') + '" loading="lazy"/>';
+          });
+        }
+        // Pre-register review so openFanReviewPage can find it
+        if (typeof window._pmRegisterReview === 'function') window._pmRegisterReview(fp, r);
+      });
+
+    } catch(e) {
+      content.innerHTML = '<div style="padding:60px 22px;text-align:center;color:#f44">Failed to load profile.</div>';
+    }
+  };
+
+  window.pmCloseProfile = function() {
+    var overlay = document.getElementById('pmProfileOverlay');
+    if (overlay) overlay.style.display = 'none';
+    document.body.style.overflow = '';
+    _profileUid  = null;
+    _profileData = null;
+  };
+
+  // Opens a review after closing the profile (pre-registers it first)
+  window._pmOpenReviewFromProfile = function(fp) {
+    setTimeout(function() {
+      if (typeof openFanReviewPage === 'function') openFanReviewPage(fp);
+    }, 80);
+  };
+
+  // ── Edit Profile ──────────────────────────────────────────────────
+  window.pmOpenEditProfile = function() {
+    if (!_pmUser || !_profileData) return;
+    var p = _profileData;
+    var g = function(id) { return document.getElementById(id); };
+    var bio  = g('pmEditBio');      if (bio)  bio.value  = p.bio         || '';
+    var gen  = g('pmEditGenre');    if (gen)  gen.value  = p.favGenre    || '';
+    var dir  = g('pmEditDirector'); if (dir)  dir.value  = p.favDirector || '';
+    var film = g('pmEditFilm');     if (film) film.value = p.favFilm     || '';
+    var nick = g('pmEditNickname'); if (nick) nick.value = p.nickname    || '';
+    var hint = g('pmEditNicknameHint');
+    var msg  = g('pmEditMsg'); if (msg) msg.textContent = '';
+
+    if (hint && nick) {
+      var daysSince = (Date.now() - (p.nicknameLastChanged || 0)) / 86400000;
+      if (daysSince < 30) {
+        var daysLeft = Math.ceil(30 - daysSince);
+        hint.textContent = 'Can change in ' + daysLeft + ' day' + (daysLeft !== 1 ? 's' : '') + '.';
+        hint.className = 'pm-edit-cooldown';
+        nick.disabled = true;
+      } else {
+        hint.textContent = '';
+        hint.className = 'pm-edit-hint';
+        nick.disabled = false;
+      }
+    }
+    var ov = g('pmEditProfileOverlay');
+    if (ov) { ov.style.display = 'flex'; }
+  };
+
+  window.pmCloseEditProfile = function() {
+    var ov = document.getElementById('pmEditProfileOverlay');
+    if (ov) ov.style.display = 'none';
+  };
+
+  window.pmSaveProfile = async function() {
+    var user = _pmUser;
+    if (!user) return;
+    var msg = document.getElementById('pmEditMsg');
+    var btn = document.querySelector('.pm-edit-save');
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+    if (msg) msg.textContent = '';
+
+    var bio      = (document.getElementById('pmEditBio')       || {}).value?.trim() || '';
+    var genre    = (document.getElementById('pmEditGenre')     || {}).value?.trim() || '';
+    var director = (document.getElementById('pmEditDirector')  || {}).value?.trim() || '';
+    var film     = (document.getElementById('pmEditFilm')      || {}).value?.trim() || '';
+    var nickEl   = document.getElementById('pmEditNickname');
+    var newNick  = nickEl && !nickEl.disabled ? (nickEl.value || '').trim() : null;
+
+    if (newNick !== null && newNick !== (_profileData?.nickname || '')) {
+      if (newNick.length < 2) {
+        if (msg) { msg.style.color='#f44'; msg.textContent='Nickname must be at least 2 characters.'; }
+        if (btn) { btn.disabled=false; btn.textContent='Save Changes'; } return;
+      }
+      if (newNick.length > 30) {
+        if (msg) { msg.style.color='#f44'; msg.textContent='Nickname must be 30 characters or fewer.'; }
+        if (btn) { btn.disabled=false; btn.textContent='Save Changes'; } return;
+      }
+      if (!/^[\w\s\-\.]+$/.test(newNick)) {
+        if (msg) { msg.style.color='#f44'; msg.textContent='Letters, numbers, spaces, hyphens and dots only.'; }
+        if (btn) { btn.disabled=false; btn.textContent='Save Changes'; } return;
+      }
+    }
+
+    var patch = { bio: bio, favGenre: genre, favDirector: director, favFilm: film };
+    if (newNick && newNick !== (_profileData?.nickname || '')) {
+      patch.nickname = newNick;
+      patch.nicknameLastChanged = Date.now();
+    }
+
+    try {
+      var token = await user.getIdToken();
+      var res = await fetch(RTDB + '/users/' + user.uid + '.json?auth=' + token, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch)
+      });
+      if (!res.ok) throw new Error('Save failed');
+      _profileData = Object.assign({}, _profileData, patch);
+      if (patch.nickname) {
+        _pmNickname = patch.nickname;
+        _prefillReviewNames(patch.nickname);
+        // Refresh welcome strip greeting
+        var greetEl = document.getElementById('pmWelcomeGreeting');
+        if (greetEl) {
+          var hr = new Date().getHours();
+          var word = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
+          var badgeSpan = document.getElementById('pmWelcomeBadge');
+          var badgeHtml = badgeSpan ? badgeSpan.outerHTML : '';
+          greetEl.innerHTML = word + ', <strong><span class="pm-profile-link" onclick="pmOpenProfile(\'' + _esc(user.uid) + '\')">' + _esc(patch.nickname) + '</span></strong> ' + badgeHtml;
+        }
+      }
+      if (msg) { msg.style.color='#4caf50'; msg.textContent='✓ Profile saved!'; }
+      setTimeout(function() {
+        pmCloseEditProfile();
+        if (_profileUid) pmOpenProfile(_profileUid);
+      }, 900);
+    } catch(e) {
+      if (msg) { msg.style.color='#f44'; msg.textContent='Save failed — try again.'; }
+    } finally {
+      if (btn) { btn.disabled=false; btn.textContent='Save Changes'; }
+    }
+  };
 
   // Override openAdmin + checkAdminPw to auto-bypass password for auth-verified editor
   setTimeout(function() {
