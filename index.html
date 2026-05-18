@@ -1926,6 +1926,16 @@
     <li><span class="pm-bi">🎬</span><span>A home experience built around you</span></li>
   </ul>
 </div>
+<script>
+/* Hide landing immediately for returning signed-in users — runs before Firebase resolves */
+(function(){
+  if (localStorage.getItem('pmovies_was_signed_in') === '1' ||
+      sessionStorage.getItem('pmovies_guest') === '1') {
+    var el = document.getElementById('pmLandingScreen');
+    if (el) el.style.display = 'none';
+  }
+})();
+</script>
 
 <!-- ╔══════════════════════════════════════════════════════════╗ -->
 <!-- ║  NICKNAME SETUP — first sign-in only                    ║ -->
@@ -13352,12 +13362,14 @@ async function deleteEditorReview(key, e) {
   firebase.auth().onAuthStateChanged(function(user) {
     _pmUser = user;
     if (user) {
+      localStorage.setItem('pmovies_was_signed_in', '1');
       _hideLanding();
       _checkNickname(user);
       _checkEditorRole(user.uid);
     } else if (sessionStorage.getItem('pmovies_guest') === '1') {
       _hideLanding();
     } else {
+      localStorage.removeItem('pmovies_was_signed_in');
       _showLanding();
     }
   });
@@ -13402,6 +13414,7 @@ async function deleteEditorReview(key, e) {
   window.pmSignOut = function() {
     firebase.auth().signOut().then(function() {
       localStorage.removeItem('pmovies_admin');
+      localStorage.removeItem('pmovies_was_signed_in');
       sessionStorage.removeItem('pmovies_guest');
       window._pmEditorAuthVerified = false;
       var strip = document.getElementById('pmWelcomeStrip');
@@ -13574,6 +13587,8 @@ async function deleteEditorReview(key, e) {
       if (data === true) {
         localStorage.setItem('pmovies_admin', '1');
         window._pmEditorAuthVerified = true;
+        var badgeEl = document.getElementById('pmWelcomeBadge');
+        if (badgeEl) badgeEl.textContent = '✏️ EDITOR';
       }
     } catch(_) {}
   }
