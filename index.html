@@ -4609,8 +4609,9 @@
   function fanReviewFp(r) {
     return btoa(encodeURIComponent(`${(r.name||'').toLowerCase()}|${(r.movie||'').toLowerCase()}|${(r.text||'').slice(0,40).toLowerCase()}`)).slice(0,24);
   }
-  let _fanLikeCache  = {};   // safeKey → count  (movie reviews)
-  let _srLikeCache   = {};   // safeKey → count  (series reviews)
+  let _fanLikeCache  = {};   // safeKey → count  (backward-compat display)
+  let _srLikeCache   = {};   // safeKey → count  (backward-compat display)
+  let _fanLikeData   = {};   // safeKey → { count, byUser:{uid:true} }
   let _cmtCountCache = {};   // fp → count  (comments, both types)
 
   // Firebase RTDB decodes %2F in paths as '/', treating it as a child separator.
@@ -4637,16 +4638,19 @@
 
   async function loadFanLikeCounts() {
     try {
-      const res = await fetch(`${RTDB}/fanReviewLikes.json`);
-      _fanLikeCache = (res.ok ? await res.json() : null) || {};
+      const res  = await fetch(`${RTDB}/fanLikes.json`);
+      const data = (res.ok ? await res.json() : null) || {};
+      _fanLikeData = data;
+      // Populate flat caches for getFanLikes / _updateFrLikeBtn
+      Object.entries(data).forEach(([key, val]) => {
+        const count = (val && typeof val === 'object') ? (val.count || 0) : 0;
+        _fanLikeCache[key] = count;
+        _srLikeCache[key]  = count;
+      });
     } catch(_) {}
   }
-  async function loadSrLikeCounts() {
-    try {
-      const res = await fetch(`${RTDB}/seriesReviewLikes.json`);
-      _srLikeCache = (res.ok ? await res.json() : null) || {};
-    } catch(_) {}
-  }
+  // Series likes now share the fanLikes node — no separate load needed
+  async function loadSrLikeCounts() { await loadFanLikeCounts(); }
   // Load comment counts for all reviews in one RTDB read
   async function loadCommentCounts(type) {
     const path = type === 'tv' ? 'seriesReviewComments' : 'fanReviewComments';
@@ -4680,34 +4684,59 @@
     return ((type === 'tv' ? _srLikeCache : _fanLikeCache)[_fpKey(fp)]) || 0;
   }
   function hasFanLiked(fp) {
-    try { return (JSON.parse(localStorage.getItem('fanLikedSet') || '[]')).includes(fp); } catch(_){ return false; }
+    const uid = window.pmGetUser ? window.pmGetUser()?.uid : null;
+    if (!uid) return false;
+    const entry = _fanLikeData[_fpKey(fp)];
+    return !!(entry && entry.byUser && entry.byUser[uid]);
   }
   async function toggleFanLike(btn) {
-    const fp    = btn.dataset.fp;
-    const type  = btn.dataset.type || 'movie';
-    const liked = hasFanLiked(fp);
-    // "Liked by me" — localStorage per device
-    let likedSet = []; try { likedSet = JSON.parse(localStorage.getItem('fanLikedSet') || '[]'); } catch(_){}
-    if (liked) { likedSet = likedSet.filter(x => x !== fp); } else { likedSet.push(fp); }
-    localStorage.setItem('fanLikedSet', JSON.stringify(likedSet));
-    // Optimistic update to shared cache (keyed by safe fp)
-    const cache  = type === 'tv' ? _srLikeCache : _fanLikeCache;
-    const safeKey = _fpKey(fp);
-    cache[safeKey] = Math.max(0, (cache[safeKey] || 0) + (liked ? -1 : 1));
-    // Update UI immediately
-    const nowLiked = !liked;
-    btn.classList.toggle('liked', nowLiked);
+    if (!window.pmRequireAuth || !window.pmRequireAuth()) return;
+
+    const fp        = btn.dataset.fp;
+    const authorUid = btn.dataset.authorUid || null;
+    const safeKey   = _fpKey(fp);
+    const user      = window.pmGetUser();
+    const uid       = user.uid;
+
+    const entry   = _fanLikeData[safeKey] || { count: 0, byUser: {} };
+    const liked   = !!(entry.byUser && entry.byUser[uid]);
+    const newCount = Math.max(0, (entry.count || 0) + (liked ? -1 : 1));
+
+    // Optimistic UI update
+    const newByUser = { ...(entry.byUser || {}) };
+    if (liked) { delete newByUser[uid]; } else { newByUser[uid] = true; }
+    _fanLikeData[safeKey] = { count: newCount, byUser: newByUser };
+    _fanLikeCache[safeKey] = newCount;
+    _srLikeCache[safeKey]  = newCount;
+
+    btn.classList.toggle('liked', !liked);
     const countEl = btn.querySelector('.like-count');
-    if (countEl) countEl.textContent = cache[safeKey] > 0 ? cache[safeKey] : '';
-    // Persist count to Firebase using safe key (no '/' → no nested path)
-    const path = type === 'tv' ? 'seriesReviewLikes' : 'fanReviewLikes';
+    if (countEl) countEl.textContent = newCount > 0 ? newCount : '';
+
     try {
-      await fetch(`${RTDB}/${path}/${encodeURIComponent(safeKey)}.json`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(cache[safeKey])
-      });
-    } catch(_) {}
+      const token = await user.getIdToken();
+      const base  = `${RTDB}/fanLikes/${encodeURIComponent(safeKey)}`;
+      const opts  = (body) => ({ method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+
+      if (liked) {
+        await fetch(`${base}/byUser/${uid}.json?auth=${token}`, { method: 'DELETE' });
+        await fetch(`${base}/count.json?auth=${token}`, opts(newCount));
+        window._pmUpdateScore && window._pmUpdateScore(uid, -1, { likesGiven: -1 });
+        if (authorUid && authorUid !== uid) window._pmUpdateScore && window._pmUpdateScore(authorUid, -3, { likesReceived: -1 });
+      } else {
+        await fetch(`${base}/byUser/${uid}.json?auth=${token}`, opts(true));
+        await fetch(`${base}/count.json?auth=${token}`, opts(newCount));
+        window._pmUpdateScore && window._pmUpdateScore(uid, 1, { likesGiven: 1 });
+        if (authorUid && authorUid !== uid) window._pmUpdateScore && window._pmUpdateScore(authorUid, 3, { likesReceived: 1 });
+      }
+    } catch(_) {
+      // Revert on error
+      _fanLikeData[safeKey] = entry;
+      _fanLikeCache[safeKey] = entry.count || 0;
+      _srLikeCache[safeKey]  = entry.count || 0;
+      btn.classList.toggle('liked', liked);
+      if (countEl) countEl.textContent = (entry.count || 0) > 0 ? entry.count : '';
+    }
   }
 
   // ── Comments ─────────────────────────────────────────────────────
@@ -4974,7 +5003,7 @@
         ${r.headline ? `<div dir="auto" style="font-size:1.05rem;font-style:italic;color:#ddd;line-height:1.65;margin-bottom:22px;padding:14px 18px;border-inline-start:3px solid #f5a623;background:rgba(245,166,35,.05);border-radius:0 8px 8px 0;text-align:start">"${esc(r.headline)}"</div>` : ''}
         ${r.text   ? `<div dir="auto" style="font-size:.95rem;color:#aaa;line-height:1.95;white-space:pre-line;margin-bottom:24px;text-align:start">${esc(r.text)}</div>` : ''}
         <div class="fan-review-actions" style="flex-wrap:wrap;gap:12px">
-          <button class="fan-like-btn${liked?' liked':''}" id="frLikeBtn-${fp}" data-fp="${fp}" data-type="${likeType}" onclick="toggleFanLike(this);_updateFrLikeBtn('${fp}','${likeType}')">
+          <button class="fan-like-btn${liked?' liked':''}" id="frLikeBtn-${fp}" data-fp="${fp}" data-type="${likeType}" data-author-uid="${r.uid||''}" onclick="toggleFanLike(this);_updateFrLikeBtn('${fp}','${likeType}')">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
             <span class="like-count">${likes > 0 ? likes : ''}</span>
             <span style="margin-left:2px">Like</span>
@@ -5363,6 +5392,8 @@
   }
 
   async function submitFanReview() {
+    if (!window.pmRequireAuth || !window.pmRequireAuth()) return;
+    const user = window.pmGetUser();
     const name   = (document.getElementById('fanName') ||{}).value?.trim();
     const fanMovieEl = document.getElementById('fanMovie');
     const movie  = (fanMovieEl.dataset.cleanTitle || fanMovieEl.value || '').trim();
@@ -5374,7 +5405,8 @@
       const btn = document.querySelector('.fan-submit-btn');
       btn.textContent = 'Posting…'; btn.disabled = true;
       const headline = (document.getElementById('fanHeadline')||{}).value?.trim() || '';
-      const reviewData = { name, movie, tmdbId, rating, headline, text, timestamp: Date.now() };
+      const reviewData = { name, movie, tmdbId, rating, headline, text, timestamp: Date.now(),
+        uid: user.uid, photoURL: user.photoURL || null };
       // Write to RTDB (new path)
       const rtdbRes = await fetch(`${RTDB}/fanReviews.json`, {
         method: 'POST',
@@ -5423,6 +5455,7 @@
       document.querySelectorAll('.fan-star').forEach(s => s.classList.remove('active'));
       document.querySelector('.fan-star-label').textContent = 'Click to rate';
       btn.textContent = 'POST REVIEW'; btn.disabled = false;
+      window._pmUpdateScore && window._pmUpdateScore(user.uid, 5, { reviewCount: 1 });
       await loadFanReviews();
       refreshChallengeResults();
       if (_currentChallengeTitle) updateChallengeReviewCount(_currentChallengeTitle);
@@ -5589,6 +5622,8 @@
   }
 
   async function submitSeriesReview() {
+    if (!window.pmRequireAuth || !window.pmRequireAuth()) return;
+    const user = window.pmGetUser();
     const name   = document.getElementById('srFanName').value?.trim();
     const seriesEl = document.getElementById('srFanSeries');
     const series = (seriesEl.dataset.cleanTitle || seriesEl.value || '').trim();
@@ -5599,7 +5634,8 @@
     try {
       const btn = document.querySelector('#srFanSection .fan-submit-btn');
       btn.textContent = 'Posting…'; btn.disabled = true;
-      const reviewData = { name, movie: series, tmdbId: srTmdbId, rating, text, timestamp: Date.now(), mediaType: 'tv' };
+      const reviewData = { name, movie: series, tmdbId: srTmdbId, rating, text, timestamp: Date.now(),
+        mediaType: 'tv', uid: user.uid, photoURL: user.photoURL || null };
       const srRes = await fetch(`${RTDB}/seriesFanReviews.json`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -5620,6 +5656,7 @@
       document.querySelectorAll('.sr-star').forEach(x => x.classList.remove('active'));
       document.getElementById('srFanStarLabel').textContent = 'Click to rate';
       btn.textContent = 'POST REVIEW'; btn.disabled = false;
+      window._pmUpdateScore && window._pmUpdateScore(user.uid, 5, { reviewCount: 1 });
       showToast('Review posted! 📺');
       await loadSeriesReviews();
     } catch(e) {
@@ -13335,7 +13372,8 @@ async function deleteEditorReview(key, e) {
     databaseURL:       RTDB
   };
 
-  let _pmUser = null;
+  let _pmUser     = null;
+  let _pmNickname = null;
 
   // Ensure Firebase App is initialized (may already be done by existing code)
   if (!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
@@ -13366,6 +13404,7 @@ async function deleteEditorReview(key, e) {
       _hideLanding();
       _checkNickname(user);
       _checkEditorRole(user.uid);
+      _silentDeviceClaim(user);
     } else if (sessionStorage.getItem('pmovies_guest') === '1') {
       _hideLanding();
     } else {
@@ -13431,8 +13470,62 @@ async function deleteEditorReview(key, e) {
   window.pmCloseSignInPrompt = function() {
     document.getElementById('pmSignInPrompt').style.display = 'none';
   };
-  window.pmGetUser   = function() { return _pmUser; };
+  window.pmGetUser    = function() { return _pmUser; };
   window.pmIsSignedIn = function() { return !!_pmUser; };
+  window.pmGetNickname = function() { return _pmNickname; };
+
+  // ── Silent Device Claim ──────────────────────────────────────────
+  // When a user signs in on the same device they used to post (pre-auth),
+  // quietly stamps their uid onto those reviews in Firebase.
+  var _claimDone = false;
+  async function _silentDeviceClaim(user) {
+    if (_claimDone) return;
+    _claimDone = true;
+    try {
+      var myMap = JSON.parse(localStorage.getItem('myReviewKeys') || '{}');
+      var entries = Object.entries(myMap);
+      if (!entries.length) return;
+      var token = await user.getIdToken();
+      await Promise.all(entries.map(async function(entry) {
+        var fp = entry[0], info = entry[1];
+        try {
+          var check = await fetch(RTDB + '/' + info.path + '/' + info.key + '/uid.json?auth=' + token);
+          var existingUid = check.ok ? await check.json() : null;
+          if (!existingUid) {
+            await fetch(RTDB + '/' + info.path + '/' + info.key + '.json?auth=' + token, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ uid: user.uid, photoURL: user.photoURL || null })
+            });
+          }
+        } catch(_) {}
+      }));
+    } catch(_) {}
+  }
+
+  // ── Contribution Score ────────────────────────────────────────────
+  // Read-then-write increment. Per-user only so race conditions are negligible.
+  window._pmUpdateScore = async function(uid, scoreDelta, counters) {
+    var user = _pmUser;
+    if (!user) return;
+    try {
+      var token = await user.getIdToken();
+      var res   = await fetch(RTDB + '/users/' + uid + '.json?auth=' + token);
+      var p     = res.ok ? await res.json() : null;
+      if (!p) return;
+      var patch = { contributionScore: Math.max(0, (p.contributionScore || 0) + scoreDelta) };
+      if (counters) {
+        if (counters.reviewCount)   patch.reviewCount   = Math.max(0, (p.reviewCount   || 0) + counters.reviewCount);
+        if (counters.likesGiven)    patch.likesGiven    = Math.max(0, (p.likesGiven    || 0) + counters.likesGiven);
+        if (counters.likesReceived) patch.likesReceived = Math.max(0, (p.likesReceived || 0) + counters.likesReceived);
+      }
+      await fetch(RTDB + '/users/' + uid + '.json?auth=' + token, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch)
+      });
+    } catch(_) {}
+  };
 
   // ── Nickname Check ───────────────────────────────────────────────
   async function _checkNickname(user) {
@@ -13443,6 +13536,8 @@ async function deleteEditorReview(key, e) {
       if (!nickname) {
         _showNicknameOverlay(user);
       } else {
+        _pmNickname = nickname;
+        _prefillReviewNames(nickname);
         _showWelcomeStrip(nickname, user.uid);
       }
     } catch(e) {
@@ -13506,6 +13601,8 @@ async function deleteEditorReview(key, e) {
         body: JSON.stringify(profile)
       });
       if (!res.ok) throw new Error('Write failed: ' + res.status);
+      _pmNickname = nickname;
+      _prefillReviewNames(nickname);
       document.getElementById('pmNicknameOverlay').style.display = 'none';
       _showWelcomeStrip(nickname, user.uid);
     } catch(e) {
@@ -13571,6 +13668,13 @@ async function deleteEditorReview(key, e) {
   function _getDailyQuote() {
     var day = Math.floor(Date.now() / 86400000);
     return _dailyQuotes[day % _dailyQuotes.length];
+  }
+
+  function _prefillReviewNames(nickname) {
+    ['fanName', 'srFanName'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el && !el.value) el.value = nickname;
+    });
   }
 
   function _esc(s) {
