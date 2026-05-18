@@ -1805,7 +1805,7 @@
   <button class="pmovies-tab" id="tab-btn-foryou" onclick="switchTab('foryou')" role="tab">
     <span class="tab-icon">✦</span>For You
   </button>
-  <button class="pmovies-tab" id="tab-btn-community" onclick="switchTab('community')" role="tab">
+  <button class="pmovies-tab" id="tab-btn-movies" onclick="switchTab('movies')" role="tab">
     <span class="tab-icon">🎥</span>Movies
   </button>
   <button class="pmovies-tab" id="tab-btn-series" onclick="switchTab('series')" role="tab">
@@ -1975,7 +1975,7 @@
   </div>
 </div><!-- /tab-panel-foryou -->
 
-<div class="tab-panel" id="tab-panel-community">
+<div class="tab-panel" id="tab-panel-movies">
 
   <!-- WEEKLY CHALLENGE -->
   <div class="challenge-section" id="challengeSection" style="display:none"></div>
@@ -2109,7 +2109,7 @@
     <div id="fanRecords" class="fan-records" style="display:none"></div>
   </div>
 
-</div><!-- /tab-panel-community -->
+</div><!-- /tab-panel-movies -->
 
 <div class="tab-panel" id="tab-panel-lists">
 
@@ -3878,7 +3878,7 @@
         </div>`;
       });
       html += `</div>`;
-      html += `<button class="pm-see-all" onclick="closeModal(null);switchTab('community')">See all reviews →</button>`;
+      html += `<button class="pm-see-all" onclick="closeModal(null);switchTab('movies')">See all reviews →</button>`;
       html += `</div>`;
     }
 
@@ -4860,7 +4860,7 @@
     if (page) page.style.display = 'none';
     document.body.style.overflow = '';
     // Return address bar to root — avoids leaving /fan/{slug} in the URL after close
-    try { history.pushState(null, '', '/#community'); } catch(e) {}
+    try { history.pushState(null, '', '/#movies'); } catch(e) {}
   }
 
   // ── Edit review helpers ───────────────────────────────────────────
@@ -5505,7 +5505,7 @@
   /* ══ TAB NAVIGATION ══ */
   function switchTab(name) {
     let foryouWasActive = false;
-    ['discover','foryou','community','lists','series','backed','posters','editor'].forEach(t => {
+    ['discover','foryou','movies','lists','series','backed','posters','editor'].forEach(t => {
       const panel = document.getElementById('tab-panel-' + t);
       const wasActive = panel.classList.contains('active');
       if (t === 'foryou') foryouWasActive = wasActive;
@@ -5866,7 +5866,7 @@
     }
 
     const tabName = hash.split('?')[0]; // strip any ?admin=... from the hash before matching
-    if (['discover','foryou','community','lists','series','backed','posters','editor'].includes(tabName)) switchTab(tabName);
+    if (['discover','foryou','movies','lists','series','backed','posters','editor'].includes(tabName)) switchTab(tabName);
     // Show Write Review button immediately if admin (button hidden by default via inline style)
     if (_isEditorAdmin()) {
       const wb = document.getElementById('editorWriteBtn');
@@ -5986,7 +5986,7 @@
   // after loadFanReviews() / loadSeriesReviews() the fp is always findable.
   async function _deepLinkFanReview(fp) {
     // Switch tab so the grid renders underneath the overlay
-    try { switchTab('community'); } catch(e) {}
+    try { switchTab('movies'); } catch(e) {}
 
     // Already in registry from a previous render → open immediately
     if (_reviewCardRegistry.has(fp) || _srReviewCardRegistry.has(fp)) {
