@@ -1934,6 +1934,7 @@
     text-transform: uppercase; padding: 7px 13px; border-radius: 20px;
     cursor: pointer; transition: all .15s;
     -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    z-index: 10;
   }
   .pm-prof-hero-change:hover { background: rgba(245,166,35,.2); border-color: rgba(245,166,35,.4); color: #f5a623; }
   /* Identity row */
@@ -2007,10 +2008,10 @@
     font-size: .56rem; font-weight: 700; letter-spacing: .14em;
     text-transform: uppercase; color: #444; padding: 26px 28px 12px;
   }
-  /* Taste card grid */
+  /* Taste card grid — 2×2 */
   .pm-prof-taste {
-    display: grid; grid-template-columns: 1fr 1fr 1fr;
-    gap: 12px; padding: 0 28px;
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 14px; padding: 0 28px;
   }
   /* Genre themed square */
   .pm-prof-taste-genre {
@@ -2040,9 +2041,10 @@
   .pm-prof-taste-item.editable { cursor: pointer; }
   .pm-prof-taste-item.editable:hover { border-color: rgba(245,166,35,.4); }
   .pm-prof-taste-img {
-    width: 100%; height: 110px; object-fit: cover; display: block;
+    width: 100%; height: 180px; object-fit: cover; display: block;
   }
-  .pm-prof-taste-img.person { object-position: top; }
+  .pm-prof-taste-img.person { height: 200px; object-position: center top; }
+  .pm-prof-taste-img.poster { height: 220px; object-fit: cover; }
   .pm-prof-taste-bottom { padding: 8px 10px 10px; }
   .pm-prof-taste-icon { font-size: 1rem; margin-bottom: 3px; }
   .pm-prof-taste-lbl {
@@ -2175,16 +2177,21 @@
   #pmGreetingScreen.gs-active { display: flex; }
   .pm-gs-bg {
     position: absolute; inset: 0;
-    background: linear-gradient(135deg,#100800 0%,#1e0e00 45%,#060007 100%);
-    transition: background 1.2s;
+    background: linear-gradient(135deg,#0a0600 0%,#1a0e00 45%,#040008 100%);
   }
   .pm-gs-bg-img {
     position: absolute; inset: 0; width: 100%; height: 100%;
-    object-fit: cover; opacity: .2; filter: blur(12px) saturate(0.8);
+    object-fit: cover; opacity: 0; display: block;
+    transition: opacity 1.8s ease;
   }
+  .pm-gs-bg-img.visible { opacity: .28; }
   .pm-gs-vignette {
     position: absolute; inset: 0;
-    background: linear-gradient(to right, rgba(0,0,0,.96) 0%, rgba(0,0,0,.72) 55%, rgba(0,0,0,.15) 100%);
+    background: linear-gradient(to right, rgba(0,0,0,.97) 0%, rgba(0,0,0,.82) 42%, rgba(0,0,0,.3) 72%, rgba(0,0,0,.1) 100%);
+  }
+  .pm-gs-vignette-bottom {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 35%;
+    background: linear-gradient(to top, rgba(0,0,0,.8), transparent);
   }
   .pm-gs-body {
     position: relative; z-index: 2; display: flex;
@@ -2192,65 +2199,78 @@
   }
   .pm-gs-left {
     flex: 1; display: flex; flex-direction: column; justify-content: center;
-    padding: 52px 44px 52px 48px; max-width: 520px;
+    padding: 60px 52px 60px 56px; max-width: 560px;
   }
   .pm-gs-right {
-    flex: 0 0 auto; width: 270px; display: flex; align-items: center;
-    justify-content: center; padding: 40px 36px 40px 0; position: relative;
+    flex: 0 0 auto; width: 320px; display: flex; align-items: center;
+    justify-content: center; padding: 48px 44px 48px 0; position: relative;
   }
   .pm-gs-time-label {
-    font-size: .6rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase;
-    color: #f5a623; margin-bottom: 22px; opacity: .8;
+    font-size: .58rem; font-weight: 700; letter-spacing: .22em; text-transform: uppercase;
+    color: #f5a623; margin-bottom: 28px; opacity: .85;
+    display: flex; align-items: center; gap: 7px;
   }
   .pm-gs-greeting-word {
-    font-family: 'Bebas Neue', sans-serif; font-size: 2.8rem;
-    letter-spacing: 3px; color: rgba(255,255,255,.55); line-height: 1;
+    font-family: 'Bebas Neue', sans-serif; font-size: 3rem;
+    letter-spacing: 3px; color: rgba(255,255,255,.45); line-height: 1;
   }
   .pm-gs-greeting-name {
-    font-family: 'Bebas Neue', sans-serif; font-size: 4.2rem;
-    letter-spacing: 3px; color: #fff; line-height: 1; margin-bottom: 18px;
+    font-family: 'Bebas Neue', sans-serif; font-size: 5rem;
+    letter-spacing: 3px; color: #fff; line-height: 1; margin-bottom: 22px;
   }
-  .pm-gs-badge-row { margin-bottom: 30px; }
+  .pm-gs-badge-row { margin-bottom: 34px; }
   .pm-gs-badge {
-    font-size: .68rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
-    padding: 5px 14px; border-radius: 20px; display: inline-block;
+    font-size: .66rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    padding: 5px 16px; border-radius: 20px; display: inline-block;
     background: rgba(245,166,35,.12); color: #f5a623; border: 1px solid rgba(245,166,35,.35);
   }
   .pm-gs-quote {
-    font-size: .88rem; color: rgba(255,255,255,.55); line-height: 1.75;
-    font-style: italic; margin-bottom: 40px; max-width: 400px;
-    border-left: 2px solid rgba(245,166,35,.35); padding-left: 16px;
+    font-size: .88rem; color: rgba(255,255,255,.5); line-height: 1.8;
+    font-style: italic; margin-bottom: 44px; max-width: 420px;
+    border-left: 2px solid rgba(245,166,35,.35); padding-left: 18px;
   }
   .pm-gs-enter-btn {
     display: inline-flex; align-items: center; gap: 10px;
     background: #f5a623; color: #000; border: none;
     font-family: 'Montserrat', sans-serif; font-weight: 800;
-    font-size: .88rem; letter-spacing: .1em; text-transform: uppercase;
-    padding: 15px 34px; border-radius: 50px; cursor: pointer;
+    font-size: .88rem; letter-spacing: .12em; text-transform: uppercase;
+    padding: 16px 38px; border-radius: 50px; cursor: pointer;
     transition: transform .2s, background .2s; align-self: flex-start;
   }
   .pm-gs-enter-btn:hover { background: #e09400; transform: translateY(-2px); }
+  /* Poster panel */
   .pm-gs-poster-wrap {
-    position: relative; width: 200px;
-    animation: gsFloat 5s ease-in-out infinite;
+    position: relative; width: 240px;
+    animation: gsFloat 6s ease-in-out infinite;
+    filter: drop-shadow(0 40px 80px rgba(0,0,0,.9));
   }
   .pm-gs-poster {
-    width: 200px; height: 298px; border-radius: 16px; overflow: hidden;
-    box-shadow: 0 40px 90px rgba(0,0,0,.85), 0 0 0 1px rgba(255,255,255,.07);
-    background: #1a1a1a; display: flex; align-items: center; justify-content: center;
-    font-size: 3.5rem;
+    width: 240px; height: 358px; border-radius: 14px; overflow: hidden;
+    box-shadow: 0 24px 64px rgba(0,0,0,.9), inset 0 0 0 1px rgba(255,255,255,.08);
+    background: #111; display: flex; align-items: center; justify-content: center;
+    font-size: 3.5rem; position: relative;
   }
-  .pm-gs-poster img { width:100%; height:100%; object-fit:cover; display:block; }
+  .pm-gs-poster img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+    transition: opacity .8s ease;
+  }
   .pm-gs-poster-film {
-    position: absolute; bottom: -28px; left: 0; right: 0; text-align: center;
-    font-size: .6rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
-    color: rgba(255,255,255,.45);
+    position: absolute; bottom: -32px; left: 0; right: 0; text-align: center;
+    font-size: .58rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+    color: rgba(255,255,255,.4);
   }
-  @keyframes gsFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
-  @media(max-width:640px){
-    .pm-gs-left { padding: 40px 24px; max-width:100%; }
+  /* Poster glow */
+  .pm-gs-poster-glow {
+    position: absolute; inset: -20px; border-radius: 24px;
+    background: radial-gradient(ellipse at center, rgba(245,166,35,.12) 0%, transparent 70%);
+    z-index: -1;
+  }
+  @keyframes gsFloat { 0%,100%{transform:translateY(0) rotate(-.5deg)} 50%{transform:translateY(-14px) rotate(.5deg)} }
+  @media(max-width:720px) {
+    .pm-gs-left { padding: 44px 28px; max-width: 100%; }
     .pm-gs-right { display: none; }
-    .pm-gs-greeting-name { font-size: 3rem; }
+    .pm-gs-greeting-name { font-size: 3.6rem; }
+    .pm-gs-greeting-word { font-size: 2.2rem; }
   }
 
   /* ─── Profile Watchlist section ─── */
@@ -2276,6 +2296,17 @@
     font-size: .58rem; color: #666; margin-top: 5px; line-height: 1.3;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center;
   }
+  /* Empty states */
+  .pm-prof-empty {
+    margin: 0 28px; padding: 28px 20px; text-align: center;
+    background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.05);
+    border-radius: 14px;
+  }
+  .pm-prof-empty-icon { font-size: 2rem; margin-bottom: 10px; }
+  .pm-prof-empty-title {
+    font-size: .82rem; color: #666; font-weight: 700; margin-bottom: 5px;
+  }
+  .pm-prof-empty-sub { font-size: .72rem; color: #444; line-height: 1.5; }
 
   /* ─── Backdrop Picker Overlay ─── */
   #pmBackdropPickerOverlay {
@@ -2338,8 +2369,8 @@
 
   /* Mobile — push chips below system status bar */
   @media(max-width:480px) {
-    #pmUserChip { top: 54px; right: 12px; }
-    #pmHomeToggleBtn { top: 54px; left: 12px; }
+    #pmUserChip { top: 72px; right: 12px; }
+    #pmHomeToggleBtn { top: 72px; left: 12px; }
     .pm-prof-identity { padding: 0 16px; }
     .pm-prof-stats { margin: 20px 16px 0; }
     .pm-prof-section-title { padding: 22px 16px 10px; }
@@ -2352,7 +2383,7 @@
     .pm-prof-avatar { width: 88px; height: 88px; }
     .pm-prof-avatar-fallback { width: 88px; height: 88px; font-size: 2.1rem; }
     .pm-prof-identity { margin-top: -42px; }
-    .pm-prof-close-btn { top: 60px; left: 12px; }
+    .pm-prof-close-btn { top: 76px; left: 12px; }
   }
 
   /* ─── Taste Picker Overlay ─── */
@@ -13985,9 +14016,10 @@ async function deleteEditorReview(key, e) {
 <!-- ╚══════════════════════════════════════════════════════════════╝ -->
 <div id="pmGreetingScreen">
   <div class="pm-gs-bg" id="pmGsBg">
-    <img id="pmGsBgImg" class="pm-gs-bg-img" src="" alt="" style="display:none"/>
+    <img id="pmGsBgImg" class="pm-gs-bg-img" src="" alt=""/>
   </div>
   <div class="pm-gs-vignette"></div>
+  <div class="pm-gs-vignette-bottom"></div>
   <div class="pm-gs-body">
     <div class="pm-gs-left">
       <div class="pm-gs-time-label" id="pmGsTimeLabel"></div>
@@ -14004,6 +14036,7 @@ async function deleteEditorReview(key, e) {
     </div>
     <div class="pm-gs-right" id="pmGsRight">
       <div class="pm-gs-poster-wrap">
+        <div class="pm-gs-poster-glow"></div>
         <div class="pm-gs-poster" id="pmGsPoster">🎬</div>
         <div class="pm-gs-poster-film" id="pmGsPosterTitle"></div>
       </div>
@@ -14056,18 +14089,6 @@ async function deleteEditorReview(key, e) {
       <label class="pm-edit-label">Bio</label>
       <textarea class="pm-edit-textarea" id="pmEditBio" maxlength="200" placeholder="Tell the community about your cinema taste…"></textarea>
       <div class="pm-edit-hint">Max 200 characters</div>
-    </div>
-    <div class="pm-edit-row">
-      <label class="pm-edit-label">Favourite Genre</label>
-      <input class="pm-edit-input" id="pmEditGenre" maxlength="40" placeholder="e.g. Sci-Fi, Drama, Thriller"/>
-    </div>
-    <div class="pm-edit-row">
-      <label class="pm-edit-label">Favourite Director</label>
-      <input class="pm-edit-input" id="pmEditDirector" maxlength="60" placeholder="e.g. Stanley Kubrick"/>
-    </div>
-    <div class="pm-edit-row">
-      <label class="pm-edit-label">Favourite Film</label>
-      <input class="pm-edit-input" id="pmEditFilm" maxlength="80" placeholder="e.g. 2001: A Space Odyssey"/>
     </div>
     <div class="pm-edit-row">
       <label class="pm-edit-label">Nickname</label>
@@ -14406,6 +14427,85 @@ async function deleteEditorReview(key, e) {
   }
 
   // ── Cinematic Greeting Screen ─────────────────────────────────────
+  // Curated film rotation for greeting screen
+  var _gsFilmList = [
+    'Lawrence of Arabia',
+    'Cinema Paradiso',
+    'The Godfather',
+    'Casablanca',
+    'The Yacoubian Building',
+    'Caramel Labaki',
+    'The Great Beauty',
+    'Alexandria Why Chahine',
+    'Bicycle Thieves',
+    'Rome Open City',
+  ];
+  var _gsFilmQueue = [];
+  var _gsRotationIdx = 0;
+  var _gsRotationTimer = null;
+  var _gsPrefetchDone = false;
+
+  function _gsPrefetchFilms(apiKey) {
+    if (_gsPrefetchDone || !apiKey) return;
+    _gsPrefetchDone = true;
+    _gsFilmList.forEach(function(q) {
+      fetch('https://api.themoviedb.org/3/search/movie?api_key=' + apiKey + '&query=' + encodeURIComponent(q) + '&language=en-US&page=1')
+        .then(function(r){ return r.ok ? r.json() : null; })
+        .then(function(data) {
+          var hit = data && data.results && data.results[0];
+          if (hit && hit.poster_path) {
+            _gsFilmQueue.push({
+              title: hit.title || q,
+              poster: 'https://image.tmdb.org/t/p/w342' + hit.poster_path,
+              backdrop: hit.backdrop_path ? 'https://image.tmdb.org/t/p/w1280' + hit.backdrop_path : null
+            });
+          }
+        }).catch(function(){});
+    });
+  }
+
+  function _gsShowFilm(film) {
+    if (!film) return;
+    // Swap poster
+    var posterEl = document.getElementById('pmGsPoster');
+    if (posterEl) {
+      var img = posterEl.querySelector('img');
+      if (img) {
+        img.style.opacity = '0';
+        setTimeout(function() {
+          img.src = film.poster;
+          img.style.opacity = '1';
+          var titleEl = document.getElementById('pmGsPosterTitle');
+          if (titleEl) titleEl.textContent = film.title;
+        }, 400);
+      } else {
+        posterEl.innerHTML = '<img src="' + film.poster + '" alt="' + film.title + '" style="transition:opacity .8s"/>';
+        var titleEl = document.getElementById('pmGsPosterTitle');
+        if (titleEl) titleEl.textContent = film.title;
+      }
+    }
+    // Swap background
+    if (film.backdrop) {
+      var bgImg = document.getElementById('pmGsBgImg');
+      if (bgImg) {
+        bgImg.classList.remove('visible');
+        setTimeout(function() {
+          bgImg.src = film.backdrop;
+          bgImg.classList.add('visible');
+        }, 600);
+      }
+    }
+  }
+
+  function _gsStartRotation() {
+    if (_gsRotationTimer) clearInterval(_gsRotationTimer);
+    _gsRotationTimer = setInterval(function() {
+      if (_gsFilmQueue.length < 2) return;
+      _gsRotationIdx = (_gsRotationIdx + 1) % _gsFilmQueue.length;
+      _gsShowFilm(_gsFilmQueue[_gsRotationIdx]);
+    }, 8000);
+  }
+
   function _showGreetingScreen(nickname, uid, profile) {
     var el = document.getElementById('pmGreetingScreen');
     if (!el) return;
@@ -14447,35 +14547,75 @@ async function deleteEditorReview(key, e) {
     el.classList.add('gs-active');
     document.body.style.overflow = 'hidden';
 
-    // Fetch favourite film poster for the right panel
-    var favFilm = profile ? profile.favFilm : null;
-    if (favFilm) {
-      var TMDB_BASE = 'https://api.themoviedb.org/3';
-      var apiKey = typeof getKey === 'function' ? getKey() : null;
-      if (apiKey) {
-        fetch(TMDB_BASE + '/search/movie?api_key=' + apiKey + '&query=' + encodeURIComponent(favFilm) + '&language=en-US&page=1')
-          .then(function(r){ return r.ok ? r.json() : null; })
-          .then(function(data) {
-            var hit = data && data.results && data.results[0];
-            if (!hit) return;
-            if (hit.poster_path) {
-              var posterEl = document.getElementById('pmGsPoster');
-              if (posterEl) posterEl.innerHTML = '<img src="https://image.tmdb.org/t/p/w342' + hit.poster_path + '" alt="' + _esc(favFilm) + '"/>';
-            }
-            if (hit.backdrop_path) {
-              var bgImg = document.getElementById('pmGsBgImg');
-              if (bgImg) { bgImg.src = 'https://image.tmdb.org/t/p/w1280' + hit.backdrop_path; bgImg.style.display = ''; }
-            }
-            var titleEl = document.getElementById('pmGsPosterTitle');
-            if (titleEl) titleEl.textContent = hit.title || favFilm;
-          }).catch(function(){});
-      }
+    var apiKey = typeof getKey === 'function' ? getKey() : null;
+
+    // Start prefetching curated rotation list
+    _gsPrefetchFilms(apiKey);
+
+    // Show favFilm poster immediately if available
+    var favFilm = profile ? (profile.favFilmAllTime || profile.favFilm || null) : null;
+    if (favFilm && apiKey) {
+      fetch('https://api.themoviedb.org/3/search/movie?api_key=' + apiKey + '&query=' + encodeURIComponent(favFilm) + '&language=en-US&page=1')
+        .then(function(r){ return r.ok ? r.json() : null; })
+        .then(function(data) {
+          var hit = data && data.results && data.results[0];
+          if (!hit) return;
+          if (hit.poster_path) {
+            var posterEl = document.getElementById('pmGsPoster');
+            if (posterEl) posterEl.innerHTML = '<img src="https://image.tmdb.org/t/p/w342' + hit.poster_path + '" alt="' + _esc(favFilm) + '" style="transition:opacity .8s"/>';
+          }
+          if (hit.backdrop_path) {
+            var bgImg = document.getElementById('pmGsBgImg');
+            if (bgImg) { bgImg.src = 'https://image.tmdb.org/t/p/w1280' + hit.backdrop_path; bgImg.classList.add('visible'); }
+          }
+          var titleEl = document.getElementById('pmGsPosterTitle');
+          if (titleEl) titleEl.textContent = hit.title || favFilm;
+          // Push this film into rotation so it stays in the cycle
+          if (hit.poster_path) {
+            _gsFilmQueue.unshift({
+              title: hit.title || favFilm,
+              poster: 'https://image.tmdb.org/t/p/w342' + hit.poster_path,
+              backdrop: hit.backdrop_path ? 'https://image.tmdb.org/t/p/w1280' + hit.backdrop_path : null
+            });
+          }
+        }).catch(function(){});
+    } else if (!favFilm && apiKey) {
+      // No favFilm — pick a random film from the curated list to show immediately
+      var randomQ = _gsFilmList[Math.floor(Math.random() * _gsFilmList.length)];
+      fetch('https://api.themoviedb.org/3/search/movie?api_key=' + apiKey + '&query=' + encodeURIComponent(randomQ) + '&language=en-US&page=1')
+        .then(function(r){ return r.ok ? r.json() : null; })
+        .then(function(data) {
+          var hit = data && data.results && data.results[0];
+          if (!hit) return;
+          if (hit.poster_path) {
+            var posterEl = document.getElementById('pmGsPoster');
+            if (posterEl) posterEl.innerHTML = '<img src="https://image.tmdb.org/t/p/w342' + hit.poster_path + '" alt="' + (hit.title||'') + '" style="transition:opacity .8s"/>';
+          }
+          if (hit.backdrop_path) {
+            var bgImg = document.getElementById('pmGsBgImg');
+            if (bgImg) { bgImg.src = 'https://image.tmdb.org/t/p/w1280' + hit.backdrop_path; bgImg.classList.add('visible'); }
+          }
+          var titleEl = document.getElementById('pmGsPosterTitle');
+          if (titleEl) titleEl.textContent = hit.title || randomQ;
+        }).catch(function(){});
     }
+
+    // Start rotation after a delay to let prefetch accumulate results
+    setTimeout(function() {
+      if (_gsFilmQueue.length >= 2) _gsStartRotation();
+      else {
+        // Wait a bit longer for prefetch
+        setTimeout(function() {
+          if (_gsFilmQueue.length >= 1) _gsStartRotation();
+        }, 3000);
+      }
+    }, 5000);
   }
 
   window.pmDismissGreeting = function() {
     var el = document.getElementById('pmGreetingScreen');
     if (!el) return;
+    if (_gsRotationTimer) { clearInterval(_gsRotationTimer); _gsRotationTimer = null; }
     el.style.transition = 'opacity .4s';
     el.style.opacity = '0';
     sessionStorage.setItem('pm_greeting_done', '1');
@@ -14484,6 +14624,9 @@ async function deleteEditorReview(key, e) {
       el.style.opacity = '';
       el.style.transition = '';
       document.body.style.overflow = '';
+      // Reset bg img so it's ready next time
+      var bgImg = document.getElementById('pmGsBgImg');
+      if (bgImg) { bgImg.classList.remove('visible'); }
     }, 420);
   };
 
@@ -14630,46 +14773,33 @@ async function deleteEditorReview(key, e) {
       // Bio
       var bioHtml = profile.bio ? '<div class="pm-prof-bio">' + _esc(profile.bio) + '</div>' : '';
 
-      // Taste card
+      // Taste card — 2×2 grid: Director | Childhood Crush | Film of All Time | Best of 2026
+      var hasAnyTaste = profile.favDirector || profile.favActress || profile.favFilmAllTime || profile.favFilm2026;
       var tasteHtml = '';
-      var hasAnyTaste = profile.favGenre || profile.favDirector || profile.favFilm;
+      var _buildTasteCard = function(id, field, label, placeholder, isOwn, uid) {
+        var val = profile[field];
+        var onc = isOwn ? ' onclick="pmOpenTastePicker(\'' + field + '\',\'' + uid + '\')"' : '';
+        var edCls = isOwn ? ' editable' : '';
+        var imgId = 'tpImg_' + field;
+        return '<div class="pm-prof-taste-item' + edCls + '"' + onc + '>'
+          + '<div id="' + imgId + '" style="background:#111;display:flex;align-items:center;justify-content:center;font-size:2rem">' + placeholder + '</div>'
+          + '<div class="pm-prof-taste-bottom">'
+          + '<div class="pm-prof-taste-lbl">' + label + '</div>'
+          + '<div class="pm-prof-taste-val">' + _esc(val || (isOwn ? '+ Add' : '—')) + '</div>'
+          + (isOwn ? '<div class="pm-prof-taste-edit-hint">✏ tap to change</div>' : '')
+          + '</div></div>';
+      };
       if (hasAnyTaste || isOwn) {
-        var gt = _GENRE_THEMES && _GENRE_THEMES[profile.favGenre];
-        var genreStyle = gt
-          ? 'background:' + gt.bg + ';border-color:' + gt.border + ';color:' + gt.accent
-          : 'background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.07);color:#ccc';
-        var genreIcon  = gt ? gt.icon : '🎭';
-        var genreHtml = '<div class="pm-prof-taste-genre' + (isOwn ? ' editable' : '') + '" style="' + genreStyle + '"'
-          + (isOwn ? ' onclick="pmOpenTastePicker(\'favGenre\',\'' + uid + '\')"' : '') + '>'
-          + '<div class="pm-prof-taste-icon">' + genreIcon + '</div>'
-          + '<div class="pm-prof-taste-lbl">Genre</div>'
-          + '<div class="pm-prof-taste-val">' + _esc(profile.favGenre || (isOwn ? '+ Add' : '—')) + '</div>'
-          + (isOwn ? '<div class="pm-prof-taste-edit-hint">✏ tap to change</div>' : '')
-          + '</div>';
-
-        var directorHtml = '<div class="pm-prof-taste-item' + (isOwn ? ' editable' : '') + '"'
-          + (isOwn ? ' onclick="pmOpenTastePicker(\'favDirector\',\'' + uid + '\')"' : '') + '>'
-          + '<div id="tpImgDirector" style="height:110px;background:#111;display:flex;align-items:center;justify-content:center;font-size:1.6rem">👤</div>'
-          + '<div class="pm-prof-taste-bottom">'
-          + '<div class="pm-prof-taste-lbl">Director</div>'
-          + '<div class="pm-prof-taste-val">' + _esc(profile.favDirector || (isOwn ? '+ Add' : '—')) + '</div>'
-          + (isOwn ? '<div class="pm-prof-taste-edit-hint">✏ tap to change</div>' : '')
-          + '</div></div>';
-
-        var filmHtml = '<div class="pm-prof-taste-item' + (isOwn ? ' editable' : '') + '"'
-          + (isOwn ? ' onclick="pmOpenTastePicker(\'favFilm\',\'' + uid + '\')"' : '') + '>'
-          + '<div id="tpImgFilm" style="height:110px;background:#111;display:flex;align-items:center;justify-content:center;font-size:1.6rem">🎞️</div>'
-          + '<div class="pm-prof-taste-bottom">'
-          + '<div class="pm-prof-taste-lbl">Film</div>'
-          + '<div class="pm-prof-taste-val">' + _esc(profile.favFilm || (isOwn ? '+ Add' : '—')) + '</div>'
-          + (isOwn ? '<div class="pm-prof-taste-edit-hint">✏ tap to change</div>' : '')
-          + '</div></div>';
-
         tasteHtml = '<div class="pm-prof-section-title">Taste Card</div>'
-          + '<div class="pm-prof-taste">' + genreHtml + directorHtml + filmHtml + '</div>';
+          + '<div class="pm-prof-taste">'
+          + _buildTasteCard('tpImg_dir',  'favDirector',   'Favourite Director',  '👤', isOwn, uid)
+          + _buildTasteCard('tpImg_act',  'favActress',    'Childhood Crush',     '🌟', isOwn, uid)
+          + _buildTasteCard('tpImg_fat',  'favFilmAllTime','Film of All Time',    '🎞️', isOwn, uid)
+          + _buildTasteCard('tpImg_f26',  'favFilm2026',   'Best of 2026',        '🏆', isOwn, uid)
+          + '</div>';
       }
 
-      // Watchlist (own profile — from localStorage)
+      // Watchlist
       var watchlistHtml = '';
       if (isOwn) {
         try {
@@ -14687,6 +14817,11 @@ async function deleteEditorReview(key, e) {
             });
             watchlistHtml = '<div class="pm-prof-section-title">My Watchlist · ' + wl.length + ' films</div>'
               + '<div class="pm-prof-wl-scroll">' + wlCards.join('') + '</div>';
+          } else {
+            watchlistHtml = '<div class="pm-prof-section-title">My Watchlist</div>'
+              + '<div class="pm-prof-empty"><div class="pm-prof-empty-icon">🎬</div>'
+              + '<div class="pm-prof-empty-title">Your watchlist is empty</div>'
+              + '<div class="pm-prof-empty-sub">Start adding films to track what you want to watch</div></div>';
           }
         } catch(_) {}
       }
@@ -14709,7 +14844,20 @@ async function deleteEditorReview(key, e) {
         });
         reviewsHtml = '<div class="pm-prof-section-title">' + reviews.length + ' Review' + (reviews.length !== 1 ? 's' : '') + '</div>'
           + '<div class="pm-prof-reviews-grid">' + cards.join('') + '</div>';
+      } else if (isOwn) {
+        reviewsHtml = '<div class="pm-prof-section-title">My Reviews</div>'
+          + '<div class="pm-prof-empty"><div class="pm-prof-empty-icon">✍️</div>'
+          + '<div class="pm-prof-empty-title">No reviews yet</div>'
+          + '<div class="pm-prof-empty-sub">Start reviewing films from the community tab</div></div>';
       }
+
+      // Lists (placeholder section — always show for own profile)
+      var listsHtml = isOwn
+        ? '<div class="pm-prof-section-title">My Lists</div>'
+          + '<div class="pm-prof-empty"><div class="pm-prof-empty-icon">📋</div>'
+          + '<div class="pm-prof-empty-title">No lists created yet</div>'
+          + '<div class="pm-prof-empty-sub">Coming soon — curate your own film collections</div></div>'
+        : '';
 
       var editBtn = isOwn ? '<button class="pm-prof-edit-btn" onclick="pmOpenEditProfile()">✏️ Edit Profile</button>' : '';
 
@@ -14719,9 +14867,10 @@ async function deleteEditorReview(key, e) {
         + bioHtml
         + tasteHtml
         + watchlistHtml
+        + listsHtml
         + reviewsHtml
         + editBtn
-        + '<div style="height:40px"></div>';
+        + '<div style="height:60px"></div>';
 
       // Async: load profile backdrop
       var heroWrap = document.getElementById('pmProfHeroWrap');
@@ -14731,38 +14880,58 @@ async function deleteEditorReview(key, e) {
         bImg.className = 'pm-prof-hero-img';
         bImg.src = profile.backdropUrl;
         heroWrap.insertBefore(bImg, heroWrap.firstChild);
-      } else if (profile.favFilm && apiKey) {
-        fetch('https://api.themoviedb.org/3/search/movie?api_key=' + apiKey + '&query=' + encodeURIComponent(profile.favFilm) + '&language=en-US&page=1')
-          .then(function(r){ return r.ok ? r.json() : null; })
-          .then(function(data) {
-            var hit = data && data.results && data.results[0];
-            if (!hit) return;
-            var hw = document.getElementById('pmProfHeroWrap');
-            if (hw && hit.backdrop_path) {
-              var bImg = document.createElement('img');
-              bImg.className = 'pm-prof-hero-img';
-              bImg.src = 'https://image.tmdb.org/t/p/w1280' + hit.backdrop_path;
-              hw.insertBefore(bImg, hw.firstChild);
-            }
-            if (hit.poster_path) {
-              var tEl = document.getElementById('tpImgFilm');
-              if (tEl) tEl.innerHTML = '<img class="pm-prof-taste-img" src="https://image.tmdb.org/t/p/w185' + hit.poster_path + '" alt=""/>';
-            }
-          }).catch(function(){});
+      } else {
+        var bdSrc = profile.favFilmAllTime || profile.favFilm || null;
+        if (bdSrc && apiKey) {
+          fetch('https://api.themoviedb.org/3/search/movie?api_key=' + apiKey + '&query=' + encodeURIComponent(bdSrc) + '&language=en-US&page=1')
+            .then(function(r){ return r.ok ? r.json() : null; })
+            .then(function(data) {
+              var hit = data && data.results && data.results[0];
+              if (!hit || !hit.backdrop_path) return;
+              var hw = document.getElementById('pmProfHeroWrap');
+              if (hw) {
+                var bImg = document.createElement('img');
+                bImg.className = 'pm-prof-hero-img';
+                bImg.src = 'https://image.tmdb.org/t/p/w1280' + hit.backdrop_path;
+                hw.insertBefore(bImg, hw.firstChild);
+              }
+            }).catch(function(){});
+        }
       }
 
-      // Async: load director photo
-      if (profile.favDirector && apiKey) {
-        fetch('https://api.themoviedb.org/3/search/person?api_key=' + apiKey + '&query=' + encodeURIComponent(profile.favDirector) + '&language=en-US&page=1')
+      // Async: load Director portrait
+      var _loadPerson = function(field, elId) {
+        var name = profile[field];
+        if (!name || !apiKey) return;
+        fetch('https://api.themoviedb.org/3/search/person?api_key=' + apiKey + '&query=' + encodeURIComponent(name) + '&language=en-US&page=1')
           .then(function(r){ return r.ok ? r.json() : null; })
           .then(function(data) {
             var hit = data && data.results && data.results[0];
             if (hit && hit.profile_path) {
-              var tEl = document.getElementById('tpImgDirector');
-              if (tEl) tEl.innerHTML = '<img class="pm-prof-taste-img person" src="https://image.tmdb.org/t/p/w185' + hit.profile_path + '" alt=""/>';
+              var tEl = document.getElementById(elId);
+              if (tEl) tEl.innerHTML = '<img class="pm-prof-taste-img person" src="https://image.tmdb.org/t/p/w342' + hit.profile_path + '" alt=""/>';
             }
           }).catch(function(){});
-      }
+      };
+      var _loadFilmPoster = function(field, elId, year2026) {
+        var title = profile[field];
+        if (!title || !apiKey) return;
+        var qs = 'https://api.themoviedb.org/3/search/movie?api_key=' + apiKey + '&query=' + encodeURIComponent(title) + '&language=en-US&page=1';
+        if (year2026) qs += '&primary_release_year=2026';
+        fetch(qs)
+          .then(function(r){ return r.ok ? r.json() : null; })
+          .then(function(data) {
+            var hit = data && data.results && data.results[0];
+            if (hit && hit.poster_path) {
+              var tEl = document.getElementById(elId);
+              if (tEl) tEl.innerHTML = '<img class="pm-prof-taste-img poster" src="https://image.tmdb.org/t/p/w342' + hit.poster_path + '" alt=""/>';
+            }
+          }).catch(function(){});
+      };
+      _loadPerson('favDirector', 'tpImg_favDirector');
+      _loadPerson('favActress',  'tpImg_favActress');
+      _loadFilmPoster('favFilmAllTime', 'tpImg_favFilmAllTime', false);
+      _loadFilmPoster('favFilm2026',    'tpImg_favFilm2026',    true);
 
       // Lazy-load review posters + pre-register
       reviews.forEach(function(r) {
@@ -14832,22 +15001,17 @@ async function deleteEditorReview(key, e) {
     var srch = document.getElementById('pmTpSearch');
     var res  = document.getElementById('pmTpResults');
     if (!ov) return;
-    if (ttl) ttl.textContent = field === 'favGenre' ? 'Favourite Genre'
-      : field === 'favDirector' ? 'Favourite Director' : 'Favourite Film';
-    if (srch) srch.style.display = field === 'favGenre' ? 'none' : '';
+    var titleMap = {
+      favDirector: 'Favourite Director',
+      favActress:  'Childhood Crush',
+      favFilmAllTime: 'Film of All Time',
+      favFilm2026: 'Best Film of 2026',
+    };
+    if (ttl) ttl.textContent = titleMap[field] || 'Choose';
+    if (srch) srch.style.display = '';
     if (srch) { srch.value = ''; }
     if (res) {
-      if (field === 'favGenre') {
-        res.innerHTML = '<div class="pm-tp-genre-grid">'
-          + _GENRES.map(function(g) {
-            var t = _GENRE_THEMES[g] || {};
-            return '<div class="pm-tp-genre-chip" style="background:' + (t.bg||'rgba(255,255,255,.05)') + ';border-color:' + (t.border||'rgba(255,255,255,.1)') + ';color:' + (t.accent||'#bbb') + '" onclick="pmSaveTasteItem(\'favGenre\',\'' + uid + '\',\'' + g + '\',null)">'
-              + '<span style="font-size:1.2rem">' + (t.icon||'🎬') + '</span>'
-              + '<span>' + g + '</span></div>';
-          }).join('') + '</div>';
-      } else {
-        res.innerHTML = '<div style="color:#555;font-size:.8rem;padding:8px 0">Start typing to search…</div>';
-      }
+      res.innerHTML = '<div style="color:#555;font-size:.8rem;padding:8px 0">Start typing to search…</div>';
     }
     ov.style.display = 'flex';
   };
@@ -14867,16 +15031,18 @@ async function deleteEditorReview(key, e) {
     _tastePicker.timer = setTimeout(async function() {
       try {
         var apiKey = typeof getKey === 'function' ? getKey() : '';
-        var endpoint = field === 'favDirector'
+        var isPerson = field === 'favDirector' || field === 'favActress';
+        var isYear2026 = field === 'favFilm2026';
+        var endpoint = isPerson
           ? 'https://api.themoviedb.org/3/search/person?api_key=' + apiKey + '&query=' + encodeURIComponent(q) + '&language=en-US&page=1'
-          : 'https://api.themoviedb.org/3/search/movie?api_key='  + apiKey + '&query=' + encodeURIComponent(q) + '&language=en-US&page=1';
+          : 'https://api.themoviedb.org/3/search/movie?api_key=' + apiKey + '&query=' + encodeURIComponent(q) + '&language=en-US&page=1' + (isYear2026 ? '&primary_release_year=2026' : '');
         var r    = await fetch(endpoint);
         var data = r.ok ? await r.json() : null;
         var hits = (data && data.results || []).slice(0, 8);
         if (!hits.length) { res.innerHTML = '<div style="color:#555;font-size:.8rem;padding:8px 0">No results.</div>'; return; }
         res.innerHTML = hits.map(function(h) {
           var imgUrl = '', sub = '', name = '', saveVal = '';
-          if (field === 'favDirector') {
+          if (isPerson) {
             name    = h.name || '';
             sub     = h.known_for_department || '';
             imgUrl  = h.profile_path ? 'https://image.tmdb.org/t/p/w92' + h.profile_path : '';
@@ -14884,7 +15050,7 @@ async function deleteEditorReview(key, e) {
             var imgHtml = imgUrl
               ? '<img class="pm-tp-img person-img" src="' + _esc(imgUrl) + '" alt=""/>'
               : '<div class="pm-tp-img person-img" style="background:#222;display:flex;align-items:center;justify-content:center">👤</div>';
-            return '<div class="pm-tp-item" onclick="pmSaveTasteItem(\'favDirector\',\'' + _tastePicker.uid + '\',\'' + _esc(saveVal).replace(/'/g,'\\\'') + '\',\'' + _esc(imgUrl) + '\')">'
+            return '<div class="pm-tp-item" onclick="pmSaveTasteItem(\'' + field + '\',\'' + _tastePicker.uid + '\',\'' + _esc(saveVal).replace(/'/g,'\\\'') + '\',\'' + _esc(imgUrl) + '\')">'
               + imgHtml + '<div><div class="pm-tp-name">' + _esc(name) + '</div><div class="pm-tp-sub">' + _esc(sub) + '</div></div></div>';
           } else {
             name    = h.title || '';
@@ -14894,7 +15060,7 @@ async function deleteEditorReview(key, e) {
             var imgHtml2 = imgUrl
               ? '<img class="pm-tp-img" src="' + _esc(imgUrl) + '" alt=""/>'
               : '<div class="pm-tp-img" style="background:#222;display:flex;align-items:center;justify-content:center">🎬</div>';
-            return '<div class="pm-tp-item" onclick="pmSaveTasteItem(\'favFilm\',\'' + _tastePicker.uid + '\',\'' + _esc(saveVal).replace(/'/g,'\\\'') + '\',\'' + _esc(imgUrl) + '\')">'
+            return '<div class="pm-tp-item" onclick="pmSaveTasteItem(\'' + field + '\',\'' + _tastePicker.uid + '\',\'' + _esc(saveVal).replace(/'/g,'\\\'') + '\',\'' + _esc(imgUrl) + '\')">'
               + imgHtml2 + '<div><div class="pm-tp-name">' + _esc(name) + '</div><div class="pm-tp-sub">' + sub + '</div></div></div>';
           }
         }).join('');
@@ -14922,7 +15088,8 @@ async function deleteEditorReview(key, e) {
   var _backdropPicker = { uid: null, timer: null };
 
   window.pmOpenBackdropPicker = function(uid) {
-    if (!_pmUser || _pmUser.uid !== uid) return;
+    if (!_pmUser) return;
+    if (uid && _pmUser.uid !== uid) return;
     _backdropPicker.uid = uid;
     var ov = document.getElementById('pmBackdropPickerOverlay');
     if (!ov) return;
@@ -15028,11 +15195,8 @@ async function deleteEditorReview(key, e) {
     if (!_pmUser || !_profileData) return;
     var p = _profileData;
     var g = function(id) { return document.getElementById(id); };
-    var bio  = g('pmEditBio');      if (bio)  bio.value  = p.bio         || '';
-    var gen  = g('pmEditGenre');    if (gen)  gen.value  = p.favGenre    || '';
-    var dir  = g('pmEditDirector'); if (dir)  dir.value  = p.favDirector || '';
-    var film = g('pmEditFilm');     if (film) film.value = p.favFilm     || '';
-    var nick = g('pmEditNickname'); if (nick) nick.value = p.nickname    || '';
+    var bio  = g('pmEditBio');      if (bio)  bio.value  = p.bio      || '';
+    var nick = g('pmEditNickname'); if (nick) nick.value = p.nickname || '';
     var hint = g('pmEditNicknameHint');
     var msg  = g('pmEditMsg'); if (msg) msg.textContent = '';
 
@@ -15066,12 +15230,9 @@ async function deleteEditorReview(key, e) {
     if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
     if (msg) msg.textContent = '';
 
-    var bio      = (document.getElementById('pmEditBio')       || {}).value?.trim() || '';
-    var genre    = (document.getElementById('pmEditGenre')     || {}).value?.trim() || '';
-    var director = (document.getElementById('pmEditDirector')  || {}).value?.trim() || '';
-    var film     = (document.getElementById('pmEditFilm')      || {}).value?.trim() || '';
-    var nickEl   = document.getElementById('pmEditNickname');
-    var newNick  = nickEl && !nickEl.disabled ? (nickEl.value || '').trim() : null;
+    var bio    = (document.getElementById('pmEditBio') || {}).value?.trim() || '';
+    var nickEl = document.getElementById('pmEditNickname');
+    var newNick = nickEl && !nickEl.disabled ? (nickEl.value || '').trim() : null;
 
     if (newNick !== null && newNick !== (_profileData?.nickname || '')) {
       if (newNick.length < 2) {
@@ -15088,7 +15249,7 @@ async function deleteEditorReview(key, e) {
       }
     }
 
-    var patch = { bio: bio, favGenre: genre, favDirector: director, favFilm: film };
+    var patch = { bio: bio };
     if (newNick && newNick !== (_profileData?.nickname || '')) {
       patch.nickname = newNick;
       patch.nicknameLastChanged = Date.now();
