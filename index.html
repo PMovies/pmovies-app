@@ -2068,6 +2068,222 @@
   }
   .pm-edit-cancel:hover { color: #888; }
   .pm-edit-msg { font-size: .78rem; text-align: center; margin-top: 8px; min-height: 20px; }
+
+  /* ─── User Chip (fixed top-right) ─── */
+  #pmUserChip {
+    display: none; position: fixed; top: 12px; right: 14px; z-index: 200;
+    align-items: center; gap: 8px; cursor: pointer;
+    background: rgba(10,10,10,.88); border: 1px solid rgba(245,166,35,.22);
+    border-radius: 50px; padding: 5px 13px 5px 5px;
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    transition: border-color .2s, background .2s; max-width: 200px;
+  }
+  #pmUserChip:hover { border-color: rgba(245,166,35,.55); background: rgba(20,12,0,.92); }
+  .pm-chip-avatar {
+    width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg,#2a1800,#4a3000);
+    display: flex; align-items: center; justify-content: center;
+    font-size: .9rem; color: #f5a623; font-weight: 700; overflow: hidden;
+    font-family: 'Bebas Neue', sans-serif;
+  }
+  .pm-chip-avatar img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+  .pm-chip-name {
+    font-size: .66rem; font-weight: 700; color: #ddd; letter-spacing: .07em;
+    text-transform: uppercase; max-width: 110px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+
+  /* ─── Cinematic Greeting Screen ─── */
+  #pmGreetingScreen {
+    display: none; position: fixed; inset: 0; z-index: 99980; overflow: hidden;
+  }
+  #pmGreetingScreen.gs-active { display: flex; }
+  .pm-gs-bg {
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg,#100800 0%,#1e0e00 45%,#060007 100%);
+    transition: background 1.2s;
+  }
+  .pm-gs-bg-img {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; opacity: .2; filter: blur(12px) saturate(0.8);
+  }
+  .pm-gs-vignette {
+    position: absolute; inset: 0;
+    background: linear-gradient(to right, rgba(0,0,0,.96) 0%, rgba(0,0,0,.72) 55%, rgba(0,0,0,.15) 100%);
+  }
+  .pm-gs-body {
+    position: relative; z-index: 2; display: flex;
+    width: 100%; height: 100%; align-items: stretch;
+  }
+  .pm-gs-left {
+    flex: 1; display: flex; flex-direction: column; justify-content: center;
+    padding: 52px 44px 52px 48px; max-width: 520px;
+  }
+  .pm-gs-right {
+    flex: 0 0 auto; width: 270px; display: flex; align-items: center;
+    justify-content: center; padding: 40px 36px 40px 0; position: relative;
+  }
+  .pm-gs-time-label {
+    font-size: .6rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase;
+    color: #f5a623; margin-bottom: 22px; opacity: .8;
+  }
+  .pm-gs-greeting-word {
+    font-family: 'Bebas Neue', sans-serif; font-size: 2.8rem;
+    letter-spacing: 3px; color: rgba(255,255,255,.55); line-height: 1;
+  }
+  .pm-gs-greeting-name {
+    font-family: 'Bebas Neue', sans-serif; font-size: 4.2rem;
+    letter-spacing: 3px; color: #fff; line-height: 1; margin-bottom: 18px;
+  }
+  .pm-gs-badge-row { margin-bottom: 30px; }
+  .pm-gs-badge {
+    font-size: .68rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    padding: 5px 14px; border-radius: 20px; display: inline-block;
+    background: rgba(245,166,35,.12); color: #f5a623; border: 1px solid rgba(245,166,35,.35);
+  }
+  .pm-gs-quote {
+    font-size: .88rem; color: rgba(255,255,255,.55); line-height: 1.75;
+    font-style: italic; margin-bottom: 40px; max-width: 400px;
+    border-left: 2px solid rgba(245,166,35,.35); padding-left: 16px;
+  }
+  .pm-gs-enter-btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: #f5a623; color: #000; border: none;
+    font-family: 'Montserrat', sans-serif; font-weight: 800;
+    font-size: .88rem; letter-spacing: .1em; text-transform: uppercase;
+    padding: 15px 34px; border-radius: 50px; cursor: pointer;
+    transition: transform .2s, background .2s; align-self: flex-start;
+  }
+  .pm-gs-enter-btn:hover { background: #e09400; transform: translateY(-2px); }
+  .pm-gs-poster-wrap {
+    position: relative; width: 200px;
+    animation: gsFloat 5s ease-in-out infinite;
+  }
+  .pm-gs-poster {
+    width: 200px; height: 298px; border-radius: 16px; overflow: hidden;
+    box-shadow: 0 40px 90px rgba(0,0,0,.85), 0 0 0 1px rgba(255,255,255,.07);
+    background: #1a1a1a; display: flex; align-items: center; justify-content: center;
+    font-size: 3.5rem;
+  }
+  .pm-gs-poster img { width:100%; height:100%; object-fit:cover; display:block; }
+  .pm-gs-poster-film {
+    position: absolute; bottom: -28px; left: 0; right: 0; text-align: center;
+    font-size: .6rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    color: rgba(255,255,255,.45);
+  }
+  @keyframes gsFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+  @media(max-width:640px){
+    .pm-gs-left { padding: 40px 24px; max-width:100%; }
+    .pm-gs-right { display: none; }
+    .pm-gs-greeting-name { font-size: 3rem; }
+  }
+
+  /* ─── Profile Backdrop Hero ─── */
+  .pm-prof-backdrop-wrap {
+    width: 100%; height: 190px; position: relative; overflow: hidden;
+    background: linear-gradient(135deg,#1a0800,#0a0014); flex-shrink: 0;
+  }
+  .pm-prof-backdrop-wrap img {
+    width: 100%; height: 100%; object-fit: cover; opacity: .5; display: block;
+  }
+  .pm-prof-backdrop-fade {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 70%;
+    background: linear-gradient(to bottom, transparent, #0e0e0e);
+  }
+
+  /* ─── Profile — interactive taste card ─── */
+  .pm-prof-taste-item.editable { cursor: pointer; }
+  .pm-prof-taste-item.editable:hover {
+    border-color: rgba(245,166,35,.4); background: rgba(245,166,35,.07);
+  }
+  .pm-prof-taste-edit-hint {
+    font-size: .54rem; color: #f5a623; margin-top: 3px; opacity: 0;
+    transition: opacity .15s;
+  }
+  .pm-prof-taste-item.editable:hover .pm-prof-taste-edit-hint { opacity: 1; }
+  .pm-prof-taste-img {
+    width: 100%; height: 80px; object-fit: cover; border-radius: 6px;
+    margin-bottom: 5px; display: block;
+  }
+
+  /* ─── Profile Watchlist section ─── */
+  .pm-prof-wl-scroll {
+    display: flex; gap: 10px; overflow-x: auto; padding: 0 22px 8px;
+    scroll-snap-type: x mandatory; scrollbar-width: none;
+  }
+  .pm-prof-wl-scroll::-webkit-scrollbar { display: none; }
+  .pm-prof-wl-item { flex: 0 0 84px; scroll-snap-align: start; cursor: pointer; }
+  .pm-prof-wl-poster {
+    width: 84px; height: 124px; border-radius: 8px; overflow: hidden;
+    background: #1a1a1a; position: relative;
+  }
+  .pm-prof-wl-poster img { width:100%; height:100%; object-fit:cover; display:block; }
+  .pm-prof-wl-status {
+    position: absolute; top: 4px; right: 4px; font-size: .5rem; font-weight: 700;
+    letter-spacing: .06em; padding: 2px 5px; border-radius: 4px; text-transform: uppercase;
+  }
+  .pm-prof-wl-status.want { background: rgba(245,166,35,.9); color: #000; }
+  .pm-prof-wl-status.watched { background: rgba(76,175,80,.9); color: #fff; }
+  .pm-prof-wl-status.fav { background: rgba(244,67,54,.9); color: #fff; }
+  .pm-prof-wl-title {
+    font-size: .6rem; color: #777; margin-top: 5px; line-height: 1.3;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center;
+  }
+
+  /* ─── Taste Picker Overlay ─── */
+  #pmTastePickerOverlay {
+    display: none; position: fixed; inset: 0; z-index: 99997;
+    align-items: flex-end; justify-content: center; padding: 0;
+    background: rgba(0,0,0,.82); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  }
+  .pm-tp-card {
+    background: #141414; border: 1px solid rgba(255,255,255,.1);
+    border-radius: 18px 18px 0 0; padding: 24px 20px 32px; width: 100%;
+    max-width: 480px; max-height: 72vh; overflow-y: auto;
+  }
+  .pm-tp-handle {
+    width: 36px; height: 4px; background: #333; border-radius: 2px;
+    margin: 0 auto 18px;
+  }
+  .pm-tp-title {
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem;
+    letter-spacing: 2px; color: #fff; margin-bottom: 14px;
+  }
+  .pm-tp-search {
+    width: 100%; background: #1a1a1a; border: 1px solid rgba(255,255,255,.12);
+    border-radius: 10px; padding: 11px 14px; color: #eee;
+    font-family: 'Montserrat', sans-serif; font-size: .88rem; box-sizing: border-box;
+    margin-bottom: 12px;
+  }
+  .pm-tp-search:focus { outline: none; border-color: rgba(245,166,35,.5); }
+  .pm-tp-results { display: flex; flex-direction: column; gap: 8px; }
+  .pm-tp-item {
+    display: flex; align-items: center; gap: 12px;
+    background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07);
+    border-radius: 10px; padding: 9px 12px; cursor: pointer; transition: all .15s;
+  }
+  .pm-tp-item:hover { background: rgba(245,166,35,.1); border-color: rgba(245,166,35,.3); }
+  .pm-tp-img {
+    width: 38px; height: 56px; border-radius: 5px; object-fit: cover;
+    background: #222; flex-shrink: 0; display: flex; align-items: center;
+    justify-content: center; font-size: 1.1rem;
+  }
+  .pm-tp-img.person-img { height: 38px; border-radius: 50%; }
+  .pm-tp-name { font-size: .85rem; color: #eee; font-weight: 600; }
+  .pm-tp-sub { font-size: .68rem; color: #666; margin-top: 2px; }
+  .pm-tp-genre-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+  .pm-tp-genre-chip {
+    background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+    border-radius: 10px; padding: 10px 6px; text-align: center; cursor: pointer;
+    font-size: .76rem; color: #bbb; font-weight: 600; transition: all .15s;
+  }
+  .pm-tp-genre-chip:hover { background: rgba(245,166,35,.12); color: #f5a623; border-color: rgba(245,166,35,.35); }
+  .pm-tp-cancel {
+    width: 100%; background: transparent; border: none; color: #555;
+    font-family: 'Montserrat', sans-serif; font-size: .8rem;
+    cursor: pointer; padding: 13px; margin-top: 4px;
+  }
+  .pm-tp-cancel:hover { color: #888; }
 </style>
 </head>
 <body>
@@ -2181,6 +2397,14 @@
     </a>
   </div>
 </header>
+
+<!-- ╔══════════════════════════════════════════════════════════════╗ -->
+<!-- ║  User Chip — fixed top-right, shown when signed in          ║ -->
+<!-- ╚══════════════════════════════════════════════════════════════╝ -->
+<button id="pmUserChip" onclick="pmOpenProfile(window.pmGetUser&&window.pmGetUser()&&window.pmGetUser().uid)" aria-label="My profile">
+  <div class="pm-chip-avatar" id="pmChipAvatar">P</div>
+  <span class="pm-chip-name" id="pmChipName"></span>
+</button>
 
 <main style="max-width:1100px;margin:0 auto;padding:0 20px">
 
@@ -13597,6 +13821,50 @@ async function deleteEditorReview(key, e) {
 
 
 <!-- ╔══════════════════════════════════════════════════════════════╗ -->
+<!-- ║  PMOVIES AUTH — Cinematic Greeting Screen                   ║ -->
+<!-- ╚══════════════════════════════════════════════════════════════╝ -->
+<div id="pmGreetingScreen">
+  <div class="pm-gs-bg" id="pmGsBg">
+    <img id="pmGsBgImg" class="pm-gs-bg-img" src="" alt="" style="display:none"/>
+  </div>
+  <div class="pm-gs-vignette"></div>
+  <div class="pm-gs-body">
+    <div class="pm-gs-left">
+      <div class="pm-gs-time-label" id="pmGsTimeLabel"></div>
+      <div class="pm-gs-greeting-word" id="pmGsWord"></div>
+      <div class="pm-gs-greeting-name" id="pmGsName"></div>
+      <div class="pm-gs-badge-row">
+        <span class="pm-gs-badge" id="pmGsBadge"></span>
+      </div>
+      <div class="pm-gs-quote" id="pmGsQuote"></div>
+      <button class="pm-gs-enter-btn" onclick="pmDismissGreeting()">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        Go to PMovies
+      </button>
+    </div>
+    <div class="pm-gs-right" id="pmGsRight">
+      <div class="pm-gs-poster-wrap">
+        <div class="pm-gs-poster" id="pmGsPoster">🎬</div>
+        <div class="pm-gs-poster-film" id="pmGsPosterTitle"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════════════╗ -->
+<!-- ║  Taste Picker — slide-up sheet for editing taste card       ║ -->
+<!-- ╚══════════════════════════════════════════════════════════════╝ -->
+<div id="pmTastePickerOverlay" onclick="if(event.target===this)pmCloseTastePicker()">
+  <div class="pm-tp-card">
+    <div class="pm-tp-handle"></div>
+    <div class="pm-tp-title" id="pmTpTitle">Choose</div>
+    <input class="pm-tp-search" id="pmTpSearch" placeholder="Search…" oninput="pmTasteSearch(this.value)" autocomplete="off" style="display:none"/>
+    <div class="pm-tp-results" id="pmTpResults"></div>
+    <button class="pm-tp-cancel" onclick="pmCloseTastePicker()">Cancel</button>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════════════╗ -->
 <!-- ║  PMOVIES AUTH — Session 3 — Profile Overlay                 ║ -->
 <!-- ╚══════════════════════════════════════════════════════════════╝ -->
 <div id="pmProfileOverlay" onclick="if(event.target===this)pmCloseProfile()">
@@ -13741,9 +14009,12 @@ async function deleteEditorReview(key, e) {
       localStorage.removeItem('pmovies_admin');
       localStorage.removeItem('pmovies_was_signed_in');
       sessionStorage.removeItem('pmovies_guest');
+      sessionStorage.removeItem('pm_greeting_done');
       window._pmEditorAuthVerified = false;
       var strip = document.getElementById('pmWelcomeStrip');
       if (strip) strip.style.display = 'none';
+      var chip = document.getElementById('pmUserChip');
+      if (chip) chip.style.display = 'none';
     });
   };
 
@@ -13817,18 +14088,21 @@ async function deleteEditorReview(key, e) {
   async function _checkNickname(user) {
     try {
       var token = await user.getIdToken();
-      var res = await fetch(RTDB + '/users/' + user.uid + '/nickname.json?auth=' + token);
-      var nickname = res.ok ? await res.json() : null;
+      // Fetch full profile so we can pass taste/score data to greeting screen
+      var res = await fetch(RTDB + '/users/' + user.uid + '.json?auth=' + token);
+      var profile = res.ok ? await res.json() : null;
+      var nickname = profile ? profile.nickname : null;
       if (!nickname) {
         _showNicknameOverlay(user);
       } else {
         _pmNickname = nickname;
         _prefillReviewNames(nickname);
-        _showWelcomeStrip(nickname, user.uid);
+        _showWelcomeStrip(nickname, user.uid, profile);
+        _updateUserChip(user, nickname);
       }
     } catch(e) {
-      // Network error — fall back gracefully
-      _showWelcomeStrip(user.displayName || 'Cinephile', user.uid);
+      _showWelcomeStrip(user.displayName || 'Cinephile', user.uid, null);
+      _updateUserChip(user, user.displayName || 'Cinephile');
     }
   }
 
@@ -13890,7 +14164,8 @@ async function deleteEditorReview(key, e) {
       _pmNickname = nickname;
       _prefillReviewNames(nickname);
       document.getElementById('pmNicknameOverlay').style.display = 'none';
-      _showWelcomeStrip(nickname, user.uid);
+      _updateUserChip(user, nickname);
+      _showWelcomeStrip(nickname, user.uid, profile);
     } catch(e) {
       btn.textContent = 'JOIN PMOVIES';
       btn.disabled = false;
@@ -13900,35 +14175,141 @@ async function deleteEditorReview(key, e) {
   };
 
   // ── Welcome Strip ─────────────────────────────────────────────────
-  async function _showWelcomeStrip(nickname, uid) {
+  async function _showWelcomeStrip(nickname, uid, profile) {
     var strip    = document.getElementById('pmWelcomeStrip');
     var greeting = document.getElementById('pmWelcomeGreeting');
     var quoteEl  = document.getElementById('pmWelcomeQuote');
-    if (!strip) return;
 
     var hr = new Date().getHours();
     var word = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
 
-    // Show immediately with Newcomer badge, then update badge from score
+    // Show greeting screen (once per session) — passes profile for poster/taste data
+    if (profile && !sessionStorage.getItem('pm_greeting_done')) {
+      _showGreetingScreen(nickname, uid, profile);
+    }
+
+    if (!strip) return;
     var badge = _getBadge(0);
     greeting.innerHTML = word + ', <strong><span class="pm-profile-link" onclick="pmOpenProfile(\'' + uid + '\')">' + _esc(nickname) + '</span></strong>'
       + ' <span class="pm-welcome-badge" id="pmWelcomeBadge">' + badge.icon + ' ' + badge.label + '</span>';
-    quoteEl.textContent = _getDailyQuote();
+    if (quoteEl) quoteEl.textContent = _getDailyQuote();
     strip.style.display = 'block';
 
     // Load real contribution score in background
     try {
       var user = _pmUser;
       if (user && uid) {
-        var token = await user.getIdToken();
-        var res = await fetch(RTDB + '/users/' + uid + '/contributionScore.json?auth=' + token);
-        var score = res.ok ? (await res.json() || 0) : 0;
+        var score = profile ? (profile.contributionScore || 0) : 0;
+        if (!profile) {
+          var token = await user.getIdToken();
+          var res = await fetch(RTDB + '/users/' + uid + '/contributionScore.json?auth=' + token);
+          score = res.ok ? (await res.json() || 0) : 0;
+        }
         var b = _getBadge(score);
         var badgeEl = document.getElementById('pmWelcomeBadge');
         if (badgeEl && !window._pmEditorAuthVerified) badgeEl.textContent = b.icon + ' ' + b.label;
       }
     } catch(_) {}
   }
+
+  // ── User Chip ─────────────────────────────────────────────────────
+  function _updateUserChip(user, nickname) {
+    var chip = document.getElementById('pmUserChip');
+    if (!chip) return;
+    var avatarEl = document.getElementById('pmChipAvatar');
+    var nameEl   = document.getElementById('pmChipName');
+    if (nameEl) nameEl.textContent = nickname || 'Profile';
+    if (avatarEl) {
+      if (user && user.photoURL) {
+        avatarEl.innerHTML = '<img src="' + _esc(user.photoURL) + '" alt=""/>';
+      } else {
+        avatarEl.textContent = (nickname || 'P').charAt(0).toUpperCase();
+      }
+    }
+    chip.style.display = 'flex';
+  }
+
+  // ── Cinematic Greeting Screen ─────────────────────────────────────
+  function _showGreetingScreen(nickname, uid, profile) {
+    var el = document.getElementById('pmGreetingScreen');
+    if (!el) return;
+
+    var hr = new Date().getHours();
+    var word, timeLabel, bgGrad;
+    if (hr >= 5 && hr < 12) {
+      word = 'Good morning,'; timeLabel = '🌅 Morning';
+      bgGrad = 'linear-gradient(135deg,#120800 0%,#200e00 45%,#060007 100%)';
+    } else if (hr >= 12 && hr < 17) {
+      word = 'Good afternoon,'; timeLabel = '☀️ Afternoon';
+      bgGrad = 'linear-gradient(135deg,#000d1a 0%,#001828 45%,#000306 100%)';
+    } else if (hr >= 17 && hr < 21) {
+      word = 'Good evening,'; timeLabel = '🌇 Evening';
+      bgGrad = 'linear-gradient(135deg,#150009 0%,#260010 45%,#080003 100%)';
+    } else {
+      word = 'Good night,'; timeLabel = '🌙 Tonight';
+      bgGrad = 'linear-gradient(135deg,#020407 0%,#040608 45%,#010103 100%)';
+    }
+
+    var bg = document.getElementById('pmGsBg');
+    if (bg) bg.style.background = bgGrad;
+
+    var wordEl  = document.getElementById('pmGsWord');
+    var nameEl  = document.getElementById('pmGsName');
+    var tlEl    = document.getElementById('pmGsTimeLabel');
+    var badgeEl = document.getElementById('pmGsBadge');
+    var quoteEl = document.getElementById('pmGsQuote');
+
+    if (wordEl) wordEl.textContent = word;
+    if (nameEl) nameEl.textContent = nickname.toUpperCase();
+    if (tlEl)   tlEl.textContent   = timeLabel;
+
+    var score = profile ? (profile.contributionScore || 0) : 0;
+    var badge = window._pmEditorAuthVerified ? { icon:'✏️', label:'EDITOR' } : _getBadge(score);
+    if (badgeEl) badgeEl.textContent = badge.icon + ' ' + badge.label;
+    if (quoteEl) quoteEl.textContent = _getDailyQuote();
+
+    el.classList.add('gs-active');
+    document.body.style.overflow = 'hidden';
+
+    // Fetch favourite film poster for the right panel
+    var favFilm = profile ? profile.favFilm : null;
+    if (favFilm) {
+      var TMDB_BASE = 'https://api.themoviedb.org/3';
+      var apiKey = typeof getKey === 'function' ? getKey() : null;
+      if (apiKey) {
+        fetch(TMDB_BASE + '/search/movie?api_key=' + apiKey + '&query=' + encodeURIComponent(favFilm) + '&language=en-US&page=1')
+          .then(function(r){ return r.ok ? r.json() : null; })
+          .then(function(data) {
+            var hit = data && data.results && data.results[0];
+            if (!hit) return;
+            if (hit.poster_path) {
+              var posterEl = document.getElementById('pmGsPoster');
+              if (posterEl) posterEl.innerHTML = '<img src="https://image.tmdb.org/t/p/w342' + hit.poster_path + '" alt="' + _esc(favFilm) + '"/>';
+            }
+            if (hit.backdrop_path) {
+              var bgImg = document.getElementById('pmGsBgImg');
+              if (bgImg) { bgImg.src = 'https://image.tmdb.org/t/p/w1280' + hit.backdrop_path; bgImg.style.display = ''; }
+            }
+            var titleEl = document.getElementById('pmGsPosterTitle');
+            if (titleEl) titleEl.textContent = hit.title || favFilm;
+          }).catch(function(){});
+      }
+    }
+  }
+
+  window.pmDismissGreeting = function() {
+    var el = document.getElementById('pmGreetingScreen');
+    if (!el) return;
+    el.style.transition = 'opacity .4s';
+    el.style.opacity = '0';
+    sessionStorage.setItem('pm_greeting_done', '1');
+    setTimeout(function() {
+      el.classList.remove('gs-active');
+      el.style.opacity = '';
+      el.style.transition = '';
+      document.body.style.overflow = '';
+    }, 420);
+  };
 
   function _getBadge(score) {
     if (score >= 300) return { icon: '👑', label: 'Legend' };
@@ -14007,6 +14388,8 @@ async function deleteEditorReview(key, e) {
   var _profileUid  = null;
   var _profileData = null;
 
+  var _tastePicker = { field: null, uid: null, timer: null };
+
   window.pmOpenProfile = async function(uid) {
     if (!uid) return;
     _profileUid = uid;
@@ -14031,44 +14414,85 @@ async function deleteEditorReview(key, e) {
       var isOwn    = _pmUser && _pmUser.uid === uid;
       var nickname = profile.nickname || 'Cinephile';
       var score    = profile.contributionScore || 0;
-      var badge    = _getBadge(score);
+      // Note 1 fix: editor always shows EDITOR badge on own profile
+      var badge    = (isOwn && window._pmEditorAuthVerified)
+        ? { icon: '✏️', label: 'EDITOR' }
+        : _getBadge(score);
       var joined   = profile.joinedAt
         ? new Date(profile.joinedAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
         : '';
       var bio      = profile.bio || '';
 
-      var allRevs = window._pmGetCommunityReviews ? window._pmGetCommunityReviews() : [];
-      var reviews = allRevs.filter(function(r) { return r.uid === uid; });
-
       var labelEl = document.getElementById('pmProfBackLabel');
       if (labelEl) labelEl.textContent = nickname;
+
+      var allRevs = window._pmGetCommunityReviews ? window._pmGetCommunityReviews() : [];
+      var reviews = allRevs.filter(function(r) { return r.uid === uid; });
 
       var avatarHtml = profile.photoURL
         ? '<img class="pm-prof-avatar" src="' + _esc(profile.photoURL) + '" alt="' + _esc(nickname) + '" onerror="this.style.display=\'none\';this.nextSibling.style.display=\'flex\'"/><div class="pm-prof-avatar-fallback" style="display:none">' + _esc(nickname.charAt(0).toUpperCase()) + '</div>'
         : '<div class="pm-prof-avatar-fallback">' + _esc(nickname.charAt(0).toUpperCase()) + '</div>';
 
       var statsHtml = [
-        { val: profile.reviewCount  || 0, lbl: 'Reviews' },
+        { val: profile.reviewCount   || 0, lbl: 'Reviews' },
         { val: profile.likesReceived || 0, lbl: 'Likes'   },
+        { val: profile.commentCount  || 0, lbl: 'Comments'},
         { val: score,                       lbl: 'Score'   }
       ].map(function(s) {
         return '<div class="pm-prof-stat"><div class="pm-prof-stat-val">' + s.val + '</div><div class="pm-prof-stat-lbl">' + s.lbl + '</div></div>';
       }).join('');
 
+      // Taste card — editable for own profile
       var tasteHtml = '';
-      if (profile.favGenre || profile.favDirector || profile.favFilm) {
-        var items = [];
-        if (profile.favGenre)    items.push('<div class="pm-prof-taste-item"><div class="pm-prof-taste-icon">🎭</div><div class="pm-prof-taste-lbl">Genre</div><div class="pm-prof-taste-val">'    + _esc(profile.favGenre)    + '</div></div>');
-        if (profile.favDirector) items.push('<div class="pm-prof-taste-item"><div class="pm-prof-taste-icon">🎬</div><div class="pm-prof-taste-lbl">Director</div><div class="pm-prof-taste-val">' + _esc(profile.favDirector) + '</div></div>');
-        if (profile.favFilm)     items.push('<div class="pm-prof-taste-item"><div class="pm-prof-taste-icon">🎞️</div><div class="pm-prof-taste-lbl">Film</div><div class="pm-prof-taste-val">'    + _esc(profile.favFilm)     + '</div></div>');
-        tasteHtml = '<div class="pm-prof-section-title">Taste Card</div><div class="pm-prof-taste">' + items.join('') + '</div>';
+      var hasAnyTaste = profile.favGenre || profile.favDirector || profile.favFilm;
+      if (hasAnyTaste || isOwn) {
+        var buildTasteItem = function(icon, lbl, val, field, imgId) {
+          var editHint = isOwn ? '<div class="pm-prof-taste-edit-hint">✏ tap to change</div>' : '';
+          var imgTag   = '<div id="' + imgId + '"></div>';
+          var onclick  = isOwn ? ' onclick="pmOpenTastePicker(\'' + field + '\',\'' + uid + '\')"' : '';
+          var edCls    = isOwn ? ' editable' : '';
+          return '<div class="pm-prof-taste-item' + edCls + '"' + onclick + '>'
+            + imgTag
+            + '<div class="pm-prof-taste-icon">' + icon + '</div>'
+            + '<div class="pm-prof-taste-lbl">' + lbl + '</div>'
+            + '<div class="pm-prof-taste-val">' + _esc(val || (isOwn ? '+ Add' : '—')) + '</div>'
+            + editHint + '</div>';
+        };
+        var tItems = [
+          buildTasteItem('🎭', 'Genre',    profile.favGenre,    'favGenre',    'tpImgGenre'),
+          buildTasteItem('🎬', 'Director', profile.favDirector, 'favDirector', 'tpImgDirector'),
+          buildTasteItem('🎞️', 'Film',     profile.favFilm,     'favFilm',     'tpImgFilm'),
+        ];
+        tasteHtml = '<div class="pm-prof-section-title">Taste Card</div><div class="pm-prof-taste">' + tItems.join('') + '</div>';
+      }
+
+      // Watchlist (own profile — from localStorage)
+      var watchlistHtml = '';
+      if (isOwn) {
+        try {
+          var wl = JSON.parse(localStorage.getItem('pmovies_wl') || '[]');
+          if (wl.length) {
+            var wlCards = wl.map(function(m) {
+              var statusLbl = m.status === 'watched' ? 'Watched' : m.status === 'fav' ? '★ Fav' : '🔖 Want';
+              var img = m.poster_path
+                ? '<img src="https://image.tmdb.org/t/p/w185' + m.poster_path + '" alt="' + _esc(m.title||'') + '" loading="lazy"/>'
+                : '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:1.5rem">🎬</div>';
+              return '<div class="pm-prof-wl-item">'
+                + '<div class="pm-prof-wl-poster">' + img
+                + '<span class="pm-prof-wl-status ' + (m.status||'want') + '">' + statusLbl + '</span></div>'
+                + '<div class="pm-prof-wl-title">' + _esc(m.title||'') + '</div></div>';
+            });
+            watchlistHtml = '<div class="pm-prof-section-title">My Lists · ' + wl.length + ' films</div>'
+              + '<div class="pm-prof-wl-scroll">' + wlCards.join('') + '</div>';
+          }
+        } catch(_) {}
       }
 
       var reviewsHtml = '';
       if (reviews.length) {
         var cards = reviews.map(function(r) {
-          var fp   = typeof fanReviewFp === 'function' ? fanReviewFp(r) : '';
-          var stars = typeof _starsHtml === 'function' ? _starsHtml(r.rating || 0) : '';
+          var fp    = typeof fanReviewFp === 'function' ? fanReviewFp(r) : '';
+          var stars = typeof _starsHtml  === 'function' ? _starsHtml(r.rating || 0) : '';
           var safeFp = (fp || '').replace(/"/g, '');
           return '<div class="pm-prof-rev-card" onclick="pmCloseProfile();_pmOpenReviewFromProfile(\'' + safeFp + '\')">'
             + '<div class="pm-prof-rev-poster" id="ppRvPoster-' + safeFp + '">🎬</div>'
@@ -14081,11 +14505,13 @@ async function deleteEditorReview(key, e) {
           + '<div class="pm-prof-reviews-grid">' + cards.join('') + '</div>';
       }
 
-      var editBtn = isOwn
-        ? '<button class="pm-prof-edit-btn" onclick="pmOpenEditProfile()">✏️ Edit Profile</button>'
-        : '';
+      var editBtn = isOwn ? '<button class="pm-prof-edit-btn" onclick="pmOpenEditProfile()">✏️ Edit Profile</button>' : '';
 
-      content.innerHTML = '<div class="pm-prof-header"><div>' + avatarHtml + '</div>'
+      // Cinematic backdrop placeholder (filled async below)
+      var backdropHtml = '<div class="pm-prof-backdrop-wrap" id="pmProfBackdropWrap"><div class="pm-prof-backdrop-fade"></div></div>';
+
+      content.innerHTML = backdropHtml
+        + '<div class="pm-prof-header"><div>' + avatarHtml + '</div>'
         + '<div class="pm-prof-info">'
         + '<div class="pm-prof-nickname">' + _esc(nickname) + '</div>'
         + '<span class="pm-prof-badge">' + badge.icon + ' ' + badge.label + '</span>'
@@ -14093,21 +14519,57 @@ async function deleteEditorReview(key, e) {
         + '</div></div>'
         + '<div class="pm-prof-stats">' + statsHtml + '</div>'
         + (bio ? '<div class="pm-prof-bio">' + _esc(bio) + '</div>' : '')
-        + tasteHtml + reviewsHtml + editBtn;
+        + tasteHtml + watchlistHtml + reviewsHtml + editBtn;
 
-      // Lazy-load review posters
+      // Async: load backdrop from favFilm
+      if (profile.favFilm) {
+        var apiKey = typeof getKey === 'function' ? getKey() : null;
+        if (apiKey) {
+          fetch('https://api.themoviedb.org/3/search/movie?api_key=' + apiKey + '&query=' + encodeURIComponent(profile.favFilm) + '&language=en-US&page=1')
+            .then(function(r){ return r.ok ? r.json() : null; })
+            .then(function(data) {
+              var hit = data && data.results && data.results[0];
+              if (!hit) return;
+              var bWrap = document.getElementById('pmProfBackdropWrap');
+              if (bWrap && hit.backdrop_path) {
+                bWrap.innerHTML = '<img src="https://image.tmdb.org/t/p/w1280' + hit.backdrop_path + '" alt=""/><div class="pm-prof-backdrop-fade"></div>';
+              }
+              // Also show poster in Film taste card
+              if (hit.poster_path) {
+                var tEl = document.getElementById('tpImgFilm');
+                if (tEl) tEl.innerHTML = '<img class="pm-prof-taste-img loaded" src="https://image.tmdb.org/t/p/w154' + hit.poster_path + '" alt=""/>';
+              }
+            }).catch(function(){});
+        }
+      }
+      // Async: load director photo
+      if (profile.favDirector) {
+        var apiKey2 = typeof getKey === 'function' ? getKey() : null;
+        if (apiKey2) {
+          fetch('https://api.themoviedb.org/3/search/person?api_key=' + apiKey2 + '&query=' + encodeURIComponent(profile.favDirector) + '&language=en-US&page=1')
+            .then(function(r){ return r.ok ? r.json() : null; })
+            .then(function(data) {
+              var hit = data && data.results && data.results[0];
+              if (hit && hit.profile_path) {
+                var tEl = document.getElementById('tpImgDirector');
+                if (tEl) tEl.innerHTML = '<img class="pm-prof-taste-img loaded" src="https://image.tmdb.org/t/p/w154' + hit.profile_path + '" alt="" style="height:80px;object-fit:cover;object-position:top"/>';
+              }
+            }).catch(function(){});
+        }
+      }
+
+      // Lazy-load review posters + pre-register
       reviews.forEach(function(r) {
-        var fp  = typeof fanReviewFp === 'function' ? fanReviewFp(r) : '';
+        var fp = typeof fanReviewFp === 'function' ? fanReviewFp(r) : '';
         if (!fp) return;
-        var el  = document.getElementById('ppRvPoster-' + fp);
+        var el = document.getElementById('ppRvPoster-' + fp);
         if (!el) return;
         var isTV = r._mediaType === 'tv' || r.mediaType === 'tv';
         if (typeof fetchPoster === 'function') {
-          fetchPoster(r.movie, isTV ? 'tv' : 'movie', r.tmdbId || null).then(function(url) {
-            if (url && el) el.innerHTML = '<img src="' + url + '" alt="' + _esc(r.movie || '') + '" loading="lazy"/>';
+          fetchPoster(r.movie, isTV ? 'tv' : 'movie', r.tmdbId || null).then(function(imgUrl) {
+            if (imgUrl && el) el.innerHTML = '<img src="' + imgUrl + '" alt="' + _esc(r.movie || '') + '" loading="lazy"/>';
           });
         }
-        // Pre-register review so openFanReviewPage can find it
         if (typeof window._pmRegisterReview === 'function') window._pmRegisterReview(fp, r);
       });
 
@@ -14124,11 +14586,107 @@ async function deleteEditorReview(key, e) {
     _profileData = null;
   };
 
-  // Opens a review after closing the profile (pre-registers it first)
   window._pmOpenReviewFromProfile = function(fp) {
     setTimeout(function() {
       if (typeof openFanReviewPage === 'function') openFanReviewPage(fp);
     }, 80);
+  };
+
+  // ── Taste Picker ──────────────────────────────────────────────────
+  var _GENRES = ['Action','Adventure','Animation','Comedy','Crime','Documentary',
+    'Drama','Fantasy','History','Horror','Music','Mystery','Romance',
+    'Sci-Fi','Thriller','War','Western','Family','Biography','Sport'];
+
+  window.pmOpenTastePicker = function(field, uid) {
+    if (!_pmUser || _pmUser.uid !== uid) return;
+    _tastePicker.field = field;
+    _tastePicker.uid   = uid;
+    var ov  = document.getElementById('pmTastePickerOverlay');
+    var ttl = document.getElementById('pmTpTitle');
+    var srch = document.getElementById('pmTpSearch');
+    var res  = document.getElementById('pmTpResults');
+    if (!ov) return;
+    if (ttl) ttl.textContent = field === 'favGenre' ? 'Favourite Genre'
+      : field === 'favDirector' ? 'Favourite Director' : 'Favourite Film';
+    if (srch) srch.style.display = field === 'favGenre' ? 'none' : '';
+    if (srch) { srch.value = ''; }
+    if (res) {
+      if (field === 'favGenre') {
+        res.innerHTML = '<div class="pm-tp-genre-grid">'
+          + _GENRES.map(function(g) {
+            return '<div class="pm-tp-genre-chip" onclick="pmSaveTasteItem(\'favGenre\',\'' + uid + '\',\'' + g + '\',null)">' + g + '</div>';
+          }).join('') + '</div>';
+      } else {
+        res.innerHTML = '<div style="color:#555;font-size:.8rem;padding:8px 0">Start typing to search…</div>';
+      }
+    }
+    ov.style.display = 'flex';
+  };
+
+  window.pmCloseTastePicker = function() {
+    var ov = document.getElementById('pmTastePickerOverlay');
+    if (ov) ov.style.display = 'none';
+    clearTimeout(_tastePicker.timer);
+  };
+
+  window.pmTasteSearch = function(q) {
+    clearTimeout(_tastePicker.timer);
+    var field = _tastePicker.field;
+    var res   = document.getElementById('pmTpResults');
+    if (!q.trim() || !res) { res.innerHTML = '<div style="color:#555;font-size:.8rem;padding:8px 0">Start typing to search…</div>'; return; }
+    res.innerHTML = '<div style="color:#555;font-size:.8rem;padding:8px 0">Searching…</div>';
+    _tastePicker.timer = setTimeout(async function() {
+      try {
+        var apiKey = typeof getKey === 'function' ? getKey() : '';
+        var endpoint = field === 'favDirector'
+          ? 'https://api.themoviedb.org/3/search/person?api_key=' + apiKey + '&query=' + encodeURIComponent(q) + '&language=en-US&page=1'
+          : 'https://api.themoviedb.org/3/search/movie?api_key='  + apiKey + '&query=' + encodeURIComponent(q) + '&language=en-US&page=1';
+        var r    = await fetch(endpoint);
+        var data = r.ok ? await r.json() : null;
+        var hits = (data && data.results || []).slice(0, 8);
+        if (!hits.length) { res.innerHTML = '<div style="color:#555;font-size:.8rem;padding:8px 0">No results.</div>'; return; }
+        res.innerHTML = hits.map(function(h) {
+          var imgUrl = '', sub = '', name = '', saveVal = '';
+          if (field === 'favDirector') {
+            name    = h.name || '';
+            sub     = h.known_for_department || '';
+            imgUrl  = h.profile_path ? 'https://image.tmdb.org/t/p/w92' + h.profile_path : '';
+            saveVal = name;
+            var imgHtml = imgUrl
+              ? '<img class="pm-tp-img person-img" src="' + _esc(imgUrl) + '" alt=""/>'
+              : '<div class="pm-tp-img person-img" style="background:#222;display:flex;align-items:center;justify-content:center">👤</div>';
+            return '<div class="pm-tp-item" onclick="pmSaveTasteItem(\'favDirector\',\'' + _tastePicker.uid + '\',\'' + _esc(saveVal).replace(/'/g,'\\\'') + '\',\'' + _esc(imgUrl) + '\')">'
+              + imgHtml + '<div><div class="pm-tp-name">' + _esc(name) + '</div><div class="pm-tp-sub">' + _esc(sub) + '</div></div></div>';
+          } else {
+            name    = h.title || '';
+            sub     = h.release_date ? h.release_date.slice(0,4) : '';
+            imgUrl  = h.poster_path ? 'https://image.tmdb.org/t/p/w92' + h.poster_path : '';
+            saveVal = name;
+            var imgHtml2 = imgUrl
+              ? '<img class="pm-tp-img" src="' + _esc(imgUrl) + '" alt=""/>'
+              : '<div class="pm-tp-img" style="background:#222;display:flex;align-items:center;justify-content:center">🎬</div>';
+            return '<div class="pm-tp-item" onclick="pmSaveTasteItem(\'favFilm\',\'' + _tastePicker.uid + '\',\'' + _esc(saveVal).replace(/'/g,'\\\'') + '\',\'' + _esc(imgUrl) + '\')">'
+              + imgHtml2 + '<div><div class="pm-tp-name">' + _esc(name) + '</div><div class="pm-tp-sub">' + sub + '</div></div></div>';
+          }
+        }).join('');
+      } catch(_) { res.innerHTML = '<div style="color:#f44;font-size:.8rem;padding:8px 0">Search failed.</div>'; }
+    }, 350);
+  };
+
+  window.pmSaveTasteItem = async function(field, uid, value, imgUrl) {
+    pmCloseTastePicker();
+    if (!_pmUser || !value) return;
+    try {
+      var token = await _pmUser.getIdToken();
+      var patch = {};
+      patch[field] = value;
+      await fetch(RTDB + '/users/' + uid + '.json?auth=' + token, {
+        method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify(patch)
+      });
+      if (_profileData) _profileData[field] = value;
+      // Refresh profile
+      pmOpenProfile(uid);
+    } catch(_) {}
   };
 
   // ── Edit Profile ──────────────────────────────────────────────────
