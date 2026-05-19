@@ -14520,7 +14520,7 @@ async function deleteEditorReview(key, e) {
 <div class="pm-prof-share-toast" id="pmShareToast"></div>
 
 <!-- ── Create / Edit List Modal ── -->
-<div id="pmCreateListOverlay" onclick="if(event.target===this)pmCloseCreateList()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:9000;display:none;align-items:center;justify-content:center;padding:20px">
+<div id="pmCreateListOverlay" onclick="if(event.target===this)pmCloseCreateList()">
   <div class="pm-cl-modal" style="width:100%;max-width:480px;max-height:88vh;overflow-y:auto;background:#111;border:1px solid #222;border-radius:20px;padding:28px">
     <div class="pm-cl-title">📋 <span id="pmClModalTitle">Create a List</span></div>
     <div class="pm-cl-field">
@@ -14550,7 +14550,7 @@ async function deleteEditorReview(key, e) {
 </div>
 
 <!-- ── List Detail Overlay (profile) ── -->
-<div id="pmListViewOverlay" onclick="if(event.target===this)pmCloseListView()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:9100;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto">
+<div id="pmListViewOverlay" onclick="if(event.target===this)pmCloseListView()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:99996;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto">
   <div style="width:100%;max-width:640px;background:#111;border:1px solid #222;border-radius:20px;padding:28px;margin:auto">
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:6px">
       <button onclick="pmCloseListView()" style="background:none;border:1px solid #333;color:#888;border-radius:10px;padding:7px 14px;cursor:pointer;font-family:'Montserrat',sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.06em;flex-shrink:0">← Back</button>
@@ -16137,12 +16137,12 @@ async function deleteEditorReview(key, e) {
     if (ms)   ms.value   = '';
     if (msg)  msg.textContent = '';
     _pmClRenderMovieTags();
-    if (ov) { ov.style.display = 'flex'; document.body.style.overflow = 'hidden'; }
+    if (ov) ov.classList.add('open');
   };
 
   window.pmCloseCreateList = function() {
     var ov = document.getElementById('pmCreateListOverlay');
-    if (ov) { ov.style.display = 'none'; document.body.style.overflow = ''; }
+    if (ov) ov.classList.remove('open');
   };
 
   window.pmClMovieSearchFn = function(q) {
@@ -16273,12 +16273,11 @@ async function deleteEditorReview(key, e) {
         : '<div style="color:#555;font-size:.8rem;padding:20px 0">No films in this list yet.</div>';
     }
     ov.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
   };
 
   window.pmCloseListView = function() {
     var ov = document.getElementById('pmListViewOverlay');
-    if (ov) { ov.style.display = 'none'; document.body.style.overflow = ''; }
+    if (ov) ov.style.display = 'none';
   };
 
   // ── Admin Delete Controls ─────────────────────────────────────────
