@@ -2428,13 +2428,13 @@
   .pm-prof-empty-sub { font-size: .72rem; color: #444; line-height: 1.5; }
 
   /* ─── Backdrop Picker Overlay ─── */
-  #pmBackdropPickerOverlay {
+  #pmBackdropPickerOverlay, #pmWlSearchOverlay {
     display: none; position: fixed; inset: 0; z-index: 99998;
     align-items: flex-end; justify-content: center;
     background: rgba(0,0,0,.75);
     -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
   }
-  #pmBackdropPickerOverlay.open { display: flex; }
+  #pmBackdropPickerOverlay.open, #pmWlSearchOverlay.open { display: flex; }
   .pm-bdp-card {
     background: #141414; border-radius: 20px 20px 0 0;
     border: 1px solid rgba(255,255,255,.1); border-bottom: none;
@@ -5527,7 +5527,7 @@
         window._pmUpdateScore(user.uid, 1, { commentCount: 1 });
         const authorUid = panel.dataset.authorUid;
         if (authorUid && authorUid !== user.uid) {
-          window._pmUpdateScore(authorUid, 1, {});
+          window._pmUpdateScore(authorUid, 1, { commentsReceived: 1 });
         }
       }
     } catch(e) {
@@ -14130,6 +14130,19 @@ async function deleteEditorReview(key, e) {
 
 <input type="file" id="pmAvatarFileInput" accept="image/*" style="display:none" onchange="pmUploadAvatar(this)"/>
 
+<!-- Watchlist search overlay -->
+<div id="pmWlSearchOverlay" onclick="if(event.target===this)pmCloseWlSearch()">
+  <div class="pm-bdp-card">
+    <div class="pm-bdp-handle"></div>
+    <div class="pm-bdp-title">Add to Watchlist</div>
+    <input class="pm-bdp-search" id="pmWlSearchInput" placeholder="Search for a movie…" oninput="pmWlSearchFn(this.value)" autocomplete="off"/>
+    <div class="pm-bdp-results" id="pmWlSearchResults">
+      <div style="color:#555;font-size:.8rem;padding:8px 0">Type a title to search…</div>
+    </div>
+    <button class="pm-bdp-cancel" onclick="pmCloseWlSearch()">Cancel</button>
+  </div>
+</div>
+
 <div id="pmTastePickerOverlay" onclick="if(event.target===this)pmCloseTastePicker()">
   <div class="pm-tp-card">
     <div class="pm-tp-handle"></div>
@@ -14335,10 +14348,11 @@ async function deleteEditorReview(key, e) {
       if (!p) return;
       var patch = { contributionScore: Math.max(0, (p.contributionScore || 0) + scoreDelta) };
       if (counters) {
-        if (counters.reviewCount)   patch.reviewCount   = Math.max(0, (p.reviewCount   || 0) + counters.reviewCount);
-        if (counters.commentCount)  patch.commentCount  = Math.max(0, (p.commentCount  || 0) + counters.commentCount);
-        if (counters.likesGiven)    patch.likesGiven    = Math.max(0, (p.likesGiven    || 0) + counters.likesGiven);
-        if (counters.likesReceived) patch.likesReceived = Math.max(0, (p.likesReceived || 0) + counters.likesReceived);
+        if (counters.reviewCount)      patch.reviewCount      = Math.max(0, (p.reviewCount      || 0) + counters.reviewCount);
+        if (counters.commentCount)     patch.commentCount     = Math.max(0, (p.commentCount     || 0) + counters.commentCount);
+        if (counters.commentsReceived) patch.commentsReceived = Math.max(0, (p.commentsReceived || 0) + counters.commentsReceived);
+        if (counters.likesGiven)       patch.likesGiven       = Math.max(0, (p.likesGiven       || 0) + counters.likesGiven);
+        if (counters.likesReceived)    patch.likesReceived    = Math.max(0, (p.likesReceived    || 0) + counters.likesReceived);
       }
       await fetch(RTDB + '/users/' + uid + '.json?auth=' + token, {
         method: 'PATCH',
@@ -14817,10 +14831,10 @@ async function deleteEditorReview(key, e) {
 
       // Stats — built first, used in identity + sidebar
       var statsHtml = [
-        { val: profile.reviewCount   || 0, lbl: 'Reviews'  },
-        { val: profile.likesReceived || 0, lbl: 'Likes'    },
-        { val: profile.commentCount  || 0, lbl: 'Comments' },
-        { val: score,                       lbl: 'Score'    }
+        { val: profile.reviewCount      || 0, lbl: 'Reviews'    },
+        { val: profile.likesReceived    || 0, lbl: 'Likes Rec\'d' },
+        { val: profile.commentsReceived || 0, lbl: 'Cmts Rec\'d'  },
+        { val: score,                          lbl: 'Score'       }
       ].map(function(s) {
         return '<div class="pm-prof-stat"><div class="pm-prof-stat-val">' + s.val + '</div><div class="pm-prof-stat-lbl">' + s.lbl + '</div></div>';
       }).join('');
@@ -14915,7 +14929,7 @@ async function deleteEditorReview(key, e) {
           var safeFp = (fp || '').replace(/"/g, '');
           return { posterPath: null, title: r.movie, onclick: 'pmCloseProfile();_pmOpenReviewFromProfile(\'' + safeFp + '\')', _fp: safeFp, _r: r };
         });
-        var navToReview = 'pmCloseProfile();switchTab(\'discover\')';
+        var navToReview = 'pmCloseProfile();switchTab(\'movies\');setTimeout(function(){var s=document.getElementById(\'fanSection\');if(s)s.scrollIntoView({behavior:\'smooth\'});setTimeout(function(){if(typeof toggleFanForm===\'function\')toggleFanForm();},300);},350)';
         var stripHtml = _buildStrip(items, reviews.length ? '' : 'No reviews yet<br>Start reviewing films →', reviews.length ? null : navToReview);
         return reviews.length
           ? '<div class="pm-prof-section-title">Recent Reviews</div>' + stripHtml
@@ -14940,8 +14954,9 @@ async function deleteEditorReview(key, e) {
             + '<div class="pm-prof-reviews-grid">' + cards.join('') + '</div>';
         }
         var items = [];
+        var navFull = 'pmCloseProfile();switchTab(\'movies\');setTimeout(function(){var s=document.getElementById(\'fanSection\');if(s)s.scrollIntoView({behavior:\'smooth\'});setTimeout(function(){if(typeof toggleFanForm===\'function\')toggleFanForm();},300);},350)';
         return (isOwn ? '<div class="pm-prof-section-title">My Reviews</div>' : '')
-          + _buildStrip(items, 'No reviews yet<br>Start reviewing films →', isOwn ? 'pmCloseProfile();switchTab(\'discover\')' : null);
+          + _buildStrip(items, 'No reviews yet<br>Start reviewing films →', isOwn ? navFull : null);
       })();
 
       // Watchlist tab content
@@ -14951,7 +14966,7 @@ async function deleteEditorReview(key, e) {
           return { posterPath: m.poster_path, title: m.title };
         });
         return '<div class="pm-prof-section-title">My Watchlist · ' + wl.length + ' films</div>'
-          + _buildStrip(items, 'Your watchlist is empty<br>Add films to track them →', 'pmCloseProfile();switchTab(\'discover\')');
+          + _buildStrip(items, 'Your watchlist is empty<br>Add films to track them →', 'pmCloseWlSearch&&pmOpenWlSearch()');
       })();
 
       // Lists tab content
@@ -14962,17 +14977,20 @@ async function deleteEditorReview(key, e) {
 
       // Stats tab content
       var statsTabHtml = '<div class="pm-prof-section-title">Statistics</div>'
-        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:0 28px 20px">'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 28px 20px">'
         + [
-            { val: profile.reviewCount   || 0, lbl: 'Reviews Written',   icon: '✍️' },
-            { val: profile.likesReceived || 0, lbl: 'Likes Received',     icon: '♥' },
-            { val: profile.commentCount  || 0, lbl: 'Comments Made',      icon: '💬' },
-            { val: score,                       lbl: 'Contribution Score', icon: '⭐' }
+            { val: profile.reviewCount      || 0, lbl: 'Reviews Written',    icon: '✍️', sub: 'created' },
+            { val: profile.likesReceived    || 0, lbl: 'Likes Received',      icon: '♥',  sub: 'on your reviews' },
+            { val: profile.commentCount     || 0, lbl: 'Comments Made',       icon: '💬', sub: 'on others\' reviews' },
+            { val: profile.commentsReceived || 0, lbl: 'Comments Received',   icon: '📥', sub: 'on your reviews' },
+            { val: profile.likesGiven       || 0, lbl: 'Likes Given',         icon: '👍', sub: 'to others' },
+            { val: score,                          lbl: 'Contribution Score',  icon: '⭐', sub: 'total points' }
           ].map(function(s) {
-            return '<div style="background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:14px;padding:20px;text-align:center">'
-              + '<div style="font-size:1.4rem;margin-bottom:8px">' + s.icon + '</div>'
-              + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:2.4rem;color:#f5a623;line-height:1">' + s.val + '</div>'
-              + '<div style="font-size:.46rem;font-weight:700;color:#555;letter-spacing:.1em;text-transform:uppercase;margin-top:4px">' + s.lbl + '</div>'
+            return '<div style="background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:14px;padding:18px 14px;text-align:center">'
+              + '<div style="font-size:1.3rem;margin-bottom:6px">' + s.icon + '</div>'
+              + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:2.2rem;color:#f5a623;line-height:1">' + s.val + '</div>'
+              + '<div style="font-size:.46rem;font-weight:700;color:#888;letter-spacing:.1em;text-transform:uppercase;margin-top:4px">' + s.lbl + '</div>'
+              + '<div style="font-size:.48rem;color:#444;margin-top:3px">' + s.sub + '</div>'
               + '</div>';
           }).join('')
         + '</div>'
@@ -15003,7 +15021,7 @@ async function deleteEditorReview(key, e) {
               return { posterPath: m.poster_path, title: m.title };
             });
             return '<div class="pm-prof-section-title">Watchlist</div>'
-              + _buildStrip(items, 'Add films →', 'pmCloseProfile();switchTab(\'discover\')');
+              + _buildStrip(items, 'Add films →', 'pmOpenWlSearch&&pmOpenWlSearch()');
           })() : '')
         // Game Night rank placeholder
         + '<div class="pm-prof-widget" style="margin-top:16px">'
@@ -15329,6 +15347,84 @@ async function deleteEditorReview(key, e) {
       if (_profileData) _profileData.backdropUrl = backdropUrl;
       pmOpenProfile(uid);
     } catch(_) {}
+  };
+
+  // ── Watchlist Search Overlay ──────────────────────────────────────
+  var _wlSearchTimer = null;
+  var _wlSearchResults = [];
+
+  window.pmOpenWlSearch = function() {
+    var ov = document.getElementById('pmWlSearchOverlay');
+    var inp = document.getElementById('pmWlSearchInput');
+    var res = document.getElementById('pmWlSearchResults');
+    if (!ov) return;
+    if (res) res.innerHTML = '<div style="color:#555;font-size:.8rem;padding:8px 0">Type a title to search…</div>';
+    if (inp) inp.value = '';
+    ov.classList.add('open');
+    setTimeout(function() { if (inp) inp.focus(); }, 80);
+  };
+
+  window.pmCloseWlSearch = function() {
+    var ov = document.getElementById('pmWlSearchOverlay');
+    if (ov) ov.classList.remove('open');
+    clearTimeout(_wlSearchTimer);
+  };
+
+  window.pmWlSearchFn = function(q) {
+    clearTimeout(_wlSearchTimer);
+    var res = document.getElementById('pmWlSearchResults');
+    q = (q || '').trim();
+    if (q.length < 2) {
+      if (res) res.innerHTML = '<div style="color:#555;font-size:.8rem;padding:8px 0">Type a title to search…</div>';
+      return;
+    }
+    if (res) res.innerHTML = '<div style="color:#555;font-size:.8rem;padding:8px 0">Searching…</div>';
+    _wlSearchTimer = setTimeout(function() {
+      var apiKey = typeof getKey === 'function' ? getKey() : null;
+      if (!apiKey) return;
+      fetch('https://api.themoviedb.org/3/search/movie?api_key=' + apiKey + '&query=' + encodeURIComponent(q) + '&language=en-US&page=1')
+        .then(function(r) { return r.ok ? r.json() : null; })
+        .then(function(data) {
+          _wlSearchResults = (data && data.results || []).slice(0, 7);
+          var resEl = document.getElementById('pmWlSearchResults');
+          if (!resEl) return;
+          if (!_wlSearchResults.length) {
+            resEl.innerHTML = '<div style="color:#555;font-size:.8rem;padding:8px 0">No results found.</div>';
+            return;
+          }
+          resEl.innerHTML = _wlSearchResults.map(function(m, i) {
+            var year = m.release_date ? m.release_date.slice(0, 4) : '';
+            var thumb = m.poster_path
+              ? '<img class="pm-bdp-thumb" src="https://image.tmdb.org/t/p/w92' + m.poster_path + '" alt="" style="width:44px;height:64px;border-radius:6px;object-fit:cover;flex-shrink:0"/>'
+              : '<div style="width:44px;height:64px;background:#222;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1rem">🎬</div>';
+            return '<div class="pm-bdp-item" onclick="pmWlAddMovie(' + i + ')">'
+              + thumb
+              + '<div><div class="pm-bdp-name">' + (m.title || '').replace(/</g,'&lt;') + '</div>'
+              + (year ? '<div class="pm-bdp-year">' + year + '</div>' : '')
+              + '</div></div>';
+          }).join('');
+        }).catch(function() {});
+    }, 350);
+  };
+
+  window.pmWlAddMovie = function(idx) {
+    var movie = _wlSearchResults[idx];
+    if (!movie) return;
+    if (typeof setMovieStatus === 'function') {
+      setMovieStatus(movie, 'want');
+    } else {
+      var wl = JSON.parse(localStorage.getItem('pmovies_wl') || '[]');
+      if (!wl.find(function(m) { return m.id === movie.id; })) {
+        wl.unshift({ id: movie.id, title: movie.title, poster_path: movie.poster_path,
+          vote_average: movie.vote_average, release_date: movie.release_date,
+          overview: movie.overview, genre_ids: movie.genre_ids, status: 'want' });
+        localStorage.setItem('pmovies_wl', JSON.stringify(wl));
+      }
+    }
+    pmCloseWlSearch();
+    var resEl = document.getElementById('pmWlSearchResults');
+    if (resEl) resEl.innerHTML = '<div style="color:#4caf50;font-size:.8rem;padding:8px 0">✓ Added to Watchlist</div>';
+    setTimeout(pmCloseWlSearch, 800);
   };
 
   // ── Avatar Picker ─────────────────────────────────────────────────
