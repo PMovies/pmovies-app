@@ -2549,6 +2549,37 @@
     cursor: pointer; padding: 13px; margin-top: 4px;
   }
   .pm-tp-cancel:hover { color: #888; }
+
+  /* ─── Image gallery (posters / backdrops / person photos) ─── */
+  .pm-img-gallery-header {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+  }
+  .pm-img-gallery-back {
+    background: none; border: 1px solid rgba(255,255,255,.12); color: #aaa;
+    border-radius: 20px; padding: 4px 12px; font-size: .72rem; cursor: pointer;
+    font-family: 'Montserrat', sans-serif; font-weight: 700; transition: all .15s;
+    flex-shrink: 0;
+  }
+  .pm-img-gallery-back:hover { color: #f5a623; border-color: rgba(245,166,35,.4); }
+  .pm-img-gallery-label { font-size: .8rem; color: #888; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pm-img-gallery-grid-backdrop { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .pm-img-gallery-grid-poster  { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .pm-img-gallery-grid-person  { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .pm-img-gallery-cell {
+    position: relative; border-radius: 8px; overflow: hidden; cursor: pointer;
+    border: 2px solid transparent; transition: border-color .15s, transform .15s;
+    background: #111;
+  }
+  .pm-img-gallery-cell:hover { border-color: #f5a623; transform: scale(1.03); }
+  .pm-img-gallery-cell img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .pm-img-gallery-cell.backdrop { aspect-ratio: 16/9; }
+  .pm-img-gallery-cell.poster   { aspect-ratio: 2/3; }
+  .pm-img-gallery-cell.person   { aspect-ratio: 3/4; }
+  .pm-img-gallery-vote {
+    position: absolute; bottom: 4px; right: 5px;
+    background: rgba(0,0,0,.7); border-radius: 4px; padding: 1px 5px;
+    font-size: .58rem; color: #f5a623; font-weight: 700;
+  }
 </style>
 </head>
 <body>
@@ -15094,29 +15125,43 @@ async function deleteEditorReview(key, e) {
       // Async: load Director portrait
       var _loadPerson = function(field) {
         var name = profile[field];
-        if (!name || !apiKey) return;
+        if (!name) return;
+        var savedPhoto = profile[field + 'Photo'];
+        var tEl = document.getElementById('tpImg_' + field);
+        if (savedPhoto && tEl) {
+          tEl.innerHTML = '<img src="' + _esc(savedPhoto) + '" alt="' + _esc(name) + '" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block"/>';
+          return;
+        }
+        if (!apiKey) return;
         fetch('https://api.themoviedb.org/3/search/person?api_key=' + apiKey + '&query=' + encodeURIComponent(name) + '&language=en-US&page=1')
           .then(function(r){ return r.ok ? r.json() : null; })
           .then(function(data) {
             var hit = data && data.results && data.results[0];
             if (hit && hit.profile_path) {
-              var tEl = document.getElementById('tpImg_' + field);
-              if (tEl) tEl.innerHTML = '<img src="https://image.tmdb.org/t/p/w342' + hit.profile_path + '" alt="' + _esc(name) + '" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block"/>';
+              var el = document.getElementById('tpImg_' + field);
+              if (el) el.innerHTML = '<img src="https://image.tmdb.org/t/p/w342' + hit.profile_path + '" alt="' + _esc(name) + '" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block"/>';
             }
           }).catch(function(){});
       };
 
       var _loadFilmPoster = function(field, year2026) {
         var title = profile[field];
-        if (!title || !apiKey) return;
+        if (!title) return;
+        var savedPoster = profile[field + 'Poster'];
+        var tEl = document.getElementById('tpImg_' + field);
+        if (savedPoster && tEl) {
+          tEl.innerHTML = '<img src="' + _esc(savedPoster) + '" alt="' + _esc(title) + '" style="width:100%;height:100%;object-fit:cover;display:block"/>';
+          return;
+        }
+        if (!apiKey) return;
         var qs = 'https://api.themoviedb.org/3/search/movie?api_key=' + apiKey + '&query=' + encodeURIComponent(title) + '&language=en-US&page=1' + (year2026 ? '&primary_release_year=2026' : '');
         fetch(qs)
           .then(function(r){ return r.ok ? r.json() : null; })
           .then(function(data) {
             var hit = data && data.results && data.results[0];
             if (hit && hit.poster_path) {
-              var tEl = document.getElementById('tpImg_' + field);
-              if (tEl) tEl.innerHTML = '<img src="https://image.tmdb.org/t/p/w342' + hit.poster_path + '" alt="' + _esc(title) + '" style="width:100%;height:100%;object-fit:cover;display:block"/>';
+              var el = document.getElementById('tpImg_' + field);
+              if (el) el.innerHTML = '<img src="https://image.tmdb.org/t/p/w342' + hit.poster_path + '" alt="' + _esc(title) + '" style="width:100%;height:100%;object-fit:cover;display:block"/>';
             }
           }).catch(function(){});
       };
@@ -15251,20 +15296,22 @@ async function deleteEditorReview(key, e) {
             sub     = h.known_for_department || '';
             imgUrl  = h.profile_path ? 'https://image.tmdb.org/t/p/w92' + h.profile_path : '';
             saveVal = name;
+            var safeName = _esc(name).replace(/'/g, '\\\'');
             var imgHtml = imgUrl
               ? '<img class="pm-tp-img person-img" src="' + _esc(imgUrl) + '" alt=""/>'
               : '<div class="pm-tp-img person-img" style="background:#222;display:flex;align-items:center;justify-content:center">👤</div>';
-            return '<div class="pm-tp-item" onclick="pmSaveTasteItem(\'' + field + '\',\'' + _tastePicker.uid + '\',\'' + _esc(saveVal).replace(/'/g,'\\\'') + '\',\'' + _esc(imgUrl) + '\')">'
+            return '<div class="pm-tp-item" onclick="pmShowPersonPhotos(\'' + field + '\',\'' + _tastePicker.uid + '\',' + h.id + ',\'' + safeName + '\')">'
               + imgHtml + '<div><div class="pm-tp-name">' + _esc(name) + '</div><div class="pm-tp-sub">' + _esc(sub) + '</div></div></div>';
           } else {
             name    = h.title || '';
             sub     = h.release_date ? h.release_date.slice(0,4) : '';
             imgUrl  = h.poster_path ? 'https://image.tmdb.org/t/p/w92' + h.poster_path : '';
             saveVal = name;
+            var safeName2 = _esc(name).replace(/'/g, '\\\'');
             var imgHtml2 = imgUrl
               ? '<img class="pm-tp-img" src="' + _esc(imgUrl) + '" alt=""/>'
               : '<div class="pm-tp-img" style="background:#222;display:flex;align-items:center;justify-content:center">🎬</div>';
-            return '<div class="pm-tp-item" onclick="pmSaveTasteItem(\'' + field + '\',\'' + _tastePicker.uid + '\',\'' + _esc(saveVal).replace(/'/g,'\\\'') + '\',\'' + _esc(imgUrl) + '\')">'
+            return '<div class="pm-tp-item" onclick="pmShowFilmPosters(\'' + field + '\',\'' + _tastePicker.uid + '\',' + h.id + ',\'' + safeName2 + '\')">'
               + imgHtml2 + '<div><div class="pm-tp-name">' + _esc(name) + '</div><div class="pm-tp-sub">' + sub + '</div></div></div>';
           }
         }).join('');
@@ -15272,18 +15319,93 @@ async function deleteEditorReview(key, e) {
     }, 350);
   };
 
-  window.pmSaveTasteItem = async function(field, uid, value, imgUrl) {
+  window.pmShowFilmPosters = async function(field, uid, movieId, movieTitle) {
+    var res = document.getElementById('pmTpResults');
+    var srch = document.getElementById('pmTpSearch');
+    var lastQ = srch ? srch.value : '';
+    if (res) res.innerHTML = '<div style="color:#555;font-size:.8rem;padding:8px 0">Loading posters…</div>';
+    try {
+      var apiKey = typeof getKey === 'function' ? getKey() : '';
+      var r = await fetch('https://api.themoviedb.org/3/movie/' + movieId + '/images?api_key=' + apiKey + '&include_image_language=en,null');
+      var data = r.ok ? await r.json() : null;
+      var posters = (data && data.posters || []).sort(function(a,b){ return b.vote_average - a.vote_average; }).slice(0, 24);
+      if (!posters.length) {
+        // Fallback: save with whatever the default was (no gallery)
+        window.pmSaveTasteItem(field, uid, movieTitle, '', movieId);
+        return;
+      }
+      var safeTitle = _esc(movieTitle).replace(/'/g, '\\\'');
+      var cells = posters.map(function(p) {
+        var thumb = 'https://image.tmdb.org/t/p/w342' + p.file_path;
+        var full  = 'https://image.tmdb.org/t/p/w500' + p.file_path;
+        var safeUrl = full.replace(/'/g, '');
+        var score = p.vote_average ? (Math.round(p.vote_average * 10) / 10) : '';
+        return '<div class="pm-img-gallery-cell poster" onclick="pmSaveTasteItem(\'' + field + '\',\'' + uid + '\',\'' + safeTitle + '\',\'' + safeUrl + '\',' + movieId + ')">'
+          + '<img src="' + _esc(thumb) + '" loading="lazy" alt=""/>'
+          + (score ? '<div class="pm-img-gallery-vote">★ ' + score + '</div>' : '')
+          + '</div>';
+      }).join('');
+      if (res) res.innerHTML = '<div class="pm-img-gallery-header">'
+        + '<button class="pm-img-gallery-back" onclick="(function(){var s=document.getElementById(\'pmTpSearch\');if(s){s.style.display=\'\';pmTasteSearch(s.value);}})()">← Back</button>'
+        + '<span class="pm-img-gallery-label">' + _esc(movieTitle) + ' — choose a poster</span>'
+        + '</div>'
+        + '<div class="pm-img-gallery-grid-poster">' + cells + '</div>';
+      if (srch) srch.style.display = 'none';
+    } catch(_) { if (res) res.innerHTML = '<div style="color:#f44;font-size:.8rem;padding:8px 0">Failed to load posters.</div>'; }
+  };
+
+  window.pmShowPersonPhotos = async function(field, uid, personId, personName) {
+    var res = document.getElementById('pmTpResults');
+    var srch = document.getElementById('pmTpSearch');
+    if (res) res.innerHTML = '<div style="color:#555;font-size:.8rem;padding:8px 0">Loading photos…</div>';
+    try {
+      var apiKey = typeof getKey === 'function' ? getKey() : '';
+      var r = await fetch('https://api.themoviedb.org/3/person/' + personId + '/images?api_key=' + apiKey);
+      var data = r.ok ? await r.json() : null;
+      var photos = (data && data.profiles || []).sort(function(a,b){ return b.vote_average - a.vote_average; }).slice(0, 18);
+      if (!photos.length) {
+        window.pmSaveTasteItem(field, uid, personName, '', personId);
+        return;
+      }
+      var safeName = _esc(personName).replace(/'/g, '\\\'');
+      var cells = photos.map(function(p) {
+        var thumb = 'https://image.tmdb.org/t/p/w185' + p.file_path;
+        var full  = 'https://image.tmdb.org/t/p/w342' + p.file_path;
+        var safeUrl = full.replace(/'/g, '');
+        var score = p.vote_average ? (Math.round(p.vote_average * 10) / 10) : '';
+        return '<div class="pm-img-gallery-cell person" onclick="pmSaveTasteItem(\'' + field + '\',\'' + uid + '\',\'' + safeName + '\',\'' + safeUrl + '\',' + personId + ')">'
+          + '<img src="' + _esc(thumb) + '" loading="lazy" alt=""/>'
+          + (score ? '<div class="pm-img-gallery-vote">★ ' + score + '</div>' : '')
+          + '</div>';
+      }).join('');
+      if (res) res.innerHTML = '<div class="pm-img-gallery-header">'
+        + '<button class="pm-img-gallery-back" onclick="(function(){var s=document.getElementById(\'pmTpSearch\');if(s){s.style.display=\'\';pmTasteSearch(s.value);}})()">← Back</button>'
+        + '<span class="pm-img-gallery-label">' + _esc(personName) + ' — choose a photo</span>'
+        + '</div>'
+        + '<div class="pm-img-gallery-grid-person">' + cells + '</div>';
+      if (srch) srch.style.display = 'none';
+    } catch(_) { if (res) res.innerHTML = '<div style="color:#f44;font-size:.8rem;padding:8px 0">Failed to load photos.</div>'; }
+  };
+
+  window.pmSaveTasteItem = async function(field, uid, value, imgUrl, tmdbId) {
     pmCloseTastePicker();
     if (!_pmUser || !value) return;
     try {
       var token = await _pmUser.getIdToken();
       var patch = {};
       patch[field] = value;
+      // Persist chosen image URL and TMDB ID so profile load doesn't need to re-search
+      var imgField = (field === 'favDirector' || field === 'favActress') ? field + 'Photo' : field + 'Poster';
+      if (imgUrl) patch[imgField] = imgUrl;
+      if (tmdbId) patch[field + 'TmdbId'] = tmdbId;
       await fetch(RTDB + '/users/' + uid + '.json?auth=' + token, {
         method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify(patch)
       });
-      if (_profileData) _profileData[field] = value;
-      // Refresh profile
+      if (_profileData) {
+        _profileData[field] = value;
+        if (imgUrl) _profileData[imgField] = imgUrl;
+        if (tmdbId) _profileData[field + 'TmdbId'] = tmdbId;
+      }
       pmOpenProfile(uid);
     } catch(_) {}
   };
@@ -15326,16 +15448,47 @@ async function deleteEditorReview(key, e) {
         var hits = (data && data.results || []).filter(function(h){ return h.backdrop_path; }).slice(0, 8);
         if (!hits.length) { if (res) res.innerHTML = '<div style="color:#555;font-size:.8rem;padding:8px 0">No results with backdrops.</div>'; return; }
         if (res) res.innerHTML = hits.map(function(h) {
-          var thumbUrl = 'https://image.tmdb.org/t/p/w300' + h.backdrop_path;
-          var fullUrl  = 'https://image.tmdb.org/t/p/w1280' + h.backdrop_path;
           var year = h.release_date ? h.release_date.slice(0,4) : '';
-          var safeUrl = fullUrl.replace(/'/g, '');
-          return '<div class="pm-bdp-item" onclick="pmSaveBackdrop(\'' + _backdropPicker.uid + '\',\'' + safeUrl + '\')">'
-            + '<img class="pm-bdp-thumb" src="' + _esc(thumbUrl) + '" alt=""/>'
+          var thumbUrl = h.backdrop_path ? 'https://image.tmdb.org/t/p/w300' + h.backdrop_path : '';
+          var thumbHtml = thumbUrl
+            ? '<img class="pm-bdp-thumb" src="' + _esc(thumbUrl) + '" alt=""/>'
+            : '<div class="pm-bdp-thumb" style="background:#222;display:flex;align-items:center;justify-content:center">🎬</div>';
+          return '<div class="pm-bdp-item" onclick="pmShowBackdrops(' + h.id + ',\'' + _esc(h.title||'').replace(/'/g,'\\\'') + '\')">'
+            + thumbHtml
             + '<div><div class="pm-bdp-name">' + _esc(h.title||'') + '</div><div class="pm-bdp-year">' + year + '</div></div></div>';
         }).join('');
       } catch(_) { if (res) res.innerHTML = '<div style="color:#f44;font-size:.8rem;padding:8px 0">Search failed.</div>'; }
     }, 350);
+  };
+
+  window.pmShowBackdrops = async function(movieId, movieTitle) {
+    var res = document.getElementById('pmBdpResults');
+    var inp = document.getElementById('pmBdpSearch');
+    var lastQ = inp ? inp.value : '';
+    if (res) res.innerHTML = '<div style="color:#555;font-size:.8rem;padding:8px 0">Loading backdrops…</div>';
+    try {
+      var apiKey = typeof getKey === 'function' ? getKey() : '';
+      var r = await fetch('https://api.themoviedb.org/3/movie/' + movieId + '/images?api_key=' + apiKey + '&include_image_language=en,null');
+      var data = r.ok ? await r.json() : null;
+      var backdrops = (data && data.backdrops || []).sort(function(a,b){ return b.vote_average - a.vote_average; }).slice(0, 20);
+      if (!backdrops.length) { if (res) res.innerHTML = '<div style="color:#555;font-size:.8rem;padding:8px 0">No backdrops found.</div>'; return; }
+      var uid = _backdropPicker.uid;
+      var cells = backdrops.map(function(b) {
+        var thumb = 'https://image.tmdb.org/t/p/w780' + b.file_path;
+        var full  = 'https://image.tmdb.org/t/p/original' + b.file_path;
+        var safeUrl = full.replace(/'/g, '');
+        var score = b.vote_average ? (Math.round(b.vote_average * 10) / 10) : '';
+        return '<div class="pm-img-gallery-cell backdrop" onclick="pmSaveBackdrop(\'' + uid + '\',\'' + safeUrl + '\')">'
+          + '<img src="' + _esc(thumb) + '" loading="lazy" alt=""/>'
+          + (score ? '<div class="pm-img-gallery-vote">★ ' + score + '</div>' : '')
+          + '</div>';
+      }).join('');
+      if (res) res.innerHTML = '<div class="pm-img-gallery-header">'
+        + '<button class="pm-img-gallery-back" onclick="(function(){var r=document.getElementById(\'pmBdpResults\');r.innerHTML=\'<div style=&quot;color:#555;font-size:.8rem;padding:8px 0&quot;>Searching…</div>\';var i=document.getElementById(\'pmBdpSearch\');if(i)pmBackdropSearch(i.value);})()">← Back</button>'
+        + '<span class="pm-img-gallery-label">' + _esc(movieTitle) + ' — choose a backdrop</span>'
+        + '</div>'
+        + '<div class="pm-img-gallery-grid-backdrop">' + cells + '</div>';
+    } catch(_) { if (res) res.innerHTML = '<div style="color:#f44;font-size:.8rem;padding:8px 0">Failed to load backdrops.</div>'; }
   };
 
   window.pmSaveBackdrop = async function(uid, backdropUrl) {
