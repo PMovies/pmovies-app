@@ -2102,8 +2102,10 @@
   /* Mobile responsive */
   @media(max-width: 640px) {
     .pm-prof-close-btn {
-      position: fixed; top: auto; left: 14px; bottom: auto;
-      top: 76px; transform: none;
+      position: fixed; top: calc(env(safe-area-inset-top, 44px) + 14px); left: 14px; transform: none;
+    }
+    .pm-prof-hero-change {
+      top: calc(env(safe-area-inset-top, 44px) + 12px);
     }
     .pm-prof-identity { padding: 0 16px 18px; gap: 16px; }
     .pm-prof-section-title { padding: 22px 16px 10px; }
@@ -2385,10 +2387,10 @@
   }
   #pmHomeToggleBtn:hover { border-color: rgba(245,166,35,.55); background: rgba(20,12,0,.92); color: #f5a623; }
 
-  /* Mobile — push chips below system status bar */
+  /* Mobile — push chips below system status bar (respects Dynamic Island / notch) */
   @media(max-width:480px) {
-    #pmUserChip { top: 72px; right: 12px; }
-    #pmHomeToggleBtn { top: 72px; left: 12px; }
+    #pmUserChip    { top: calc(env(safe-area-inset-top, 44px) + 12px); right: 12px; }
+    #pmHomeToggleBtn { top: calc(env(safe-area-inset-top, 44px) + 12px); left: 12px; }
   }
 
   /* ─── Taste Picker Overlay ─── */
