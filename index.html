@@ -2165,18 +2165,31 @@
     font-size: .46rem; font-weight: 700; color: #444;
     letter-spacing: .13em; text-transform: uppercase; margin-bottom: 14px;
   }
-  .pm-prof-widget-stats {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  /* Timeline activity feed */
+  .pm-timeline { display: flex; flex-direction: column; gap: 0; }
+  .pm-tl-item {
+    display: flex; gap: 10px; align-items: flex-start;
+    position: relative; padding-bottom: 14px;
   }
-  .pm-prof-wstat { text-align: center; }
-  .pm-prof-wstat-val {
-    font-family: 'Bebas Neue', sans-serif; font-size: 1.7rem;
-    color: #f5a623; line-height: 1; display: block;
+  .pm-tl-item:last-child { padding-bottom: 0; }
+  .pm-tl-spine {
+    display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 28px;
   }
-  .pm-prof-wstat-lbl {
-    font-size: .42rem; font-weight: 700; color: #555;
-    letter-spacing: .1em; text-transform: uppercase; display: block; margin-top: 2px;
+  .pm-tl-dot {
+    width: 8px; height: 8px; border-radius: 50%; background: #2a2a2a;
+    border: 2px solid #333; flex-shrink: 0; margin-top: 3px; transition: border-color .2s;
   }
+  .pm-tl-item:first-child .pm-tl-dot { border-color: #f5a623; background: rgba(245,166,35,.2); }
+  .pm-tl-line {
+    width: 1px; flex: 1; background: rgba(255,255,255,.06); min-height: 12px; margin-top: 3px;
+  }
+  .pm-tl-item:last-child .pm-tl-line { display: none; }
+  .pm-tl-body { flex: 1; min-width: 0; }
+  .pm-tl-action { font-size: .72rem; color: #ccc; line-height: 1.4; }
+  .pm-tl-action strong { color: #eee; font-weight: 700; }
+  .pm-tl-action .pm-tl-film { color: #f5a623; font-weight: 600; }
+  .pm-tl-meta { font-size: .58rem; color: #444; margin-top: 2px; }
+  .pm-tl-rating { font-size: .62rem; color: #f5a623; margin-top: 1px; letter-spacing: 1px; }
   .pm-prof-game-row {
     display: flex; align-items: center; gap: 12px;
   }
@@ -15032,21 +15045,68 @@ async function deleteEditorReview(key, e) {
       // Overview tab
       var overviewHtml = tasteInner + reviewStrip;
 
+      // Relative time helper
+      var _relTime = function(ts) {
+        if (!ts) return '';
+        var diff = Date.now() - ts;
+        var m = Math.floor(diff / 60000);
+        if (m < 2)   return 'just now';
+        if (m < 60)  return m + 'm ago';
+        var h = Math.floor(m / 60);
+        if (h < 24)  return h + 'h ago';
+        var d = Math.floor(h / 24);
+        if (d < 30)  return d + 'd ago';
+        var mo = Math.floor(d / 30);
+        if (mo < 12) return mo + 'mo ago';
+        return Math.floor(mo / 12) + 'y ago';
+      };
+
+      // Build timeline events from reviews + join date
+      var _tlEvents = [];
+      reviews.slice(0, 12).forEach(function(r) {
+        var stars = r.rating ? '★'.repeat(Math.round(r.rating)) : '';
+        _tlEvents.push({
+          ts: r.timestamp || 0,
+          icon: '✍️',
+          html: 'Reviewed <span class="pm-tl-film">' + _esc(r.movie || 'a film') + '</span>',
+          rating: stars,
+          meta: _relTime(r.timestamp)
+        });
+      });
+      // Joined event — pinned at bottom
+      var joinedTs = profile.createdAt || profile.joinedAt || null;
+      var joinedStr = joinedTs ? (function() {
+        var d = new Date(joinedTs);
+        return d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+      })() : null;
+      _tlEvents.sort(function(a, b) { return b.ts - a.ts; });
+      _tlEvents.push({
+        ts: 0,
+        icon: '🎬',
+        html: 'Joined <strong>PMovies</strong>' + (joinedStr ? ' · ' + joinedStr : ''),
+        rating: '',
+        meta: ''
+      });
+
+      var timelineHtml = '<div class="pm-timeline">'
+        + _tlEvents.map(function(ev, i) {
+            return '<div class="pm-tl-item">'
+              + '<div class="pm-tl-spine"><div class="pm-tl-dot"></div><div class="pm-tl-line"></div></div>'
+              + '<div class="pm-tl-body">'
+              + '<div class="pm-tl-action">' + ev.html + '</div>'
+              + (ev.rating ? '<div class="pm-tl-rating">' + ev.rating + '</div>' : '')
+              + (ev.meta ? '<div class="pm-tl-meta">' + ev.meta + '</div>' : '')
+              + '</div>'
+              + '</div>';
+          }).join('')
+        + '</div>';
+
       // Sidebar
       var sidebarHtml = ''
-        // Stats widget
+        // Activity timeline widget
         + '<div class="pm-prof-widget">'
-        +   '<div class="pm-prof-widget-title">Stats</div>'
-        +   '<div class="pm-prof-widget-stats">'
-        +   [
-              { val: profile.reviewCount || 0,   lbl: 'Reviews'  },
-              { val: profile.likesReceived || 0, lbl: 'Likes'    },
-              { val: profile.commentCount || 0,  lbl: 'Comments' },
-              { val: score,                       lbl: 'Score'    }
-            ].map(function(s) {
-              return '<div class="pm-prof-wstat"><span class="pm-prof-wstat-val">' + s.val + '</span><span class="pm-prof-wstat-lbl">' + s.lbl + '</span></div>';
-            }).join('')
-        +   '</div>'
+        +   '<div class="pm-prof-widget-title">Activity</div>'
+        +   timelineHtml
         + '</div>'
         // Watchlist mini-strip (sidebar)
         + (isOwn ? (function() {
