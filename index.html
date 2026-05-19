@@ -2121,10 +2121,16 @@
     background: rgba(10,10,10,.65); border-radius: 10px;
     pointer-events: none;
   }
+  .pm-prof-strip-overlay.clickable {
+    pointer-events: auto; cursor: pointer;
+    transition: background .15s;
+  }
+  .pm-prof-strip-overlay.clickable:hover { background: rgba(10,10,10,.55); }
   .pm-prof-strip-cta {
     font-size: .7rem; font-weight: 700; color: #f5a623;
     letter-spacing: .05em; text-align: center; line-height: 1.7;
   }
+  .pm-prof-strip-overlay.clickable .pm-prof-strip-cta { text-decoration: underline; text-underline-offset: 3px; }
 
   /* Reviews grid */
   .pm-prof-reviews-grid {
@@ -14330,6 +14336,7 @@ async function deleteEditorReview(key, e) {
       var patch = { contributionScore: Math.max(0, (p.contributionScore || 0) + scoreDelta) };
       if (counters) {
         if (counters.reviewCount)   patch.reviewCount   = Math.max(0, (p.reviewCount   || 0) + counters.reviewCount);
+        if (counters.commentCount)  patch.commentCount  = Math.max(0, (p.commentCount  || 0) + counters.commentCount);
         if (counters.likesGiven)    patch.likesGiven    = Math.max(0, (p.likesGiven    || 0) + counters.likesGiven);
         if (counters.likesReceived) patch.likesReceived = Math.max(0, (p.likesReceived || 0) + counters.likesReceived);
       }
@@ -14852,8 +14859,8 @@ async function deleteEditorReview(key, e) {
         + '<button class="pm-prof-tab" data-tab="stats" onclick="pmProfTab(\'stats\')">Stats</button>'
         + '</div>';
 
-      // Poster strip builder
-      var _buildStrip = function(items, emptyPrompt) {
+      // Poster strip builder — onclickJs is an optional JS string to fire when the empty CTA is clicked
+      var _buildStrip = function(items, emptyPrompt, onclickJs) {
         var SKEL = 5;
         var frames = '';
         if (items.length) {
@@ -14865,9 +14872,11 @@ async function deleteEditorReview(key, e) {
           return '<div class="pm-prof-strip-wrap"><div class="pm-prof-strip">' + frames + '</div></div>';
         } else {
           for (var i = 0; i < SKEL; i++) frames += '<div class="pm-prof-poster-frame skeleton"></div>';
+          var overlayCls = onclickJs ? ' clickable' : '';
+          var overlayOnclick = onclickJs ? ' onclick="' + onclickJs + '"' : '';
           return '<div class="pm-prof-strip-wrap">'
             + '<div class="pm-prof-strip">' + frames + '</div>'
-            + '<div class="pm-prof-strip-overlay"><div class="pm-prof-strip-cta">' + emptyPrompt + '</div></div>'
+            + '<div class="pm-prof-strip-overlay' + overlayCls + '"' + overlayOnclick + '><div class="pm-prof-strip-cta">' + emptyPrompt + '</div></div>'
             + '</div>';
         }
       };
@@ -14906,7 +14915,8 @@ async function deleteEditorReview(key, e) {
           var safeFp = (fp || '').replace(/"/g, '');
           return { posterPath: null, title: r.movie, onclick: 'pmCloseProfile();_pmOpenReviewFromProfile(\'' + safeFp + '\')', _fp: safeFp, _r: r };
         });
-        var stripHtml = _buildStrip(items, reviews.length ? '' : 'No reviews yet<br>Start reviewing films →');
+        var navToReview = 'pmCloseProfile();switchTab(\'discover\')';
+        var stripHtml = _buildStrip(items, reviews.length ? '' : 'No reviews yet<br>Start reviewing films →', reviews.length ? null : navToReview);
         return reviews.length
           ? '<div class="pm-prof-section-title">Recent Reviews</div>' + stripHtml
           : (isOwn ? '<div class="pm-prof-section-title">My Reviews</div>' + stripHtml : '');
@@ -14931,7 +14941,7 @@ async function deleteEditorReview(key, e) {
         }
         var items = [];
         return (isOwn ? '<div class="pm-prof-section-title">My Reviews</div>' : '')
-          + _buildStrip(items, 'No reviews yet<br>Start reviewing films →');
+          + _buildStrip(items, 'No reviews yet<br>Start reviewing films →', isOwn ? 'pmCloseProfile();switchTab(\'discover\')' : null);
       })();
 
       // Watchlist tab content
@@ -14941,7 +14951,7 @@ async function deleteEditorReview(key, e) {
           return { posterPath: m.poster_path, title: m.title };
         });
         return '<div class="pm-prof-section-title">My Watchlist · ' + wl.length + ' films</div>'
-          + _buildStrip(items, 'Your watchlist is empty<br>Add films to track them →');
+          + _buildStrip(items, 'Your watchlist is empty<br>Add films to track them →', 'pmCloseProfile();switchTab(\'discover\')');
       })();
 
       // Lists tab content
@@ -14993,7 +15003,7 @@ async function deleteEditorReview(key, e) {
               return { posterPath: m.poster_path, title: m.title };
             });
             return '<div class="pm-prof-section-title">Watchlist</div>'
-              + _buildStrip(items, 'Add films →');
+              + _buildStrip(items, 'Add films →', 'pmCloseProfile();switchTab(\'discover\')');
           })() : '')
         // Game Night rank placeholder
         + '<div class="pm-prof-widget" style="margin-top:16px">'
