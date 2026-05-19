@@ -1645,14 +1645,12 @@
   .lists-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:18px; }
   .list-card { background:#111; border:1px solid #1e1e1e; border-radius:18px; overflow:hidden; cursor:pointer; transition:transform .2s,border-color .2s,box-shadow .2s; }
   .list-card:hover { transform:translateY(-3px); border-color:#333; box-shadow:0 12px 40px rgba(0,0,0,.5); }
-  /* Fan-style poster strip */
-  .list-card-fan { display:flex; align-items:flex-end; padding:16px 16px 0; gap:0; height:136px; position:relative; overflow:hidden; }
-  .list-card-fan::after { content:''; position:absolute; bottom:0; left:0; right:0; height:40px; background:linear-gradient(transparent,#111); pointer-events:none; }
-  .lc-fan-item { flex-shrink:0; width:72px; height:108px; border-radius:8px; overflow:hidden; margin-left:-18px; box-shadow:-4px 0 14px rgba(0,0,0,.7); position:relative; transition:transform .2s; }
-  .lc-fan-item:first-child { margin-left:0; }
-  .list-card:hover .lc-fan-item { transform:translateY(-6px) translateX(-2px); }
-  .list-card:hover .lc-fan-item:first-child { transform:translateY(-6px); }
-  .lc-fan-item img { width:100%; height:100%; object-fit:cover; display:block; }
+  /* Fan-style poster strip — fills full card width */
+  .list-card-fan { display:flex; height:148px; overflow:hidden; gap:2px; background:#000; }
+  .lc-fan-item { flex:1; min-width:0; overflow:hidden; position:relative; transition:transform .2s,filter .2s; }
+  .list-card:hover .lc-fan-item { filter:brightness(1.08); }
+  .lc-fan-item img { width:100%; height:100%; object-fit:cover; object-position:center top; display:block; transition:transform .3s; }
+  .list-card:hover .lc-fan-item img { transform:scale(1.05); }
   .lc-fan-ph { width:100%;height:100%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:1.4rem; }
   /* Legacy grid poster (kept for main lists tab) */
   .list-card-posters { display:grid; grid-template-columns:repeat(4,1fr); height:96px; overflow:hidden; }
@@ -16214,16 +16212,67 @@ async function deleteEditorReview(key, e) {
     }, 320);
   };
 
-  window.pmClSelectMovieByIdx = function(i) {
+  window.pmClSelectMovieByIdx = async function(i) {
     var m = _pmClSearchResults[i];
     if (!m) return;
     if (_pmClMovies.find(function(x) { return x.id === m.id; })) return;
-    _pmClMovies.push(m);
-    _pmClRenderMovieTags();
     var ms = document.getElementById('pmClMovieSearch');
     var dd = document.getElementById('pmClMovieDd');
     if (ms) ms.value = '';
     if (dd) dd.style.display = 'none';
+    // Fetch TMDB poster options for this movie
+    try {
+      var TMDB = 'https://api.themoviedb.org/3';
+      var key  = typeof getKey === 'function' ? getKey() : '';
+      var ir   = await fetch(TMDB + '/movie/' + m.id + '/images?api_key=' + key);
+      var idata = ir.ok ? await ir.json() : null;
+      var posters = idata && idata.posters ? idata.posters.slice(0, 8) : [];
+      if (posters.length <= 1) {
+        // Only one poster or none — add directly
+        _pmClMovies.push(m);
+        _pmClRenderMovieTags();
+        return;
+      }
+      // Show poster picker
+      _pmClShowPosterPicker(m, posters);
+    } catch(_) {
+      _pmClMovies.push(m);
+      _pmClRenderMovieTags();
+    }
+  };
+
+  function _pmClShowPosterPicker(movie, posters) {
+    var existing = document.getElementById('pmClPosterPicker');
+    if (existing) existing.remove();
+    var wrap = document.createElement('div');
+    wrap.id = 'pmClPosterPicker';
+    wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100010;display:flex;align-items:center;justify-content:center;padding:20px';
+    wrap.innerHTML = '<div style="background:#141414;border:1px solid #2a2a2a;border-radius:18px;padding:24px;max-width:500px;width:100%">'
+      + '<div style="font-family:Montserrat,sans-serif;font-weight:700;font-size:.82rem;color:#f5a623;letter-spacing:.1em;text-transform:uppercase;margin-bottom:14px">Choose a Poster — ' + (movie.title || '').replace(/</g,'&lt;') + '</div>'
+      + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-height:320px;overflow-y:auto">'
+      + posters.map(function(p, i) {
+          return '<div onclick="pmClPickPoster(' + i + ')" style="cursor:pointer;border-radius:8px;overflow:hidden;aspect-ratio:.67;border:2px solid transparent;transition:border-color .15s" onmouseover="this.style.borderColor=\'#f5a623\'" onmouseout="this.style.borderColor=\'transparent\'">'
+            + '<img src="https://image.tmdb.org/t/p/w185' + p.file_path + '" style="width:100%;height:100%;object-fit:cover;display:block"/>'
+            + '</div>';
+        }).join('')
+      + '</div>'
+      + '<button onclick="document.getElementById(\'pmClPosterPicker\').remove()" style="margin-top:14px;background:none;border:1px solid #333;color:#666;border-radius:10px;padding:8px 18px;cursor:pointer;font-family:Montserrat,sans-serif;font-size:.72rem;font-weight:700">Cancel</button>'
+      + '</div>';
+    document.body.appendChild(wrap);
+    window._pmClPosterPickerMovie   = movie;
+    window._pmClPosterPickerOptions = posters;
+  }
+
+  window.pmClPickPoster = function(idx) {
+    var movie   = window._pmClPosterPickerMovie;
+    var posters = window._pmClPosterPickerOptions;
+    var picker  = document.getElementById('pmClPosterPicker');
+    if (!movie || !posters) { if (picker) picker.remove(); return; }
+    var chosen = posters[idx];
+    var movieWithPoster = Object.assign({}, movie, { poster_path: chosen ? chosen.file_path : movie.poster_path });
+    _pmClMovies.push(movieWithPoster);
+    _pmClRenderMovieTags();
+    if (picker) picker.remove();
   };
 
   window.pmClRemoveMovie = function(i) {
@@ -16339,7 +16388,6 @@ async function deleteEditorReview(key, e) {
   window.pmListOpenMovie = function(i) {
     var m = (window._pmListViewMovies || [])[i];
     if (!m) return;
-    // Build a movie object compatible with openModal
     var movieObj = {
       id:           m.id,
       title:        m.title        || '',
@@ -16350,10 +16398,22 @@ async function deleteEditorReview(key, e) {
       vote_count:   m.vote_count   || 0,
       media_type:   'movie'
     };
-    if (typeof openModal === 'function') {
-      pmCloseListView();
-      setTimeout(function() { openModal(movieObj); }, 80);
+    if (typeof openModal !== 'function') return;
+    // Boost movie modal above all profile/list overlays, restore on close
+    var modalEl = document.querySelector('.modal-overlay');
+    if (modalEl) {
+      modalEl.style.zIndex = '100001';
+      var obs = new MutationObserver(function(muts) {
+        muts.forEach(function() {
+          if (!modalEl.classList.contains('visible')) {
+            modalEl.style.zIndex = '';
+            obs.disconnect();
+          }
+        });
+      });
+      obs.observe(modalEl, { attributes: true, attributeFilter: ['class'] });
     }
+    openModal(movieObj);
   };
 
   window.pmCloseListView = function() {
