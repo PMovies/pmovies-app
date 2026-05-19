@@ -1919,18 +1919,18 @@
 
   /* Hero */
   .pm-prof-hero {
-    position: relative; width: 100%; height: 36vh;
-    min-height: 180px; max-height: 300px;
+    position: relative; width: 100%; height: 40vh;
+    min-height: 200px; max-height: 360px;
     background: linear-gradient(135deg,#0a0500 0%,#1a0e00 50%,#060012 100%);
     overflow: hidden;
   }
   .pm-prof-hero-img {
     position: absolute; inset: 0; width: 100%; height: 100%;
-    object-fit: cover; opacity: .5; display: block;
+    object-fit: cover; object-position: center 25%; opacity: .65; display: block;
   }
   .pm-prof-hero-gradient {
     position: absolute; inset: 0;
-    background: linear-gradient(to bottom, rgba(0,0,0,.1) 0%, rgba(10,10,10,.95) 100%);
+    background: linear-gradient(to bottom, rgba(0,0,0,.05) 0%, rgba(10,10,10,.92) 100%);
   }
   .pm-prof-hero-change {
     position: absolute; top: 14px; right: 14px;
@@ -2486,10 +2486,12 @@
   }
   #pmHomeToggleBtn:hover { border-color: rgba(245,166,35,.55); background: rgba(20,12,0,.92); color: #f5a623; }
 
-  /* Mobile — push chips below system status bar (respects Dynamic Island / notch) */
-  @media(max-width:480px) {
-    #pmUserChip    { top: calc(env(safe-area-inset-top, 44px) + 12px); right: 12px; }
-    #pmHomeToggleBtn { top: calc(env(safe-area-inset-top, 44px) + 12px); left: 12px; }
+  /* Mobile — push chips below system status bar.
+     Uses env() for Dynamic Island/notch + a 64px floor so it works even
+     when env() is unsupported. 768px breakpoint covers all phones. */
+  @media(max-width:768px) {
+    #pmUserChip    { top: calc(env(safe-area-inset-top, 64px) + 16px); right: 12px; }
+    #pmHomeToggleBtn { top: calc(env(safe-area-inset-top, 64px) + 16px); left: 12px; }
   }
 
   /* ─── Taste Picker Overlay ─── */
