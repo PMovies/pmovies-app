@@ -2955,9 +2955,6 @@
   <button class="pmovies-tab" id="tab-btn-series" onclick="switchTab('series')" role="tab">
     <span class="tab-icon">📺</span>Series
   </button>
-  <button class="pmovies-tab" id="tab-btn-lists" onclick="switchTab('lists')" role="tab">
-    <span class="tab-icon">📋</span>Lists
-  </button>
   <button class="pmovies-tab" id="tab-btn-backed" onclick="switchTab('backed')" role="tab">
     <span class="tab-icon">❤️</span>Backed
   </button>
@@ -14522,27 +14519,45 @@ async function deleteEditorReview(key, e) {
 <canvas id="pmShareCardCanvas" style="display:none"></canvas>
 <div class="pm-prof-share-toast" id="pmShareToast"></div>
 
-<!-- ── Create List Modal ── -->
-<div id="pmCreateListOverlay" onclick="if(event.target===this)pmCloseCreateList()">
-  <div class="pm-cl-modal">
-    <div class="pm-cl-title">📋 Create a List</div>
+<!-- ── Create / Edit List Modal ── -->
+<div id="pmCreateListOverlay" onclick="if(event.target===this)pmCloseCreateList()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:9000;display:none;align-items:center;justify-content:center;padding:20px">
+  <div class="pm-cl-modal" style="width:100%;max-width:480px;max-height:88vh;overflow-y:auto;background:#111;border:1px solid #222;border-radius:20px;padding:28px">
+    <div class="pm-cl-title">📋 <span id="pmClModalTitle">Create a List</span></div>
     <div class="pm-cl-field">
       <label class="pm-cl-label">Title</label>
       <input class="pm-cl-input" id="pmClTitle" placeholder="e.g. Best Noir Films" maxlength="80"/>
     </div>
     <div class="pm-cl-field">
       <label class="pm-cl-label">Description <span style="color:#444">(optional)</span></label>
-      <textarea class="pm-cl-textarea" id="pmClDesc" placeholder="What's this list about?" maxlength="300"></textarea>
+      <textarea class="pm-cl-textarea" id="pmClDesc" placeholder="What's this list about?" maxlength="300" style="resize:vertical;min-height:56px"></textarea>
     </div>
     <div class="pm-cl-field">
-      <label class="pm-cl-label">Category / Tag <span style="color:#444">(optional)</span></label>
-      <input class="pm-cl-input" id="pmClTag" placeholder="e.g. Thriller, 70s Cinema" maxlength="40"/>
+      <label class="pm-cl-label">Add Films</label>
+      <div style="position:relative">
+        <input class="pm-cl-input" id="pmClMovieSearch" placeholder="Search a film title…" autocomplete="off"
+          oninput="pmClMovieSearchFn(this.value)"
+          onblur="setTimeout(function(){var d=document.getElementById('pmClMovieDd');if(d)d.style.display='none'},220)"/>
+        <div id="pmClMovieDd" style="position:absolute;top:100%;left:0;right:0;background:#181818;border:1px solid #333;border-radius:10px;z-index:300;max-height:220px;overflow-y:auto;display:none;margin-top:4px"></div>
+      </div>
+      <div id="pmClMovieTags" style="display:flex;flex-wrap:wrap;gap:7px;margin-top:10px;min-height:4px"></div>
     </div>
     <div class="pm-cl-actions">
       <button class="pm-cl-save" id="pmClSaveBtn" onclick="pmSaveNewList()">Create List</button>
       <button class="pm-cl-cancel" onclick="pmCloseCreateList()">Cancel</button>
     </div>
-    <div id="pmClMsg" style="font-size:.72rem;color:#f5a623;text-align:center;min-height:18px"></div>
+    <div id="pmClMsg" style="font-size:.72rem;color:#f5a623;text-align:center;min-height:18px;margin-top:6px"></div>
+  </div>
+</div>
+
+<!-- ── List Detail Overlay (profile) ── -->
+<div id="pmListViewOverlay" onclick="if(event.target===this)pmCloseListView()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:9100;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto">
+  <div style="width:100%;max-width:640px;background:#111;border:1px solid #222;border-radius:20px;padding:28px;margin:auto">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:6px">
+      <button onclick="pmCloseListView()" style="background:none;border:1px solid #333;color:#888;border-radius:10px;padding:7px 14px;cursor:pointer;font-family:'Montserrat',sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.06em;flex-shrink:0">← Back</button>
+      <div id="pmLvTitle" style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:1.1rem;color:#fff"></div>
+    </div>
+    <div id="pmLvDesc" style="font-size:.77rem;color:#666;margin-bottom:20px;padding-left:2px"></div>
+    <div id="pmLvGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px"></div>
   </div>
 </div>
 
@@ -15327,7 +15342,7 @@ async function deleteEditorReview(key, e) {
         + '<button class="pm-prof-tab active" data-tab="overview" onclick="pmProfTab(\'overview\')">Overview</button>'
         + '<button class="pm-prof-tab" data-tab="reviews" onclick="pmProfTab(\'reviews\')">Reviews' + (reviews.length ? ' · ' + reviews.length : '') + '</button>'
         + (isOwn ? '<button class="pm-prof-tab" data-tab="watchlist" onclick="pmProfTab(\'watchlist\')">Watchlist' + (wl.length ? ' · ' + wl.length : '') + '</button>' : '')
-        + (isOwn ? '<button class="pm-prof-tab" data-tab="lists" onclick="pmProfTab(\'lists\')">Lists</button>' : '')
+        + '<button class="pm-prof-tab" data-tab="lists" onclick="pmProfTab(\'lists\')">Lists</button>'
         + '<button class="pm-prof-tab" data-tab="stats" onclick="pmProfTab(\'stats\')">Stats</button>'
         + (isAdminUser ? '<button class="pm-prof-tab" data-tab="admin" onclick="pmProfTab(\'admin\')">⚡ Admin</button>' : '')
         + '</div>';
@@ -15428,14 +15443,12 @@ async function deleteEditorReview(key, e) {
           + _buildStrip(items, 'Your watchlist is empty<br>Add films to track them →', 'pmCloseWlSearch&&pmOpenWlSearch()');
       })();
 
-      // Lists tab content — with create button for own profile
-      var listsTabHtml = isOwn
-        ? '<div class="pm-prof-section-title">My Lists</div>'
-          + '<button class="pm-list-create-btn" onclick="pmOpenCreateList()">'
+      // Lists tab content — visible to all visitors, create button for owner only
+      var listsTabHtml = '<div class="pm-prof-section-title">' + (isOwn ? 'My Lists' : 'Lists') + '</div>'
+        + (isOwn ? '<button class="pm-list-create-btn" onclick="pmOpenCreateList()">'
           + '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>'
-          + 'Create New List</button>'
-          + '<div id="pmUserListsContainer"><div style="color:#555;font-size:.78rem;padding:8px 28px">Loading your lists…</div></div>'
-        : '';
+          + 'Create New List</button>' : '')
+        + '<div id="pmUserListsContainer" style="padding:0 28px 20px"><div style="color:#555;font-size:.78rem;padding:8px 0">Loading lists…</div></div>';
 
       // Stats tab content
       var statsTabHtml = '<div class="pm-prof-section-title">Statistics</div>'
@@ -15576,7 +15589,7 @@ async function deleteEditorReview(key, e) {
         +     '<div class="pm-prof-tab-panel" id="pmProfPanel-overview">' + overviewHtml + '</div>'
         +     '<div class="pm-prof-tab-panel" id="pmProfPanel-reviews" style="display:none">' + fullReviewsHtml + '</div>'
         +     (isOwn ? '<div class="pm-prof-tab-panel" id="pmProfPanel-watchlist" style="display:none">' + watchlistTabHtml + '</div>' : '')
-        +     (isOwn ? '<div class="pm-prof-tab-panel" id="pmProfPanel-lists" style="display:none">' + listsTabHtml + '</div>' : '')
+        +     '<div class="pm-prof-tab-panel" id="pmProfPanel-lists" style="display:none">' + listsTabHtml + '</div>'
         +     '<div class="pm-prof-tab-panel" id="pmProfPanel-stats" style="display:none">' + statsTabHtml + '</div>'
         +     (isAdminUser ? '<div class="pm-prof-tab-panel" id="pmProfPanel-admin" style="display:none">' + adminTabHtml + '</div>' : '')
         +   '</div>'
@@ -15677,29 +15690,60 @@ async function deleteEditorReview(key, e) {
         if (typeof window._pmRegisterReview === 'function') window._pmRegisterReview(fp, r);
       });
 
-      // Async: load user's own lists into Lists tab
-      if (isOwn) {
-        (function() {
-          var container = document.getElementById('pmUserListsContainer');
-          fetch(RTDB + '/lists.json?orderBy=%22uid%22&equalTo=%22' + uid + '%22')
-            .then(function(r) { return r.ok ? r.json() : null; })
-            .then(function(data) {
-              if (!container) return;
-              if (!data) { container.innerHTML = '<div style="color:#555;font-size:.78rem;padding:8px 28px">No lists yet. Create your first one!</div>'; return; }
-              var lists = Object.entries(data).map(function(e) { return Object.assign({ _id: e[0] }, e[1]); })
-                .sort(function(a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
-              if (!lists.length) { container.innerHTML = '<div style="color:#555;font-size:.78rem;padding:8px 28px">No lists yet. Create your first one!</div>'; return; }
-              container.innerHTML = lists.map(function(l) {
-                var films = l.films ? Object.keys(l.films).length : 0;
-                return '<div class="pm-user-list-card pm-del-wrap">'
-                  + '<div><div class="pm-user-list-title">' + _esc(l.title || 'Untitled') + '</div>'
-                  + '<div class="pm-user-list-meta">' + films + ' film' + (films !== 1 ? 's' : '') + (l.tag ? ' · ' + _esc(l.tag) : '') + '</div></div>'
-                  + '<button class="pm-del-btn" onclick="pmAdminDeleteItem(\'lists\',\'' + l._id + '\',this.closest(\'.pm-user-list-card\'))">✕</button>'
-                  + '</div>';
+      // Async: load user lists into Lists tab (visible to all)
+      window._pmLoadUserLists = async function(targetUid, isOwnProfile) {
+        var container = document.getElementById('pmUserListsContainer');
+        if (!container) return;
+        try {
+          var _ulUser = window.pmGetUser ? window.pmGetUser() : null;
+          var _ulTok  = _ulUser && _ulUser.getIdToken ? await _ulUser.getIdToken() : null;
+          var _ulUrl  = RTDB + '/userLists.json?orderBy=%22uid%22&equalTo=%22' + targetUid + '%22'
+                      + (_ulTok ? '&auth=' + _ulTok : '');
+          var _ulRes  = await fetch(_ulUrl);
+          var data    = _ulRes.ok ? await _ulRes.json() : null;
+          if (!data) {
+            container.innerHTML = '<div style="color:#555;font-size:.78rem;padding:8px 0">'
+              + (isOwnProfile ? 'No lists yet. Create your first one!' : 'No lists yet.') + '</div>';
+            return;
+          }
+          var lists = Object.entries(data).map(function(e) { return Object.assign({ _id: e[0] }, e[1]); })
+            .sort(function(a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
+          if (!lists.length) {
+            container.innerHTML = '<div style="color:#555;font-size:.78rem;padding:8px 0">'
+              + (isOwnProfile ? 'No lists yet. Create your first one!' : 'No lists yet.') + '</div>';
+            return;
+          }
+          // Render as poster-grid cards (same style as main Lists tab)
+          container.innerHTML = '<div class="lists-grid" style="padding:0">'
+            + lists.map(function(l) {
+              var movies = l.movies || [];
+              var cnt = movies.length;
+              var strip = movies.slice(0,4).concat(
+                new Array(Math.max(0, 4 - Math.min(movies.length, 4))).fill(null)
+              ).map(function(m) {
+                return m && m.poster_path
+                  ? '<div class="list-card-poster"><img src="https://image.tmdb.org/t/p/w92' + m.poster_path + '" loading="lazy"/></div>'
+                  : '<div class="list-card-poster"><div class="list-card-poster-ph">🎬</div></div>';
               }).join('');
-            }).catch(function() { if (container) container.innerHTML = '<div style="color:#555;font-size:.78rem;padding:8px 28px">Could not load lists.</div>'; });
-        })();
-      }
+              var delBtn = isOwnProfile
+                ? '<button class="pm-del-btn" onclick="event.stopPropagation();pmAdminDeleteItem(\'userLists\',\'' + l._id + '\',this.closest(\'.list-card\'))">✕</button>'
+                : '';
+              return '<div class="list-card pm-del-wrap" onclick="pmOpenListView(\'' + l._id + '\',' + JSON.stringify(l).replace(/</g,'\\u003c') + ')">'
+                + '<div class="list-card-posters">' + strip + '</div>'
+                + '<div class="list-card-body">'
+                + '<div class="list-card-title">' + _esc(l.title || 'Untitled') + '</div>'
+                + (l.desc ? '<div class="list-card-desc">' + _esc(l.desc) + '</div>' : '')
+                + '<div class="list-card-footer"><span class="list-card-count">' + cnt + ' film' + (cnt !== 1 ? 's' : '') + '</span></div>'
+                + '</div>'
+                + delBtn
+                + '</div>';
+            }).join('')
+            + '</div>';
+        } catch(e) { if (container) container.innerHTML = '<div style="color:#555;font-size:.78rem;padding:8px 0">Could not load lists.</div>'; }
+      };
+      // Store uid + isOwn for deferred load when tab is clicked
+      window._pmListsTabUid   = uid;
+      window._pmListsTabIsOwn = isOwn;
 
       // Async: load admin stats when Admin tab is first opened
       if (isAdminUser) {
@@ -16061,6 +16105,13 @@ async function deleteEditorReview(key, e) {
     if (tab === 'admin' && typeof window._pmLoadAdminStats === 'function') {
       window._pmLoadAdminStats();
     }
+    // Lazy-load user lists on first open
+    if (tab === 'lists' && typeof window._pmLoadUserLists === 'function') {
+      var container = document.getElementById('pmUserListsContainer');
+      if (container && container.querySelector('[style*="Loading"]')) {
+        window._pmLoadUserLists(window._pmListsTabUid, window._pmListsTabIsOwn);
+      }
+    }
   };
 
   window._pmOpenReviewFromProfile = function(fp) {
@@ -16070,29 +16121,89 @@ async function deleteEditorReview(key, e) {
   };
 
   // ── Create List ───────────────────────────────────────────────────
+  var _pmClMovies = [];
+  var _pmClSearchTimer = null;
+  var _pmClSearchResults = [];
+
   window.pmOpenCreateList = function() {
-    var ov = document.getElementById('pmCreateListOverlay');
+    _pmClMovies = [];
+    var ov  = document.getElementById('pmCreateListOverlay');
     var inp = document.getElementById('pmClTitle');
     var desc = document.getElementById('pmClDesc');
-    var tag = document.getElementById('pmClTag');
+    var ms  = document.getElementById('pmClMovieSearch');
     var msg = document.getElementById('pmClMsg');
     if (inp)  inp.value  = '';
     if (desc) desc.value = '';
-    if (tag)  tag.value  = '';
+    if (ms)   ms.value   = '';
     if (msg)  msg.textContent = '';
-    if (ov)   ov.classList.add('open');
+    _pmClRenderMovieTags();
+    if (ov) { ov.style.display = 'flex'; document.body.style.overflow = 'hidden'; }
   };
 
   window.pmCloseCreateList = function() {
     var ov = document.getElementById('pmCreateListOverlay');
-    if (ov) ov.classList.remove('open');
+    if (ov) { ov.style.display = 'none'; document.body.style.overflow = ''; }
   };
+
+  window.pmClMovieSearchFn = function(q) {
+    clearTimeout(_pmClSearchTimer);
+    var dd = document.getElementById('pmClMovieDd');
+    q = q.trim();
+    if (q.length < 2) { if (dd) dd.style.display = 'none'; return; }
+    _pmClSearchTimer = setTimeout(async function() {
+      try {
+        var TMDB = 'https://api.themoviedb.org/3';
+        var key  = typeof getKey === 'function' ? getKey() : '';
+        var res  = await fetch(TMDB + '/search/movie?api_key=' + key + '&query=' + encodeURIComponent(q) + '&language=en-US&page=1');
+        var data = res.ok ? await res.json() : null;
+        _pmClSearchResults = (data && data.results ? data.results : []).slice(0, 6);
+        if (!_pmClSearchResults.length) { if (dd) dd.style.display = 'none'; return; }
+        if (!dd) return;
+        dd.innerHTML = _pmClSearchResults.map(function(m, i) {
+          var year = m.release_date ? m.release_date.slice(0,4) : '';
+          var img = m.poster_path
+            ? '<img src="https://image.tmdb.org/t/p/w45' + m.poster_path + '" style="width:28px;height:42px;object-fit:cover;border-radius:4px;flex-shrink:0"/>'
+            : '<div style="width:28px;height:42px;background:#333;border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.7rem">🎬</div>';
+          var title = m.title ? m.title.replace(/</g,'&lt;') : '';
+          return '<div class="admin-movie-dd-item" onmousedown="event.preventDefault();pmClSelectMovieByIdx(' + i + ')">'
+            + img + '<span>' + title + (year ? ' (' + year + ')' : '') + '</span></div>';
+        }).join('');
+        dd.style.display = 'block';
+      } catch(_) { if (dd) dd.style.display = 'none'; }
+    }, 320);
+  };
+
+  window.pmClSelectMovieByIdx = function(i) {
+    var m = _pmClSearchResults[i];
+    if (!m) return;
+    if (_pmClMovies.find(function(x) { return x.id === m.id; })) return;
+    _pmClMovies.push(m);
+    _pmClRenderMovieTags();
+    var ms = document.getElementById('pmClMovieSearch');
+    var dd = document.getElementById('pmClMovieDd');
+    if (ms) ms.value = '';
+    if (dd) dd.style.display = 'none';
+  };
+
+  window.pmClRemoveMovie = function(i) {
+    _pmClMovies.splice(i, 1);
+    _pmClRenderMovieTags();
+  };
+
+  function _pmClRenderMovieTags() {
+    var wrap = document.getElementById('pmClMovieTags');
+    if (!wrap) return;
+    wrap.innerHTML = _pmClMovies.map(function(m, i) {
+      var t = m.title ? m.title.replace(/</g,'&lt;') : '';
+      return '<div class="admin-movie-tag">' + t
+        + '<button class="admin-movie-tag-del" onclick="pmClRemoveMovie(' + i + ')">✕</button></div>';
+    }).join('');
+  }
 
   window.pmSaveNewList = async function() {
     if (!_pmUser) return;
     var title = (document.getElementById('pmClTitle') || {}).value || '';
     var desc  = (document.getElementById('pmClDesc')  || {}).value || '';
-    var tag   = (document.getElementById('pmClTag')   || {}).value || '';
     var msg   = document.getElementById('pmClMsg');
     var btn   = document.getElementById('pmClSaveBtn');
     if (!title.trim()) { if (msg) msg.textContent = 'Please enter a title.'; return; }
@@ -16102,24 +16213,72 @@ async function deleteEditorReview(key, e) {
       var token = await _pmUser.getIdToken();
       var payload = {
         title: title.trim(),
-        description: desc.trim(),
-        tag: tag.trim(),
-        uid: _pmUser.uid,
+        desc:  desc.trim(),
+        uid:   _pmUser.uid,
         createdAt: Date.now(),
-        films: {}
+        likes: 0,
+        movies: _pmClMovies.map(function(m) {
+          return {
+            id:           m.id,
+            title:        m.title,
+            poster_path:  m.poster_path  || null,
+            release_date: m.release_date || '',
+            overview:     m.overview     || '',
+            vote_average: m.vote_average || 0,
+            vote_count:   m.vote_count   || 0
+          };
+        })
       };
-      var r = await fetch(RTDB + '/lists.json?auth=' + token, {
+      var r = await fetch(RTDB + '/userLists.json?auth=' + token, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
       if (!r.ok) throw new Error('Save failed');
       if (msg) msg.textContent = '✓ List created!';
-      setTimeout(function() { pmCloseCreateList(); pmOpenProfile(_profileUid); }, 900);
+      setTimeout(function() {
+        pmCloseCreateList();
+        // Reload lists panel
+        if (typeof window._pmLoadUserLists === 'function') {
+          window._pmLoadUserLists(window._pmListsTabUid, window._pmListsTabIsOwn);
+        }
+      }, 800);
     } catch(e) {
       if (msg) msg.textContent = 'Error saving. Try again.';
     } finally {
       if (btn) btn.disabled = false;
     }
+  };
+
+  // ── List Detail View (profile) ────────────────────────────────────
+  window.pmOpenListView = function(listId, listData) {
+    var ov = document.getElementById('pmListViewOverlay');
+    if (!ov) return;
+    var titleEl = document.getElementById('pmLvTitle');
+    var descEl  = document.getElementById('pmLvDesc');
+    var gridEl  = document.getElementById('pmLvGrid');
+    if (titleEl) titleEl.textContent = listData.title || 'Untitled';
+    if (descEl)  descEl.textContent  = listData.desc  || '';
+    var movies = listData.movies || [];
+    if (gridEl) {
+      gridEl.innerHTML = movies.length
+        ? movies.map(function(m) {
+            var img = m.poster_path
+              ? '<img src="https://image.tmdb.org/t/p/w185' + m.poster_path + '" alt="' + (m.title||'').replace(/</g,'&lt;') + '" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block"/>'
+              : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2rem">🎬</div>';
+            return '<div class="list-poster-item" onclick="void(0)" title="' + (m.title||'').replace(/</g,'&lt;') + '">'
+              + img
+              + '<div class="list-poster-label">' + (m.title||'').replace(/</g,'&lt;') + '</div>'
+              + '</div>';
+          }).join('')
+        : '<div style="color:#555;font-size:.8rem;padding:20px 0">No films in this list yet.</div>';
+    }
+    ov.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  };
+
+  window.pmCloseListView = function() {
+    var ov = document.getElementById('pmListViewOverlay');
+    if (ov) { ov.style.display = 'none'; document.body.style.overflow = ''; }
   };
 
   // ── Admin Delete Controls ─────────────────────────────────────────
@@ -16177,6 +16336,34 @@ async function deleteEditorReview(key, e) {
       pmCloseProfile();
       alert('Profile deleted.');
     } catch(e) { alert('Delete failed.'); }
+  };
+
+  // ── Migrate list from /lists → /userLists (admin utility) ────────
+  // Usage: await pmMigrateListToProfile('أفلام مصرية Must watch')
+  window.pmMigrateListToProfile = async function(listTitle) {
+    if (!_pmUser) { console.error('Not logged in'); return; }
+    var token = await _pmUser.getIdToken();
+    // 1. Load all curated lists
+    var res = await fetch(RTDB + '/lists.json?auth=' + token);
+    if (!res.ok) { console.error('Could not read /lists'); return; }
+    var allLists = await res.json();
+    if (!allLists) { console.error('No lists found'); return; }
+    // 2. Find by title
+    var found = Object.entries(allLists).find(function(e) { return e[1].title === listTitle; });
+    if (!found) { console.error('List not found: ' + listTitle); return; }
+    var listKey  = found[0];
+    var listData = found[1];
+    // 3. Write to /userLists with uid
+    var payload = Object.assign({}, listData, { uid: _pmUser.uid, createdAt: listData.createdAt || Date.now() });
+    var wRes = await fetch(RTDB + '/userLists.json?auth=' + token, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!wRes.ok) { console.error('Write to /userLists failed'); return; }
+    // 4. Delete from /lists
+    await fetch(RTDB + '/lists/' + listKey + '.json?auth=' + token, { method: 'DELETE' });
+    console.log('✅ Migrated "' + listTitle + '" to your profile lists!');
+    alert('✅ Migrated "' + listTitle + '" to your profile lists!');
   };
 
   // ── Taste Picker ──────────────────────────────────────────────────
