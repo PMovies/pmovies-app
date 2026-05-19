@@ -2613,6 +2613,23 @@
     cursor: pointer; padding: 13px; margin-top: 4px;
   }
   .pm-tp-cancel:hover { color: #888; }
+  /* Crush source tabs */
+  .pm-tp-tabs {
+    display: flex; gap: 8px; margin-bottom: 14px;
+  }
+  .pm-tp-tab {
+    flex: 1; padding: 9px 0; border-radius: 10px;
+    border: 1px solid rgba(255,255,255,.1);
+    background: transparent; color: rgba(255,255,255,.45);
+    cursor: pointer; font-size: .78rem; font-weight: 700;
+    font-family: 'Montserrat', sans-serif; letter-spacing: .04em;
+    transition: all .15s;
+  }
+  .pm-tp-tab.active {
+    background: rgba(245,166,35,.12); border-color: rgba(245,166,35,.45);
+    color: #f5a623;
+  }
+  .pm-tp-tab:not(.active):hover { background: rgba(255,255,255,.05); color: rgba(255,255,255,.7); }
 
   /* ─── Image gallery (posters / backdrops / person photos) ─── */
   .pm-img-gallery-header {
@@ -14297,6 +14314,10 @@ async function deleteEditorReview(key, e) {
   <div class="pm-tp-card">
     <div class="pm-tp-handle"></div>
     <div class="pm-tp-title" id="pmTpTitle">Choose</div>
+    <div class="pm-tp-tabs" id="pmTpTabs" style="display:none">
+      <button class="pm-tp-tab active" id="pmTpTabTmdb" onclick="pmSetCrushSource('tmdb')">🧍 Person</button>
+      <button class="pm-tp-tab" id="pmTpTabJikan" onclick="pmSetCrushSource('jikan')">✨ Character</button>
+    </div>
     <input class="pm-tp-search" id="pmTpSearch" placeholder="Search…" oninput="pmTasteSearch(this.value)" autocomplete="off" style="display:none"/>
     <div class="pm-tp-results" id="pmTpResults"></div>
     <button class="pm-tp-cancel" onclick="pmCloseTastePicker()">Cancel</button>
@@ -15800,7 +15821,27 @@ async function deleteEditorReview(key, e) {
     if (res) {
       res.innerHTML = '<div style="color:#555;font-size:.8rem;padding:8px 0">Start typing to search…</div>';
     }
+    // Show source tabs only for Childhood Crush
+    var tabs = document.getElementById('pmTpTabs');
+    var tabTmdb  = document.getElementById('pmTpTabTmdb');
+    var tabJikan = document.getElementById('pmTpTabJikan');
+    if (tabs) tabs.style.display = (field === 'favActress') ? '' : 'none';
+    if (tabTmdb)  tabTmdb.classList.add('active');
+    if (tabJikan) tabJikan.classList.remove('active');
+    _tastePicker.source = 'tmdb'; // always reset to person mode
     ov.style.display = 'flex';
+  };
+
+  window.pmSetCrushSource = function(src) {
+    _tastePicker.source = src;
+    var tabTmdb  = document.getElementById('pmTpTabTmdb');
+    var tabJikan = document.getElementById('pmTpTabJikan');
+    if (tabTmdb)  tabTmdb.classList.toggle('active',  src === 'tmdb');
+    if (tabJikan) tabJikan.classList.toggle('active', src === 'jikan');
+    var res  = document.getElementById('pmTpResults');
+    var srch = document.getElementById('pmTpSearch');
+    if (res)  res.innerHTML = '<div style="color:#555;font-size:.8rem;padding:8px 0">Start typing to search…</div>';
+    if (srch) { srch.value = ''; srch.style.display = ''; srch.focus(); }
   };
 
   window.pmCloseTastePicker = function() {
@@ -15820,6 +15861,28 @@ async function deleteEditorReview(key, e) {
         var apiKey = typeof getKey === 'function' ? getKey() : '';
         var isPerson = field === 'favDirector' || field === 'favActress';
         var isYear2026 = field === 'favFilm2026';
+
+        // ── Jikan (anime/manga character) branch ──
+        if (_tastePicker.source === 'jikan') {
+          var jr = await fetch('https://api.jikan.moe/v4/characters?q=' + encodeURIComponent(q) + '&limit=10&order_by=favorites&sort=desc');
+          var jdata = jr.ok ? await jr.json() : null;
+          var jhits = (jdata && jdata.data || []).slice(0, 10);
+          if (!jhits.length) { res.innerHTML = '<div style="color:#555;font-size:.8rem;padding:8px 0">No characters found.</div>'; return; }
+          res.innerHTML = jhits.map(function(h) {
+            var name   = h.name || '';
+            var imgUrl = h.images && h.images.jpg && (h.images.jpg.image_url || '') || '';
+            var favs   = h.favorites ? '♥ ' + (h.favorites >= 1000 ? (h.favorites/1000).toFixed(1) + 'k' : h.favorites) + ' fans' : '';
+            var safeName = _esc(name).replace(/'/g, '\\\'');
+            var imgHtml = imgUrl
+              ? '<img class="pm-tp-img person-img" src="' + _esc(imgUrl) + '" alt="" style="border-radius:6px"/>'
+              : '<div class="pm-tp-img person-img" style="background:#1a1a2e;display:flex;align-items:center;justify-content:center;border-radius:6px">✨</div>';
+            return '<div class="pm-tp-item" onclick="pmShowCharacterPhotos(\'' + field + '\',\'' + _tastePicker.uid + '\',' + h.mal_id + ',\'' + safeName + '\')">'
+              + imgHtml + '<div><div class="pm-tp-name">' + _esc(name) + '</div>'
+              + (favs ? '<div class="pm-tp-sub">' + favs + '</div>' : '') + '</div></div>';
+          }).join('');
+          return;
+        }
+
         var endpoint = isPerson
           ? 'https://api.themoviedb.org/3/search/person?api_key=' + apiKey + '&query=' + encodeURIComponent(q) + '&language=en-US&page=1'
           : 'https://api.themoviedb.org/3/search/movie?api_key=' + apiKey + '&query=' + encodeURIComponent(q) + '&language=en-US&page=1' + (isYear2026 ? '&primary_release_year=2026' : '');
@@ -15923,6 +15986,48 @@ async function deleteEditorReview(key, e) {
         + '<div class="pm-img-gallery-grid-person">' + cells + '</div>';
       if (srch) srch.style.display = 'none';
     } catch(_) { if (res) res.innerHTML = '<div style="color:#f44;font-size:.8rem;padding:8px 0">Failed to load photos.</div>'; }
+  };
+
+  // ── Jikan character photo gallery ──
+  window.pmShowCharacterPhotos = async function(field, uid, charId, charName) {
+    var res  = document.getElementById('pmTpResults');
+    var srch = document.getElementById('pmTpSearch');
+    if (res) res.innerHTML = '<div style="color:#555;font-size:.8rem;padding:8px 0">Loading character photos…</div>';
+    try {
+      var r = await fetch('https://api.jikan.moe/v4/characters/' + charId + '/pictures');
+      var data = r.ok ? await r.json() : null;
+      var photos = (data && data.data || []);
+      var safeName = _esc(charName).replace(/'/g, '\\\'');
+
+      if (!photos.length) {
+        // No extra photos — grab the default image from the character endpoint
+        var r2 = await fetch('https://api.jikan.moe/v4/characters/' + charId);
+        var d2 = r2.ok ? await r2.json() : null;
+        var defImg = d2 && d2.data && d2.data.images && d2.data.images.jpg
+          ? (d2.data.images.jpg.large_image_url || d2.data.images.jpg.image_url || '')
+          : '';
+        window.pmSaveTasteItem(field, uid, charName, defImg, null);
+        return;
+      }
+
+      var cells = photos.map(function(p) {
+        var imgUrl = (p.jpg && (p.jpg.large_image_url || p.jpg.image_url)) || '';
+        if (!imgUrl) return '';
+        var safeUrl = imgUrl.replace(/'/g, '');
+        return '<div class="pm-img-gallery-cell person" onclick="pmSaveTasteItem(\'' + field + '\',\'' + uid + '\',\'' + safeName + '\',\'' + safeUrl + '\',null)">'
+          + '<img src="' + _esc(imgUrl) + '" loading="lazy" alt="" style="border-radius:4px"/>'
+          + '</div>';
+      }).filter(Boolean).join('');
+
+      var backFn = 'pmSetCrushSource(\'jikan\')';
+      if (res) res.innerHTML = '<div class="pm-img-gallery-header">'
+        + '<button class="pm-img-gallery-back" onclick="' + backFn + '">← Back</button>'
+        + '<span class="pm-img-gallery-label">' + _esc(charName) + ' — choose a photo</span>'
+        + '</div>'
+        + (cells ? '<div class="pm-img-gallery-grid-person">' + cells + '</div>'
+                 : '<div style="color:#555;font-size:.8rem;padding:8px 0">No extra photos found.</div>');
+      if (srch) srch.style.display = 'none';
+    } catch(e) { if (res) res.innerHTML = '<div style="color:#f44;font-size:.8rem;padding:8px 0">Failed to load photos.</div>'; }
   };
 
   window.pmSaveTasteItem = async function(field, uid, value, imgUrl, tmdbId) {
