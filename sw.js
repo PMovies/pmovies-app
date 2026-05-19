@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pmovies-v186';
+const CACHE_NAME = 'pmovies-v189';
 
 const APP_SHELL = [
   '/',
@@ -57,8 +57,8 @@ const API_HOSTS = [
   'allorigins.win',
   'thingproxy.freeboard.io',
   'letterboxd.com',
-  'api.jikan.moe',
-  'cdn.jikan.moe',
+  'graphql.anilist.co',
+  's4.anilist.co',
 ];
 
 function isApiRequest(url) {

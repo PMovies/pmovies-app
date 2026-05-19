@@ -15410,7 +15410,9 @@ async function deleteEditorReview(key, e) {
         var savedPhoto = profile[field + 'Photo'];
         var tEl = document.getElementById('tpImg_' + field);
         if (savedPhoto && tEl) {
-          tEl.innerHTML = '<img src="' + _esc(savedPhoto) + '" alt="' + _esc(name) + '" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block"/>';
+          var isMal = savedPhoto.indexOf('myanimelist.net') !== -1 || savedPhoto.indexOf('jikan.moe') !== -1;
+          tEl.innerHTML = '<img src="' + _esc(savedPhoto) + '" alt="' + _esc(name) + '" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block"'
+            + (isMal ? ' referrerpolicy="no-referrer" crossorigin="anonymous"' : '') + '/>';
           return;
         }
         if (!apiKey) return;
@@ -15862,23 +15864,31 @@ async function deleteEditorReview(key, e) {
         var isPerson = field === 'favDirector' || field === 'favActress';
         var isYear2026 = field === 'favFilm2026';
 
-        // ── Jikan (anime/manga character) branch ──
+        // ── AniList (anime/manga character) branch — images from s4.anilist.co (no CORS issues) ──
         if (_tastePicker.source === 'jikan') {
-          var jr = await fetch('https://api.jikan.moe/v4/characters?q=' + encodeURIComponent(q) + '&limit=10&order_by=favorites&sort=desc');
+          var alQuery = 'query($s:String){Page(page:1,perPage:10){characters(search:$s,sort:FAVOURITES_DESC){id name{full}image{large}favourites}}}';
+          var jr = await fetch('https://graphql.anilist.co', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ query: alQuery, variables: { s: q } })
+          });
           var jdata = jr.ok ? await jr.json() : null;
-          var jhits = (jdata && jdata.data || []).slice(0, 10);
+          var jhits = (jdata && jdata.data && jdata.data.Page && jdata.data.Page.characters || []).slice(0, 10);
           if (!jhits.length) { res.innerHTML = '<div style="color:#555;font-size:.8rem;padding:8px 0">No characters found.</div>'; return; }
           res.innerHTML = jhits.map(function(h) {
-            var name   = h.name || '';
-            var imgUrl = h.images && h.images.jpg && (h.images.jpg.image_url || '') || '';
-            var favs   = h.favorites ? '♥ ' + (h.favorites >= 1000 ? (h.favorites/1000).toFixed(1) + 'k' : h.favorites) + ' fans' : '';
+            var name   = (h.name && h.name.full) || '';
+            var imgUrl = (h.image && h.image.large) || '';
+            var fans   = h.favourites || 0;
+            var favsTxt = fans ? '♥ ' + (fans >= 1000 ? (fans/1000).toFixed(1) + 'k' : fans) + ' fans' : '';
+            var sub    = favsTxt;
             var safeName = _esc(name).replace(/'/g, '\\\'');
+            var safeImg  = imgUrl.replace(/'/g, '');
             var imgHtml = imgUrl
               ? '<img class="pm-tp-img person-img" src="' + _esc(imgUrl) + '" alt="" style="border-radius:6px"/>'
               : '<div class="pm-tp-img person-img" style="background:#1a1a2e;display:flex;align-items:center;justify-content:center;border-radius:6px">✨</div>';
-            return '<div class="pm-tp-item" onclick="pmShowCharacterPhotos(\'' + field + '\',\'' + _tastePicker.uid + '\',' + h.mal_id + ',\'' + safeName + '\')">'
+            return '<div class="pm-tp-item" onclick="pmSaveCharacterDirect(\'' + field + '\',\'' + _tastePicker.uid + '\',\'' + safeName + '\',\'' + safeImg + '\')">'
               + imgHtml + '<div><div class="pm-tp-name">' + _esc(name) + '</div>'
-              + (favs ? '<div class="pm-tp-sub">' + favs + '</div>' : '') + '</div></div>';
+              + (sub ? '<div class="pm-tp-sub">' + _esc(sub) + '</div>' : '') + '</div></div>';
           }).join('');
           return;
         }
@@ -15988,46 +15998,9 @@ async function deleteEditorReview(key, e) {
     } catch(_) { if (res) res.innerHTML = '<div style="color:#f44;font-size:.8rem;padding:8px 0">Failed to load photos.</div>'; }
   };
 
-  // ── Jikan character photo gallery ──
-  window.pmShowCharacterPhotos = async function(field, uid, charId, charName) {
-    var res  = document.getElementById('pmTpResults');
-    var srch = document.getElementById('pmTpSearch');
-    if (res) res.innerHTML = '<div style="color:#555;font-size:.8rem;padding:8px 0">Loading character photos…</div>';
-    try {
-      var r = await fetch('https://api.jikan.moe/v4/characters/' + charId + '/pictures');
-      var data = r.ok ? await r.json() : null;
-      var photos = (data && data.data || []);
-      var safeName = _esc(charName).replace(/'/g, '\\\'');
-
-      if (!photos.length) {
-        // No extra photos — grab the default image from the character endpoint
-        var r2 = await fetch('https://api.jikan.moe/v4/characters/' + charId);
-        var d2 = r2.ok ? await r2.json() : null;
-        var defImg = d2 && d2.data && d2.data.images && d2.data.images.jpg
-          ? (d2.data.images.jpg.large_image_url || d2.data.images.jpg.image_url || '')
-          : '';
-        window.pmSaveTasteItem(field, uid, charName, defImg, null);
-        return;
-      }
-
-      var cells = photos.map(function(p) {
-        var imgUrl = (p.jpg && (p.jpg.large_image_url || p.jpg.image_url)) || '';
-        if (!imgUrl) return '';
-        var safeUrl = imgUrl.replace(/'/g, '');
-        return '<div class="pm-img-gallery-cell person" onclick="pmSaveTasteItem(\'' + field + '\',\'' + uid + '\',\'' + safeName + '\',\'' + safeUrl + '\',null)">'
-          + '<img src="' + _esc(imgUrl) + '" loading="lazy" alt="" style="border-radius:4px"/>'
-          + '</div>';
-      }).filter(Boolean).join('');
-
-      var backFn = 'pmSetCrushSource(\'jikan\')';
-      if (res) res.innerHTML = '<div class="pm-img-gallery-header">'
-        + '<button class="pm-img-gallery-back" onclick="' + backFn + '">← Back</button>'
-        + '<span class="pm-img-gallery-label">' + _esc(charName) + ' — choose a photo</span>'
-        + '</div>'
-        + (cells ? '<div class="pm-img-gallery-grid-person">' + cells + '</div>'
-                 : '<div style="color:#555;font-size:.8rem;padding:8px 0">No extra photos found.</div>');
-      if (srch) srch.style.display = 'none';
-    } catch(e) { if (res) res.innerHTML = '<div style="color:#f44;font-size:.8rem;padding:8px 0">Failed to load photos.</div>'; }
+  // ── AniList character direct save (one curated image per character) ──
+  window.pmSaveCharacterDirect = function(field, uid, charName, imgUrl) {
+    window.pmSaveTasteItem(field, uid, charName, imgUrl, null);
   };
 
   window.pmSaveTasteItem = async function(field, uid, value, imgUrl, tmdbId) {
