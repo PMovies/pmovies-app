@@ -2001,7 +2001,14 @@
   }
   .pm-prof-hero-gradient {
     position: absolute; inset: 0;
-    background: linear-gradient(to bottom, rgba(0,0,0,.05) 0%, rgba(10,10,10,.92) 100%);
+    background: linear-gradient(
+      to bottom,
+      rgba(0,0,0,0)   0%,
+      rgba(0,0,0,.15) 35%,
+      rgba(0,0,0,.6)  65%,
+      rgba(0,0,0,.88) 82%,
+      #0a0a0a         100%
+    );
   }
   .pm-prof-hero-change {
     position: absolute; top: 14px; right: 14px;
@@ -2148,8 +2155,8 @@
   .pm-prof-taste-placeholder { font-size: 2.2rem; color: #2a2a2a; }
   .pm-prof-taste-bottom {
     position: absolute; bottom: 0; left: 0; right: 0;
-    background: linear-gradient(to top, rgba(0,0,0,.96) 0%, rgba(0,0,0,.65) 55%, transparent 100%);
-    padding: 44px 12px 12px;
+    background: linear-gradient(to top, rgba(0,0,0,.98) 0%, rgba(0,0,0,.7) 50%, transparent 100%);
+    padding: 32px 12px 10px;
   }
   .pm-prof-taste-lbl {
     font-size: .44rem; color: #888; text-transform: uppercase;
