@@ -9923,8 +9923,23 @@ async function shareReviewCard() {
   downloadReviewCard();
 }
 
-async function _fetchReviewAssets(title, mediaType = 'movie') {
+async function _fetchReviewAssets(title, mediaType = 'movie', tmdbId = null) {
   try {
+    // Direct ID lookup — most reliable, avoids wrong-movie text-search collisions
+    if (tmdbId) {
+      const endpoint = mediaType === 'tv' ? `tv/${tmdbId}` : `movie/${tmdbId}`;
+      const res  = await fetch(`${TMDB}/${endpoint}?api_key=${getKey()}`);
+      const data = res.ok ? await res.json() : null;
+      if (data && (data.backdrop_path || data.poster_path)) {
+        const dateField = data.release_date || data.first_air_date || '';
+        return {
+          poster:   data.poster_path   ? `https://image.tmdb.org/t/p/w342${data.poster_path}`    : null,
+          backdrop: data.backdrop_path ? `https://image.tmdb.org/t/p/w1280${data.backdrop_path}` : null,
+          year:     dateField.slice(0, 4)
+        };
+      }
+    }
+    // Fallback: title text search (older reviews without tmdbId)
     const ep   = mediaType === 'tv' ? 'search/tv' : 'search/movie';
     const res  = await fetch(`${TMDB}/${ep}?api_key=${getKey()}&query=${encodeURIComponent(title)}&language=en-US&page=1`);
     const data = res.ok ? await res.json() : null;
@@ -9932,8 +9947,8 @@ async function _fetchReviewAssets(title, mediaType = 'movie') {
     if (!hit) return { poster: null, backdrop: null, year: '' };
     const dateField = hit.first_air_date || hit.release_date || '';
     return {
-      poster:   hit.poster_path   ? `https://image.tmdb.org/t/p/w342${hit.poster_path}`   : null,
-      backdrop: hit.backdrop_path ? `https://image.tmdb.org/t/p/w780${hit.backdrop_path}` : null,
+      poster:   hit.poster_path   ? `https://image.tmdb.org/t/p/w342${hit.poster_path}`    : null,
+      backdrop: hit.backdrop_path ? `https://image.tmdb.org/t/p/w1280${hit.backdrop_path}` : null,
       year:     dateField.slice(0, 4)
     };
   } catch(_) { return { poster: null, backdrop: null, year: '' }; }
@@ -10006,7 +10021,7 @@ async function generateReviewCard(r) {
   const W = 1080, H = 1080;
   canvas.width = W; canvas.height = H;
 
-  const assets   = await _fetchReviewAssets(r.movie || '', r.mediaType || 'movie');
+  const assets   = await _fetchReviewAssets(r.movie || '', r.mediaType || 'movie', r.tmdbId || null);
   const [bdImg, posterImg] = await Promise.all([
     assets.backdrop ? _loadImg(assets.backdrop) : Promise.resolve(null),
     assets.poster   ? _loadImg(assets.poster)   : Promise.resolve(null)
@@ -10179,7 +10194,7 @@ async function generateReviewCardReel(r) {
   const W = 1080, H = 1920;
   canvas.width = W; canvas.height = H;
 
-  const assets = await _fetchReviewAssets(r.movie || '', r.mediaType || 'movie');
+  const assets = await _fetchReviewAssets(r.movie || '', r.mediaType || 'movie', r.tmdbId || null);
   const [bdImg, posterImg] = await Promise.all([
     assets.backdrop ? _loadImg(assets.backdrop) : Promise.resolve(null),
     assets.poster   ? _loadImg(assets.poster)   : Promise.resolve(null)
