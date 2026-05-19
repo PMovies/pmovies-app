@@ -1904,30 +1904,63 @@
     position: relative; padding-bottom: 80px;
     max-width: 960px; margin: 0 auto;
   }
-  .pm-prof-close-btn {
-    position: fixed; top: 16px; left: 50%;
-    transform: translateX(calc(-480px - 20px));
-    z-index: 99991;
-    background: rgba(0,0,0,.75); border: 1px solid rgba(255,255,255,.14);
-    color: #fff; width: 42px; height: 42px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.1rem; cursor: pointer;
-    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
-    transition: background .15s;
+  /* Profile top bar — sticky, contains close + share, never overlaps */
+  .pm-prof-top-bar {
+    position: sticky; top: 0; z-index: 99991;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: env(safe-area-inset-top, 0px) 16px 0;
+    pointer-events: none; /* transparent to scroll */
+    height: 0; overflow: visible; /* zero height — buttons float above content */
   }
+  .pm-prof-close-btn, .pm-prof-share-btn {
+    pointer-events: auto;
+    position: relative; top: 14px;
+    background: rgba(0,0,0,.72); border: 1px solid rgba(255,255,255,.14);
+    width: 42px; height: 42px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    transition: background .15s, color .15s, border-color .15s;
+    flex-shrink: 0;
+  }
+  .pm-prof-close-btn { color: #fff; font-size: 1.1rem; }
   .pm-prof-close-btn:hover { background: rgba(255,255,255,.12); }
-  .pm-prof-share-btn {
-    position: fixed; top: 16px; left: 50%;
-    transform: translateX(calc(480px - 22px));
-    z-index: 99991;
-    background: rgba(0,0,0,.75); border: 1px solid rgba(255,255,255,.14);
-    color: #aaa; width: 42px; height: 42px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: .9rem; cursor: pointer;
-    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
-    transition: background .15s, color .15s;
+  .pm-prof-share-btn { color: #aaa; }
+  .pm-prof-share-btn:hover { background: rgba(245,166,35,.15); color: #f5a623; border-color: rgba(245,166,35,.35); }
+
+  /* Share card modal */
+  #pmShareCardOverlay {
+    display: none; position: fixed; inset: 0; z-index: 999999;
+    background: rgba(0,0,0,.88); align-items: center; justify-content: center;
+    padding: 24px 16px;
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
   }
-  .pm-prof-share-btn:hover { background: rgba(245,166,35,.15); color: #f5a623; border-color: rgba(245,166,35,.3); }
+  #pmShareCardOverlay.open { display: flex; }
+  .pm-sc-modal {
+    background: #111; border: 1px solid rgba(255,255,255,.1);
+    border-radius: 20px; padding: 20px; max-width: 420px; width: 100%;
+    display: flex; flex-direction: column; gap: 14px; align-items: center;
+  }
+  .pm-sc-title {
+    font-family: 'Montserrat', sans-serif; font-size: .65rem; font-weight: 700;
+    letter-spacing: .16em; text-transform: uppercase; color: #555;
+    align-self: flex-start;
+  }
+  #pmShareCardImg { width: 100%; border-radius: 12px; display: block; }
+  .pm-sc-actions { display: flex; gap: 10px; width: 100%; }
+  .pm-sc-btn {
+    flex: 1; padding: 13px; border-radius: 50px; border: none; cursor: pointer;
+    font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: .76rem;
+    letter-spacing: .07em; text-transform: uppercase; transition: opacity .15s;
+  }
+  .pm-sc-btn:hover { opacity: .85; }
+  .pm-sc-btn-primary { background: #f5a623; color: #000; }
+  .pm-sc-btn-secondary { background: rgba(255,255,255,.07); color: #ccc; border: 1px solid rgba(255,255,255,.1); }
+  .pm-sc-close { align-self: center; background: none; border: none; color: #444;
+    font-size: .75rem; cursor: pointer; font-family: 'Montserrat', sans-serif; padding: 4px 8px; }
+  .pm-sc-close:hover { color: #888; }
+
+  /* Fallback toast */
   .pm-prof-share-toast {
     position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(20px);
     background: #1a1a1a; border: 1px solid rgba(255,255,255,.12);
@@ -1937,13 +1970,6 @@
     pointer-events: none; white-space: nowrap;
   }
   .pm-prof-share-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-  @media(max-width:1080px) {
-    .pm-prof-share-btn { transform: translateX(calc(50vw - 64px)); }
-  }
-  @media(max-width:640px) {
-    .pm-prof-close-btn { transform: translateX(calc(-50vw + 22px)); top: calc(env(safe-area-inset-top,0px) + 10px); }
-    .pm-prof-share-btn { transform: translateX(calc(50vw - 64px)); top: calc(env(safe-area-inset-top,0px) + 10px); }
-  }
 
   /* Hero */
   .pm-prof-hero {
@@ -2241,9 +2267,6 @@
     .pm-prof-widget { margin: 16px 16px 0; }
   }
   @media(max-width: 640px) {
-    .pm-prof-close-btn {
-      position: fixed; top: calc(env(safe-area-inset-top, 44px) + 14px); left: 14px; transform: none;
-    }
     .pm-prof-hero-change { top: calc(env(safe-area-inset-top, 44px) + 12px); }
     .pm-prof-identity { padding: 0 16px 18px; gap: 14px; margin-top: -42px; }
     .pm-prof-stats-col { display: none; }
@@ -14285,14 +14308,32 @@ async function deleteEditorReview(key, e) {
 <!-- ╚══════════════════════════════════════════════════════════════╝ -->
 <div id="pmProfileOverlay">
   <div id="pmProfileModal">
-    <button class="pm-prof-close-btn" onclick="pmCloseProfile()" aria-label="Close profile">←</button>
-    <button class="pm-prof-share-btn" onclick="pmShareProfile()" aria-label="Share profile" title="Copy link">
-      <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-    </button>
+    <div class="pm-prof-top-bar">
+      <button class="pm-prof-close-btn" onclick="pmCloseProfile()" aria-label="Close profile">←</button>
+      <button class="pm-prof-share-btn" onclick="pmShareProfile()" aria-label="Share profile" title="Share profile">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      </button>
+    </div>
     <div id="pmProfContent"></div>
   </div>
 </div>
-<div class="pm-prof-share-toast" id="pmShareToast">🔗 Link copied to clipboard</div>
+
+<!-- Share card modal -->
+<div id="pmShareCardOverlay" onclick="if(event.target===this)pmCloseShareCard()">
+  <div class="pm-sc-modal">
+    <div class="pm-sc-title">Share Profile</div>
+    <img id="pmShareCardImg" src="" alt="Profile card"/>
+    <div class="pm-sc-actions">
+      <button class="pm-sc-btn pm-sc-btn-primary" onclick="pmShareCardNative()">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:middle"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share
+      </button>
+      <button class="pm-sc-btn pm-sc-btn-secondary" onclick="pmDownloadShareCard()">↓ Save Image</button>
+    </div>
+    <button class="pm-sc-close" onclick="pmCloseShareCard()">Cancel</button>
+  </div>
+</div>
+<canvas id="pmShareCardCanvas" style="display:none"></canvas>
+<div class="pm-prof-share-toast" id="pmShareToast"></div>
 
 <div id="pmEditProfileOverlay" onclick="if(event.target===this)pmCloseEditProfile()">
   <div class="pm-edit-card">
@@ -15422,25 +15463,283 @@ async function deleteEditorReview(key, e) {
     }
   };
 
-  window.pmShareProfile = function() {
+  // ── Share card canvas generator ────────────────────────────────────
+  var _shareCardBlob = null;
+  var _shareCardUid  = null;
+
+  function _loadImg(src) {
+    return new Promise(function(resolve) {
+      var img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload  = function() { resolve(img); };
+      img.onerror = function() { resolve(null); };
+      img.src = src;
+    });
+  }
+
+  function _roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  async function _buildShareCard(uid, profile) {
+    var W = 1080, H = 1080;
+    var canvas = document.getElementById('pmShareCardCanvas');
+    if (!canvas) return null;
+    canvas.width = W; canvas.height = H;
+    var ctx = canvas.getContext('2d');
+
+    var score    = profile.contributionScore || 0;
+    var badge    = (typeof _getBadge === 'function') ? _getBadge(score) : { icon:'🎬', label:'Member' };
+    var nickname = profile.nickname || 'Film Lover';
+    var reviews  = profile.reviewCount || 0;
+    var likes    = profile.likesReceived || 0;
+
+    // — Background —
+    var grad = ctx.createLinearGradient(0, 0, W, H);
+    grad.addColorStop(0,   '#0d0800');
+    grad.addColorStop(0.5, '#1a0e00');
+    grad.addColorStop(1,   '#060012');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
+    // — Backdrop image (blurred, dark) —
+    var bdpSrc = profile.backdropUrl ||
+      (profile.favFilmAllTimePoster ? null : null); // use preloaded URL
+    if (bdpSrc) {
+      var bdpImg = await _loadImg(bdpSrc);
+      if (bdpImg) {
+        ctx.save();
+        ctx.globalAlpha = 0.18;
+        ctx.filter = 'blur(28px)';
+        // draw scaled to fill
+        var scale = Math.max(W / bdpImg.width, H / bdpImg.height);
+        var dw = bdpImg.width * scale, dh = bdpImg.height * scale;
+        ctx.drawImage(bdpImg, (W - dw) / 2, (H - dh) / 2, dw, dh);
+        ctx.filter = 'none';
+        ctx.globalAlpha = 1;
+        ctx.restore();
+      }
+    }
+
+    // — Top gold stripe —
+    ctx.fillStyle = '#f5a623';
+    ctx.fillRect(0, 0, W, 7);
+
+    // — Subtle grid lines —
+    ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+    ctx.lineWidth = 1;
+    for (var gx = 0; gx < W; gx += 80) { ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke(); }
+    for (var gy = 0; gy < H; gy += 80) { ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke(); }
+
+    // — PMovies wordmark (top-left) —
+    ctx.font = '700 52px Montserrat, sans-serif';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('P', 72, 116);
+    var pw = ctx.measureText('P').width;
+    ctx.fillStyle = '#f5a623';
+    ctx.fillText('Movies', 72 + pw, 116);
+
+    ctx.font = '400 26px Montserrat, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.28)';
+    ctx.fillText('Cinema lives here', 72, 156);
+
+    // — Avatar circle (centered, middle area) —
+    var AX = W / 2, AY = 390, AR = 120;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(AX, AY, AR, 0, Math.PI * 2);
+    ctx.clip();
+
+    var avatarSrc = profile.avatarUrl || null;
+    var avatarImg = avatarSrc ? await _loadImg(avatarSrc) : null;
+    if (avatarImg) {
+      var as = Math.max(AR * 2 / avatarImg.width, AR * 2 / avatarImg.height);
+      var aw = avatarImg.width * as, ah = avatarImg.height * as;
+      ctx.drawImage(avatarImg, AX - aw / 2, AY - ah / 2, aw, ah);
+    } else {
+      // Fallback initial
+      ctx.fillStyle = '#1a1a1a';
+      ctx.fillRect(AX - AR, AY - AR, AR * 2, AR * 2);
+      ctx.font = '700 100px Montserrat, sans-serif';
+      ctx.fillStyle = '#f5a623';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText((nickname[0] || 'P').toUpperCase(), AX, AY);
+    }
+    ctx.restore();
+
+    // Avatar ring
+    ctx.beginPath();
+    ctx.arc(AX, AY, AR + 3, 0, Math.PI * 2);
+    ctx.strokeStyle = '#f5a623';
+    ctx.lineWidth = 4;
+    ctx.stroke();
+
+    // — Name —
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    ctx.font = '700 88px "Bebas Neue", sans-serif';
+    ctx.fillStyle = '#ffffff';
+    // Shrink if long
+    var nameW = ctx.measureText(nickname.toUpperCase()).width;
+    if (nameW > W - 120) {
+      ctx.font = '700 ' + Math.floor(88 * (W - 120) / nameW) + 'px "Bebas Neue", sans-serif';
+    }
+    ctx.fillText(nickname.toUpperCase(), W / 2, 570);
+
+    // — Badge chip —
+    var badgeTxt = badge.icon + '  ' + badge.label;
+    ctx.font = '700 28px Montserrat, sans-serif';
+    var btw = ctx.measureText(badgeTxt).width;
+    var bpx = 36, bpy = 18, bch = 56;
+    var bcx = (W - btw - bpx * 2) / 2;
+    _roundRect(ctx, bcx, 594, btw + bpx * 2, bch, bch / 2);
+    ctx.fillStyle = 'rgba(245,166,35,0.14)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(245,166,35,0.45)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = '#f5a623';
+    ctx.textAlign = 'center';
+    ctx.fillText(badgeTxt, W / 2, 632);
+
+    // — Divider —
+    var divGrad = ctx.createLinearGradient(120, 0, W - 120, 0);
+    divGrad.addColorStop(0,   'transparent');
+    divGrad.addColorStop(0.3, 'rgba(255,255,255,0.12)');
+    divGrad.addColorStop(0.7, 'rgba(255,255,255,0.12)');
+    divGrad.addColorStop(1,   'transparent');
+    ctx.strokeStyle = divGrad;
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(120, 690); ctx.lineTo(W - 120, 690); ctx.stroke();
+
+    // — Stats row —
+    var stats = [
+      { val: reviews, lbl: 'Reviews'  },
+      { val: score,   lbl: 'Score'    },
+      { val: likes,   lbl: "Likes Rec'd" },
+    ];
+    var colW = (W - 120) / stats.length;
+    stats.forEach(function(s, i) {
+      var cx = 60 + colW * i + colW / 2;
+      ctx.textAlign = 'center';
+      ctx.font = '700 72px "Bebas Neue", sans-serif';
+      ctx.fillStyle = '#f5a623';
+      ctx.fillText(String(s.val), cx, 786);
+      ctx.font = '700 22px Montserrat, sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.38)';
+      ctx.fillText(s.lbl.toUpperCase(), cx, 820);
+    });
+
+    // — Bottom bar —
+    ctx.fillStyle = 'rgba(245,166,35,0.08)';
+    ctx.fillRect(0, H - 110, W, 110);
+    ctx.strokeStyle = 'rgba(245,166,35,0.2)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, H - 110); ctx.lineTo(W, H - 110); ctx.stroke();
+
+    ctx.textAlign = 'left';
+    ctx.font = '700 30px Montserrat, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.fillText('p-movies.com', 72, H - 58);
+
+    ctx.textAlign = 'right';
+    ctx.font = '400 26px Montserrat, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.22)';
+    ctx.fillText('Film Community', W - 72, H - 58);
+
+    return canvas.toDataURL('image/png');
+  }
+
+  window.pmShareProfile = async function() {
     var uid = _profileUid;
     if (!uid) return;
-    var url = window.location.origin + window.location.pathname + '?u=' + encodeURIComponent(uid);
-    var toast = document.getElementById('pmShareToast');
-    var show = function(msg) {
-      if (toast) { toast.textContent = msg; toast.classList.add('show'); setTimeout(function() { toast.classList.remove('show'); }, 2400); }
-    };
-    if (navigator.share) {
-      navigator.share({ title: 'PMovies Profile', url: url }).catch(function() {});
-    } else if (navigator.clipboard) {
-      navigator.clipboard.writeText(url).then(function() { show('🔗 Link copied to clipboard'); }).catch(function() { show('⚠️ Could not copy — ' + url); });
-    } else {
-      var ta = document.createElement('textarea');
-      ta.value = url; ta.style.position = 'fixed'; ta.style.opacity = '0';
-      document.body.appendChild(ta); ta.select();
-      try { document.execCommand('copy'); show('🔗 Link copied to clipboard'); } catch(_) { show('⚠️ Copy failed'); }
-      document.body.removeChild(ta);
+    var profile = _profileData || {};
+
+    // Show share card modal with generated image
+    var overlay = document.getElementById('pmShareCardOverlay');
+    var cardImg  = document.getElementById('pmShareCardImg');
+    if (!overlay || !cardImg) return;
+
+    // Show overlay immediately with spinner while canvas renders
+    cardImg.src = '';
+    cardImg.style.opacity = '0.3';
+    overlay.classList.add('open');
+
+    try {
+      await document.fonts.ready;
+      var dataUrl = await _buildShareCard(uid, profile);
+      if (dataUrl) {
+        _shareCardBlob = dataUrl;
+        _shareCardUid  = uid;
+        cardImg.src = dataUrl;
+        cardImg.style.opacity = '1';
+      }
+    } catch(e) {
+      // Fallback: just copy the link
+      overlay.classList.remove('open');
+      var url = window.location.origin + window.location.pathname + '?u=' + encodeURIComponent(uid);
+      var toast = document.getElementById('pmShareToast');
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(function() {
+          if (toast) { toast.textContent = '🔗 Link copied'; toast.classList.add('show'); setTimeout(function(){ toast.classList.remove('show'); }, 2400); }
+        });
+      }
     }
+  };
+
+  window.pmCloseShareCard = function() {
+    var ov = document.getElementById('pmShareCardOverlay');
+    if (ov) ov.classList.remove('open');
+  };
+
+  window.pmShareCardNative = function() {
+    var uid = _shareCardUid || _profileUid;
+    var url = window.location.origin + window.location.pathname + '?u=' + encodeURIComponent(uid);
+    if (_shareCardBlob && navigator.share && navigator.canShare) {
+      // Convert dataURL to Blob for native file share
+      fetch(_shareCardBlob).then(function(r){ return r.blob(); }).then(function(blob) {
+        var file = new File([blob], 'pmovies-profile.png', { type: 'image/png' });
+        if (navigator.canShare({ files: [file] })) {
+          navigator.share({ title: 'My PMovies Profile', url: url, files: [file] })
+            .then(function(){ pmCloseShareCard(); })
+            .catch(function(){});
+        } else {
+          navigator.share({ title: 'My PMovies Profile', url: url }).catch(function(){});
+          pmCloseShareCard();
+        }
+      });
+    } else if (navigator.share) {
+      navigator.share({ title: 'My PMovies Profile', url: url }).catch(function(){});
+      pmCloseShareCard();
+    } else {
+      // Copy link fallback
+      var toast = document.getElementById('pmShareToast');
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(function() {
+          pmCloseShareCard();
+          if (toast) { toast.textContent = '🔗 Link copied to clipboard'; toast.classList.add('show'); setTimeout(function(){ toast.classList.remove('show'); }, 2400); }
+        });
+      }
+    }
+  };
+
+  window.pmDownloadShareCard = function() {
+    if (!_shareCardBlob) return;
+    var a = document.createElement('a');
+    a.href = _shareCardBlob;
+    a.download = 'pmovies-' + ((_profileData && _profileData.nickname) || 'profile') + '.png';
+    a.click();
   };
 
   // Handle browser back/forward — close profile when navigating back from ?u=
