@@ -1643,20 +1643,37 @@
 
   /* ── LISTS TAB ── */
   .lists-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:18px; }
-  .list-card { background:#111; border:1px solid #222; border-radius:18px; overflow:hidden; cursor:pointer; transition:transform .2s,border-color .2s; }
-  .list-card:hover { transform:translateY(-4px); border-color:#444; }
+  .list-card { background:#111; border:1px solid #1e1e1e; border-radius:18px; overflow:hidden; cursor:pointer; transition:transform .2s,border-color .2s,box-shadow .2s; }
+  .list-card:hover { transform:translateY(-3px); border-color:#333; box-shadow:0 12px 40px rgba(0,0,0,.5); }
+  /* Fan-style poster strip */
+  .list-card-fan { display:flex; align-items:flex-end; padding:16px 16px 0; gap:0; height:136px; position:relative; overflow:hidden; }
+  .list-card-fan::after { content:''; position:absolute; bottom:0; left:0; right:0; height:40px; background:linear-gradient(transparent,#111); pointer-events:none; }
+  .lc-fan-item { flex-shrink:0; width:72px; height:108px; border-radius:8px; overflow:hidden; margin-left:-18px; box-shadow:-4px 0 14px rgba(0,0,0,.7); position:relative; transition:transform .2s; }
+  .lc-fan-item:first-child { margin-left:0; }
+  .list-card:hover .lc-fan-item { transform:translateY(-6px) translateX(-2px); }
+  .list-card:hover .lc-fan-item:first-child { transform:translateY(-6px); }
+  .lc-fan-item img { width:100%; height:100%; object-fit:cover; display:block; }
+  .lc-fan-ph { width:100%;height:100%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:1.4rem; }
+  /* Legacy grid poster (kept for main lists tab) */
   .list-card-posters { display:grid; grid-template-columns:repeat(4,1fr); height:96px; overflow:hidden; }
   .list-card-poster { overflow:hidden; }
   .list-card-poster img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .3s; }
   .list-card:hover .list-card-poster img { transform:scale(1.06); }
   .list-card-poster-ph { width:100%; height:100%; background:#1a1a1a; display:flex; align-items:center; justify-content:center; font-size:1.2rem; }
-  .list-card-body { padding:16px; }
-  .list-card-title { font-family:'Montserrat',sans-serif; font-weight:700; font-size:.92rem; color:#fff; margin-bottom:5px; }
-  .list-card-desc { font-size:.77rem; color:#777; line-height:1.5; margin-bottom:12px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .list-card-body { padding:14px 16px 16px; }
+  .list-card-title { font-family:'Montserrat',sans-serif; font-weight:700; font-size:.9rem; color:#fff; margin-bottom:4px; }
+  .list-card-desc { font-size:.74rem; color:#666; line-height:1.5; margin-bottom:10px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
   .list-card-footer { display:flex; align-items:center; justify-content:space-between; }
-  .list-card-count { font-size:.7rem; color:#555; font-family:'Montserrat',sans-serif; letter-spacing:.04em; }
+  .list-card-count { font-size:.68rem; color:#444; font-family:'Montserrat',sans-serif; letter-spacing:.06em; text-transform:uppercase; }
   .list-like-btn { display:flex; align-items:center; gap:5px; font-size:.75rem; color:#555; cursor:pointer; border:none; background:none; padding:0; transition:color .2s; font-family:'Montserrat',sans-serif; font-weight:700; }
   .list-like-btn:hover,.list-like-btn.liked { color:var(--orange); }
+  /* List detail movie grid */
+  .lv-movie-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:12px; }
+  .lv-movie-item { cursor:pointer; border-radius:10px; overflow:hidden; background:#1a1a1a; position:relative; transition:transform .18s,box-shadow .18s; aspect-ratio:.67; }
+  .lv-movie-item:hover { transform:scale(1.04); box-shadow:0 8px 24px rgba(0,0,0,.6); }
+  .lv-movie-item img { width:100%;height:100%;object-fit:cover;display:block; }
+  .lv-movie-label { position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.9));padding:18px 6px 6px;font-size:.58rem;font-weight:700;color:#eee;font-family:'Montserrat',sans-serif;line-height:1.3; }
+  .lv-movie-ph { width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2rem; }
   .list-detail { display:none; }
   .list-detail.active { display:block; animation:tabFadeIn .25s ease; }
   .list-detail-back { display:flex; align-items:center; gap:14px; margin-bottom:20px; }
@@ -14555,10 +14572,13 @@ async function deleteEditorReview(key, e) {
   <div style="width:100%;max-width:640px;background:#111;border:1px solid #222;border-radius:20px;padding:28px;margin:auto">
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:6px">
       <button onclick="pmCloseListView()" style="background:none;border:1px solid #333;color:#888;border-radius:10px;padding:7px 14px;cursor:pointer;font-family:'Montserrat',sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.06em;flex-shrink:0">← Back</button>
-      <div id="pmLvTitle" style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:1.1rem;color:#fff"></div>
+        <div>
+        <div id="pmLvTitle" style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:1.1rem;color:#fff"></div>
+        <div id="pmLvCount" style="font-size:.68rem;color:#444;font-family:'Montserrat',sans-serif;letter-spacing:.06em;text-transform:uppercase;margin-top:2px"></div>
+      </div>
     </div>
-    <div id="pmLvDesc" style="font-size:.77rem;color:#666;margin-bottom:20px;padding-left:2px"></div>
-    <div id="pmLvGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px"></div>
+    <div id="pmLvDesc" style="font-size:.77rem;color:#666;margin-bottom:20px;padding-left:2px;line-height:1.6"></div>
+    <div id="pmLvGrid"></div>
   </div>
 </div>
 
@@ -15729,28 +15749,31 @@ async function deleteEditorReview(key, e) {
           }
           // Cache list data by _id so onclick can look up safely
           lists.forEach(function(l) { window._pmUserListsCache[l._id] = l; });
-          // Render as poster-grid cards
+          // Render as fan-style poster cards
           container.innerHTML = '<div class="lists-grid" style="padding:0">'
             + lists.map(function(l) {
               var movies = l.movies || [];
               var cnt = movies.length;
-              var strip = movies.slice(0, 4).concat(
-                new Array(Math.max(0, 4 - Math.min(movies.length, 4))).fill(null)
+              // Fan strip: up to 5 posters overlapping
+              var fanItems = movies.slice(0, 5).concat(
+                new Array(Math.max(0, 5 - Math.min(movies.length, 5))).fill(null)
               ).map(function(m) {
-                return m && m.poster_path
-                  ? '<div class="list-card-poster"><img src="https://image.tmdb.org/t/p/w92' + m.poster_path + '" loading="lazy"/></div>'
-                  : '<div class="list-card-poster"><div class="list-card-poster-ph">🎬</div></div>';
+                return '<div class="lc-fan-item">'
+                  + (m && m.poster_path
+                    ? '<img src="https://image.tmdb.org/t/p/w185' + m.poster_path + '" loading="lazy" alt=""/>'
+                    : '<div class="lc-fan-ph">🎬</div>')
+                  + '</div>';
               }).join('');
               var safeId = l._id.replace(/'/g, '');
               var delBtn = isOwnProfile
                 ? '<button class="pm-del-btn" onclick="event.stopPropagation();pmAdminDeleteItem(\'userLists\',\'' + safeId + '\',this.closest(\'.list-card\'))">✕</button>'
                 : '';
               return '<div class="list-card pm-del-wrap" onclick="pmOpenListView(\'' + safeId + '\')">'
-                + '<div class="list-card-posters">' + strip + '</div>'
+                + '<div class="list-card-fan">' + fanItems + '</div>'
                 + '<div class="list-card-body">'
                 + '<div class="list-card-title">' + _esc(l.title || 'Untitled') + '</div>'
                 + (l.desc ? '<div class="list-card-desc">' + _esc(l.desc) + '</div>' : '')
-                + '<div class="list-card-footer"><span class="list-card-count">' + cnt + ' film' + (cnt !== 1 ? 's' : '') + '</span></div>'
+                + '<div class="list-card-footer"><span class="list-card-count">' + cnt + ' FILM' + (cnt !== 1 ? 'S' : '') + '</span></div>'
                 + '</div>'
                 + delBtn
                 + '</div>';
@@ -16268,6 +16291,8 @@ async function deleteEditorReview(key, e) {
   };
 
   // ── List Detail View (profile) ────────────────────────────────────
+  window._pmListViewMovies = []; // indexed lookup for onclick
+
   window.pmOpenListView = function(listId) {
     var listData = (window._pmUserListsCache || {})[listId];
     if (!listData) return;
@@ -16276,23 +16301,59 @@ async function deleteEditorReview(key, e) {
     var titleEl = document.getElementById('pmLvTitle');
     var descEl  = document.getElementById('pmLvDesc');
     var gridEl  = document.getElementById('pmLvGrid');
+    var cntEl   = document.getElementById('pmLvCount');
+    var movies  = listData.movies || [];
+    window._pmListViewMovies = movies;
     if (titleEl) titleEl.textContent = listData.title || 'Untitled';
     if (descEl)  descEl.textContent  = listData.desc  || '';
-    var movies = listData.movies || [];
+    if (cntEl)   cntEl.textContent   = movies.length + ' film' + (movies.length !== 1 ? 's' : '');
     if (gridEl) {
+      gridEl.className = 'lv-movie-grid';
       gridEl.innerHTML = movies.length
-        ? movies.map(function(m) {
+        ? movies.map(function(m, i) {
+            var t = (m.title || '').replace(/</g, '&lt;');
+            var year = m.release_date ? ' (' + m.release_date.slice(0,4) + ')' : '';
             var img = m.poster_path
-              ? '<img src="https://image.tmdb.org/t/p/w185' + m.poster_path + '" alt="' + (m.title||'').replace(/</g,'&lt;') + '" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block"/>'
-              : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2rem">🎬</div>';
-            return '<div class="list-poster-item" onclick="void(0)" title="' + (m.title||'').replace(/</g,'&lt;') + '">'
+              ? '<img src="https://image.tmdb.org/t/p/w342' + m.poster_path + '" alt="' + t + '" loading="lazy"/>'
+              : '<div class="lv-movie-ph">🎬</div>';
+            return '<div class="lv-movie-item" onclick="pmListOpenMovie(' + i + ')" title="' + t + year + '">'
               + img
-              + '<div class="list-poster-label">' + (m.title||'').replace(/</g,'&lt;') + '</div>'
+              + '<div class="lv-movie-label">' + t + '</div>'
               + '</div>';
           }).join('')
         : '<div style="color:#555;font-size:.8rem;padding:20px 0">No films in this list yet.</div>';
+      // Lazy-load better posters via fetchPoster if available
+      if (typeof fetchPoster === 'function') {
+        movies.forEach(function(m, i) {
+          if (!m.poster_path) return;
+          var el = gridEl.querySelectorAll('.lv-movie-item')[i];
+          if (!el) return;
+          var imgEl = el.querySelector('img');
+          if (imgEl) return; // already has image from stored path
+        });
+      }
     }
     ov.style.display = 'flex';
+  };
+
+  window.pmListOpenMovie = function(i) {
+    var m = (window._pmListViewMovies || [])[i];
+    if (!m) return;
+    // Build a movie object compatible with openModal
+    var movieObj = {
+      id:           m.id,
+      title:        m.title        || '',
+      poster_path:  m.poster_path  || null,
+      release_date: m.release_date || '',
+      overview:     m.overview     || '',
+      vote_average: m.vote_average || 0,
+      vote_count:   m.vote_count   || 0,
+      media_type:   'movie'
+    };
+    if (typeof openModal === 'function') {
+      pmCloseListView();
+      setTimeout(function() { openModal(movieObj); }, 80);
+    }
   };
 
   window.pmCloseListView = function() {
