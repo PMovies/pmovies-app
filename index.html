@@ -4954,7 +4954,9 @@
         if (typeof allReviews !== 'undefined' && allReviews.length) {
           _pmReviewsCache = allReviews;
         } else {
-          const r = await fetch(`${RTDB}/fanReviews.json`);
+          const _cacheUser = window.pmGetUser ? window.pmGetUser() : null;
+          const _cacheTok  = _cacheUser?.getIdToken ? await _cacheUser.getIdToken() : null;
+          const r = await fetch(`${RTDB}/fanReviews.json${_cacheTok ? '?auth=' + _cacheTok : ''}`);
           const d = r.ok ? await r.json() : null;
           _pmReviewsCache = d ? Object.values(d) : [];
         }
@@ -6174,7 +6176,9 @@
       if (!rtdbKey) throw new Error('Could not locate the original review record.');
 
       const patch = { headline, text, rating, _edited: Date.now() };
-      const res = await fetch(`${RTDB}/${rtdbPath}/${rtdbKey}.json`, {
+      const _editUser = window.pmGetUser ? window.pmGetUser() : null;
+      const _editToken = _editUser?.getIdToken ? await _editUser.getIdToken() : null;
+      const res = await fetch(`${RTDB}/${rtdbPath}/${rtdbKey}.json${_editToken ? '?auth=' + _editToken : ''}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(patch)
@@ -6302,7 +6306,9 @@
 
     // 1. Load movies from RTDB (preserve key so edits can PATCH the right record)
     try {
-      const rtdbRes  = await fetch(`${RTDB}/fanReviews.json`);
+      const _readUser = window.pmGetUser ? window.pmGetUser() : null;
+      const _readToken = _readUser?.getIdToken ? await _readUser.getIdToken() : null;
+      const rtdbRes  = await fetch(`${RTDB}/fanReviews.json${_readToken ? '?auth=' + _readToken : ''}`);
       const rtdbData = rtdbRes.ok ? await rtdbRes.json() : null;
       if (rtdbData) rtdbReviews = Object.entries(rtdbData).map(([k, r]) => ({ ...r, _rtdbKey: k }));
     } catch(_) {}
@@ -6373,8 +6379,9 @@
       const headline = (document.getElementById('fanHeadline')||{}).value?.trim() || '';
       const reviewData = { name, movie, tmdbId, rating, headline, text, timestamp: Date.now(),
         uid: user.uid, photoURL: user.photoURL || null };
-      // Write to RTDB (new path)
-      const rtdbRes = await fetch(`${RTDB}/fanReviews.json`, {
+      // Write to RTDB — auth token required by security rules
+      const idToken = user.getIdToken ? await user.getIdToken() : null;
+      const rtdbRes = await fetch(`${RTDB}/fanReviews.json${idToken ? '?auth=' + idToken : ''}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(reviewData)
@@ -6573,7 +6580,9 @@
     try {
       let reviews = [];
       try {
-        const res  = await fetch(`${RTDB}/seriesFanReviews.json`);
+        const _srReadUser = window.pmGetUser ? window.pmGetUser() : null;
+        const _srReadToken = _srReadUser?.getIdToken ? await _srReadUser.getIdToken() : null;
+        const res  = await fetch(`${RTDB}/seriesFanReviews.json${_srReadToken ? '?auth=' + _srReadToken : ''}`);
         const data = res.ok ? await res.json() : null;
         if (data) reviews = Object.values(data);
       } catch(_) {}
@@ -6609,7 +6618,8 @@
       btn.textContent = 'Posting…'; btn.disabled = true;
       const reviewData = { name, movie: series, tmdbId: srTmdbId, rating, text, timestamp: Date.now(),
         mediaType: 'tv', uid: user.uid, photoURL: user.photoURL || null };
-      const srRes = await fetch(`${RTDB}/seriesFanReviews.json`, {
+      const srToken = user.getIdToken ? await user.getIdToken() : null;
+      const srRes = await fetch(`${RTDB}/seriesFanReviews.json${srToken ? '?auth=' + srToken : ''}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(reviewData)
