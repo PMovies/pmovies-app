@@ -1894,6 +1894,7 @@
   .pm-sip-cancel:hover { color: #888; }
 
   /* ─── Profile Overlay — Letterboxd-style ─── */
+  /* ─── Profile Overlay ─── */
   #pmProfileOverlay {
     display: none; position: fixed; inset: 0; z-index: 99990;
     background: #0a0a0a; overflow-y: auto; overflow-x: hidden;
@@ -1901,11 +1902,11 @@
   #pmProfileModal {
     min-height: 100vh; width: 100%; background: #0a0a0a;
     position: relative; padding-bottom: 80px;
-    max-width: 900px; margin: 0 auto;
+    max-width: 960px; margin: 0 auto;
   }
   .pm-prof-close-btn {
     position: fixed; top: 16px; left: 50%;
-    transform: translateX(calc(-450px - 20px));
+    transform: translateX(calc(-480px - 20px));
     z-index: 99991;
     background: rgba(0,0,0,.75); border: 1px solid rgba(255,255,255,.14);
     color: #fff; width: 42px; height: 42px; border-radius: 50%;
@@ -1941,10 +1942,10 @@
   }
   .pm-prof-hero-change:hover { background: rgba(245,166,35,.2); border-color: rgba(245,166,35,.4); color: #f5a623; }
 
-  /* Identity — Letterboxd style */
+  /* Identity row */
   .pm-prof-identity {
-    display: flex; align-items: flex-end; gap: 22px;
-    padding: 0 28px 22px; margin-top: -54px;
+    display: flex; align-items: flex-end; gap: 18px;
+    padding: 0 28px 20px; margin-top: -54px;
     position: relative; z-index: 2;
     border-bottom: 1px solid rgba(255,255,255,.07);
   }
@@ -1971,11 +1972,9 @@
     font-size: .68rem; cursor: pointer; transition: transform .15s; color: #000;
   }
   .pm-prof-avatar-change:hover { transform: scale(1.1); }
-
-  /* Info column */
   .pm-prof-info-col { flex: 1; min-width: 0; padding-bottom: 4px; }
   .pm-prof-name-row {
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 5px;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 5px;
   }
   .pm-prof-nickname {
     font-family: 'Bebas Neue', sans-serif; font-size: 2rem;
@@ -1987,50 +1986,75 @@
     background: rgba(245,166,35,.12); color: #f5a623;
     border: 1px solid rgba(245,166,35,.35); display: inline-block; flex-shrink: 0;
   }
-  .pm-prof-joined { font-size: .6rem; color: #444; margin-bottom: 12px; }
+  .pm-prof-edit-btn {
+    background: rgba(245,166,35,.08); border: 1px solid rgba(245,166,35,.22);
+    color: #f5a623; font-family: 'Montserrat', sans-serif; font-weight: 700;
+    font-size: .58rem; letter-spacing: .08em; text-transform: uppercase;
+    padding: 4px 12px; border-radius: 20px; cursor: pointer;
+    transition: background .15s; white-space: nowrap; flex-shrink: 0;
+  }
+  .pm-prof-edit-btn:hover { background: rgba(245,166,35,.16); }
+  .pm-prof-joined { font-size: .6rem; color: #444; margin-bottom: 5px; }
   .pm-prof-bio {
-    font-size: .82rem; color: #666; line-height: 1.6; margin-bottom: 10px;
-    white-space: pre-wrap; max-width: 520px;
+    font-size: .8rem; color: #666; line-height: 1.6; margin-bottom: 0;
+    white-space: pre-wrap; max-width: 380px;
   }
-
-  /* Stats — compact inline row */
+  /* Stats — right-aligned column in identity row */
+  .pm-prof-stats-col {
+    flex-shrink: 0; display: flex; flex-direction: column;
+    align-items: flex-end; justify-content: flex-end; padding-bottom: 4px;
+  }
   .pm-prof-stats {
-    display: flex; gap: 18px; flex-wrap: wrap;
-    margin: 0; padding: 0; border: none; background: none; border-radius: 0;
+    display: flex; gap: 18px; flex-wrap: wrap; justify-content: flex-end;
   }
-  .pm-prof-stat { flex: 0 0 auto; padding: 0; text-align: left; border: none; }
+  .pm-prof-stat { flex: 0 0 auto; text-align: center; }
   .pm-prof-stat-val {
-    font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem;
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem;
     color: #f5a623; line-height: 1; display: block;
   }
   .pm-prof-stat-lbl {
-    font-size: .44rem; font-weight: 700; color: #444;
+    font-size: .42rem; font-weight: 700; color: #555;
     letter-spacing: .1em; text-transform: uppercase; margin-top: 2px; display: block;
   }
 
-  /* Edit profile button */
-  .pm-prof-edit-btn {
-    display: block; margin: 24px 28px 0;
-    background: rgba(245,166,35,.08); border: 1px solid rgba(245,166,35,.22);
-    color: #f5a623; font-family: 'Montserrat', sans-serif; font-weight: 700;
-    font-size: .78rem; letter-spacing: .08em; text-transform: uppercase;
-    padding: 13px; border-radius: 10px; cursor: pointer;
-    width: calc(100% - 56px); transition: background .15s;
+  /* Tab bar */
+  .pm-prof-tabs {
+    display: flex; padding: 0 20px;
+    border-bottom: 1px solid rgba(255,255,255,.07);
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
   }
-  .pm-prof-edit-btn:hover { background: rgba(245,166,35,.16); }
+  .pm-prof-tabs::-webkit-scrollbar { display: none; }
+  .pm-prof-tab {
+    flex-shrink: 0; padding: 14px 16px; cursor: pointer;
+    font-family: 'Montserrat', sans-serif; font-size: .62rem;
+    font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    color: #555; border: none; background: none;
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+    transition: color .15s, border-color .15s;
+  }
+  .pm-prof-tab:hover { color: #aaa; }
+  .pm-prof-tab.active { color: #f5a623; border-bottom-color: #f5a623; }
+
+  /* Two-column body */
+  .pm-prof-body { display: flex; align-items: flex-start; }
+  .pm-prof-main { flex: 0 0 65%; min-width: 0; padding-bottom: 40px; }
+  .pm-prof-sidebar {
+    flex: 0 0 35%; min-width: 0; padding-bottom: 40px;
+    border-left: 1px solid rgba(255,255,255,.05);
+  }
 
   /* Section title */
   .pm-prof-section-title {
-    font-size: .54rem; font-weight: 700; letter-spacing: .14em;
-    text-transform: uppercase; color: #444; padding: 26px 28px 12px;
+    font-size: .52rem; font-weight: 700; letter-spacing: .14em;
+    text-transform: uppercase; color: #444; padding: 24px 28px 12px;
   }
+  .pm-prof-sidebar .pm-prof-section-title { padding: 24px 20px 12px; }
 
-  /* Taste card — 4 col desktop, 2 col mobile */
+  /* Taste card — 4 col */
   .pm-prof-taste {
     display: grid; grid-template-columns: repeat(4, 1fr);
     gap: 10px; padding: 0 28px;
   }
-  /* Taste card item — aspect ratio 2:3, image fills entirely */
   .pm-prof-taste-item {
     border-radius: 12px; overflow: hidden; position: relative;
     aspect-ratio: 2/3; background: #111;
@@ -2042,7 +2066,6 @@
     transform: scale(1.03); box-shadow: 0 16px 40px rgba(0,0,0,.7);
     border-color: rgba(245,166,35,.3);
   }
-  /* Image fills the full card */
   .pm-prof-taste-img-wrap {
     position: absolute; inset: 0;
     display: flex; align-items: center; justify-content: center;
@@ -2052,7 +2075,6 @@
     object-position: center top; display: block;
   }
   .pm-prof-taste-placeholder { font-size: 2.2rem; color: #2a2a2a; }
-  /* Gradient + label overlay at bottom */
   .pm-prof-taste-bottom {
     position: absolute; bottom: 0; left: 0; right: 0;
     background: linear-gradient(to top, rgba(0,0,0,.96) 0%, rgba(0,0,0,.65) 55%, transparent 100%);
@@ -2068,9 +2090,45 @@
   }
   .pm-prof-taste-item.editable:hover .pm-prof-taste-edit-hint { opacity: 1; }
 
+  /* Poster strip — horizontal scroll */
+  .pm-prof-strip-wrap {
+    position: relative; padding: 0 28px;
+  }
+  .pm-prof-sidebar .pm-prof-strip-wrap { padding: 0 20px; }
+  .pm-prof-strip {
+    display: flex; gap: 8px; overflow-x: auto;
+    -webkit-overflow-scrolling: touch; padding-bottom: 4px;
+    scroll-snap-type: x mandatory;
+  }
+  .pm-prof-strip::-webkit-scrollbar { height: 3px; }
+  .pm-prof-strip::-webkit-scrollbar-thumb { background: rgba(245,166,35,.3); border-radius: 2px; }
+  .pm-prof-poster-frame {
+    flex: 0 0 auto; width: 80px; aspect-ratio: 2/3;
+    border-radius: 8px; overflow: hidden; background: #111;
+    border: 1px solid rgba(255,255,255,.06);
+    scroll-snap-align: start; transition: transform .15s; cursor: pointer;
+  }
+  .pm-prof-poster-frame:hover { transform: scale(1.05); }
+  .pm-prof-poster-frame img { width:100%; height:100%; object-fit:cover; display:block; }
+  .pm-prof-poster-frame.skeleton {
+    background: linear-gradient(135deg,#111 0%,#191919 50%,#111 100%);
+    animation: pmSkelPulse 1.8s ease-in-out infinite;
+  }
+  @keyframes pmSkelPulse { 0%,100%{opacity:.35} 50%{opacity:.65} }
+  .pm-prof-strip-overlay {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(10,10,10,.65); border-radius: 10px;
+    pointer-events: none;
+  }
+  .pm-prof-strip-cta {
+    font-size: .7rem; font-weight: 700; color: #f5a623;
+    letter-spacing: .05em; text-align: center; line-height: 1.7;
+  }
+
   /* Reviews grid */
   .pm-prof-reviews-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(100px,1fr));
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(90px,1fr));
     gap: 10px; padding: 0 28px;
   }
   .pm-prof-rev-card {
@@ -2084,12 +2142,41 @@
     font-size: 1.4rem; overflow: hidden;
   }
   .pm-prof-rev-poster img { width:100%; height:100%; object-fit:cover; }
-  .pm-prof-rev-meta { padding: 7px; }
+  .pm-prof-rev-meta { padding: 6px; }
   .pm-prof-rev-title {
-    font-size: .66rem; color: #ddd; font-weight: 600; line-height: 1.3;
+    font-size: .6rem; color: #ddd; font-weight: 600; line-height: 1.3;
     margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  .pm-prof-rev-stars { font-size: .64rem; color: #f5a623; }
+  .pm-prof-rev-stars { font-size: .6rem; color: #f5a623; }
+
+  /* Sidebar widget cards */
+  .pm-prof-widget {
+    margin: 16px 20px 0;
+    background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.05);
+    border-radius: 14px; padding: 16px 16px 14px;
+  }
+  .pm-prof-widget-title {
+    font-size: .46rem; font-weight: 700; color: #444;
+    letter-spacing: .13em; text-transform: uppercase; margin-bottom: 14px;
+  }
+  .pm-prof-widget-stats {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  }
+  .pm-prof-wstat { text-align: center; }
+  .pm-prof-wstat-val {
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.7rem;
+    color: #f5a623; line-height: 1; display: block;
+  }
+  .pm-prof-wstat-lbl {
+    font-size: .42rem; font-weight: 700; color: #555;
+    letter-spacing: .1em; text-transform: uppercase; display: block; margin-top: 2px;
+  }
+  .pm-prof-game-row {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .pm-prof-game-icon { font-size: 1.5rem; flex-shrink: 0; }
+  .pm-prof-game-label { font-size: .7rem; font-weight: 700; color: #666; margin-bottom: 2px; }
+  .pm-prof-game-sub { font-size: .62rem; color: #444; }
 
   /* Profile link */
   .pm-profile-link {
@@ -2099,23 +2186,29 @@
   }
   .pm-profile-link:hover { color: #f5a623; border-color: #f5a623; }
 
-  /* Mobile responsive */
+  /* Responsive */
+  @media(max-width: 768px) {
+    .pm-prof-body { flex-direction: column; }
+    .pm-prof-main { flex: none; width: 100%; }
+    .pm-prof-sidebar { flex: none; width: 100%; border-left: none; border-top: 1px solid rgba(255,255,255,.05); }
+    .pm-prof-widget { margin: 16px 16px 0; }
+  }
   @media(max-width: 640px) {
     .pm-prof-close-btn {
       position: fixed; top: calc(env(safe-area-inset-top, 44px) + 14px); left: 14px; transform: none;
     }
-    .pm-prof-hero-change {
-      top: calc(env(safe-area-inset-top, 44px) + 12px);
-    }
-    .pm-prof-identity { padding: 0 16px 18px; gap: 16px; }
-    .pm-prof-section-title { padding: 22px 16px 10px; }
-    .pm-prof-taste { grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 16px; }
+    .pm-prof-hero-change { top: calc(env(safe-area-inset-top, 44px) + 12px); }
+    .pm-prof-identity { padding: 0 16px 18px; gap: 14px; margin-top: -42px; }
+    .pm-prof-stats-col { display: none; }
+    .pm-prof-section-title { padding: 20px 16px 10px; }
+    .pm-prof-tabs { padding: 0 8px; }
+    .pm-prof-tab { padding: 12px 10px; font-size: .56rem; }
+    .pm-prof-taste { grid-template-columns: 1fr 1fr; gap: 8px; padding: 0 16px; }
+    .pm-prof-strip-wrap { padding: 0 16px; }
     .pm-prof-reviews-grid { padding: 0 16px; }
-    .pm-prof-edit-btn { margin: 20px 16px 0; width: calc(100% - 32px); }
     .pm-prof-nickname { font-size: 1.7rem; }
     .pm-prof-avatar { width: 84px; height: 84px; }
     .pm-prof-avatar-fallback { width: 84px; height: 84px; font-size: 2rem; }
-    .pm-prof-identity { margin-top: -42px; }
   }
 
   /* ─── Edit Profile Overlay ─── */
@@ -14715,7 +14808,7 @@ async function deleteEditorReview(key, e) {
         + (isOwn ? '<button class="pm-prof-hero-change" onclick="pmOpenBackdropPicker(\'' + uid + '\')">🖼 Change Cover</button>' : '')
         + '</div>';
 
-      // Stats — must be built before identityHtml
+      // Stats — built first, used in identity + sidebar
       var statsHtml = [
         { val: profile.reviewCount   || 0, lbl: 'Reviews'  },
         { val: profile.likesReceived || 0, lbl: 'Likes'    },
@@ -14734,112 +14827,212 @@ async function deleteEditorReview(key, e) {
       var identityHtml = '<div class="pm-prof-identity">'
         + '<div class="pm-prof-avatar-wrap">' + avatarHtml + avatarChangeHtml + '</div>'
         + '<div class="pm-prof-info-col">'
-        + '<div class="pm-prof-name-row">'
-        + '<div class="pm-prof-nickname">' + _esc(nickname) + '</div>'
-        + '<span class="pm-prof-badge">' + badge.icon + ' ' + badge.label + '</span>'
+        +   '<div class="pm-prof-name-row">'
+        +     '<div class="pm-prof-nickname">' + _esc(nickname) + '</div>'
+        +     '<span class="pm-prof-badge">' + badge.icon + ' ' + badge.label + '</span>'
+        +     (isOwn ? '<button class="pm-prof-edit-btn" onclick="pmOpenEditProfile()">✏️ Edit</button>' : '')
+        +   '</div>'
+        +   (joined ? '<div class="pm-prof-joined">Member since ' + joined + '</div>' : '')
+        +   (profile.bio ? '<div class="pm-prof-bio">' + _esc(profile.bio) + '</div>' : '')
         + '</div>'
-        + (joined ? '<div class="pm-prof-joined">Member since ' + joined + '</div>' : '')
-        + (profile.bio ? '<div class="pm-prof-bio">' + _esc(profile.bio) + '</div>' : '')
-        + '<div class="pm-prof-stats">' + statsHtml + '</div>'
-        + '</div></div>';
+        + '<div class="pm-prof-stats-col"><div class="pm-prof-stats">' + statsHtml + '</div></div>'
+        + '</div>';
 
-      // Taste card — 2×2 grid: Director | Childhood Crush | Film of All Time | Best of 2026
+      // Tab bar
+      var wl = [];
+      try { wl = JSON.parse(localStorage.getItem('pmovies_wl') || '[]'); } catch(_e) {}
+      var allRevs = window._pmGetCommunityReviews ? window._pmGetCommunityReviews() : [];
+      var reviews = allRevs.filter(function(r) { return r.uid === uid; });
+
+      var tabsHtml = '<div class="pm-prof-tabs">'
+        + '<button class="pm-prof-tab active" data-tab="overview" onclick="pmProfTab(\'overview\')">Overview</button>'
+        + '<button class="pm-prof-tab" data-tab="reviews" onclick="pmProfTab(\'reviews\')">Reviews' + (reviews.length ? ' · ' + reviews.length : '') + '</button>'
+        + (isOwn ? '<button class="pm-prof-tab" data-tab="watchlist" onclick="pmProfTab(\'watchlist\')">Watchlist' + (wl.length ? ' · ' + wl.length : '') + '</button>' : '')
+        + (isOwn ? '<button class="pm-prof-tab" data-tab="lists" onclick="pmProfTab(\'lists\')">Lists</button>' : '')
+        + '<button class="pm-prof-tab" data-tab="stats" onclick="pmProfTab(\'stats\')">Stats</button>'
+        + '</div>';
+
+      // Poster strip builder
+      var _buildStrip = function(items, emptyPrompt) {
+        var SKEL = 5;
+        var frames = '';
+        if (items.length) {
+          frames = items.map(function(it) {
+            var img = it.posterPath ? '<img src="https://image.tmdb.org/t/p/w185' + it.posterPath + '" alt="' + _esc(it.title||'') + '" loading="lazy"/>' : '';
+            var click = it.onclick ? ' onclick="' + it.onclick + '"' : '';
+            return '<div class="pm-prof-poster-frame"' + click + '>' + img + '</div>';
+          }).join('');
+          return '<div class="pm-prof-strip-wrap"><div class="pm-prof-strip">' + frames + '</div></div>';
+        } else {
+          for (var i = 0; i < SKEL; i++) frames += '<div class="pm-prof-poster-frame skeleton"></div>';
+          return '<div class="pm-prof-strip-wrap">'
+            + '<div class="pm-prof-strip">' + frames + '</div>'
+            + '<div class="pm-prof-strip-overlay"><div class="pm-prof-strip-cta">' + emptyPrompt + '</div></div>'
+            + '</div>';
+        }
+      };
+
+      // Taste section (full-width in Overview, always shown if own)
       var hasAnyTaste = profile.favDirector || profile.favActress || profile.favFilmAllTime || profile.favFilm2026;
-      var tasteHtml = '';
-      var _buildTasteCard = function(field, label, placeholder, isOwn, uid) {
+      var _buildTasteCard = function(field, label, placeholder, _isOwn, _uid) {
         var val = profile[field];
-        var onc = isOwn ? ' onclick="pmOpenTastePicker(\'' + field + '\',\'' + uid + '\')"' : '';
-        var edCls = isOwn ? ' editable' : '';
+        var onc = _isOwn ? ' onclick="pmOpenTastePicker(\'' + field + '\',\'' + _uid + '\')"' : '';
+        var edCls = _isOwn ? ' editable' : '';
         return '<div class="pm-prof-taste-item' + edCls + '"' + onc + '>'
           + '<div class="pm-prof-taste-img-wrap" id="tpImg_' + field + '">'
           + '<div class="pm-prof-taste-placeholder">' + placeholder + '</div>'
           + '</div>'
           + '<div class="pm-prof-taste-bottom">'
           + '<div class="pm-prof-taste-lbl">' + label + '</div>'
-          + '<div class="pm-prof-taste-val">' + _esc(val || (isOwn ? '+ Add' : '—')) + '</div>'
-          + (isOwn ? '<div class="pm-prof-taste-edit-hint">✏ tap to change</div>' : '')
+          + '<div class="pm-prof-taste-val">' + _esc(val || (_isOwn ? '+ Add' : '—')) + '</div>'
+          + (_isOwn ? '<div class="pm-prof-taste-edit-hint">✏ tap to change</div>' : '')
           + '</div></div>';
       };
+      var tasteInner = '';
       if (hasAnyTaste || isOwn) {
-        tasteHtml = '<div class="pm-prof-section-title">Taste Card</div>'
+        tasteInner = '<div class="pm-prof-section-title">Taste Card</div>'
           + '<div class="pm-prof-taste">'
-          + _buildTasteCard('favDirector',   'Favourite Director', '👤', isOwn, uid)
-          + _buildTasteCard('favActress',    'Childhood Crush',    '🌟', isOwn, uid)
-          + _buildTasteCard('favFilmAllTime','Film of All Time',   '🎞️', isOwn, uid)
-          + _buildTasteCard('favFilm2026',   'Best of 2026',       '🏆', isOwn, uid)
+          + _buildTasteCard('favDirector',    'Favourite Director', '👤', isOwn, uid)
+          + _buildTasteCard('favActress',     'Childhood Crush',    '🌟', isOwn, uid)
+          + _buildTasteCard('favFilmAllTime', 'Film of All Time',   '🎞️', isOwn, uid)
+          + _buildTasteCard('favFilm2026',    'Best of 2026',       '🏆', isOwn, uid)
           + '</div>';
       }
 
-      // Watchlist
-      var watchlistHtml = '';
-      if (isOwn) {
-        try {
-          var wl = JSON.parse(localStorage.getItem('pmovies_wl') || '[]');
-          if (wl.length) {
-            var wlCards = wl.map(function(m) {
-              var statusLbl = m.status === 'watched' ? 'Watched' : m.status === 'fav' ? '★ Fav' : '🔖 Want';
-              var img = m.poster_path
-                ? '<img src="https://image.tmdb.org/t/p/w185' + m.poster_path + '" alt="' + _esc(m.title||'') + '" loading="lazy"/>'
-                : '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:1.5rem">🎬</div>';
-              return '<div class="pm-prof-wl-item">'
-                + '<div class="pm-prof-wl-poster">' + img
-                + '<span class="pm-prof-wl-status ' + (m.status||'want') + '">' + statusLbl + '</span></div>'
-                + '<div class="pm-prof-wl-title">' + _esc(m.title||'') + '</div></div>';
-            });
-            watchlistHtml = '<div class="pm-prof-section-title">My Watchlist · ' + wl.length + ' films</div>'
-              + '<div class="pm-prof-wl-scroll">' + wlCards.join('') + '</div>';
-          } else {
-            watchlistHtml = '<div class="pm-prof-section-title">My Watchlist</div>'
-              + '<div class="pm-prof-empty"><div class="pm-prof-empty-icon">🎬</div>'
-              + '<div class="pm-prof-empty-title">Your watchlist is empty</div>'
-              + '<div class="pm-prof-empty-sub">Start adding films to track what you want to watch</div></div>';
-          }
-        } catch(_) {}
-      }
-
-      // Reviews
-      var allRevs = window._pmGetCommunityReviews ? window._pmGetCommunityReviews() : [];
-      var reviews = allRevs.filter(function(r) { return r.uid === uid; });
-      var reviewsHtml = '';
-      if (reviews.length) {
-        var cards = reviews.map(function(r) {
-          var fp     = typeof fanReviewFp === 'function' ? fanReviewFp(r) : '';
-          var stars  = typeof _starsHtml  === 'function' ? _starsHtml(r.rating || 0) : '';
+      // Reviews strip for overview (first 5 posters)
+      var reviewStrip = (function() {
+        var items = reviews.slice(0, 8).map(function(r) {
+          var fp = typeof fanReviewFp === 'function' ? fanReviewFp(r) : '';
           var safeFp = (fp || '').replace(/"/g, '');
-          return '<div class="pm-prof-rev-card" onclick="pmCloseProfile();_pmOpenReviewFromProfile(\'' + safeFp + '\')">'
-            + '<div class="pm-prof-rev-poster" id="ppRvPoster-' + safeFp + '">🎬</div>'
-            + '<div class="pm-prof-rev-meta">'
-            + '<div class="pm-prof-rev-title" title="' + _esc(r.movie || '') + '">' + _esc(r.movie || 'Unknown') + '</div>'
-            + '<div class="pm-prof-rev-stars">' + stars + '</div>'
-            + '</div></div>';
+          return { posterPath: null, title: r.movie, onclick: 'pmCloseProfile();_pmOpenReviewFromProfile(\'' + safeFp + '\')', _fp: safeFp, _r: r };
         });
-        reviewsHtml = '<div class="pm-prof-section-title">' + reviews.length + ' Review' + (reviews.length !== 1 ? 's' : '') + '</div>'
-          + '<div class="pm-prof-reviews-grid">' + cards.join('') + '</div>';
-      } else if (isOwn) {
-        reviewsHtml = '<div class="pm-prof-section-title">My Reviews</div>'
-          + '<div class="pm-prof-empty"><div class="pm-prof-empty-icon">✍️</div>'
-          + '<div class="pm-prof-empty-title">No reviews yet</div>'
-          + '<div class="pm-prof-empty-sub">Start reviewing films from the community tab</div></div>';
-      }
+        var stripHtml = _buildStrip(items, reviews.length ? '' : 'No reviews yet<br>Start reviewing films →');
+        return reviews.length
+          ? '<div class="pm-prof-section-title">Recent Reviews</div>' + stripHtml
+          : (isOwn ? '<div class="pm-prof-section-title">My Reviews</div>' + stripHtml : '');
+      })();
 
-      // Lists (placeholder section — always show for own profile)
-      var listsHtml = isOwn
+      // Full reviews grid (Reviews tab)
+      var fullReviewsHtml = (function() {
+        if (reviews.length) {
+          var cards = reviews.map(function(r) {
+            var fp = typeof fanReviewFp === 'function' ? fanReviewFp(r) : '';
+            var stars = typeof _starsHtml === 'function' ? _starsHtml(r.rating || 0) : '';
+            var safeFp = (fp || '').replace(/"/g, '');
+            return '<div class="pm-prof-rev-card" onclick="pmCloseProfile();_pmOpenReviewFromProfile(\'' + safeFp + '\')">'
+              + '<div class="pm-prof-rev-poster" id="ppRvPoster-' + safeFp + '">🎬</div>'
+              + '<div class="pm-prof-rev-meta">'
+              + '<div class="pm-prof-rev-title" title="' + _esc(r.movie || '') + '">' + _esc(r.movie || 'Unknown') + '</div>'
+              + '<div class="pm-prof-rev-stars">' + stars + '</div>'
+              + '</div></div>';
+          });
+          return '<div class="pm-prof-section-title">' + reviews.length + ' Review' + (reviews.length !== 1 ? 's' : '') + '</div>'
+            + '<div class="pm-prof-reviews-grid">' + cards.join('') + '</div>';
+        }
+        var items = [];
+        return (isOwn ? '<div class="pm-prof-section-title">My Reviews</div>' : '')
+          + _buildStrip(items, 'No reviews yet<br>Start reviewing films →');
+      })();
+
+      // Watchlist tab content
+      var watchlistTabHtml = (function() {
+        if (!isOwn) return '';
+        var items = wl.map(function(m) {
+          return { posterPath: m.poster_path, title: m.title };
+        });
+        return '<div class="pm-prof-section-title">My Watchlist · ' + wl.length + ' films</div>'
+          + _buildStrip(items, 'Your watchlist is empty<br>Add films to track them →');
+      })();
+
+      // Lists tab content
+      var listsTabHtml = isOwn
         ? '<div class="pm-prof-section-title">My Lists</div>'
-          + '<div class="pm-prof-empty"><div class="pm-prof-empty-icon">📋</div>'
-          + '<div class="pm-prof-empty-title">No lists created yet</div>'
-          + '<div class="pm-prof-empty-sub">Coming soon — curate your own film collections</div></div>'
+          + _buildStrip([], 'No lists yet<br>Coming soon — curate your collections →')
         : '';
 
-      var editBtn = isOwn ? '<button class="pm-prof-edit-btn" onclick="pmOpenEditProfile()">✏️ Edit Profile</button>' : '';
+      // Stats tab content
+      var statsTabHtml = '<div class="pm-prof-section-title">Statistics</div>'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:0 28px 20px">'
+        + [
+            { val: profile.reviewCount   || 0, lbl: 'Reviews Written',   icon: '✍️' },
+            { val: profile.likesReceived || 0, lbl: 'Likes Received',     icon: '♥' },
+            { val: profile.commentCount  || 0, lbl: 'Comments Made',      icon: '💬' },
+            { val: score,                       lbl: 'Contribution Score', icon: '⭐' }
+          ].map(function(s) {
+            return '<div style="background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:14px;padding:20px;text-align:center">'
+              + '<div style="font-size:1.4rem;margin-bottom:8px">' + s.icon + '</div>'
+              + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:2.4rem;color:#f5a623;line-height:1">' + s.val + '</div>'
+              + '<div style="font-size:.46rem;font-weight:700;color:#555;letter-spacing:.1em;text-transform:uppercase;margin-top:4px">' + s.lbl + '</div>'
+              + '</div>';
+          }).join('')
+        + '</div>'
+        + (joined ? '<div style="padding:0 28px;font-size:.72rem;color:#444">Member since ' + joined + '</div>' : '');
+
+      // Overview tab
+      var overviewHtml = tasteInner + reviewStrip;
+
+      // Sidebar
+      var sidebarHtml = ''
+        // Stats widget
+        + '<div class="pm-prof-widget">'
+        +   '<div class="pm-prof-widget-title">Stats</div>'
+        +   '<div class="pm-prof-widget-stats">'
+        +   [
+              { val: profile.reviewCount || 0,   lbl: 'Reviews'  },
+              { val: profile.likesReceived || 0, lbl: 'Likes'    },
+              { val: profile.commentCount || 0,  lbl: 'Comments' },
+              { val: score,                       lbl: 'Score'    }
+            ].map(function(s) {
+              return '<div class="pm-prof-wstat"><span class="pm-prof-wstat-val">' + s.val + '</span><span class="pm-prof-wstat-lbl">' + s.lbl + '</span></div>';
+            }).join('')
+        +   '</div>'
+        + '</div>'
+        // Watchlist mini-strip (sidebar)
+        + (isOwn ? (function() {
+            var items = wl.slice(0, 6).map(function(m) {
+              return { posterPath: m.poster_path, title: m.title };
+            });
+            return '<div class="pm-prof-section-title">Watchlist</div>'
+              + _buildStrip(items, 'Add films →');
+          })() : '')
+        // Game Night rank placeholder
+        + '<div class="pm-prof-widget" style="margin-top:16px">'
+        +   '<div class="pm-prof-widget-title">Game Night</div>'
+        +   '<div class="pm-prof-game-row">'
+        +     '<div class="pm-prof-game-icon">🎮</div>'
+        +     '<div><div class="pm-prof-game-label">Rank · Coming Soon</div>'
+        +     '<div class="pm-prof-game-sub">Challenge your friends to film quizzes</div></div>'
+        +   '</div>'
+        + '</div>'
+        // Recent activity: last 3 reviews
+        + (reviews.length ? (function() {
+            var recent = reviews.slice(0, 3).map(function(r) {
+              var stars = typeof _starsHtml === 'function' ? _starsHtml(r.rating || 0) : '';
+              return '<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)">'
+                + '<div style="font-size:.72rem;color:#ccc;font-weight:600;margin-bottom:2px">' + _esc(r.movie || 'Unknown') + '</div>'
+                + '<div style="font-size:.6rem;color:#f5a623">' + stars + '</div>'
+                + '</div>';
+            }).join('');
+            return '<div class="pm-prof-widget" style="margin-top:16px">'
+              + '<div class="pm-prof-widget-title">Recent Activity</div>'
+              + recent
+              + '</div>';
+          })() : '');
 
       content.innerHTML = heroHtml
         + identityHtml
-        + tasteHtml
-        + watchlistHtml
-        + listsHtml
-        + reviewsHtml
-        + editBtn
-        + '<div style="height:60px"></div>';
+        + tabsHtml
+        + '<div class="pm-prof-body">'
+        +   '<div class="pm-prof-main">'
+        +     '<div class="pm-prof-tab-panel" id="pmProfPanel-overview">' + overviewHtml + '</div>'
+        +     '<div class="pm-prof-tab-panel" id="pmProfPanel-reviews" style="display:none">' + fullReviewsHtml + '</div>'
+        +     (isOwn ? '<div class="pm-prof-tab-panel" id="pmProfPanel-watchlist" style="display:none">' + watchlistTabHtml + '</div>' : '')
+        +     (isOwn ? '<div class="pm-prof-tab-panel" id="pmProfPanel-lists" style="display:none">' + listsTabHtml + '</div>' : '')
+        +     '<div class="pm-prof-tab-panel" id="pmProfPanel-stats" style="display:none">' + statsTabHtml + '</div>'
+        +   '</div>'
+        +   '<div class="pm-prof-sidebar">' + sidebarHtml + '</div>'
+        + '</div>'
+        + '<div style="height:40px"></div>';
 
       // Async: load profile backdrop
       var heroWrap = document.getElementById('pmProfHeroWrap');
@@ -14929,6 +15122,17 @@ async function deleteEditorReview(key, e) {
     document.body.style.overflow = '';
     _profileUid  = null;
     _profileData = null;
+  };
+
+  window.pmProfTab = function(tab) {
+    var panels = document.querySelectorAll('#pmProfContent .pm-prof-tab-panel');
+    panels.forEach(function(p) { p.style.display = 'none'; });
+    var active = document.getElementById('pmProfPanel-' + tab);
+    if (active) active.style.display = 'block';
+    var tabs = document.querySelectorAll('#pmProfContent .pm-prof-tab');
+    tabs.forEach(function(t) { t.classList.remove('active'); });
+    var activeTab = document.querySelector('#pmProfContent .pm-prof-tab[data-tab="' + tab + '"]');
+    if (activeTab) activeTab.classList.add('active');
   };
 
   window._pmOpenReviewFromProfile = function(fp) {
