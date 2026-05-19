@@ -2348,7 +2348,7 @@
   }
   .pm-gs-greeting-name {
     font-family: 'Bebas Neue', sans-serif; font-size: 5rem;
-    letter-spacing: 3px; color: #fff; line-height: 1; margin-bottom: 22px;
+    letter-spacing: 0.01em; color: #fff; line-height: 0.9; margin-bottom: 22px;
   }
   .pm-gs-badge-row { margin-bottom: 34px; }
   .pm-gs-badge {
@@ -2593,9 +2593,57 @@
     background: rgba(0,0,0,.7); border-radius: 4px; padding: 1px 5px;
     font-size: .58rem; color: #f5a623; font-weight: 700;
   }
+
+  /* ═══ Film Grain (global) ═══ */
+  .grain::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PScwIDAgMjAwIDIwMCcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz48ZmlsdGVyIGlkPSduJz48ZmVUdXJidWxlbmNlIHR5cGU9J2ZyYWN0YWxOb2lzZScgYmFzZUZyZXF1ZW5jeT0nMC45JyBudW1PY3RhdmVzPScyJyBzdGl0Y2hUaWxlcz0nc3RpdGNoJy8+PGZlQ29sb3JNYXRyaXggdmFsdWVzPScwIDAgMCAwIDEgMCAwIDAgMCAxIDAgMCAwIDAgMSAwIDAgMCAwLjA2IDAnLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0nMTAwJScgaGVpZ2h0PScxMDAlJyBmaWx0ZXI9J3VybCgjbiknLz48L3N2Zz4=");
+    pointer-events: none;
+    mix-blend-mode: overlay;
+    opacity: 0.55;
+    z-index: 9999;
+  }
+
+  /* ═══ Greeting screen — fadeUp entrance ═══ */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .gs-anim {
+    animation: fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* ═══ Greeting — metadata strip ═══ */
+  .pm-gs-meta {
+    font-family: 'Courier New', monospace; font-size: .58rem;
+    color: rgba(255,255,255,.32); letter-spacing: .12em; text-transform: uppercase;
+    margin-bottom: 28px; line-height: 1.8; word-break: break-word;
+  }
+  .pm-gs-meta span { color: rgba(245,166,35,.55); }
+
+  /* ═══ Greeting — backdrop counter ═══ */
+  .pm-gs-bdp-counter {
+    position: absolute; top: 20px; right: 24px; z-index: 4;
+    font-family: 'Courier New', monospace; font-size: .6rem;
+    color: rgba(255,255,255,.3); letter-spacing: .1em;
+    pointer-events: none;
+  }
+  @media(max-width:720px) { .pm-gs-bdp-counter { top: calc(env(safe-area-inset-top,0px) + 14px); right: 16px; } }
+
+  /* ═══ Dual-image crossfade backdrop ═══ */
+  .pm-gs-bg-img-a, .pm-gs-bg-img-b {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; display: block; transition: opacity 1s ease;
+  }
+  .pm-gs-bg-img-a { opacity: 0; }
+  .pm-gs-bg-img-b { opacity: 0; }
+  .pm-gs-bg-img-a.gs-vis { opacity: .32; }
+  .pm-gs-bg-img-b.gs-vis { opacity: .32; }
 </style>
 </head>
-<body>
+<body class="grain">
 
 <!-- ╔══════════════════════════════════════════════════════════╗ -->
 <!-- ║  LANDING SCREEN — shown every visit until signed in     ║ -->
@@ -14130,20 +14178,25 @@ async function deleteEditorReview(key, e) {
 <!-- ╚══════════════════════════════════════════════════════════════╝ -->
 <div id="pmGreetingScreen">
   <div class="pm-gs-bg" id="pmGsBg">
-    <img id="pmGsBgImg" class="pm-gs-bg-img" src="" alt=""/>
+    <img id="pmGsBgImgA" class="pm-gs-bg-img-a" src="" alt=""/>
+    <img id="pmGsBgImgB" class="pm-gs-bg-img-b" src="" alt=""/>
   </div>
   <div class="pm-gs-vignette"></div>
   <div class="pm-gs-vignette-bottom"></div>
+  <div class="pm-gs-bdp-counter" id="pmGsBdpCounter"></div>
   <div class="pm-gs-body">
     <div class="pm-gs-left">
-      <div class="pm-gs-time-label" id="pmGsTimeLabel"></div>
-      <div class="pm-gs-greeting-word" id="pmGsWord"></div>
-      <div class="pm-gs-greeting-name" id="pmGsName"></div>
-      <div class="pm-gs-badge-row">
+      <div class="pm-gs-time-label gs-anim" id="pmGsTimeLabel" style="animation-delay:.1s"></div>
+      <div style="animation-delay:.2s" class="gs-anim">
+        <div class="pm-gs-greeting-word" id="pmGsWord"></div>
+        <div class="pm-gs-greeting-name" id="pmGsName"></div>
+      </div>
+      <div class="pm-gs-badge-row gs-anim" style="animation-delay:.3s">
         <span class="pm-gs-badge" id="pmGsBadge"></span>
       </div>
-      <div class="pm-gs-quote" id="pmGsQuote"></div>
-      <button class="pm-gs-enter-btn" onclick="pmDismissGreeting()">
+      <div class="pm-gs-meta gs-anim" id="pmGsMeta" style="animation-delay:.4s"></div>
+      <div class="pm-gs-quote gs-anim" id="pmGsQuote" style="animation-delay:.5s"></div>
+      <button class="pm-gs-enter-btn gs-anim" style="animation-delay:.6s" onclick="pmDismissGreeting()">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
         Go to PMovies
       </button>
@@ -14556,7 +14609,22 @@ async function deleteEditorReview(key, e) {
   }
 
   // ── Cinematic Greeting Screen ─────────────────────────────────────
-  // Curated film rotation for greeting screen
+  // Hardcoded TMDB backdrop paths — no API call needed for the background rotation
+  var _gsHardcodedBdps = [
+    { path: '/rSPw7tgCH9c6NqICZef4kZjFOQ5.jpg',  title: 'The Godfather'       },
+    { path: '/xu9zaAevzQ5nnrsXN6JcahLnG4i.jpg',   title: 'Interstellar'        },
+    { path: '/5SBXHmKjWfO5LzmQNvGLFBpyHOv.jpg',   title: 'Blade Runner 2049'   },
+    { path: '/jYEW5xZkZk2WTrdbMGAPFuBqbDc.jpg',   title: 'Dune'                },
+    { path: '/2j5G6JyIOSKHDWHv6vM5UKjF0xQ.jpg',   title: 'Lawrence of Arabia'  },
+    { path: '/8SukvzLP0NrFNvjDWOAf5XLbGAn.jpg',   title: 'Cinema Paradiso'     },
+    { path: '/phszHPFnhPCDCcCFHAk0SqOJE7e.jpg',   title: 'Mad Max: Fury Road'  },
+    { path: '/nadTlnTE3N8YSACD1dxBnHJbRWo.jpg',   title: 'La La Land'          },
+  ];
+  var _gsBdpIdx  = 0;
+  var _gsBdpSlot = 'a'; // which img element is currently visible
+  var _gsBdpTimer = null;
+
+  // Curated film rotation for greeting screen (poster panel only)
   var _gsFilmList = [
     'Lawrence of Arabia',
     'Cinema Paradiso',
@@ -14595,7 +14663,7 @@ async function deleteEditorReview(key, e) {
 
   function _gsShowFilm(film) {
     if (!film) return;
-    // Swap poster
+    // Swap poster panel only — backdrop rotates independently
     var posterEl = document.getElementById('pmGsPoster');
     if (posterEl) {
       var img = posterEl.querySelector('img');
@@ -14613,17 +14681,50 @@ async function deleteEditorReview(key, e) {
         if (titleEl) titleEl.textContent = film.title;
       }
     }
-    // Swap background
-    if (film.backdrop) {
-      var bgImg = document.getElementById('pmGsBgImg');
-      if (bgImg) {
-        bgImg.classList.remove('visible');
-        setTimeout(function() {
-          bgImg.src = film.backdrop;
-          bgImg.classList.add('visible');
-        }, 600);
-      }
+  }
+
+  function _gsShowBdp(idx) {
+    var total = _gsHardcodedBdps.length;
+    var bdp   = _gsHardcodedBdps[idx % total];
+    var url   = 'https://image.tmdb.org/t/p/w1280' + bdp.path;
+    var imgA  = document.getElementById('pmGsBgImgA');
+    var imgB  = document.getElementById('pmGsBgImgB');
+    var counter = document.getElementById('pmGsBdpCounter');
+    if (!imgA || !imgB) return;
+
+    if (_gsBdpSlot === 'a') {
+      // Load next into B, then fade A out / B in
+      imgB.src = url;
+      imgB.onload = function() {
+        imgA.classList.remove('gs-vis');
+        imgB.classList.add('gs-vis');
+        _gsBdpSlot = 'b';
+      };
+      // If image fails / cached, just swap anyway
+      setTimeout(function() { if (_gsBdpSlot === 'a') { imgA.classList.remove('gs-vis'); imgB.classList.add('gs-vis'); _gsBdpSlot = 'b'; } }, 1200);
+    } else {
+      imgA.src = url;
+      imgA.onload = function() {
+        imgB.classList.remove('gs-vis');
+        imgA.classList.add('gs-vis');
+        _gsBdpSlot = 'a';
+      };
+      setTimeout(function() { if (_gsBdpSlot === 'b') { imgB.classList.remove('gs-vis'); imgA.classList.add('gs-vis'); _gsBdpSlot = 'a'; } }, 1200);
     }
+    if (counter) {
+      var n = String(idx % total + 1).padStart(2, '0');
+      var t = String(total).padStart(2, '0');
+      counter.textContent = n + ' / ' + t;
+    }
+  }
+
+  function _gsStartBdpRotation() {
+    _gsShowBdp(_gsBdpIdx); // show first immediately
+    if (_gsBdpTimer) clearInterval(_gsBdpTimer);
+    _gsBdpTimer = setInterval(function() {
+      _gsBdpIdx = (_gsBdpIdx + 1) % _gsHardcodedBdps.length;
+      _gsShowBdp(_gsBdpIdx);
+    }, 6000);
   }
 
   function _gsStartRotation() {
@@ -14673,12 +14774,34 @@ async function deleteEditorReview(key, e) {
     if (badgeEl) badgeEl.textContent = badge.icon + ' ' + badge.label;
     if (quoteEl) quoteEl.textContent = _getDailyQuote();
 
+    // Metadata strip
+    var metaEl = document.getElementById('pmGsMeta');
+    if (metaEl) {
+      var joinedTs = profile && (profile.createdAt || profile.joinedAt);
+      var joinedStr = joinedTs ? (function() {
+        var d = new Date(joinedTs);
+        return 'Member since ' + d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+      })() : 'Member since ' + new Date().toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+      var reviewCount = profile ? (profile.reviewCount || 0) : 0;
+      var reviewStr = reviewCount + (reviewCount === 1 ? ' Review' : ' Reviews');
+      metaEl.innerHTML = _esc(joinedStr) + ' <span>·</span> ' + reviewStr + ' <span>·</span> ' + badge.label;
+    }
+
     el.classList.add('gs-active');
     document.body.style.overflow = 'hidden';
 
+    // Start backdrop rotation immediately (hardcoded paths, no API needed)
+    _gsBdpIdx  = Math.floor(Math.random() * _gsHardcodedBdps.length); // random start
+    _gsBdpSlot = 'a';
+    var imgA = document.getElementById('pmGsBgImgA');
+    var imgB = document.getElementById('pmGsBgImgB');
+    if (imgA) { imgA.classList.remove('gs-vis'); imgA.src = ''; }
+    if (imgB) { imgB.classList.remove('gs-vis'); imgB.src = ''; }
+    _gsStartBdpRotation();
+
     var apiKey = typeof getKey === 'function' ? getKey() : null;
 
-    // Start prefetching curated rotation list
+    // Start prefetching curated rotation list (for poster panel)
     _gsPrefetchFilms(apiKey);
 
     // Show favFilm poster immediately if available
@@ -14692,24 +14815,15 @@ async function deleteEditorReview(key, e) {
           if (hit.poster_path) {
             var posterEl = document.getElementById('pmGsPoster');
             if (posterEl) posterEl.innerHTML = '<img src="https://image.tmdb.org/t/p/w342' + hit.poster_path + '" alt="' + _esc(favFilm) + '" style="transition:opacity .8s"/>';
-          }
-          if (hit.backdrop_path) {
-            var bgImg = document.getElementById('pmGsBgImg');
-            if (bgImg) { bgImg.src = 'https://image.tmdb.org/t/p/w1280' + hit.backdrop_path; bgImg.classList.add('visible'); }
-          }
-          var titleEl = document.getElementById('pmGsPosterTitle');
-          if (titleEl) titleEl.textContent = hit.title || favFilm;
-          // Push this film into rotation so it stays in the cycle
-          if (hit.poster_path) {
+            var titleEl = document.getElementById('pmGsPosterTitle');
+            if (titleEl) titleEl.textContent = hit.title || favFilm;
             _gsFilmQueue.unshift({
               title: hit.title || favFilm,
-              poster: 'https://image.tmdb.org/t/p/w342' + hit.poster_path,
-              backdrop: hit.backdrop_path ? 'https://image.tmdb.org/t/p/w1280' + hit.backdrop_path : null
+              poster: 'https://image.tmdb.org/t/p/w342' + hit.poster_path
             });
           }
         }).catch(function(){});
     } else if (!favFilm && apiKey) {
-      // No favFilm — pick a random film from the curated list to show immediately
       var randomQ = _gsFilmList[Math.floor(Math.random() * _gsFilmList.length)];
       fetch('https://api.themoviedb.org/3/search/movie?api_key=' + apiKey + '&query=' + encodeURIComponent(randomQ) + '&language=en-US&page=1')
         .then(function(r){ return r.ok ? r.json() : null; })
@@ -14719,25 +14833,16 @@ async function deleteEditorReview(key, e) {
           if (hit.poster_path) {
             var posterEl = document.getElementById('pmGsPoster');
             if (posterEl) posterEl.innerHTML = '<img src="https://image.tmdb.org/t/p/w342' + hit.poster_path + '" alt="' + (hit.title||'') + '" style="transition:opacity .8s"/>';
+            var titleEl = document.getElementById('pmGsPosterTitle');
+            if (titleEl) titleEl.textContent = hit.title || randomQ;
           }
-          if (hit.backdrop_path) {
-            var bgImg = document.getElementById('pmGsBgImg');
-            if (bgImg) { bgImg.src = 'https://image.tmdb.org/t/p/w1280' + hit.backdrop_path; bgImg.classList.add('visible'); }
-          }
-          var titleEl = document.getElementById('pmGsPosterTitle');
-          if (titleEl) titleEl.textContent = hit.title || randomQ;
         }).catch(function(){});
     }
 
-    // Start rotation after a delay to let prefetch accumulate results
+    // Poster panel rotation
     setTimeout(function() {
       if (_gsFilmQueue.length >= 2) _gsStartRotation();
-      else {
-        // Wait a bit longer for prefetch
-        setTimeout(function() {
-          if (_gsFilmQueue.length >= 1) _gsStartRotation();
-        }, 3000);
-      }
+      else setTimeout(function() { if (_gsFilmQueue.length >= 1) _gsStartRotation(); }, 3000);
     }, 5000);
   }
 
@@ -14745,6 +14850,7 @@ async function deleteEditorReview(key, e) {
     var el = document.getElementById('pmGreetingScreen');
     if (!el) return;
     if (_gsRotationTimer) { clearInterval(_gsRotationTimer); _gsRotationTimer = null; }
+    if (_gsBdpTimer)      { clearInterval(_gsBdpTimer);      _gsBdpTimer = null; }
     el.style.transition = 'opacity .4s';
     el.style.opacity = '0';
     sessionStorage.setItem('pm_greeting_done', '1');
@@ -14753,9 +14859,10 @@ async function deleteEditorReview(key, e) {
       el.style.opacity = '';
       el.style.transition = '';
       document.body.style.overflow = '';
-      // Reset bg img so it's ready next time
-      var bgImg = document.getElementById('pmGsBgImg');
-      if (bgImg) { bgImg.classList.remove('visible'); }
+      var imgA = document.getElementById('pmGsBgImgA');
+      var imgB = document.getElementById('pmGsBgImgB');
+      if (imgA) { imgA.classList.remove('gs-vis'); imgA.src = ''; }
+      if (imgB) { imgB.classList.remove('gs-vis'); imgB.src = ''; }
     }, 420);
   };
 
