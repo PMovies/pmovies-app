@@ -15692,44 +15692,54 @@ async function deleteEditorReview(key, e) {
       });
 
       // Async: load user lists into Lists tab (visible to all)
+      // Stored by _id so pmOpenListView can look up without inline JSON
+      window._pmUserListsCache = {};
+
       window._pmLoadUserLists = async function(targetUid, isOwnProfile) {
         var container = document.getElementById('pmUserListsContainer');
         if (!container) return;
+        container.innerHTML = '<div style="color:#555;font-size:.78rem;padding:8px 0">Loading…</div>';
         try {
           var _ulUser = window.pmGetUser ? window.pmGetUser() : null;
           var _ulTok  = _ulUser && _ulUser.getIdToken ? await _ulUser.getIdToken() : null;
-          var _ulUrl  = RTDB + '/userLists.json?orderBy=%22uid%22&equalTo=%22' + targetUid + '%22'
-                      + (_ulTok ? '&auth=' + _ulTok : '');
+          // Fetch all userLists and filter client-side — no index required
+          var _ulUrl  = RTDB + '/userLists.json' + (_ulTok ? '?auth=' + _ulTok : '');
           var _ulRes  = await fetch(_ulUrl);
-          var data    = _ulRes.ok ? await _ulRes.json() : null;
-          if (!data) {
+          var allData = _ulRes.ok ? await _ulRes.json() : null;
+          if (!allData) {
             container.innerHTML = '<div style="color:#555;font-size:.78rem;padding:8px 0">'
               + (isOwnProfile ? 'No lists yet. Create your first one!' : 'No lists yet.') + '</div>';
             return;
           }
-          var lists = Object.entries(data).map(function(e) { return Object.assign({ _id: e[0] }, e[1]); })
+          // Filter by uid client-side
+          var lists = Object.entries(allData)
+            .filter(function(e) { return e[1] && e[1].uid === targetUid; })
+            .map(function(e) { return Object.assign({ _id: e[0] }, e[1]); })
             .sort(function(a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
           if (!lists.length) {
             container.innerHTML = '<div style="color:#555;font-size:.78rem;padding:8px 0">'
               + (isOwnProfile ? 'No lists yet. Create your first one!' : 'No lists yet.') + '</div>';
             return;
           }
-          // Render as poster-grid cards (same style as main Lists tab)
+          // Cache list data by _id so onclick can look up safely
+          lists.forEach(function(l) { window._pmUserListsCache[l._id] = l; });
+          // Render as poster-grid cards
           container.innerHTML = '<div class="lists-grid" style="padding:0">'
             + lists.map(function(l) {
               var movies = l.movies || [];
               var cnt = movies.length;
-              var strip = movies.slice(0,4).concat(
+              var strip = movies.slice(0, 4).concat(
                 new Array(Math.max(0, 4 - Math.min(movies.length, 4))).fill(null)
               ).map(function(m) {
                 return m && m.poster_path
                   ? '<div class="list-card-poster"><img src="https://image.tmdb.org/t/p/w92' + m.poster_path + '" loading="lazy"/></div>'
                   : '<div class="list-card-poster"><div class="list-card-poster-ph">🎬</div></div>';
               }).join('');
+              var safeId = l._id.replace(/'/g, '');
               var delBtn = isOwnProfile
-                ? '<button class="pm-del-btn" onclick="event.stopPropagation();pmAdminDeleteItem(\'userLists\',\'' + l._id + '\',this.closest(\'.list-card\'))">✕</button>'
+                ? '<button class="pm-del-btn" onclick="event.stopPropagation();pmAdminDeleteItem(\'userLists\',\'' + safeId + '\',this.closest(\'.list-card\'))">✕</button>'
                 : '';
-              return '<div class="list-card pm-del-wrap" onclick="pmOpenListView(\'' + l._id + '\',' + JSON.stringify(l).replace(/</g,'\\u003c') + ')">'
+              return '<div class="list-card pm-del-wrap" onclick="pmOpenListView(\'' + safeId + '\')">'
                 + '<div class="list-card-posters">' + strip + '</div>'
                 + '<div class="list-card-body">'
                 + '<div class="list-card-title">' + _esc(l.title || 'Untitled') + '</div>'
@@ -15740,7 +15750,9 @@ async function deleteEditorReview(key, e) {
                 + '</div>';
             }).join('')
             + '</div>';
-        } catch(e) { if (container) container.innerHTML = '<div style="color:#555;font-size:.78rem;padding:8px 0">Could not load lists.</div>'; }
+        } catch(e) {
+          if (container) container.innerHTML = '<div style="color:#555;font-size:.78rem;padding:8px 0">Could not load lists.</div>';
+        }
       };
       // Store uid + isOwn for deferred load when tab is clicked
       window._pmListsTabUid   = uid;
@@ -16251,7 +16263,9 @@ async function deleteEditorReview(key, e) {
   };
 
   // ── List Detail View (profile) ────────────────────────────────────
-  window.pmOpenListView = function(listId, listData) {
+  window.pmOpenListView = function(listId) {
+    var listData = (window._pmUserListsCache || {})[listId];
+    if (!listData) return;
     var ov = document.getElementById('pmListViewOverlay');
     if (!ov) return;
     var titleEl = document.getElementById('pmLvTitle');
