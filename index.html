@@ -15501,60 +15501,49 @@ async function deleteEditorReview(key, e) {
     var score    = profile.contributionScore || 0;
     var badge    = (typeof _getBadge === 'function') ? _getBadge(score) : { icon:'🎬', label:'Member' };
     var nickname = profile.nickname || 'Film Lover';
-    var reviews  = profile.reviewCount || 0;
-    var likes    = profile.likesReceived || 0;
 
-    // — Background —
-    var grad = ctx.createLinearGradient(0, 0, W, H);
-    grad.addColorStop(0,   '#0d0800');
-    grad.addColorStop(0.5, '#1a0e00');
-    grad.addColorStop(1,   '#060012');
-    ctx.fillStyle = grad;
+    // ── 1. Solid dark base ──
+    ctx.fillStyle = '#0a0700';
     ctx.fillRect(0, 0, W, H);
 
-    // — Backdrop image (blurred, dark) —
-    var bdpSrc = profile.backdropUrl ||
-      (profile.favFilmAllTimePoster ? null : null); // use preloaded URL
-    if (bdpSrc) {
-      var bdpImg = await _loadImg(bdpSrc);
-      if (bdpImg) {
-        ctx.save();
-        ctx.globalAlpha = 0.18;
-        ctx.filter = 'blur(28px)';
-        // draw scaled to fill
-        var scale = Math.max(W / bdpImg.width, H / bdpImg.height);
-        var dw = bdpImg.width * scale, dh = bdpImg.height * scale;
-        ctx.drawImage(bdpImg, (W - dw) / 2, (H - dh) / 2, dw, dh);
-        ctx.filter = 'none';
-        ctx.globalAlpha = 1;
-        ctx.restore();
-      }
+    // ── 2. PMovies brand art as faded background ──
+    var brandImg = await _loadImg('https://p-movies.com/icons/social.png');
+    if (brandImg) {
+      ctx.save();
+      // Scale to fill, anchor to center-bottom so the character is visible
+      var sc = Math.max(W / brandImg.width, H / brandImg.height);
+      var bw = brandImg.width * sc, bh = brandImg.height * sc;
+      var bx = (W - bw) / 2, by = H - bh; // bottom-align
+      ctx.globalAlpha = 0.38;
+      ctx.drawImage(brandImg, bx, by, bw, bh);
+      ctx.globalAlpha = 1;
+      ctx.restore();
     }
 
-    // — Top gold stripe —
+    // ── 3. Gradient overlay — softer so brand art breathes through ──
+    var vGrad = ctx.createLinearGradient(0, 0, 0, H);
+    vGrad.addColorStop(0,    'rgba(10,7,0,0.75)');
+    vGrad.addColorStop(0.3,  'rgba(10,7,0,0.45)');
+    vGrad.addColorStop(0.6,  'rgba(10,7,0,0.42)');
+    vGrad.addColorStop(1,    'rgba(10,7,0,0.82)');
+    ctx.fillStyle = vGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    // ── 4. Top gold stripe ──
     ctx.fillStyle = '#f5a623';
-    ctx.fillRect(0, 0, W, 7);
+    ctx.fillRect(0, 0, W, 6);
 
-    // — Subtle grid lines —
-    ctx.strokeStyle = 'rgba(255,255,255,0.03)';
-    ctx.lineWidth = 1;
-    for (var gx = 0; gx < W; gx += 80) { ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke(); }
-    for (var gy = 0; gy < H; gy += 80) { ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke(); }
+    // ── 5. Avatar — upper-centre, large ──
+    var AX = W / 2, AY = 340, AR = 150;
 
-    // — PMovies wordmark (top-left) —
-    ctx.font = '700 52px Montserrat, sans-serif';
-    ctx.fillStyle = '#fff';
-    ctx.fillText('P', 72, 116);
-    var pw = ctx.measureText('P').width;
-    ctx.fillStyle = '#f5a623';
-    ctx.fillText('Movies', 72 + pw, 116);
+    // Glow ring behind avatar
+    var glowGrad = ctx.createRadialGradient(AX, AY, AR, AX, AY, AR + 60);
+    glowGrad.addColorStop(0,   'rgba(245,166,35,0.25)');
+    glowGrad.addColorStop(1,   'rgba(245,166,35,0)');
+    ctx.fillStyle = glowGrad;
+    ctx.beginPath(); ctx.arc(AX, AY, AR + 60, 0, Math.PI * 2); ctx.fill();
 
-    ctx.font = '400 26px Montserrat, sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.28)';
-    ctx.fillText('Cinema lives here', 72, 156);
-
-    // — Avatar circle (centered, middle area) —
-    var AX = W / 2, AY = 390, AR = 120;
+    // Clip and draw avatar
     ctx.save();
     ctx.beginPath();
     ctx.arc(AX, AY, AR, 0, Math.PI * 2);
@@ -15563,14 +15552,14 @@ async function deleteEditorReview(key, e) {
     var avatarSrc = profile.avatarUrl || null;
     var avatarImg = avatarSrc ? await _loadImg(avatarSrc) : null;
     if (avatarImg) {
-      var as = Math.max(AR * 2 / avatarImg.width, AR * 2 / avatarImg.height);
+      var as = Math.max((AR * 2) / avatarImg.width, (AR * 2) / avatarImg.height);
       var aw = avatarImg.width * as, ah = avatarImg.height * as;
       ctx.drawImage(avatarImg, AX - aw / 2, AY - ah / 2, aw, ah);
     } else {
-      // Fallback initial
-      ctx.fillStyle = '#1a1a1a';
+      // Fallback: dark circle + gold initial
+      ctx.fillStyle = '#1c1200';
       ctx.fillRect(AX - AR, AY - AR, AR * 2, AR * 2);
-      ctx.font = '700 100px Montserrat, sans-serif';
+      ctx.font = '700 130px Montserrat, sans-serif';
       ctx.fillStyle = '#f5a623';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -15578,85 +15567,77 @@ async function deleteEditorReview(key, e) {
     }
     ctx.restore();
 
-    // Avatar ring
+    // Gold ring around avatar
     ctx.beginPath();
-    ctx.arc(AX, AY, AR + 3, 0, Math.PI * 2);
+    ctx.arc(AX, AY, AR + 4, 0, Math.PI * 2);
     ctx.strokeStyle = '#f5a623';
-    ctx.lineWidth = 4;
+    ctx.lineWidth = 5;
     ctx.stroke();
 
-    // — Name —
+    // ── 6. Name — well below avatar, no overlap ──
     ctx.textAlign = 'center';
     ctx.textBaseline = 'alphabetic';
-    ctx.font = '700 88px "Bebas Neue", sans-serif';
-    ctx.fillStyle = '#ffffff';
-    // Shrink if long
+    var nameFontSize = 100;
+    ctx.font = '700 ' + nameFontSize + 'px "Bebas Neue", sans-serif';
     var nameW = ctx.measureText(nickname.toUpperCase()).width;
-    if (nameW > W - 120) {
-      ctx.font = '700 ' + Math.floor(88 * (W - 120) / nameW) + 'px "Bebas Neue", sans-serif';
+    // Shrink to fit within 860px wide
+    if (nameW > 860) {
+      nameFontSize = Math.floor(nameFontSize * 860 / nameW);
+      ctx.font = '700 ' + nameFontSize + 'px "Bebas Neue", sans-serif';
     }
-    ctx.fillText(nickname.toUpperCase(), W / 2, 570);
+    var nameY = AY + AR + 90; // 90px gap below avatar ring
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(nickname.toUpperCase(), W / 2, nameY);
 
-    // — Badge chip —
-    var badgeTxt = badge.icon + '  ' + badge.label;
-    ctx.font = '700 28px Montserrat, sans-serif';
+    // ── 7. Badge chip — below name ──
+    var badgeTxt = badge.icon + '  ' + badge.label.toUpperCase();
+    ctx.font = '700 30px Montserrat, sans-serif';
     var btw = ctx.measureText(badgeTxt).width;
-    var bpx = 36, bpy = 18, bch = 56;
+    var bph = 60, bpx = 40;
+    var bcy = nameY + 30;
     var bcx = (W - btw - bpx * 2) / 2;
-    _roundRect(ctx, bcx, 594, btw + bpx * 2, bch, bch / 2);
-    ctx.fillStyle = 'rgba(245,166,35,0.14)';
+    _roundRect(ctx, bcx, bcy, btw + bpx * 2, bph, bph / 2);
+    ctx.fillStyle = 'rgba(245,166,35,0.15)';
     ctx.fill();
-    ctx.strokeStyle = 'rgba(245,166,35,0.45)';
+    ctx.strokeStyle = 'rgba(245,166,35,0.5)';
     ctx.lineWidth = 2;
     ctx.stroke();
     ctx.fillStyle = '#f5a623';
     ctx.textAlign = 'center';
-    ctx.fillText(badgeTxt, W / 2, 632);
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText(badgeTxt, W / 2, bcy + bph - 15);
 
-    // — Divider —
-    var divGrad = ctx.createLinearGradient(120, 0, W - 120, 0);
-    divGrad.addColorStop(0,   'transparent');
-    divGrad.addColorStop(0.3, 'rgba(255,255,255,0.12)');
-    divGrad.addColorStop(0.7, 'rgba(255,255,255,0.12)');
-    divGrad.addColorStop(1,   'transparent');
-    ctx.strokeStyle = divGrad;
+    // ── 8. Tagline ──
+    var tagY = bcy + bph + 54;
+    ctx.font = '400 28px Montserrat, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.28)';
+    ctx.letterSpacing = '0.14em';
+    ctx.fillText('YOUR CINEMA · YOUR MOOD · YOUR FILM', W / 2, tagY);
+
+    // ── 9. Bottom gold bar ──
+    var barY = H - 96;
+    ctx.fillStyle = 'rgba(245,166,35,0.09)';
+    ctx.fillRect(0, barY, W, 96);
+    // top edge of bar
+    var barLineGrad = ctx.createLinearGradient(0, 0, W, 0);
+    barLineGrad.addColorStop(0,   'transparent');
+    barLineGrad.addColorStop(0.1, 'rgba(245,166,35,0.4)');
+    barLineGrad.addColorStop(0.9, 'rgba(245,166,35,0.4)');
+    barLineGrad.addColorStop(1,   'transparent');
+    ctx.strokeStyle = barLineGrad;
     ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(120, 690); ctx.lineTo(W - 120, 690); ctx.stroke();
-
-    // — Stats row —
-    var stats = [
-      { val: reviews, lbl: 'Reviews'  },
-      { val: score,   lbl: 'Score'    },
-      { val: likes,   lbl: "Likes Rec'd" },
-    ];
-    var colW = (W - 120) / stats.length;
-    stats.forEach(function(s, i) {
-      var cx = 60 + colW * i + colW / 2;
-      ctx.textAlign = 'center';
-      ctx.font = '700 72px "Bebas Neue", sans-serif';
-      ctx.fillStyle = '#f5a623';
-      ctx.fillText(String(s.val), cx, 786);
-      ctx.font = '700 22px Montserrat, sans-serif';
-      ctx.fillStyle = 'rgba(255,255,255,0.38)';
-      ctx.fillText(s.lbl.toUpperCase(), cx, 820);
-    });
-
-    // — Bottom bar —
-    ctx.fillStyle = 'rgba(245,166,35,0.08)';
-    ctx.fillRect(0, H - 110, W, 110);
-    ctx.strokeStyle = 'rgba(245,166,35,0.2)';
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(0, H - 110); ctx.lineTo(W, H - 110); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, barY); ctx.lineTo(W, barY); ctx.stroke();
 
     ctx.textAlign = 'left';
-    ctx.font = '700 30px Montserrat, sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    ctx.fillText('p-movies.com', 72, H - 58);
+    ctx.textBaseline = 'middle';
+    ctx.font = '700 32px Montserrat, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.fillText('p-movies.com', 72, barY + 48);
 
     ctx.textAlign = 'right';
     ctx.font = '400 26px Montserrat, sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.22)';
-    ctx.fillText('Film Community', W - 72, H - 58);
+    ctx.fillStyle = 'rgba(245,166,35,0.45)';
+    ctx.fillText('FILM COMMUNITY', W - 72, barY + 48);
 
     return canvas.toDataURL('image/png');
   }
