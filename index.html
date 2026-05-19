@@ -15422,41 +15422,50 @@ async function deleteEditorReview(key, e) {
       }
 
       // Reviews strip for overview (first 5 posters)
-      var reviewStrip = (function() {
-        var items = reviews.slice(0, 8).map(function(r) {
-          var fp = typeof fanReviewFp === 'function' ? fanReviewFp(r) : '';
-          var safeFp = (fp || '').replace(/"/g, '');
-          return { posterPath: null, title: r.movie, onclick: 'pmCloseProfile();_pmOpenReviewFromProfile(\'' + safeFp + '\')', _fp: safeFp, _r: r };
-        });
-        var navToReview = 'pmCloseProfile();switchTab(\'movies\');setTimeout(function(){var s=document.getElementById(\'fanSection\');if(s)s.scrollIntoView({behavior:\'smooth\'});setTimeout(function(){if(typeof toggleFanForm===\'function\')toggleFanForm();},300);},350)';
-        var stripHtml = _buildStrip(items, reviews.length ? '' : 'No reviews yet<br>Start reviewing films →', reviews.length ? null : navToReview);
-        return reviews.length
-          ? '<div class="pm-prof-section-title">Recent Reviews</div>' + stripHtml
-          : (isOwn ? '<div class="pm-prof-section-title">My Reviews</div>' + stripHtml : '');
-      })();
+      // Admin profile: use editor reviews (async); others: fan reviews
+      var reviewStrip = isAdminUser
+        ? '<div class="pm-prof-section-title">Recent Reviews</div>'
+          + '<div id="pmProfEdRevOvr" class="pm-prof-strip-wrap"><div class="pm-prof-strip">'
+          + [1,2,3,4,5].map(function() { return '<div class="pm-prof-poster-frame skeleton"></div>'; }).join('')
+          + '</div></div>'
+        : (function() {
+            var items = reviews.slice(0, 8).map(function(r) {
+              var fp = typeof fanReviewFp === 'function' ? fanReviewFp(r) : '';
+              var safeFp = (fp || '').replace(/"/g, '');
+              return { posterPath: null, title: r.movie, onclick: 'pmCloseProfile();_pmOpenReviewFromProfile(\'' + safeFp + '\')', _fp: safeFp, _r: r };
+            });
+            var navToReview = 'pmCloseProfile();switchTab(\'movies\');setTimeout(function(){var s=document.getElementById(\'fanSection\');if(s)s.scrollIntoView({behavior:\'smooth\'});setTimeout(function(){if(typeof toggleFanForm===\'function\')toggleFanForm();},300);},350)';
+            var stripHtml = _buildStrip(items, reviews.length ? '' : 'No reviews yet<br>Start reviewing films →', reviews.length ? null : navToReview);
+            return reviews.length
+              ? '<div class="pm-prof-section-title">Recent Reviews</div>' + stripHtml
+              : (isOwn ? '<div class="pm-prof-section-title">My Reviews</div>' + stripHtml : '');
+          })();
 
       // Full reviews grid (Reviews tab)
-      var fullReviewsHtml = (function() {
-        if (reviews.length) {
-          var cards = reviews.map(function(r) {
-            var fp = typeof fanReviewFp === 'function' ? fanReviewFp(r) : '';
-            var stars = typeof _starsHtml === 'function' ? _starsHtml(r.rating || 0) : '';
-            var safeFp = (fp || '').replace(/"/g, '');
-            return '<div class="pm-prof-rev-card" onclick="pmCloseProfile();_pmOpenReviewFromProfile(\'' + safeFp + '\')">'
-              + '<div class="pm-prof-rev-poster" id="ppRvPoster-' + safeFp + '">🎬</div>'
-              + '<div class="pm-prof-rev-meta">'
-              + '<div class="pm-prof-rev-title" title="' + _esc(r.movie || '') + '">' + _esc(r.movie || 'Unknown') + '</div>'
-              + '<div class="pm-prof-rev-stars">' + stars + '</div>'
-              + '</div></div>';
-          });
-          return '<div class="pm-prof-section-title">' + reviews.length + ' Review' + (reviews.length !== 1 ? 's' : '') + '</div>'
-            + '<div class="pm-prof-reviews-grid">' + cards.join('') + '</div>';
-        }
-        var items = [];
-        var navFull = 'pmCloseProfile();switchTab(\'movies\');setTimeout(function(){var s=document.getElementById(\'fanSection\');if(s)s.scrollIntoView({behavior:\'smooth\'});setTimeout(function(){if(typeof toggleFanForm===\'function\')toggleFanForm();},300);},350)';
-        return (isOwn ? '<div class="pm-prof-section-title">My Reviews</div>' : '')
-          + _buildStrip(items, 'No reviews yet<br>Start reviewing films →', isOwn ? navFull : null);
-      })();
+      // Admin: placeholder filled async; others: fan reviews
+      var fullReviewsHtml = isAdminUser
+        ? '<div class="pm-prof-section-title" id="pmProfEdRevTitle">Reviews</div>'
+          + '<div id="pmProfEdRevGrid" style="color:#555;font-size:.78rem;padding:12px 0">Loading…</div>'
+        : (function() {
+            if (reviews.length) {
+              var cards = reviews.map(function(r) {
+                var fp = typeof fanReviewFp === 'function' ? fanReviewFp(r) : '';
+                var stars = typeof _starsHtml === 'function' ? _starsHtml(r.rating || 0) : '';
+                var safeFp = (fp || '').replace(/"/g, '');
+                return '<div class="pm-prof-rev-card" onclick="pmCloseProfile();_pmOpenReviewFromProfile(\'' + safeFp + '\')">'
+                  + '<div class="pm-prof-rev-poster" id="ppRvPoster-' + safeFp + '">🎬</div>'
+                  + '<div class="pm-prof-rev-meta">'
+                  + '<div class="pm-prof-rev-title" title="' + _esc(r.movie || '') + '">' + _esc(r.movie || 'Unknown') + '</div>'
+                  + '<div class="pm-prof-rev-stars">' + stars + '</div>'
+                  + '</div></div>';
+              });
+              return '<div class="pm-prof-section-title">' + reviews.length + ' Review' + (reviews.length !== 1 ? 's' : '') + '</div>'
+                + '<div class="pm-prof-reviews-grid">' + cards.join('') + '</div>';
+            }
+            var navFull = 'pmCloseProfile();switchTab(\'movies\');setTimeout(function(){var s=document.getElementById(\'fanSection\');if(s)s.scrollIntoView({behavior:\'smooth\'});setTimeout(function(){if(typeof toggleFanForm===\'function\')toggleFanForm();},300);},350)';
+            return (isOwn ? '<div class="pm-prof-section-title">My Reviews</div>' : '')
+              + _buildStrip([], 'No reviews yet<br>Start reviewing films →', isOwn ? navFull : null);
+          })();
 
       // Watchlist tab content
       var watchlistTabHtml = (function() {
@@ -15794,6 +15803,86 @@ async function deleteEditorReview(key, e) {
       window._pmListsTabIsOwn = isOwn;
       // Pre-load lists immediately so they're ready when tab is clicked
       window._pmLoadUserLists(uid, isOwn);
+
+      // Async: inject editor reviews into profile (admin only)
+      if (isAdminUser) {
+        (async function() {
+          try {
+            // Use already-loaded editor reviews if available, else fetch
+            var edRevs;
+            if (window._editorAllReviews && window._editorAllReviews.length) {
+              edRevs = window._editorAllReviews;
+            } else {
+              var _er = await fetch(RTDB + '/editorReviews.json');
+              var _ed = _er.ok ? await _er.json() : null;
+              edRevs = _ed
+                ? Object.entries(_ed).map(function(e) { return Object.assign({ _key: e[0] }, e[1]); })
+                    .sort(function(a, b) { return (b.publishedAt || 0) - (a.publishedAt || 0); })
+                : [];
+            }
+            window._pmEdRevsForProfile = edRevs; // indexed for onclick
+
+            // ── Overview strip: 3–5 most recent ──
+            var ovrEl = document.getElementById('pmProfEdRevOvr');
+            if (ovrEl) {
+              var recent = edRevs.slice(0, 5);
+              if (recent.length) {
+                var frames = recent.map(function(r, i) {
+                  var img = r.poster
+                    ? '<img src="https://image.tmdb.org/t/p/w185' + r.poster + '" alt="' + _esc(r.title || '') + '" loading="lazy"/>'
+                    : '';
+                  return '<div class="pm-prof-poster-frame" style="cursor:pointer" onclick="pmCloseProfile();setTimeout(function(){openEditorRead(window._pmEdRevsForProfile[' + i + '])},80)">' + img + '</div>';
+                }).join('');
+                ovrEl.innerHTML = '<div class="pm-prof-strip">' + frames + '</div>';
+              } else {
+                ovrEl.innerHTML = '<div style="color:#555;font-size:.78rem;padding:8px 0">No reviews published yet.</div>';
+              }
+            }
+
+            // ── Reviews tab: full grid ──
+            var titleEl = document.getElementById('pmProfEdRevTitle');
+            var gridEl  = document.getElementById('pmProfEdRevGrid');
+            if (titleEl) titleEl.textContent = edRevs.length + ' Review' + (edRevs.length !== 1 ? 's' : '');
+            // Update tab button count
+            var revBtn = document.querySelector('#pmProfContent .pm-prof-tab[data-tab="reviews"]');
+            if (revBtn) revBtn.textContent = 'Reviews' + (edRevs.length ? ' · ' + edRevs.length : '');
+            if (gridEl) {
+              if (edRevs.length) {
+                gridEl.className = 'pm-prof-reviews-grid';
+                gridEl.style = '';
+                gridEl.innerHTML = edRevs.map(function(r, i) {
+                  var stars = typeof _editorStarsHTML === 'function'
+                    ? _editorStarsHTML(r.rating || 0)
+                    : '★'.repeat(Math.round(r.rating || 0));
+                  var poster = r.poster
+                    ? '<img src="https://image.tmdb.org/t/p/w185' + r.poster + '" loading="lazy"/>'
+                    : '🎬';
+                  return '<div class="pm-prof-rev-card" onclick="pmCloseProfile();setTimeout(function(){openEditorRead(window._pmEdRevsForProfile[' + i + '])},80)">'
+                    + '<div class="pm-prof-rev-poster">' + poster + '</div>'
+                    + '<div class="pm-prof-rev-meta">'
+                    + '<div class="pm-prof-rev-title">' + _esc(r.title || 'Unknown') + '</div>'
+                    + '<div class="pm-prof-rev-stars">' + stars + '</div>'
+                    + '</div></div>';
+                }).join('');
+              } else {
+                gridEl.textContent = 'No reviews published yet.';
+              }
+            }
+            // Also async-load poster images for overview strip
+            recent && recent.forEach(function(r, i) {
+              var frame = document.querySelectorAll('#pmProfEdRevOvr .pm-prof-poster-frame')[i];
+              if (frame && !r.poster && typeof fetchPoster === 'function') {
+                fetchPoster(r.title, 'movie', r.tmdbId || null).then(function(url) {
+                  if (url && frame) frame.innerHTML = '<img src="' + url + '" loading="lazy"/>';
+                });
+              }
+            });
+          } catch(_e) {
+            var g = document.getElementById('pmProfEdRevGrid');
+            if (g) g.textContent = 'Could not load reviews.';
+          }
+        })();
+      }
 
       // Async: load admin stats when Admin tab is first opened
       if (isAdminUser) {
