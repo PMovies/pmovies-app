@@ -1916,6 +1916,34 @@
     transition: background .15s;
   }
   .pm-prof-close-btn:hover { background: rgba(255,255,255,.12); }
+  .pm-prof-share-btn {
+    position: fixed; top: 16px; left: 50%;
+    transform: translateX(calc(480px - 22px));
+    z-index: 99991;
+    background: rgba(0,0,0,.75); border: 1px solid rgba(255,255,255,.14);
+    color: #aaa; width: 42px; height: 42px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .9rem; cursor: pointer;
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    transition: background .15s, color .15s;
+  }
+  .pm-prof-share-btn:hover { background: rgba(245,166,35,.15); color: #f5a623; border-color: rgba(245,166,35,.3); }
+  .pm-prof-share-toast {
+    position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: #1a1a1a; border: 1px solid rgba(255,255,255,.12);
+    color: #eee; font-family: 'Montserrat', sans-serif; font-size: .75rem;
+    font-weight: 600; padding: 10px 20px; border-radius: 30px;
+    z-index: 999999; opacity: 0; transition: opacity .25s, transform .25s;
+    pointer-events: none; white-space: nowrap;
+  }
+  .pm-prof-share-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  @media(max-width:1080px) {
+    .pm-prof-share-btn { transform: translateX(calc(50vw - 64px)); }
+  }
+  @media(max-width:640px) {
+    .pm-prof-close-btn { transform: translateX(calc(-50vw + 22px)); top: calc(env(safe-area-inset-top,0px) + 10px); }
+    .pm-prof-share-btn { transform: translateX(calc(50vw - 64px)); top: calc(env(safe-area-inset-top,0px) + 10px); }
+  }
 
   /* Hero */
   .pm-prof-hero {
@@ -14258,9 +14286,13 @@ async function deleteEditorReview(key, e) {
 <div id="pmProfileOverlay">
   <div id="pmProfileModal">
     <button class="pm-prof-close-btn" onclick="pmCloseProfile()" aria-label="Close profile">←</button>
+    <button class="pm-prof-share-btn" onclick="pmShareProfile()" aria-label="Share profile" title="Copy link">
+      <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+    </button>
     <div id="pmProfContent"></div>
   </div>
 </div>
+<div class="pm-prof-share-toast" id="pmShareToast">🔗 Link copied to clipboard</div>
 
 <div id="pmEditProfileOverlay" onclick="if(event.target===this)pmCloseEditProfile()">
   <div class="pm-edit-card">
@@ -14324,6 +14356,19 @@ async function deleteEditorReview(key, e) {
   })();
 
   // ── Auth State Listener ──────────────────────────────────────────
+  // Read ?u= param once on startup — open that profile after auth resolves
+  var _startupProfileUid = (function() {
+    var p = new URLSearchParams(window.location.search);
+    return p.get('u') || null;
+  })();
+  var _startupProfileHandled = false;
+  function _maybeOpenStartupProfile() {
+    if (_startupProfileHandled || !_startupProfileUid) return;
+    _startupProfileHandled = true;
+    // Small delay so the app UI is ready
+    setTimeout(function() { pmOpenProfile(_startupProfileUid); }, 400);
+  }
+
   firebase.auth().onAuthStateChanged(function(user) {
     _pmUser = user;
     if (user) {
@@ -14332,11 +14377,15 @@ async function deleteEditorReview(key, e) {
       _checkNickname(user);
       _checkEditorRole(user.uid);
       _silentDeviceClaim(user);
+      _maybeOpenStartupProfile();
     } else if (sessionStorage.getItem('pmovies_guest') === '1') {
       _hideLanding();
+      _maybeOpenStartupProfile();
     } else {
       localStorage.removeItem('pmovies_was_signed_in');
-      _showLanding();
+      // Still allow viewing a shared profile link even when signed out
+      if (_startupProfileUid) _maybeOpenStartupProfile();
+      else _showLanding();
     }
   });
 
@@ -14953,6 +15002,9 @@ async function deleteEditorReview(key, e) {
     if (!overlay || !content) return;
     overlay.style.display = 'block';
     document.body.style.overflow = 'hidden';
+    // Update URL so this profile is directly linkable
+    var profileUrl = window.location.pathname + '?u=' + encodeURIComponent(uid);
+    history.pushState({ pmProfile: uid }, '', profileUrl);
     content.innerHTML = '<div style="height:46vh;min-height:240px;background:linear-gradient(135deg,#0a0500,#1a0e00);"></div><div style="padding:60px 28px;text-align:center;color:#555;font-size:.88rem">Loading…</div>';
 
     try {
@@ -15364,7 +15416,46 @@ async function deleteEditorReview(key, e) {
     document.body.style.overflow = '';
     _profileUid  = null;
     _profileData = null;
+    // Restore clean URL if we pushed a profile URL
+    if (history.state && history.state.pmProfile) {
+      history.pushState({}, '', window.location.pathname);
+    }
   };
+
+  window.pmShareProfile = function() {
+    var uid = _profileUid;
+    if (!uid) return;
+    var url = window.location.origin + window.location.pathname + '?u=' + encodeURIComponent(uid);
+    var toast = document.getElementById('pmShareToast');
+    var show = function(msg) {
+      if (toast) { toast.textContent = msg; toast.classList.add('show'); setTimeout(function() { toast.classList.remove('show'); }, 2400); }
+    };
+    if (navigator.share) {
+      navigator.share({ title: 'PMovies Profile', url: url }).catch(function() {});
+    } else if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(function() { show('🔗 Link copied to clipboard'); }).catch(function() { show('⚠️ Could not copy — ' + url); });
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = url; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); show('🔗 Link copied to clipboard'); } catch(_) { show('⚠️ Copy failed'); }
+      document.body.removeChild(ta);
+    }
+  };
+
+  // Handle browser back/forward — close profile when navigating back from ?u=
+  window.addEventListener('popstate', function(e) {
+    var overlay = document.getElementById('pmProfileOverlay');
+    if (overlay && overlay.style.display === 'block') {
+      // User hit back — close profile without pushing another history entry
+      overlay.style.display = 'none';
+      document.body.style.overflow = '';
+      _profileUid  = null;
+      _profileData = null;
+    } else if (e.state && e.state.pmProfile) {
+      pmOpenProfile(e.state.pmProfile);
+    }
+  });
 
   window.pmProfTab = function(tab) {
     var panels = document.querySelectorAll('#pmProfContent .pm-prof-tab-panel');
