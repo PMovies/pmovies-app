@@ -15705,7 +15705,13 @@ async function deleteEditorReview(key, e) {
           // Fetch all userLists and filter client-side — no index required
           var _ulUrl  = RTDB + '/userLists.json' + (_ulTok ? '?auth=' + _ulTok : '');
           var _ulRes  = await fetch(_ulUrl);
-          var allData = _ulRes.ok ? await _ulRes.json() : null;
+          var allData = null;
+          if (_ulRes.ok) {
+            allData = await _ulRes.json();
+          } else {
+            container.innerHTML = '<div style="color:#e55;font-size:.78rem;padding:8px 0">Error ' + _ulRes.status + ' loading lists.</div>';
+            return;
+          }
           if (!allData) {
             container.innerHTML = '<div style="color:#555;font-size:.78rem;padding:8px 0">'
               + (isOwnProfile ? 'No lists yet. Create your first one!' : 'No lists yet.') + '</div>';
@@ -15757,6 +15763,8 @@ async function deleteEditorReview(key, e) {
       // Store uid + isOwn for deferred load when tab is clicked
       window._pmListsTabUid   = uid;
       window._pmListsTabIsOwn = isOwn;
+      // Pre-load lists immediately so they're ready when tab is clicked
+      window._pmLoadUserLists(uid, isOwn);
 
       // Async: load admin stats when Admin tab is first opened
       if (isAdminUser) {
@@ -16118,12 +16126,9 @@ async function deleteEditorReview(key, e) {
     if (tab === 'admin' && typeof window._pmLoadAdminStats === 'function') {
       window._pmLoadAdminStats();
     }
-    // Lazy-load user lists on first open
+    // Load user lists every time the tab is opened
     if (tab === 'lists' && typeof window._pmLoadUserLists === 'function') {
-      var container = document.getElementById('pmUserListsContainer');
-      if (container && container.querySelector('[style*="Loading"]')) {
-        window._pmLoadUserLists(window._pmListsTabUid, window._pmListsTabIsOwn);
-      }
+      window._pmLoadUserLists(window._pmListsTabUid, window._pmListsTabIsOwn);
     }
   };
 
