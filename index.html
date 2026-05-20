@@ -15425,6 +15425,7 @@ async function deleteEditorReview(key, e) {
         body: JSON.stringify(profile)
       });
       if (!res.ok) throw new Error('Write failed: ' + res.status);
+
       _pmNickname = nickname;
       _prefillReviewNames(nickname);
       document.getElementById('pmNicknameOverlay').style.display = 'none';
@@ -15875,6 +15876,25 @@ async function deleteEditorReview(key, e) {
       var joined   = profile.joinedAt
         ? new Date(profile.joinedAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
         : '';
+      // Resolve member number from joinedAt rank (runs async, updates DOM after render)
+      var memberNum    = profile.memberNumber || null;
+      var memberNumStr = memberNum ? '#' + String(memberNum).padStart(3, '0') : '';
+      var memberLine   = memberNumStr && joined  ? 'Member ' + memberNumStr + '  ·  ' + joined
+                       : memberNumStr            ? 'Member ' + memberNumStr
+                       : joined                  ? 'Member since ' + joined
+                       : '';
+      // If number not yet cached, fetch it async and patch DOM once ready
+      if (!memberNum) {
+        _resolveMemberNumber(uid, profile, token || null).then(function(rank) {
+          if (!rank) return;
+          var numStr  = '#' + String(rank).padStart(3, '0');
+          var newLine = joined ? 'Member ' + numStr + '  ·  ' + joined : 'Member ' + numStr;
+          var el1 = document.getElementById('pmProfMemberLine');
+          var el2 = document.getElementById('pmProfMemberLineStat');
+          if (el1) el1.textContent = newLine;
+          if (el2) el2.textContent = newLine;
+        });
+      }
 
       // ── Review count — computed BEFORE stats HTML so display is accurate ──
       // _allCommunityReviews may be empty if reviews haven't loaded yet;
@@ -15939,7 +15959,7 @@ async function deleteEditorReview(key, e) {
         +     '<span class="pm-prof-badge">' + badge.icon + ' ' + badge.label + '</span>'
         +     (isOwn ? '<button class="pm-prof-edit-btn" onclick="pmOpenEditProfile()">✏️ Edit</button>' : '')
         +   '</div>'
-        +   (joined ? '<div class="pm-prof-joined">Member since ' + joined + '</div>' : '')
+        +   '<div class="pm-prof-joined" id="pmProfMemberLine">' + (memberLine || '') + '</div>'
         +   (profile.bio ? '<div class="pm-prof-bio">' + _esc(profile.bio) + '</div>' : '')
         + '</div>'
         + '<div class="pm-prof-stats-col"><div class="pm-prof-stats">' + statsHtml + '</div></div>'
@@ -16112,7 +16132,7 @@ async function deleteEditorReview(key, e) {
               + '</div>';
           }).join('')
         + '</div>'
-        + (joined ? '<div style="padding:0 28px;font-size:.72rem;color:#444">Member since ' + joined + '</div>' : '');
+        + '<div style="padding:0 28px;font-size:.72rem;color:#444" id="pmProfMemberLineStat">' + (memberLine || '') + '</div>';
 
       // Overview tab
       var overviewHtml = tasteInner + reviewStrip;
@@ -16259,6 +16279,8 @@ async function deleteEditorReview(key, e) {
             var published = eR.ok ? Object.keys((await eR.json()) || {}).length : '—';
             var members   = uR.ok ? Object.keys((await uR.json()) || {}).length : '—';
             var fanArt    = pR.ok ? Object.keys((await pR.json()) || {}).length : '—';
+            // Cache globally so the share card can use the live values
+            window._editorSiteStats = { published: published, members: members, fanArt: fanArt };
             var elP = document.getElementById('pmEditorStatPublished');
             var elM = document.getElementById('pmEditorStatMembers');
             var elF = document.getElementById('pmEditorStatFanArt');
@@ -16624,6 +16646,32 @@ async function deleteEditorReview(key, e) {
     ctx.closePath();
   }
 
+  // ── Member number: rank by joinedAt order, cached in profile ──────────
+  // Queries Firebase for users who joined at or before this user → count = rank.
+  // Result is written back to the profile so subsequent loads are instant.
+  async function _resolveMemberNumber(uid, profile, token) {
+    if (profile.memberNumber) return profile.memberNumber;
+    var joinedAt = profile.joinedAt || profile.createdAt;
+    if (!joinedAt) return null;
+    try {
+      var url = RTDB + '/users.json?orderBy="joinedAt"&endAt=' + joinedAt;
+      var r = await fetch(url);
+      if (!r.ok) return null;
+      var data = await r.json();
+      var rank = data ? Object.keys(data).length : 1;
+      rank = Math.max(1, rank); // never 0
+      profile.memberNumber = rank; // cache in-memory
+      // Persist to RTDB silently (own profile or admin)
+      if (token) {
+        fetch(RTDB + '/users/' + uid + '/memberNumber.json?auth=' + token, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(rank)
+        }).catch(function(){});
+      }
+      return rank;
+    } catch(_e) { return null; }
+  }
+
   async function _buildShareCard(uid, profile) {
     var W = 1080, H = 1080;
     var canvas = document.getElementById('pmShareCardCanvas');
@@ -16646,14 +16694,15 @@ async function deleteEditorReview(key, e) {
     }
 
     // ── Profile data ─────────────────────────────────────────────────
-    var nickname = profile.nickname || 'Film Lover';
-    var username = profile.username ? '@' + profile.username : '';
-    var score    = profile.contributionScore || 0;
-    var reviews  = profile.reviewCount    || 0;
-    var likes    = profile.likesReceived  || 0;
-    var favFilm  = profile.favFilmAllTime || profile.favFilm || '';
+    var nickname    = profile.nickname || 'Film Lover';
+    var username    = profile.username ? '@' + profile.username : '';
+    var score       = profile.contributionScore || 0;
+    var reviews     = profile.reviewCount    || 0;
+    var likes       = profile.likesReceived  || 0;
+    var favFilm     = profile.favFilmAllTime || profile.favFilm || '';
+    var isEditorCard = profile.isEditor === true;
 
-    var isEditor = !!(window._pmEditorAuthVerified);
+    var isEditor = isEditorCard || !!(window._pmEditorAuthVerified);
     var badge = isEditor
       ? { icon: '✎', label: 'EDITOR' }
       : score >= 300 ? { icon: '👑', label: 'LEGEND' }
@@ -16662,10 +16711,13 @@ async function deleteEditorReview(key, e) {
       : score >= 25  ? { icon: '🎬', label: 'CINEPHILE' }
       :                { icon: '✦',  label: 'NEWCOMER' };
 
-    var joinedAt  = profile.createdAt || profile.joinedAt || null;
-    var joinedStr = joinedAt
-      ? 'MEMBER SINCE ' + new Date(joinedAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase()
-      : '';
+    var joinedAt   = profile.createdAt || profile.joinedAt || null;
+    var joinedMon  = joinedAt ? new Date(joinedAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase() : '';
+    var cardMemNum = profile.memberNumber ? '#' + String(profile.memberNumber).padStart(3, '0') : '';
+    var joinedStr  = cardMemNum && joinedMon ? 'MEMBER ' + cardMemNum + '  ·  ' + joinedMon
+                   : cardMemNum              ? 'MEMBER ' + cardMemNum
+                   : joinedMon              ? 'MEMBER SINCE ' + joinedMon
+                   : '';
 
     // ── Layer 1: Backdrop ────────────────────────────────────────────
     // Priority: user's saved cover → Film of All Time TMDB → cinematic fallback
@@ -16856,11 +16908,22 @@ async function deleteEditorReview(key, e) {
     var STATS_MID = DIV_Y + (BAR_Y - DIV_Y) * 0.44; // upper half of remaining space
     var colW     = W / 3;
 
-    [
-      { val: reviews, lbl: 'REVIEWS' },
-      { val: likes,   lbl: "LIKES REC'D" },
-      { val: score,   lbl: 'SCORE' },
-    ].forEach(function(s, i) {
+    var _cardStats;
+    if (isEditorCard) {
+      var _es = window._editorSiteStats || {};
+      _cardStats = [
+        { val: _es.published || 0, lbl: 'PUBLISHED' },
+        { val: _es.members   || 0, lbl: 'MEMBERS'   },
+        { val: _es.fanArt    || 0, lbl: 'FAN ART'   },
+      ];
+    } else {
+      _cardStats = [
+        { val: reviews, lbl: 'REVIEWS'    },
+        { val: likes,   lbl: "LIKES REC'D" },
+        { val: score,   lbl: 'SCORE'      },
+      ];
+    }
+    _cardStats.forEach(function(s, i) {
       var cx = colW * i + colW / 2;
 
       // Number — 72px Anton, gold
