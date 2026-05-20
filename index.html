@@ -6020,8 +6020,8 @@
       if (yrEl && yr) yrEl.textContent = yr;
     });
 
-    // Write meta immediately (no backdrop) so the slug key exists in Firebase right away
-    _writeReviewMeta(fp, r, null);
+    // Fetch backdrop and write meta — never write null first (would destroy stored backdrop
+    // and make Twitter scrape a card with no image during the fetch window).
     fetchBackdrop(r.movie, isTV ? 'tv' : 'movie', r.tmdbId || null).then(backdropUrl => {
       const bw = document.getElementById(`frBackdropWrap-${fp}`);
       if (bw && backdropUrl) {
@@ -6031,12 +6031,12 @@
         img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;display:block';
         bw.insertBefore(img, bw.firstChild);
       }
-      // Update meta with real backdrop once it loads
+      // Always write meta after fetch — creates the slug key if missing, never destroys backdrop
       const backdropPath = backdropUrl
         ? backdropUrl.replace('https://image.tmdb.org/t/p/w1280', '')
         : null;
-      if (backdropPath) _writeReviewMeta(fp, r, backdropPath);
-    });
+      _writeReviewMeta(fp, r, backdropPath);
+    }).catch(() => {});
 
     page.scrollTop = 0;
     document.body.style.overflow = 'hidden';
@@ -6417,15 +6417,17 @@
         const myMap = JSON.parse(localStorage.getItem('myReviewKeys') || '{}');
         myMap[fp] = { key: rtdbKey, path: 'fanReviews' };
         localStorage.setItem('myReviewKeys', JSON.stringify(myMap));
-        // Write OG meta immediately (no backdrop yet) so Twitter can scrape right away,
-        // then update with the real backdrop once the TMDB fetch completes.
-        _writeReviewMeta(fp, reviewData, null);
+        // Fetch backdrop first, then write meta — this way Twitter always gets the image.
+        // Writing null first causes a race window where the crawler sees no backdrop.
         fetchBackdrop(movie, 'movie', tmdbId).then(backdropUrl => {
           const backdropPath = backdropUrl
             ? backdropUrl.replace('https://image.tmdb.org/t/p/w1280', '')
             : null;
-          if (backdropPath) _writeReviewMeta(fp, reviewData, backdropPath);
-        }).catch(() => {});
+          _writeReviewMeta(fp, reviewData, backdropPath);
+        }).catch(() => {
+          // Backdrop fetch failed — write meta with no backdrop so slug key still exists
+          _writeReviewMeta(fp, reviewData, null);
+        });
       } catch(_) {}
       // Also write to Firestore via SDK if available (for users on cached version)
       if (fbDb) {
