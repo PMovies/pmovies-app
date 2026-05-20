@@ -16372,9 +16372,10 @@ async function deleteEditorReview(key, e) {
             }
             // Priority 2 — tmdbId known: direct lookup (accurate, fast)
             // Priority 3 — title search (may mismatch for ambiguous titles)
-            if (typeof fetchPoster === 'function') {
+            var _fn = window._pmFetchPoster || (typeof fetchPoster === 'function' ? fetchPoster : null);
+            if (_fn) {
               var isTV = r._mediaType === 'tv';
-              fetchPoster(r.movie, isTV ? 'tv' : 'movie', r.tmdbId || null).then(function(url) {
+              _fn(r.movie, isTV ? 'tv' : 'movie', r.tmdbId || null).then(function(url) {
                 var cel = document.getElementById('ppRvPoster-' + safeFp);
                 if (cel && url) {
                   cel.innerHTML = '<img src="' + url + '" alt="' + _esc(r.movie || '')
@@ -16471,8 +16472,9 @@ async function deleteEditorReview(key, e) {
         var el = document.getElementById('ppRvPoster-' + fp);
         if (!el) return;
         var isTV = r._mediaType === 'tv' || r.mediaType === 'tv';
-        if (typeof fetchPoster === 'function') {
-          fetchPoster(r.movie, isTV ? 'tv' : 'movie', r.tmdbId || null).then(function(imgUrl) {
+        var _fpFn = window._pmFetchPoster || (typeof fetchPoster === 'function' ? fetchPoster : null);
+        if (_fpFn) {
+          _fpFn(r.movie, isTV ? 'tv' : 'movie', r.tmdbId || null).then(function(imgUrl) {
             if (imgUrl && el) el.innerHTML = '<img src="' + imgUrl + '" alt="' + _esc(r.movie || '') + '" loading="lazy"/>';
           });
         }
@@ -16626,8 +16628,9 @@ async function deleteEditorReview(key, e) {
             // Also async-load poster images for overview strip
             recent && recent.forEach(function(r, i) {
               var frame = document.querySelectorAll('#pmProfEdRevOvr .pm-prof-poster-frame')[i];
-              if (frame && !r.poster && typeof fetchPoster === 'function') {
-                fetchPoster(r.title, 'movie', r.tmdbId || null).then(function(url) {
+              var _efn = window._pmFetchPoster || (typeof fetchPoster === 'function' ? fetchPoster : null);
+              if (frame && !r.poster && _efn) {
+                _efn(r.title, 'movie', r.tmdbId || null).then(function(url) {
                   if (url && frame) frame.innerHTML = '<img src="' + url + '" loading="lazy"/>';
                 });
               }
