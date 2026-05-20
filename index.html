@@ -2311,8 +2311,17 @@
   }
   @media(max-width: 640px) {
     .pm-prof-hero-change { top: calc(env(safe-area-inset-top, 44px) + 12px); }
-    .pm-prof-identity { padding: 0 16px 18px; gap: 14px; margin-top: -42px; }
-    .pm-prof-stats-col { display: none; }
+    .pm-prof-identity { padding: 0 16px 18px; gap: 14px; margin-top: -42px; flex-wrap: wrap; }
+    /* Stats: full-width row below avatar+name on mobile */
+    .pm-prof-stats-col {
+      display: flex; width: 100%; order: 3;
+      align-items: center; justify-content: flex-start;
+      padding-top: 14px; margin-top: 2px;
+      border-top: 1px solid rgba(255,255,255,0.07);
+    }
+    .pm-prof-stats { justify-content: flex-start; gap: 24px; width: 100%; }
+    .pm-prof-stat-val { font-size: 1.25rem; }
+    .pm-prof-stat-lbl { font-size: .5rem; }
     .pm-prof-section-title { padding: 20px 16px 10px; }
     .pm-prof-tabs { padding: 0 8px; }
     .pm-prof-tab { padding: 12px 10px; font-size: .56rem; }
@@ -15823,7 +15832,7 @@ async function deleteEditorReview(key, e) {
         localStorage.setItem('pmovies_admin', '1');
         window._pmEditorAuthVerified = true;
         var badgeEl = document.getElementById('pmWelcomeBadge');
-        if (badgeEl) badgeEl.textContent = '✏️ EDITOR';
+        if (badgeEl) badgeEl.textContent = '✏️ FOUNDER';
         // Write isEditor flag to profile so CF Worker can show EDITOR badge
         // in OG/Twitter card previews without needing auth
         fetch(RTDB + '/users/' + uid + '/isEditor.json?auth=' + token, {
@@ -15871,7 +15880,7 @@ async function deleteEditorReview(key, e) {
       var nickname = profile.nickname || 'Cinephile';
       var score    = profile.contributionScore || 0;
       var badge    = (isOwn && window._pmEditorAuthVerified) || isEditorProfile
-        ? { icon: '✏️', label: 'EDITOR' }
+        ? { icon: '✏️', label: 'FOUNDER' }
         : _getBadge(score);
       var joined   = profile.joinedAt
         ? new Date(profile.joinedAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
@@ -15968,10 +15977,10 @@ async function deleteEditorReview(key, e) {
       var isAdminUser = isOwn && (window._pmEditorAuthVerified || localStorage.getItem('pmovies_admin') === '1');
       var tabsHtml = '<div class="pm-prof-tabs">'
         + '<button class="pm-prof-tab active" data-tab="overview" onclick="pmProfTab(\'overview\')">Overview</button>'
-        + '<button class="pm-prof-tab" data-tab="reviews" onclick="pmProfTab(\'reviews\')">Reviews' + (reviews.length ? ' · ' + reviews.length : '') + '</button>'
-        + (isOwn ? '<button class="pm-prof-tab" data-tab="watchlist" onclick="pmProfTab(\'watchlist\')">Watchlist' + (wl.length ? ' · ' + wl.length : '') + '</button>' : '')
+        + '<button class="pm-prof-tab" data-tab="reviews" onclick="pmProfTab(\'reviews\')">Reviews</button>'
+        + (isOwn && !isEditorProfile ? '<button class="pm-prof-tab" data-tab="watchlist" onclick="pmProfTab(\'watchlist\')">Watchlist' + (wl.length ? ' · ' + wl.length : '') + '</button>' : '')
         + '<button class="pm-prof-tab" data-tab="lists" onclick="pmProfTab(\'lists\')">Lists</button>'
-        + '<button class="pm-prof-tab" data-tab="stats" onclick="pmProfTab(\'stats\')">Stats</button>'
+        + (!isEditorProfile ? '<button class="pm-prof-tab" data-tab="stats" onclick="pmProfTab(\'stats\')">Stats</button>' : '')
         + (isAdminUser ? '<button class="pm-prof-tab" data-tab="admin" onclick="pmProfTab(\'admin\')">⚡ Admin</button>' : '')
         + '</div>';
 
@@ -16071,8 +16080,8 @@ async function deleteEditorReview(key, e) {
           })();
 
       // Full reviews grid (Reviews tab)
-      // Admin: placeholder filled async; others: fan reviews
-      var fullReviewsHtml = isAdminUser
+      // Editor profile: show published editor reviews for all visitors
+      var fullReviewsHtml = isEditorProfile
         ? '<div class="pm-prof-section-title" id="pmProfEdRevTitle">Reviews</div>'
           + '<div id="pmProfEdRevGrid" style="color:#555;font-size:.78rem;padding:12px 0">Loading…</div>'
         : (function() {
@@ -16464,8 +16473,8 @@ async function deleteEditorReview(key, e) {
       // Pre-load lists immediately so they're ready when tab is clicked
       window._pmLoadUserLists(uid, isOwn);
 
-      // Async: inject editor reviews into profile (admin only)
-      if (isAdminUser) {
+      // Async: inject editor reviews into profile (all visitors to editor profile)
+      if (isEditorProfile) {
         (async function() {
           try {
             // Use already-loaded editor reviews if available, else fetch
@@ -16704,7 +16713,7 @@ async function deleteEditorReview(key, e) {
 
     var isEditor = isEditorCard || !!(window._pmEditorAuthVerified);
     var badge = isEditor
-      ? { icon: '✎', label: 'EDITOR' }
+      ? { icon: '✎', label: 'FOUNDER' }
       : score >= 300 ? { icon: '👑', label: 'LEGEND' }
       : score >= 150 ? { icon: '🏆', label: 'TRUSTED VOICE' }
       : score >= 75  ? { icon: '🎭', label: 'CRITIC' }
