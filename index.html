@@ -2313,7 +2313,18 @@
     .pm-prof-widget { margin: 16px 16px 0; }
   }
   @media(max-width: 640px) {
-    .pm-prof-hero-change { top: calc(env(safe-area-inset-top, 44px) + 12px); }
+    .pm-prof-hero-change {
+      /* Pull it out of the hero and park it in the top-bar row, left of the share button */
+      position: fixed;
+      top: calc(env(safe-area-inset-top, 44px) + 14px);
+      right: calc(16px + 42px + 8px); /* 16 padding + 42 share-btn width + 8 gap */
+      /* Shrink to an icon-size pill so it fits neatly beside the share button */
+      padding: 0 10px;
+      height: 42px;
+      border-radius: 21px;
+      font-size: .52rem;
+      letter-spacing: .06em;
+    }
     .pm-prof-identity { padding: 0 16px 18px; gap: 14px; margin-top: -42px; flex-wrap: wrap; }
     /* Stats: full-width row below avatar+name on mobile */
     .pm-prof-stats-col {
