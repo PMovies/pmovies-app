@@ -3920,6 +3920,19 @@
       })
       .catch(() => {});
   })();
+
+  // PWA standalone open tracker
+  (function(){
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+                      || window.navigator.standalone === true;
+    if (!isStandalone) return;
+    const RTDB_STATS = 'https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app';
+    fetch(`${RTDB_STATS}/siteStats.json`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pwaOpens: { '.sv': { increment: 1 } } })
+    }).catch(() => {});
+  })();
 </script>
 
 <script>
@@ -16671,6 +16684,7 @@ async function deleteEditorReview(key, e) {
             var totalEditor  = eData ? Object.keys(eData).length : 0;
             var totalFanArt  = pData ? Object.keys(pData).length : 0;
             var totalVisits  = stData && stData.visits ? stData.visits : 0;
+            var totalPWA     = stData && stData.pwaOpens ? stData.pwaOpens : 0;
             var stats = [
               { icon: '👥', val: totalUsers,             lbl: 'Total Users',       sub: 'registered members' },
               { icon: '✍️', val: totalRevs,              lbl: 'Film Reviews',       sub: 'community reviews' },
@@ -16678,6 +16692,7 @@ async function deleteEditorReview(key, e) {
               { icon: '🎬', val: totalEditor,            lbl: 'Editor Reviews',     sub: 'published by editor' },
               { icon: '🖼',  val: totalFanArt,            lbl: 'Fan Art Uploads',    sub: 'approved posters' },
               { icon: '👁',  val: Number(totalVisits).toLocaleString(), lbl: 'Site Visits',  sub: 'all time' },
+              { icon: '📱',  val: Number(totalPWA).toLocaleString(),    lbl: 'PWA Opens',    sub: 'launched from home screen' },
             ];
             grid.innerHTML = '<div class="pm-admin-section"><div class="pm-admin-section-title">Site Statistics</div></div>'
               + '<div class="pm-admin-stats">'
