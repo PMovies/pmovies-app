@@ -15587,6 +15587,11 @@ async function deleteEditorReview(key, e) {
         window._pmEditorAuthVerified = true;
         var badgeEl = document.getElementById('pmWelcomeBadge');
         if (badgeEl) badgeEl.textContent = '✏️ EDITOR';
+        // Write isEditor flag to profile so CF Worker can show EDITOR badge
+        // in OG/Twitter card previews without needing auth
+        fetch(RTDB + '/users/' + uid + '/isEditor.json?auth=' + token, {
+          method: 'PUT', body: JSON.stringify(true)
+        }).catch(function(){});
       }
     } catch(_) {}
   }
