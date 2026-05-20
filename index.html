@@ -1972,7 +1972,18 @@
     letter-spacing: .16em; text-transform: uppercase; color: #555;
     align-self: flex-start;
   }
-  #pmShareCardImg { width: 100%; border-radius: 12px; display: block; }
+  #pmShareCardImg { width: 100%; border-radius: 12px; display: block; transition: opacity .3s; }
+  #pmShareCardImg.pm-sc-loading {
+    min-height: 340px;
+    background: linear-gradient(90deg, #111 25%, #1c1c1c 50%, #111 75%);
+    background-size: 200% 100%;
+    animation: pmScShimmer 1.4s ease-in-out infinite;
+    border-radius: 12px;
+  }
+  @keyframes pmScShimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
   .pm-sc-actions { display: flex; gap: 10px; width: 100%; }
   .pm-sc-btn {
     flex: 1; padding: 13px; border-radius: 50px; border: none; cursor: pointer;
@@ -16310,146 +16321,251 @@ async function deleteEditorReview(key, e) {
     canvas.width = W; canvas.height = H;
     var ctx = canvas.getContext('2d');
 
-    var score    = profile.contributionScore || 0;
-    var badge    = (typeof _getBadge === 'function') ? _getBadge(score) : { icon:'🎬', label:'Member' };
-    var nickname = profile.nickname || 'Film Lover';
+    // ── Design tokens ────────────────────────────────────────────────
+    var GOLD       = '#ffb800';
+    var TEXT_PRI   = '#f4f1ea';
+    var TEXT_DIM   = 'rgba(244,241,234,0.5)';
+    var TEXT_FAINT = 'rgba(244,241,234,0.35)';
 
-    // ── 1. Solid dark base ──
-    ctx.fillStyle = '#0a0700';
+    // ── Profile data ─────────────────────────────────────────────────
+    var nickname = profile.nickname || 'Film Lover';
+    var username = profile.username ? '@' + profile.username : '';
+    var score    = profile.contributionScore || 0;
+    var reviews  = profile.reviewCount    || 0;
+    var likes    = profile.likesReceived  || 0;
+
+    var isEditor = !!(window._pmEditorAuthVerified);
+    var badge = isEditor
+      ? { icon: '✎', label: 'EDITOR' }
+      : score >= 300 ? { icon: '👑', label: 'LEGEND' }
+      : score >= 150 ? { icon: '🏆', label: 'TRUSTED VOICE' }
+      : score >= 75  ? { icon: '🎭', label: 'CRITIC' }
+      : score >= 25  ? { icon: '🎬', label: 'CINEPHILE' }
+      :                { icon: '✦',  label: 'NEWCOMER' };
+
+    var joinedAt = profile.createdAt || profile.joinedAt || null;
+    var joinedStr = joinedAt
+      ? 'MEMBER SINCE ' + new Date(joinedAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase()
+      : '';
+
+    // ── Layer 1: Backdrop ────────────────────────────────────────────
+    // Priority: Film of All Time TMDB backdrop → user cover → solid dark
+    var backdropImg = null;
+    var favFilm = profile.favFilmAllTime || profile.favFilm || null;
+    if (favFilm) {
+      try {
+        var apiKey = typeof getKey === 'function' ? getKey() : '';
+        var br = await fetch('https://api.themoviedb.org/3/search/movie?api_key=' + apiKey
+          + '&query=' + encodeURIComponent(favFilm) + '&language=en-US&page=1');
+        var bd = br.ok ? await br.json() : null;
+        var bHit = (bd && bd.results || []).find(function(m){ return m.backdrop_path; });
+        if (bHit) backdropImg = await _loadImg('https://image.tmdb.org/t/p/w1280' + bHit.backdrop_path);
+      } catch(_) {}
+    }
+    if (!backdropImg && profile.backdropUrl) {
+      backdropImg = await _loadImg(profile.backdropUrl);
+    }
+
+    // Base dark fill
+    ctx.fillStyle = '#050505';
     ctx.fillRect(0, 0, W, H);
 
-    // ── 2. PMovies brand art as faded background ──
-    var brandImg = await _loadImg('https://p-movies.com/icons/social.png');
-    if (brandImg) {
+    // Full-bleed backdrop
+    if (backdropImg) {
+      var sc = Math.max(W / backdropImg.width, H / backdropImg.height);
+      var bw = backdropImg.width * sc, bh = backdropImg.height * sc;
+      ctx.drawImage(backdropImg, (W - bw) / 2, (H - bh) / 2, bw, bh);
+    }
+
+    // Dark gradient overlay
+    var grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0,   'rgba(5,5,5,0.55)');
+    grad.addColorStop(0.5, 'rgba(5,5,5,0.75)');
+    grad.addColorStop(1,   'rgba(5,5,5,0.95)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Film grain noise overlay
+    (function() {
+      try {
+        var gc = document.createElement('canvas');
+        gc.width = W; gc.height = H;
+        var gx = gc.getContext('2d');
+        var id = gx.createImageData(W, H);
+        var d  = id.data;
+        for (var i = 0; i < d.length; i += 4) {
+          var v = Math.random() * 255 | 0;
+          d[i] = v; d[i+1] = v; d[i+2] = v;
+          d[i+3] = Math.random() * 40 | 0; // max ~16% alpha
+        }
+        gx.putImageData(id, 0, 0);
+        ctx.save();
+        ctx.globalAlpha = 0.55;
+        ctx.globalCompositeOperation = 'overlay';
+        ctx.drawImage(gc, 0, 0);
+        ctx.restore();
+      } catch(_) {}
+    })();
+
+    // ── Layer 2: Top bar ─────────────────────────────────────────────
+    // 3px gold line
+    ctx.fillStyle = GOLD;
+    ctx.fillRect(0, 0, W, 3);
+
+    // P logomark — top right 32px
+    var pIcon = await _loadImg('https://p-movies.com/icons/icon-192.png');
+    if (pIcon) {
       ctx.save();
-      // Scale to fill, anchor to center-bottom so the character is visible
-      var sc = Math.max(W / brandImg.width, H / brandImg.height);
-      var bw = brandImg.width * sc, bh = brandImg.height * sc;
-      var bx = (W - bw) / 2, by = H - bh; // bottom-align
-      ctx.globalAlpha = 0.38;
-      ctx.drawImage(brandImg, bx, by, bw, bh);
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = 0.82;
+      // Draw with rounded clip for clean look
+      var iconSize = 32, iconX = W - 20 - iconSize, iconY = 18;
+      ctx.beginPath();
+      ctx.roundRect(iconX, iconY, iconSize, iconSize, 6);
+      ctx.clip();
+      ctx.drawImage(pIcon, iconX, iconY, iconSize, iconSize);
       ctx.restore();
     }
 
-    // ── 3. Gradient overlay — softer so brand art breathes through ──
-    var vGrad = ctx.createLinearGradient(0, 0, 0, H);
-    vGrad.addColorStop(0,    'rgba(10,7,0,0.75)');
-    vGrad.addColorStop(0.3,  'rgba(10,7,0,0.45)');
-    vGrad.addColorStop(0.6,  'rgba(10,7,0,0.42)');
-    vGrad.addColorStop(1,    'rgba(10,7,0,0.82)');
-    ctx.fillStyle = vGrad;
-    ctx.fillRect(0, 0, W, H);
+    // ── Layer 3: Avatar (center, ~35% from top) ──────────────────────
+    var AX = W / 2, AY = 336, AR = 70; // 140px diameter
 
-    // ── 4. Top gold stripe ──
-    ctx.fillStyle = '#f5a623';
-    ctx.fillRect(0, 0, W, 6);
-
-    // ── 5. Avatar — upper-centre, large ──
-    var AX = W / 2, AY = 340, AR = 150;
-
-    // Glow ring behind avatar
-    var glowGrad = ctx.createRadialGradient(AX, AY, AR, AX, AY, AR + 60);
-    glowGrad.addColorStop(0,   'rgba(245,166,35,0.25)');
-    glowGrad.addColorStop(1,   'rgba(245,166,35,0)');
+    // Glow
+    var glowGrad = ctx.createRadialGradient(AX, AY, AR * 0.6, AX, AY, AR + 55);
+    glowGrad.addColorStop(0, 'rgba(255,184,0,0.35)');
+    glowGrad.addColorStop(1, 'rgba(255,184,0,0)');
     ctx.fillStyle = glowGrad;
-    ctx.beginPath(); ctx.arc(AX, AY, AR + 60, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(AX, AY, AR + 55, 0, Math.PI * 2); ctx.fill();
 
-    // Clip and draw avatar
+    // Avatar circle clip
     ctx.save();
-    ctx.beginPath();
-    ctx.arc(AX, AY, AR, 0, Math.PI * 2);
-    ctx.clip();
-
-    var avatarSrc = profile.avatarUrl || null;
+    ctx.beginPath(); ctx.arc(AX, AY, AR, 0, Math.PI * 2); ctx.clip();
+    var avatarSrc = profile.avatarUrl || profile.photoURL || null;
     var avatarImg = avatarSrc ? await _loadImg(avatarSrc) : null;
     if (avatarImg) {
       var as = Math.max((AR * 2) / avatarImg.width, (AR * 2) / avatarImg.height);
       var aw = avatarImg.width * as, ah = avatarImg.height * as;
       ctx.drawImage(avatarImg, AX - aw / 2, AY - ah / 2, aw, ah);
     } else {
-      // Fallback: dark circle + gold initial
-      ctx.fillStyle = '#1c1200';
+      ctx.fillStyle = '#1c1c1c';
       ctx.fillRect(AX - AR, AY - AR, AR * 2, AR * 2);
-      ctx.font = '700 130px Montserrat, sans-serif';
-      ctx.fillStyle = '#f5a623';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
+      ctx.font = '400 ' + Math.round(AR * 1.1) + 'px "Bebas Neue", sans-serif';
+      ctx.fillStyle = GOLD;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText((nickname[0] || 'P').toUpperCase(), AX, AY);
     }
     ctx.restore();
 
-    // Gold ring around avatar
-    ctx.beginPath();
-    ctx.arc(AX, AY, AR + 4, 0, Math.PI * 2);
-    ctx.strokeStyle = '#f5a623';
-    ctx.lineWidth = 5;
-    ctx.stroke();
+    // Gold ring
+    ctx.beginPath(); ctx.arc(AX, AY, AR + 3, 0, Math.PI * 2);
+    ctx.strokeStyle = GOLD; ctx.lineWidth = 3; ctx.stroke();
 
-    // ── 6. Name — well below avatar, no overlap ──
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'alphabetic';
-    var nameFontSize = 100;
-    ctx.font = '700 ' + nameFontSize + 'px "Bebas Neue", sans-serif';
-    var nameW = ctx.measureText(nickname.toUpperCase()).width;
-    // Shrink to fit within 860px wide
-    if (nameW > 860) {
-      nameFontSize = Math.floor(nameFontSize * 860 / nameW);
-      ctx.font = '700 ' + nameFontSize + 'px "Bebas Neue", sans-serif';
+    // ── Layer 4: Identity block ───────────────────────────────────────
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+
+    // Name — Anton/Bebas Neue, 52px, uppercase, shrink to fit
+    var nameFontSize = 52;
+    ctx.font = '400 ' + nameFontSize + 'px "Anton", "Bebas Neue", sans-serif';
+    var nw = ctx.measureText(nickname.toUpperCase()).width;
+    if (nw > 900) {
+      nameFontSize = Math.floor(nameFontSize * 900 / nw);
+      ctx.font = '400 ' + nameFontSize + 'px "Anton", "Bebas Neue", sans-serif';
     }
-    var nameY = AY + AR + 90; // 90px gap below avatar ring
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(nickname.toUpperCase(), W / 2, nameY);
+    var nameY = AY + AR + 36 + nameFontSize / 2;
+    ctx.fillStyle = TEXT_PRI;
+    ctx.fillText(nickname.toUpperCase(), AX, nameY);
 
-    // ── 7. Badge chip — below name ──
-    var badgeTxt = badge.icon + '  ' + badge.label.toUpperCase();
-    ctx.font = '700 30px Montserrat, sans-serif';
-    var btw = ctx.measureText(badgeTxt).width;
-    var bph = 60, bpx = 40;
-    var bcy = nameY + 30;
-    var bcx = (W - btw - bpx * 2) / 2;
-    _roundRect(ctx, bcx, bcy, btw + bpx * 2, bph, bph / 2);
-    ctx.fillStyle = 'rgba(245,166,35,0.15)';
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(245,166,35,0.5)';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    ctx.fillStyle = '#f5a623';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'alphabetic';
-    ctx.fillText(badgeTxt, W / 2, bcy + bph - 15);
+    // @username — Inter 16px
+    var curY = nameY + nameFontSize / 2 + 10;
+    if (username) {
+      ctx.font = '400 16px "Inter", sans-serif';
+      ctx.fillStyle = TEXT_DIM;
+      curY += 8;
+      ctx.fillText(username, AX, curY);
+      curY += 8 + 12;
+    } else {
+      curY += 8;
+    }
 
-    // ── 8. Tagline ──
-    var tagY = bcy + bph + 54;
-    ctx.font = '400 28px Montserrat, sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.28)';
-    ctx.letterSpacing = '0.14em';
-    ctx.fillText('YOUR CINEMA · YOUR MOOD · YOUR FILM', W / 2, tagY);
-
-    // ── 9. Bottom gold bar ──
-    var barY = H - 96;
-    ctx.fillStyle = 'rgba(245,166,35,0.09)';
-    ctx.fillRect(0, barY, W, 96);
-    // top edge of bar
-    var barLineGrad = ctx.createLinearGradient(0, 0, W, 0);
-    barLineGrad.addColorStop(0,   'transparent');
-    barLineGrad.addColorStop(0.1, 'rgba(245,166,35,0.4)');
-    barLineGrad.addColorStop(0.9, 'rgba(245,166,35,0.4)');
-    barLineGrad.addColorStop(1,   'transparent');
-    ctx.strokeStyle = barLineGrad;
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(0, barY); ctx.lineTo(W, barY); ctx.stroke();
-
-    ctx.textAlign = 'left';
+    // Badge pill — Inter Medium 13px
+    var badgeTxt = badge.icon + ' ' + badge.label;
+    ctx.font = '500 13px "Inter", sans-serif';
+    var btw     = ctx.measureText(badgeTxt).width;
+    var PILL_H  = 28, PILL_PX = 20;
+    var PILL_W  = btw + PILL_PX * 2;
+    var PILL_X  = AX - PILL_W / 2;
+    var PILL_Y  = curY + 8;
+    _roundRect(ctx, PILL_X, PILL_Y, PILL_W, PILL_H, PILL_H / 2);
+    ctx.fillStyle = 'rgba(255,184,0,0.1)';   ctx.fill();
+    ctx.strokeStyle = GOLD; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = GOLD;
     ctx.textBaseline = 'middle';
-    ctx.font = '700 32px Montserrat, sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.55)';
-    ctx.fillText('p-movies.com', 72, barY + 48);
+    ctx.fillText(badgeTxt, AX, PILL_Y + PILL_H / 2);
 
+    // ── Layer 5: Divider ─────────────────────────────────────────────
+    var DIV_Y = PILL_Y + PILL_H + 28;
+    ctx.beginPath();
+    ctx.moveTo(60, DIV_Y); ctx.lineTo(W - 60, DIV_Y);
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 1; ctx.stroke();
+
+    // ── Layer 6: Stats strip ─────────────────────────────────────────
+    // Vertically centered in remaining space above bottom bar
+    var BAR_Y   = H - 48;
+    var STATS_Y = DIV_Y + (BAR_Y - DIV_Y) / 2;
+    var colW    = W / 3;
+
+    [
+      { val: reviews, lbl: 'REVIEWS' },
+      { val: likes,   lbl: "LIKES REC'D" },
+      { val: score,   lbl: 'SCORE' },
+    ].forEach(function(s, i) {
+      var cx = colW * i + colW / 2;
+
+      // Number — Anton/Bebas 40px, gold
+      ctx.font = '400 40px "Anton", "Bebas Neue", sans-serif';
+      ctx.fillStyle = GOLD;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(String(s.val), cx, STATS_Y - 18);
+
+      // Label — Inter 10px
+      ctx.font = '500 10px "Inter", sans-serif';
+      ctx.fillStyle = TEXT_DIM;
+      ctx.fillText(s.lbl, cx, STATS_Y + 22);
+
+      // Vertical divider (not after last)
+      if (i < 2) {
+        var dvx = colW * (i + 1);
+        ctx.beginPath();
+        ctx.moveTo(dvx, STATS_Y - 30); ctx.lineTo(dvx, STATS_Y + 30);
+        ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 1; ctx.stroke();
+      }
+    });
+
+    // ── Layer 7: Bottom bar ──────────────────────────────────────────
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillRect(0, BAR_Y, W, 48);
+
+    var barMid = BAR_Y + 24;
+    ctx.textBaseline = 'middle';
+
+    // Left: p-movies.com
+    ctx.font = '400 12px "Inter", sans-serif';
+    ctx.fillStyle = 'rgba(244,241,234,0.4)';
+    ctx.textAlign = 'left';
+    ctx.fillText('p-movies.com', 32, barMid);
+
+    // Center: MEMBER SINCE
+    if (joinedStr) {
+      ctx.font = '500 11px "Inter", sans-serif';
+      ctx.fillStyle = TEXT_FAINT;
+      ctx.textAlign = 'center';
+      ctx.fillText(joinedStr, W / 2, barMid);
+    }
+
+    // Right: subtle film frame
+    ctx.font = '18px serif';
+    ctx.fillStyle = 'rgba(255,184,0,0.3)';
     ctx.textAlign = 'right';
-    ctx.font = '400 26px Montserrat, sans-serif';
-    ctx.fillStyle = 'rgba(245,166,35,0.45)';
-    ctx.fillText('FILM COMMUNITY', W - 72, barY + 48);
+    ctx.fillText('🎬', W - 32, barMid);
 
     return canvas.toDataURL('image/png');
   }
@@ -16464,9 +16580,10 @@ async function deleteEditorReview(key, e) {
     var cardImg  = document.getElementById('pmShareCardImg');
     if (!overlay || !cardImg) return;
 
-    // Show overlay immediately with spinner while canvas renders
+    // Show overlay immediately with pulse placeholder while canvas renders
     cardImg.src = '';
-    cardImg.style.opacity = '0.3';
+    cardImg.style.opacity = '0';
+    cardImg.classList.add('pm-sc-loading');
     overlay.classList.add('open');
 
     try {
@@ -16475,6 +16592,7 @@ async function deleteEditorReview(key, e) {
       if (dataUrl) {
         _shareCardBlob = dataUrl;
         _shareCardUid  = uid;
+        cardImg.classList.remove('pm-sc-loading');
         cardImg.src = dataUrl;
         cardImg.style.opacity = '1';
       }
@@ -16533,9 +16651,10 @@ async function deleteEditorReview(key, e) {
 
   window.pmDownloadShareCard = function() {
     if (!_shareCardBlob) return;
+    var slug = (_profileData && (_profileData.username || _profileData.nickname)) || 'profile';
     var a = document.createElement('a');
     a.href = _shareCardBlob;
-    a.download = 'pmovies-' + ((_profileData && _profileData.nickname) || 'profile') + '.png';
+    a.download = 'pmovies-' + slug.replace(/\s+/g, '_').toLowerCase() + '.png';
     a.click();
   };
 
