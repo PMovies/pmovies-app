@@ -7872,7 +7872,15 @@
       window.open('https://wa.me/?text=' + encodeURIComponent(full), '_blank');
 
     } else if (platform === 'x') {
-      window.open('https://x.com/intent/tweet?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(url) + '&via=PMovies155', '_blank');
+      // Append ?t=timestamp to /fan/ URLs so Twitter always fetches a "new" URL
+      // and never serves its cached no-image card. WhatsApp re-fetches on every
+      // share so it doesn't need this; Twitter caches per URL indefinitely.
+      // The CF Worker reads only the path (ignores query params) and the
+      // client-side deep-link handler already strips ?… from the slug.
+      const xUrl = url.includes('/fan/')
+        ? url + (url.includes('?') ? '&' : '?') + 't=' + Math.floor(Date.now() / 1000)
+        : url;
+      window.open('https://x.com/intent/tweet?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(xUrl) + '&via=PMovies155', '_blank');
 
     } else if (platform === 'instagram') {
       // Mobile: native share sheet (includes Instagram app)
