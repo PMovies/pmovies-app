@@ -15832,7 +15832,7 @@ async function deleteEditorReview(key, e) {
         localStorage.setItem('pmovies_admin', '1');
         window._pmEditorAuthVerified = true;
         var badgeEl = document.getElementById('pmWelcomeBadge');
-        if (badgeEl) badgeEl.textContent = '✏️ FOUNDER';
+        if (badgeEl) badgeEl.textContent = '🔑 FOUNDER';
         // Write isEditor flag to profile so CF Worker can show EDITOR badge
         // in OG/Twitter card previews without needing auth
         fetch(RTDB + '/users/' + uid + '/isEditor.json?auth=' + token, {
@@ -15880,7 +15880,7 @@ async function deleteEditorReview(key, e) {
       var nickname = profile.nickname || 'Cinephile';
       var score    = profile.contributionScore || 0;
       var badge    = (isOwn && window._pmEditorAuthVerified) || isEditorProfile
-        ? { icon: '✏️', label: 'FOUNDER' }
+        ? { icon: '🔑', label: 'FOUNDER' }
         : _getBadge(score);
       var joined   = profile.joinedAt
         ? new Date(profile.joinedAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
@@ -16713,7 +16713,7 @@ async function deleteEditorReview(key, e) {
 
     var isEditor = isEditorCard || !!(window._pmEditorAuthVerified);
     var badge = isEditor
-      ? { icon: '✎', label: 'FOUNDER' }
+      ? { icon: '🔑', label: 'FOUNDER' }
       : score >= 300 ? { icon: '👑', label: 'LEGEND' }
       : score >= 150 ? { icon: '🏆', label: 'TRUSTED VOICE' }
       : score >= 75  ? { icon: '🎭', label: 'CRITIC' }
