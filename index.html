@@ -6475,6 +6475,10 @@
     _reviewCardRegistry.set(fp, r);
     _srReviewCardRegistry.set(fp, r);
   };
+  // Expose poster fetcher so the profile IIFE can load posters without re-fetching TMDB key
+  window._pmFetchPoster = function(title, mediaType, tmdbId) {
+    return fetchPoster(title, mediaType || 'movie', tmdbId || null);
+  };
 
   function setupSrFanStars() {
     const picker = document.getElementById('srFanStarPicker');
@@ -7802,6 +7806,26 @@
         menu.style.left = Math.max(8, leftPx) + 'px';
       }
       menu.classList.add('open');
+
+      // Proactively write backdrop to fanReviewMeta when a fan-review share menu opens.
+      // By the time the user actually tweets, Firebase will already have the backdrop stored
+      // so Twitter's crawler sees the movie card — not a blank card.
+      const menuId = menu?.id || '';
+      if (menuId.startsWith('frShareMenu-')) {
+        const fp = menuId.slice('frShareMenu-'.length);
+        const r  = _reviewCardRegistry.get(fp) || _srReviewCardRegistry.get(fp);
+        if (r) {
+          const isTV = r._mediaType === 'tv' || r.mediaType === 'tv';
+          fetchBackdrop(r.movie, isTV ? 'tv' : 'movie', r.tmdbId || null)
+            .then(function(backdropUrl) {
+              const backdropPath = backdropUrl
+                ? backdropUrl.replace('https://image.tmdb.org/t/p/w1280', '')
+                : null;
+              _writeReviewMeta(fp, r, backdropPath);
+            })
+            .catch(function() {});
+        }
+      }
     }
   }
 
@@ -15446,16 +15470,42 @@ async function deleteEditorReview(key, e) {
           + [1,2,3,4,5].map(function() { return '<div class="pm-prof-poster-frame skeleton"></div>'; }).join('')
           + '</div></div>'
         : (function() {
-            var items = reviews.slice(0, 8).map(function(r) {
+            var recentRevs = reviews.slice(0, 8);
+            var items = recentRevs.map(function(r, i) {
               var fp = typeof fanReviewFp === 'function' ? fanReviewFp(r) : '';
               var safeFp = (fp || '').replace(/"/g, '');
-              return { posterPath: null, title: r.movie, onclick: 'pmCloseProfile();_pmOpenReviewFromProfile(\'' + safeFp + '\')', _fp: safeFp, _r: r };
+              // posterPath starts null — async-filled below after render
+              return { posterPath: null, title: r.movie, frameId: 'pmProfRevFrame-' + i,
+                onclick: 'pmCloseProfile();_pmOpenReviewFromProfile(\'' + safeFp + '\')', _r: r };
             });
             var navToReview = 'pmCloseProfile();switchTab(\'movies\');setTimeout(function(){var s=document.getElementById(\'fanSection\');if(s)s.scrollIntoView({behavior:\'smooth\'});setTimeout(function(){if(typeof toggleFanForm===\'function\')toggleFanForm();},300);},350)';
-            var stripHtml = _buildStrip(items, reviews.length ? '' : 'No reviews yet<br>Start reviewing films →', reviews.length ? null : navToReview);
-            return reviews.length
-              ? '<div class="pm-prof-section-title">Recent Reviews</div>' + stripHtml
-              : (isOwn ? '<div class="pm-prof-section-title">My Reviews</div>' + stripHtml : '');
+            // Build strip with frame IDs
+            var framesHtml = '';
+            if (recentRevs.length) {
+              framesHtml = items.map(function(it) {
+                var click = ' onclick="' + it.onclick + '"';
+                return '<div class="pm-prof-poster-frame" id="' + it.frameId + '"' + click + '></div>';
+              }).join('');
+            }
+            var stripHtml = recentRevs.length
+              ? '<div class="pm-prof-strip-wrap"><div class="pm-prof-strip">' + framesHtml + '</div></div>'
+              : _buildStrip([], 'No reviews yet<br>Start reviewing films →', navToReview);
+            var sectionTitle = recentRevs.length ? 'Recent Reviews' : (isOwn ? 'My Reviews' : '');
+            var result = sectionTitle
+              ? '<div class="pm-prof-section-title">' + sectionTitle + '</div>' + stripHtml
+              : '';
+            // Async: inject posters once strip is in the DOM
+            if (recentRevs.length && window._pmFetchPoster) {
+              setTimeout(function() {
+                recentRevs.forEach(function(r, i) {
+                  window._pmFetchPoster(r.movie, r._mediaType || 'movie', r.tmdbId || null).then(function(url) {
+                    var frame = document.getElementById('pmProfRevFrame-' + i);
+                    if (frame && url) frame.innerHTML = '<img src="' + url + '" alt="' + _esc(r.movie || '') + '" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block"/>';
+                  });
+                });
+              }, 0);
+            }
+            return result;
           })();
 
       // Full reviews grid (Reviews tab)
