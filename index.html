@@ -6413,6 +6413,29 @@
     _pmReviewsCache = movieMerged;
     _allCommunityReviews = allMerged;
 
+    // ── Hook: update open profile's review count now that reviews are loaded ──
+    // Handles the case where pmOpenProfile ran before community reviews were cached.
+    (function() {
+      var sync = window._pmPendingReviewSync;
+      if (!sync) return;
+      window._pmPendingReviewSync = null;
+      var count = allMerged.filter(function(r) { return r.uid === sync.uid; }).length;
+      if (count === 0) return;
+      var barEl = document.getElementById('pmProfStatRevBar');
+      if (barEl) barEl.textContent = count;
+      var tabEl = document.getElementById('pmProfStatRevTab');
+      if (tabEl) tabEl.textContent = count;
+      var revTab = document.querySelector('#pmProfContent .pm-prof-tab[data-tab="reviews"]');
+      if (revTab) revTab.textContent = 'Reviews · ' + count;
+      if (sync.isOwn && window.pmGetUser && window.pmGetUser()) {
+        window.pmGetUser().getIdToken().then(function(tok) {
+          fetch(RTDB + '/users/' + sync.uid + '/reviewCount.json?auth=' + tok, {
+            method: 'PUT', body: JSON.stringify(count)
+          }).catch(function(){});
+        });
+      }
+    })();
+
     try {
       _renderCommunityGrid();
       renderFanRecords(allMerged, 'all');
@@ -9070,14 +9093,15 @@ function updateVoteBar() {
 function showEmailPopup() {
   const pending = getPendingVotes();
   if (!pending.length) return;
-  _latency.popupOpenAt = Date.now();              // start email-typing timer
-  const chips = document.getElementById('evpChips');
-  if (chips) chips.innerHTML = pending.map(v => `<span class="evp-vote-chip">🎬 ${esc(v.title)}</span>`).join('');
-  const inp = document.getElementById('evpEmailInput');
-  if (inp) inp.value = '';
-  evpClearError();
-  document.getElementById('emailVerifyOverlay').classList.add('open');
-  if (inp) setTimeout(() => inp.focus(), 120);
+
+  // Only logged-in users can vote
+  const user = window.pmGetUser && window.pmGetUser();
+  if (!user) {
+    if (window.pmRequireAuth) window.pmRequireAuth();
+    return;
+  }
+
+  submitVotesAsLoggedInUser(user);
 }
 
 function closeEmailPopup() {
@@ -9176,7 +9200,13 @@ async function submitAllVotes(email, hash) {
         method: 'PUT', headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ t: Date.now(), title: v.title })
       }) : Promise.resolve();
-      return Promise.all([writeVote, writeFp]);
+      const [voteRes] = await Promise.all([writeVote, writeFp]);
+      // Explicitly catch Firebase permission errors — fetch() resolves even on 401/403
+      if (!voteRes.ok) {
+        const errBody = await voteRes.text().catch(() => voteRes.status);
+        console.error('[PMovies] Vote write failed:', voteRes.status, errBody);
+        throw new Error('Vote write rejected by server (' + voteRes.status + '). Check Firebase RTDB rules for communityVotes.');
+      }
     }));
 
     // Record email hash with full audit trail
@@ -9223,8 +9253,110 @@ async function submitAllVotes(email, hash) {
   }
 }
 
+/* ── Submit top-100 votes for a logged-in user (no email required) ── */
+async function submitVotesAsLoggedInUser(user) {
+  const submitBtn = document.getElementById('vsbSubmitBtn');
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Submitting…'; }
+
+  const pending = getPendingVotes();
+  if (!pending.length) {
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit Votes'; }
+    return;
+  }
+
+  try {
+    // Behavioral / anomaly checks (skip in dev)
+    if (!IS_DEV) {
+      if (getBehavioralScore() < 15) {
+        showToast('Unusual activity detected. Browse the site a bit more before voting.');
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit Votes'; }
+        return;
+      }
+      const { hardBlock } = _detectAnomalies(pending);
+      if (hardBlock) {
+        showToast('Suspicious activity detected. Please interact with the site naturally before voting.');
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit Votes'; }
+        return;
+      }
+      // Block double-submit within the same session
+      if (sessionStorage.getItem(lsKey('pmovies_session_voted'))) {
+        showToast('You have already voted in this session.');
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit Votes'; }
+        return;
+      }
+    }
+
+    const token = await user.getIdToken();
+    const uid   = user.uid;
+    const fp    = await getStableFp().catch(() => null);
+
+    // Check RTDB for existing uid votes (prevents cross-device double-vote)
+    if (!IS_DEV) {
+      const uvRes = await fetch(`${RTDB}/${dbPath('userVotes')}/${uid}.json?auth=${token}`);
+      const existing = uvRes.ok ? await uvRes.json() : null;
+      if (existing && pending.some(v => existing[v.id])) {
+        showToast('You have already voted with this account.');
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit Votes'; }
+        return;
+      }
+    }
+
+    _latency.submitAt = Date.now();
+
+    await Promise.all(pending.map(async v => {
+      const url  = `${RTDB}/${dbPath('communityVotes')}/${v.id}.json`;
+      const res  = await fetch(url);
+      const curr = res.ok ? await res.json() : null;
+      const genres = v.genresStr ? v.genresStr.split('|').filter(Boolean) : [];
+      const updated = {
+        title: v.title, poster: v.poster, backdrop: v.backdrop, year: v.year, genres,
+        votes:      (curr?.votes || 0) + 1,
+        firstVoted: curr?.firstVoted || Date.now(),
+        lastVoted:  Date.now()
+      };
+      const writeVote = fetch(`${url}?auth=${token}`, {
+        method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(updated)
+      });
+      writeVoteEvent(v.title, v.poster);
+      const writeFp = fp ? fetch(`${RTDB}/${dbPath('votesByFp')}/${fp}/${v.id}.json?auth=${token}`, {
+        method: 'PUT', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ t: Date.now(), title: v.title })
+      }) : Promise.resolve();
+      const writeUv = fetch(`${RTDB}/${dbPath('userVotes')}/${uid}/${v.id}.json?auth=${token}`, {
+        method: 'PUT', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ t: Date.now(), title: v.title })
+      });
+      const [voteRes] = await Promise.all([writeVote, writeFp, writeUv]);
+      if (!voteRes.ok) {
+        const errBody = await voteRes.text().catch(() => voteRes.status);
+        console.error('[PMovies] Vote write failed:', voteRes.status, errBody);
+        throw new Error('Vote write rejected by server (' + voteRes.status + '). Check Firebase RTDB rules for communityVotes.');
+      }
+    }));
+
+    sessionStorage.setItem(lsKey('pmovies_session_voted'), '1');
+    const myVotes = getMyVotes();
+    pending.forEach(v => { if (!myVotes.includes(v.id)) myVotes.push(v.id); });
+    saveMyVotes(myVotes);
+    savePendingVotes([]);
+
+    updateVoteBar();
+    fireConfetti();
+    setTimeout(() => loadVoteFeed(), 1200);
+    const [_] = await Promise.all([
+      loadTop100(),
+      showPicksCardModal(pending)
+    ]);
+  } catch(e) {
+    console.error('[PMovies] submitVotesAsLoggedInUser error:', e);
+    showToast('Submit failed — please try again.');
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit Votes'; }
+  }
+}
+
 /* ── Add / toggle a pending vote (replaces immediate castVote) ── */
 function addPending(id, title, poster, backdrop, year, genresStr) {
+  if (!window.pmRequireAuth || !window.pmRequireAuth()) return;  // guests cannot vote
   const myVotes = getMyVotes();
   if (myVotes.includes(id)) return;               // already submitted
 
@@ -13262,6 +13394,7 @@ let _mini50LatencyFirst = null;
 let _mini50PickTimes    = [];
 
 function addPendingMini50(id, title, poster, backdrop, year) {
+  if (!window.pmRequireAuth || !window.pmRequireAuth()) return;  // guests cannot vote
   const myVotes = getMini50Votes();
   if (myVotes.includes(id)) return;
   let pending = getPendingMini50();
@@ -13687,22 +13820,18 @@ async function selectMini50(id, title, poster, backdrop, year) {
 /* ── Email verification popup ── */
 function openMiniEvp() {
   if (!getPendingMini50().length) return;
-  _latency.popupOpenAt = Date.now();
-  const chips = document.getElementById('miniEvpChips');
-  if (chips) chips.innerHTML = getPendingMini50().map((v, i) =>
-    `<div class="evp-chip">
-      <span class="evp-chip-rank">#${i+1}</span>
-      ${v.poster ? `<img class="evp-chip-poster" src="https://image.tmdb.org/t/p/w92${v.poster}" alt="" onerror="this.style.display='none'"/>` : ''}
-      <div class="evp-chip-info">
-        <div class="evp-chip-title">${esc(v.title)}</div>
-        ${v.year ? `<div class="evp-chip-year">${v.year}</div>` : ''}
-      </div>
-    </div>`
-  ).join('');
-  const ov = document.getElementById('miniEvpOverlay');
-  if (ov) ov.classList.add('open');
-  setTimeout(() => { const inp = document.getElementById('miniEvpEmail'); if (inp) inp.focus(); }, 100);
+
+  // Only logged-in users can vote
+  const user = window.pmGetUser && window.pmGetUser();
+  if (!user) {
+    if (window.pmRequireAuth) window.pmRequireAuth();
+    return;
+  }
+
+  submitMini50AsLoggedInUser(user);
 }
+
+
 function closeMiniEvp() {
   const ov = document.getElementById('miniEvpOverlay');
   if (ov) ov.classList.remove('open');
@@ -13759,6 +13888,107 @@ async function miniEvpConfirm() {
   } catch(e) {
     if (err) err.textContent = 'Network error — please try again.';
     if (btn) { btn.disabled = false; btn.textContent = 'Confirm & Submit'; }
+  }
+}
+
+/* ── Submit mini-series votes for a logged-in user (no email required) ── */
+async function submitMini50AsLoggedInUser(user) {
+  const submitBtn = document.getElementById('mini50SubmitBtn');
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Submitting…'; }
+
+  const pending = getPendingMini50();
+  if (!pending.length) {
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit Votes'; }
+    return;
+  }
+  const submittedPicks = pending.slice();
+
+  try {
+    // Behavioral / anomaly checks (skip in dev)
+    if (!IS_DEV) {
+      if (getBehavioralScore() < 15) {
+        showToast('Unusual activity detected. Browse the site a bit more before voting.');
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit Votes'; }
+        return;
+      }
+      if (sessionStorage.getItem(lsKey('pmovies_mini50_session_voted'))) {
+        showToast('You have already voted in this session.');
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit Votes'; }
+        return;
+      }
+      if (_mini50PickTimes.length >= 2) {
+        const span = _mini50PickTimes.at(-1) - _mini50PickTimes[0];
+        if (span < 1000) {
+          showToast('Picks made too quickly — please browse the list naturally.');
+          if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit Votes'; }
+          return;
+        }
+      }
+    }
+
+    const token = await user.getIdToken();
+    const uid   = user.uid;
+    const fp    = await getStableFp().catch(() => null);
+
+    // Check RTDB for existing uid votes (prevents cross-device double-vote)
+    if (!IS_DEV) {
+      const uvRes = await fetch(`${RTDB}/${dbPath('userVotesMini')}/${uid}.json?auth=${token}`);
+      const existing = uvRes.ok ? await uvRes.json() : null;
+      if (existing && pending.some(v => existing[v.id])) {
+        showToast('You have already voted with this account.');
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit Votes'; }
+        return;
+      }
+    }
+
+    _latency.submitAt = Date.now();
+
+    await Promise.all(pending.map(async v => {
+      const url  = `${RTDB}/${dbPath('miniSeriesVotes')}/${v.id}.json`;
+      const res  = await fetch(url);
+      const curr = res.ok ? await res.json() : null;
+      const updated = {
+        title: v.title, poster: v.poster, backdrop: v.backdrop, year: v.year,
+        votes:      (curr?.votes || 0) + 1,
+        firstVoted: curr?.firstVoted || Date.now(),
+        lastVoted:  Date.now()
+      };
+      const writeFp = fp ? fetch(`${RTDB}/${dbPath('votesByFpMini')}/${fp}/${v.id}.json?auth=${token}`, {
+        method: 'PUT', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ t: Date.now(), title: v.title })
+      }) : Promise.resolve();
+      const writeUv = fetch(`${RTDB}/${dbPath('userVotesMini')}/${uid}/${v.id}.json?auth=${token}`, {
+        method: 'PUT', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ t: Date.now(), title: v.title })
+      });
+      const [voteRes] = await Promise.all([
+        fetch(`${url}?auth=${token}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(updated) }),
+        writeFp,
+        writeUv
+      ]);
+      if (!voteRes.ok) {
+        const errBody = await voteRes.text().catch(() => voteRes.status);
+        console.error('[PMovies] Mini vote write failed:', voteRes.status, errBody);
+        throw new Error('Mini vote write rejected by server (' + voteRes.status + '). Check Firebase RTDB rules for miniSeriesVotes.');
+      }
+    }));
+
+    sessionStorage.setItem(lsKey('pmovies_mini50_session_voted'), '1');
+    const myVotes = getMini50Votes();
+    pending.forEach(v => { if (!myVotes.includes(v.id)) myVotes.push(v.id); });
+    saveMini50Votes(myVotes);
+    savePendingMini50([]);
+    _mini50LatencyFirst = null;
+    _mini50PickTimes    = [];
+
+    updateMini50VoteBar();
+    fireConfetti();
+    await loadTop50Mini();
+    showMiniPicksCardModal(submittedPicks);
+  } catch(e) {
+    console.error('[PMovies] submitMini50AsLoggedInUser error:', e);
+    showToast('Submit failed — please try again.');
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit Votes'; }
   }
 }
 
@@ -13899,10 +14129,16 @@ async function submitAllMini50Votes(email, hash) {
         method: 'PUT', headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ t: Date.now(), title: v.title })
       }) : Promise.resolve();
-      return Promise.all([
+      const [voteRes] = await Promise.all([
         fetch(url, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(updated) }),
         writeFp
       ]);
+      // Explicitly catch Firebase permission errors — fetch() resolves even on 401/403
+      if (!voteRes.ok) {
+        const errBody = await voteRes.text().catch(() => voteRes.status);
+        console.error('[PMovies] Mini vote write failed:', voteRes.status, errBody);
+        throw new Error('Mini vote write rejected by server (' + voteRes.status + '). Check Firebase RTDB rules for miniSeriesVotes.');
+      }
     }));
     /* audit trail */
     await fetch(`${RTDB}/${dbPath('voterEmailsMini')}/${hash}.json`, {
@@ -15992,42 +16228,11 @@ async function deleteEditorReview(key, e) {
         + '</div>'
         + '<div style="height:40px"></div>';
 
-      // ── Async: fix review count if community reviews weren't cached yet ──
-      // Polls for up to 3s after render; stops as soon as it finds reviews.
-      // Updates the header stats bar DOM directly so no page reload needed.
-      (function() {
-        if (realReviewCount > 0) return; // already corrected before render
-        var attempts = 0;
-        var timer = setInterval(function() {
-          attempts++;
-          var cached = window._pmGetCommunityReviews ? window._pmGetCommunityReviews() : [];
-          var userRevs = cached.filter(function(r) { return r.uid === uid; });
-          if (userRevs.length > 0 || attempts >= 6) {
-            clearInterval(timer);
-            if (userRevs.length === 0) return;
-            var count = userRevs.length;
-            profile.reviewCount = count;
-            if (_profileData) _profileData.reviewCount = count;
-            // Update header stats bar
-            var barEl = document.getElementById('pmProfStatRevBar');
-            if (barEl) barEl.textContent = count;
-            // Update Reviews tab label
-            var revTab = document.querySelector('#pmProfContent .pm-prof-tab[data-tab="reviews"]');
-            if (revTab) revTab.textContent = 'Reviews · ' + count;
-            // Update Stats tab grid
-            var tabEl = document.getElementById('pmProfStatRevTab');
-            if (tabEl) tabEl.textContent = count;
-            // Persist to RTDB
-            if (isOwn && _pmUser) {
-              _pmUser.getIdToken().then(function(tok) {
-                fetch(RTDB + '/users/' + uid + '/reviewCount.json?auth=' + tok, {
-                  method: 'PUT', body: JSON.stringify(count)
-                }).catch(function(){});
-              });
-            }
-          }
-        }, 500);
-      })();
+      // ── If review count was 0 (community cache cold), register a sync hook ──
+      // loadFanReviews() will fire it as soon as the reviews finish loading.
+      if (realReviewCount === 0) {
+        window._pmPendingReviewSync = { uid: uid, isOwn: !!isOwn };
+      }
 
       // Async: load profile backdrop
       var heroWrap = document.getElementById('pmProfHeroWrap');
