@@ -15865,10 +15865,11 @@ async function deleteEditorReview(key, e) {
         history.replaceState({ pmProfile: uid }, '', '/u/' + encodeURIComponent(profile.username));
       }
 
-      var isOwn    = _pmUser && _pmUser.uid === uid;
+      var isOwn          = _pmUser && _pmUser.uid === uid;
+      var isEditorProfile = profile.isEditor === true;
       var nickname = profile.nickname || 'Cinephile';
       var score    = profile.contributionScore || 0;
-      var badge    = (isOwn && window._pmEditorAuthVerified)
+      var badge    = (isOwn && window._pmEditorAuthVerified) || isEditorProfile
         ? { icon: '✏️', label: 'EDITOR' }
         : _getBadge(score);
       var joined   = profile.joinedAt
@@ -15902,16 +15903,27 @@ async function deleteEditorReview(key, e) {
         + (isOwn ? '<button class="pm-prof-hero-change" onclick="pmOpenBackdropPicker(\'' + uid + '\')">🖼 Change Cover</button>' : '')
         + '</div>';
 
-      // Stats bar — now uses the already-corrected profile.reviewCount
-      var statsHtml = [
-        { val: profile.reviewCount      || 0, lbl: 'Reviews',    id: 'pmProfStatRevBar'  },
-        { val: profile.likesReceived    || 0, lbl: 'Likes Rec\'d', id: '' },
-        { val: profile.commentsReceived || 0, lbl: 'Cmts Rec\'d',  id: '' },
-        { val: score,                          lbl: 'Score',       id: '' }
-      ].map(function(s) {
-        var idAttr = s.id ? ' id="' + s.id + '"' : '';
-        return '<div class="pm-prof-stat"><div class="pm-prof-stat-val"' + idAttr + '>' + s.val + '</div><div class="pm-prof-stat-lbl">' + s.lbl + '</div></div>';
-      }).join('');
+      // Stats bar — editor profile gets site-wide stats; regular profiles get personal stats
+      var statsHtml;
+      if (isEditorProfile) {
+        statsHtml = [
+          { val: '…', lbl: 'Published', id: 'pmEditorStatPublished' },
+          { val: '…', lbl: 'Members',   id: 'pmEditorStatMembers'   },
+          { val: '…', lbl: 'Fan Art',   id: 'pmEditorStatFanArt'    }
+        ].map(function(s) {
+          return '<div class="pm-prof-stat"><div class="pm-prof-stat-val" id="' + s.id + '">' + s.val + '</div><div class="pm-prof-stat-lbl">' + s.lbl + '</div></div>';
+        }).join('');
+      } else {
+        statsHtml = [
+          { val: profile.reviewCount      || 0, lbl: 'Reviews',    id: 'pmProfStatRevBar'  },
+          { val: profile.likesReceived    || 0, lbl: 'Likes Rec\'d', id: '' },
+          { val: profile.commentsReceived || 0, lbl: 'Cmts Rec\'d',  id: '' },
+          { val: score,                          lbl: 'Score',       id: '' }
+        ].map(function(s) {
+          var idAttr = s.id ? ' id="' + s.id + '"' : '';
+          return '<div class="pm-prof-stat"><div class="pm-prof-stat-val"' + idAttr + '>' + s.val + '</div><div class="pm-prof-stat-lbl">' + s.lbl + '</div></div>';
+        }).join('');
+      }
 
       // Avatar
       var avatarHtml = profile.photoURL
@@ -16230,8 +16242,31 @@ async function deleteEditorReview(key, e) {
 
       // ── If review count was 0 (community cache cold), register a sync hook ──
       // loadFanReviews() will fire it as soon as the reviews finish loading.
-      if (realReviewCount === 0) {
+      if (realReviewCount === 0 && !isEditorProfile) {
         window._pmPendingReviewSync = { uid: uid, isOwn: !!isOwn };
+      }
+
+      // ── Editor profile: load site-wide stats asynchronously ──
+      if (isEditorProfile) {
+        (async function() {
+          try {
+            var authParam = token ? '&auth=' + token : '';
+            var [eR, uR, pR] = await Promise.all([
+              fetch(RTDB + '/editorReviews.json?shallow=true'),
+              fetch(RTDB + '/users.json?shallow=true' + authParam),
+              fetch(RTDB + '/posterUploads/approved.json?shallow=true')
+            ]);
+            var published = eR.ok ? Object.keys((await eR.json()) || {}).length : '—';
+            var members   = uR.ok ? Object.keys((await uR.json()) || {}).length : '—';
+            var fanArt    = pR.ok ? Object.keys((await pR.json()) || {}).length : '—';
+            var elP = document.getElementById('pmEditorStatPublished');
+            var elM = document.getElementById('pmEditorStatMembers');
+            var elF = document.getElementById('pmEditorStatFanArt');
+            if (elP) elP.textContent = published;
+            if (elM) elM.textContent = members;
+            if (elF) elF.textContent = fanArt;
+          } catch(_e) {}
+        })();
       }
 
       // Async: load profile backdrop
