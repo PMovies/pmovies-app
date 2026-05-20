@@ -1984,15 +1984,17 @@
     0%   { background-position: 200% 0; }
     100% { background-position: -200% 0; }
   }
-  .pm-sc-actions { display: flex; gap: 10px; width: 100%; }
+  .pm-sc-actions { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+  .pm-sc-actions-row { display: flex; gap: 8px; width: 100%; }
   .pm-sc-btn {
     flex: 1; padding: 13px; border-radius: 50px; border: none; cursor: pointer;
     font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: .76rem;
     letter-spacing: .07em; text-transform: uppercase; transition: opacity .15s;
   }
   .pm-sc-btn:hover { opacity: .85; }
-  .pm-sc-btn-primary { background: #f5a623; color: #000; }
-  .pm-sc-btn-secondary { background: rgba(255,255,255,.07); color: #ccc; border: 1px solid rgba(255,255,255,.1); }
+  .pm-sc-btn-primary  { background: #f5a623; color: #000; }
+  .pm-sc-btn-x        { background: #000; color: #fff; border: 1px solid #333; }
+  .pm-sc-btn-secondary{ background: rgba(255,255,255,.07); color: #ccc; border: 1px solid rgba(255,255,255,.1); }
   .pm-sc-close { align-self: center; background: none; border: none; color: #444;
     font-size: .75rem; cursor: pointer; font-family: 'Montserrat', sans-serif; padding: 4px 8px; }
   .pm-sc-close:hover { color: #888; }
@@ -14657,10 +14659,20 @@ async function deleteEditorReview(key, e) {
     <div class="pm-sc-title">Share Profile</div>
     <img id="pmShareCardImg" src="" alt="Profile card"/>
     <div class="pm-sc-actions">
-      <button class="pm-sc-btn pm-sc-btn-primary" onclick="pmShareCardNative()">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:middle"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share
-      </button>
-      <button class="pm-sc-btn pm-sc-btn-secondary" onclick="pmDownloadShareCard()">↓ Save Image</button>
+      <div class="pm-sc-actions-row">
+        <!-- Native share (image + URL in text — no double-card issue) -->
+        <button id="pmScShareBtn" class="pm-sc-btn pm-sc-btn-primary" onclick="pmShareCardNative()">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:middle"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share
+        </button>
+        <!-- Post to X — Twitter web intent with profile link in tweet text -->
+        <button class="pm-sc-btn pm-sc-btn-x" onclick="pmShareCardToX()">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" style="margin-right:6px;vertical-align:middle"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.259 5.631 5.905-5.631zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>Post to X
+        </button>
+      </div>
+      <div class="pm-sc-actions-row">
+        <button class="pm-sc-btn pm-sc-btn-secondary" onclick="pmCopyProfileLink()">🔗 Copy Link</button>
+        <button class="pm-sc-btn pm-sc-btn-secondary" onclick="pmDownloadShareCard()">↓ Save Image</button>
+      </div>
     </div>
     <button class="pm-sc-close" onclick="pmCloseShareCard()">Cancel</button>
   </div>
@@ -16629,7 +16641,7 @@ async function deleteEditorReview(key, e) {
     var cardImg  = document.getElementById('pmShareCardImg');
     if (!overlay || !cardImg) return;
 
-    // Show overlay immediately with pulse placeholder while canvas renders
+    // Show overlay immediately with shimmer while canvas renders
     cardImg.src = '';
     cardImg.style.opacity = '0';
     cardImg.classList.add('pm-sc-loading');
@@ -16644,19 +16656,11 @@ async function deleteEditorReview(key, e) {
         cardImg.classList.remove('pm-sc-loading');
         cardImg.src = dataUrl;
         cardImg.style.opacity = '1';
+
       }
     } catch(e) {
-      // Fallback: just copy the link
       overlay.classList.remove('open');
-      var url = (_profileData && _profileData.username)
-        ? window.location.origin + '/u/' + encodeURIComponent(_profileData.username)
-        : window.location.origin + '/?u=' + encodeURIComponent(uid);
-      var toast = document.getElementById('pmShareToast');
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(url).then(function() {
-          if (toast) { toast.textContent = '🔗 Link copied'; toast.classList.add('show'); setTimeout(function(){ toast.classList.remove('show'); }, 2400); }
-        });
-      }
+      pmCopyProfileLink();
     }
   };
 
@@ -16665,35 +16669,65 @@ async function deleteEditorReview(key, e) {
     if (ov) ov.classList.remove('open');
   };
 
-  window.pmShareCardNative = function() {
+  // ── Shared helper: build profile URL ────────────────────────────────
+  function _profileShareUrl() {
     var uid = _shareCardUid || _profileUid;
-    var url = (_profileData && _profileData.username)
+    return (_profileData && _profileData.username)
       ? window.location.origin + '/u/' + encodeURIComponent(_profileData.username)
       : window.location.origin + '/?u=' + encodeURIComponent(uid);
-    if (_shareCardBlob && navigator.share && navigator.canShare) {
-      // Convert dataURL to Blob for native file share
-      fetch(_shareCardBlob).then(function(r){ return r.blob(); }).then(function(blob) {
-        var file = new File([blob], 'pmovies-profile.png', { type: 'image/png' });
-        if (navigator.canShare({ files: [file] })) {
-          navigator.share({ title: 'My PMovies Profile', url: url, files: [file] })
-            .then(function(){ pmCloseShareCard(); })
-            .catch(function(){});
-        } else {
-          navigator.share({ title: 'My PMovies Profile', url: url }).catch(function(){});
-          pmCloseShareCard();
+  }
+
+  // ── Native system share (mobile) ─────────────────────────────────────
+  // Share the profile URL only — the CF Worker serves og:image (the uploaded
+  // share card) so Twitter/WhatsApp/etc. show a rich clickable preview card.
+  // No file attachment needed; clicking the card goes straight to the profile.
+  window.pmShareCardNative = function() {
+    var url      = _profileShareUrl();
+    var nickname = (_profileData && _profileData.nickname) || 'my';
+    if (navigator.share) {
+      navigator.share({
+        title: nickname + "'s PMovies Profile",
+        url:   url
+      }).then(function(){ pmCloseShareCard(); }).catch(function(){});
+    } else {
+      pmCopyProfileLink();
+    }
+  };
+
+  // ── Post to X / Twitter web intent ───────────────────────────────────
+  // Just the URL — Twitter fetches og:image (the uploaded share card) from
+  // the CF Worker and shows it as a summary_large_image card. Clicking it
+  // redirects to the profile. Clean, no double-attachment.
+  window.pmShareCardToX = function() {
+    var url    = _profileShareUrl();
+    var intent = 'https://twitter.com/intent/tweet?url=' + encodeURIComponent(url);
+    window.open(intent, '_blank', 'width=560,height=440,noopener,noreferrer');
+    pmCloseShareCard();
+  };
+
+  // ── Copy profile link ─────────────────────────────────────────────────
+  window.pmCopyProfileLink = function() {
+    var url   = _profileShareUrl();
+    var toast = document.getElementById('pmShareToast');
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(function() {
+        if (toast) {
+          toast.textContent = '🔗 Link copied!';
+          toast.classList.add('show');
+          setTimeout(function(){ toast.classList.remove('show'); }, 2400);
         }
       });
-    } else if (navigator.share) {
-      navigator.share({ title: 'My PMovies Profile', url: url }).catch(function(){});
-      pmCloseShareCard();
     } else {
-      // Copy link fallback
-      var toast = document.getElementById('pmShareToast');
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(url).then(function() {
-          pmCloseShareCard();
-          if (toast) { toast.textContent = '🔗 Link copied to clipboard'; toast.classList.add('show'); setTimeout(function(){ toast.classList.remove('show'); }, 2400); }
-        });
+      // Older browser fallback
+      var ta = document.createElement('textarea');
+      ta.value = url; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch(_) {}
+      document.body.removeChild(ta);
+      if (toast) {
+        toast.textContent = '🔗 Link copied!';
+        toast.classList.add('show');
+        setTimeout(function(){ toast.classList.remove('show'); }, 2400);
       }
     }
   };
