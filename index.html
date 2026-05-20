@@ -6396,9 +6396,8 @@
         const isTV = r._mediaType === 'tv';
         fetchBackdrop(r.movie, isTV ? 'tv' : 'movie', r.tmdbId || null)
           .then(function(backdropUrl) {
-            const backdropPath = backdropUrl
-              ? backdropUrl.replace('https://image.tmdb.org/t/p/w1280', '')
-              : null;
+            if (!backdropUrl) return; // never overwrite an existing good backdrop with null
+            const backdropPath = backdropUrl.replace('https://image.tmdb.org/t/p/w1280', '');
             _writeReviewMeta(fp, r, backdropPath);
           })
           .catch(function() {})
@@ -7845,9 +7844,8 @@
           const isTV = r._mediaType === 'tv' || r.mediaType === 'tv';
           fetchBackdrop(r.movie, isTV ? 'tv' : 'movie', r.tmdbId || null)
             .then(function(backdropUrl) {
-              const backdropPath = backdropUrl
-                ? backdropUrl.replace('https://image.tmdb.org/t/p/w1280', '')
-                : null;
+              if (!backdropUrl) return; // never overwrite existing backdrop with null
+              const backdropPath = backdropUrl.replace('https://image.tmdb.org/t/p/w1280', '');
               _writeReviewMeta(fp, r, backdropPath);
             })
             .catch(function() {});
@@ -7872,7 +7870,13 @@
       window.open('https://wa.me/?text=' + encodeURIComponent(full), '_blank');
 
     } else if (platform === 'x') {
-      window.open('https://x.com/intent/tweet?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(url) + '&via=PMovies155', '_blank');
+      // For fan review URLs: append ?t=timestamp so Twitter sees a fresh URL it has
+      // never cached. The CF Worker already strips query params when extracting the slug
+      // (path.slice(5).split('?')[0]) so this is transparent to Firebase lookup.
+      const xUrl = url.includes('/fan/')
+        ? url + '?t=' + Math.floor(Date.now() / 1000)
+        : url;
+      window.open('https://x.com/intent/tweet?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(xUrl) + '&via=PMovies155', '_blank');
 
     } else if (platform === 'instagram') {
       // Mobile: native share sheet (includes Instagram app)
