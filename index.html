@@ -6380,6 +6380,33 @@
     } catch(e) {
       list.innerHTML = `<p style="color:#888;padding:20px;text-align:center">Could not load reviews: ${esc(e.message)}</p><button onclick="loadFanReviews()" style="display:block;margin:10px auto;background:#f5a623;border:none;color:#000;padding:10px 20px;border-radius:8px;font-weight:700;cursor:pointer">↺ Retry</button>`;
     }
+
+    // ── Silent backdrop backfill ──
+    // Write fanReviewMeta for every review so Twitter always sees the movie card.
+    // Throttled to 1 write per 400 ms to avoid hammering TMDB / Firebase.
+    // Runs once per page load — only reviews missing a backdrop in the local
+    // backdropCache get a fresh TMDB fetch; cached ones resolve instantly.
+    (function _backfillMeta() {
+      const reviews = allMerged.slice(); // snapshot
+      let i = 0;
+      function _next() {
+        if (i >= reviews.length) return;
+        const r   = reviews[i++];
+        const fp  = fanReviewFp(r);
+        const isTV = r._mediaType === 'tv';
+        fetchBackdrop(r.movie, isTV ? 'tv' : 'movie', r.tmdbId || null)
+          .then(function(backdropUrl) {
+            const backdropPath = backdropUrl
+              ? backdropUrl.replace('https://image.tmdb.org/t/p/w1280', '')
+              : null;
+            _writeReviewMeta(fp, r, backdropPath);
+          })
+          .catch(function() {})
+          .finally(function() { setTimeout(_next, 400); });
+      }
+      // Start after a 3-second grace period so page load isn't affected
+      setTimeout(_next, 3000);
+    })();
   }
 
   async function submitFanReview() {
