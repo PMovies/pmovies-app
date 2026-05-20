@@ -3269,7 +3269,7 @@
         </div>
         <input type="hidden" id="fanRating" value="0"/>
         <input id="fanHeadline" type="text" placeholder="One-line summary (optional, max 120 chars)" maxlength="120" autocomplete="off" style="margin-bottom:10px"/>
-        <textarea id="fanText" placeholder="Your full review… (max 1500 chars)" maxlength="1500" rows="3"></textarea>
+        <textarea id="fanText" placeholder="Your full review…" rows="3"></textarea>
         <button class="fan-submit-btn" onclick="submitFanReview()">POST REVIEW</button>
       </div>
     </div>
@@ -3509,7 +3509,7 @@
           <span class="fan-star-label" id="srFanStarLabel">Click to rate</span>
         </div>
         <input type="hidden" id="srFanRating" value="0"/>
-        <textarea id="srFanText" placeholder="What did you think? (max 1500 chars)" maxlength="1500" rows="3"></textarea>
+        <textarea id="srFanText" placeholder="What did you think?" rows="3"></textarea>
         <button class="fan-submit-btn" onclick="submitSeriesReview()">POST REVIEW</button>
       </div>
     </div>
@@ -6147,7 +6147,7 @@
 
         <div style="margin-bottom:24px">
           <div style="font-size:.65rem;font-weight:700;letter-spacing:1px;color:#666;text-transform:uppercase;margin-bottom:8px">Review</div>
-          <textarea id="feText-${fp}" class="fe-input" maxlength="1500" rows="7" dir="auto" placeholder="Your review…" style="resize:vertical;min-height:120px;line-height:1.6">${esc(r.text||'')}</textarea>
+          <textarea id="feText-${fp}" class="fe-input" rows="7" dir="auto" placeholder="Your review…" style="resize:vertical;min-height:120px;line-height:1.6">${esc(r.text||'')}</textarea>
         </div>
 
         <div style="display:flex;gap:10px">
