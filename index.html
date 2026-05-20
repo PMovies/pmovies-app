@@ -16097,14 +16097,25 @@ async function deleteEditorReview(key, e) {
             var result = sectionTitle
               ? '<div class="pm-prof-section-title">' + sectionTitle + '</div>' + stripHtml
               : '';
-            // Async: inject posters once strip is in the DOM
-            if (recentRevs.length && window._pmFetchPoster) {
+            // Async: inject posters for overview strip
+            if (recentRevs.length) {
               setTimeout(function() {
                 recentRevs.forEach(function(r, i) {
-                  window._pmFetchPoster(r.movie, r._mediaType || 'movie', r.tmdbId || null).then(function(url) {
-                    var frame = document.getElementById('pmProfRevFrame-' + i);
-                    if (frame && url) frame.innerHTML = '<img src="' + url + '" alt="' + _esc(r.movie || '') + '" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block"/>';
-                  });
+                  var frame = document.getElementById('pmProfRevFrame-' + i);
+                  if (!frame) return;
+                  // Use stored poster path first (accurate, no API call needed)
+                  if (r.poster) {
+                    frame.innerHTML = '<img src="https://image.tmdb.org/t/p/w185' + r.poster
+                      + '" alt="' + _esc(r.movie || '') + '" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block"/>';
+                    return;
+                  }
+                  var fn = window._pmFetchPoster || (typeof fetchPoster === 'function' ? fetchPoster : null);
+                  if (fn) {
+                    fn(r.movie, r._mediaType || 'movie', r.tmdbId || null).then(function(url) {
+                      var f = document.getElementById('pmProfRevFrame-' + i);
+                      if (f && url) f.innerHTML = '<img src="' + url + '" alt="' + _esc(r.movie || '') + '" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block"/>';
+                    });
+                  }
                 });
               }, 0);
             }
@@ -16341,6 +16352,38 @@ async function deleteEditorReview(key, e) {
             if (elF) elF.textContent = fanArt;
           } catch(_e) {}
         })();
+      }
+
+      // Async: load posters for the full Reviews grid
+      // Uses tmdbId (direct lookup) when available — eliminates wrong-movie matches.
+      // Falls back to title search only when no id is stored.
+      if (!isEditorProfile && reviews.length) {
+        setTimeout(function() {
+          reviews.forEach(function(r) {
+            var fp     = typeof fanReviewFp === 'function' ? fanReviewFp(r) : '';
+            var safeFp = (fp || '').replace(/"/g, '');
+            var el     = document.getElementById('ppRvPoster-' + safeFp);
+            if (!el) return;
+            // Priority 1 — poster path already stored on the review record
+            if (r.poster) {
+              el.innerHTML = '<img src="https://image.tmdb.org/t/p/w185' + r.poster
+                + '" alt="' + _esc(r.movie || '') + '" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block">';
+              return;
+            }
+            // Priority 2 — tmdbId known: direct lookup (accurate, fast)
+            // Priority 3 — title search (may mismatch for ambiguous titles)
+            if (typeof fetchPoster === 'function') {
+              var isTV = r._mediaType === 'tv';
+              fetchPoster(r.movie, isTV ? 'tv' : 'movie', r.tmdbId || null).then(function(url) {
+                var cel = document.getElementById('ppRvPoster-' + safeFp);
+                if (cel && url) {
+                  cel.innerHTML = '<img src="' + url + '" alt="' + _esc(r.movie || '')
+                    + '" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block">';
+                }
+              });
+            }
+          });
+        }, 0);
       }
 
       // Async: load profile backdrop
