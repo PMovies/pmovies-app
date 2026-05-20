@@ -1858,6 +1858,15 @@
   .pm-nickname-submit:disabled { opacity: .6; cursor: default; }
   .pm-nickname-error { font-size: .74rem; color: #f55; margin-top: 10px; display: none; }
 
+  /* ── USERNAME SETUP OVERLAY ─────────────────────────── */
+  #pmUsernameOverlay {
+    position: fixed; inset: 0; z-index: 99999;
+    background: rgba(0,0,0,.92); display: none;
+    align-items: center; justify-content: center; padding: 24px;
+    backdrop-filter: blur(6px);
+  }
+  .pm-username-status { font-size: .74rem; margin-bottom: 14px; min-height: 18px; transition: color .2s; }
+
   /* ── WELCOME STRIP ───────────────────────────────────── */
   #pmWelcomeStrip {
     display: none;
@@ -2884,6 +2893,25 @@
     <div class="pm-nickname-hint">2–30 characters · Letters, numbers and spaces</div>
     <button class="pm-nickname-submit" id="pmNicknameSubmitBtn" onclick="pmSubmitNickname()">JOIN PMOVIES</button>
     <div class="pm-nickname-error" id="pmNicknameError"></div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!-- ║  USERNAME SETUP — after nickname, one-time choice       ║ -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<div id="pmUsernameOverlay">
+  <div class="pm-nickname-card">
+    <div style="font-size:2rem;margin-bottom:14px">🔗</div>
+    <div class="pm-nickname-title">Claim Your URL</div>
+    <div class="pm-nickname-sub">Choose a username for your public PMovies URL.<br>This <strong>cannot be changed</strong> once set.</div>
+    <input class="pm-nickname-input" id="pmUsernameInput" type="text"
+           placeholder="your-username" maxlength="20"
+           oninput="pmUsernameCheck()"
+           onkeydown="if(event.key==='Enter')pmSubmitUsername()"/>
+    <div class="pm-nickname-hint">3–20 chars · lowercase letters, numbers, _ and -</div>
+    <div class="pm-username-status" id="pmUsernameStatus"></div>
+    <button class="pm-nickname-submit" id="pmUsernameSubmitBtn" onclick="pmSubmitUsername()" disabled>CONFIRM USERNAME</button>
+    <div class="pm-nickname-error" id="pmUsernameError"></div>
   </div>
 </div>
 
@@ -14720,17 +14748,46 @@ async function deleteEditorReview(key, e) {
   })();
 
   // ── Auth State Listener ──────────────────────────────────────────
-  // Read ?u= param once on startup — open that profile after auth resolves
+  // Read ?u= or /u/{username} param once on startup — open that profile after auth resolves
   var _startupProfileUid = (function() {
     var p = new URLSearchParams(window.location.search);
     return p.get('u') || null;
   })();
+  var _startupProfileUsername = (function() {
+    var pn = window.location.pathname;
+    if (pn.startsWith('/u/')) return pn.slice(3).split('?')[0] || null;
+    return null;
+  })();
   var _startupProfileHandled = false;
   function _maybeOpenStartupProfile() {
-    if (_startupProfileHandled || !_startupProfileUid) return;
+    if (_startupProfileHandled) return;
+    if (!_startupProfileUid && !_startupProfileUsername) return;
     _startupProfileHandled = true;
-    // Small delay so the app UI is ready
-    setTimeout(function() { pmOpenProfile(_startupProfileUid); }, 400);
+    if (_startupProfileUid) {
+      // Direct UID link (?u=…)
+      setTimeout(function() { pmOpenProfile(_startupProfileUid); }, 400);
+    } else {
+      // Clean username URL (/u/{username}) — resolve to UID first
+      var uname = _startupProfileUsername;
+      setTimeout(function() {
+        fetch(RTDB + '/usernames/' + encodeURIComponent(uname) + '.json')
+          .then(function(r) { return r.ok ? r.json() : null; })
+          .then(function(uid) {
+            if (uid) {
+              pmOpenProfile(uid);
+            } else {
+              var overlay = document.getElementById('pmProfileOverlay');
+              if (overlay) {
+                overlay.style.display = 'block';
+                document.body.style.overflow = 'hidden';
+                var content = document.getElementById('pmProfContent');
+                if (content) content.innerHTML = '<div style="padding:80px 28px;text-align:center;color:#555">User @' + uname + ' not found.</div>';
+              }
+            }
+          })
+          .catch(function() {});
+      }, 400);
+    }
   }
 
   firebase.auth().onAuthStateChanged(function(user) {
@@ -14748,7 +14805,7 @@ async function deleteEditorReview(key, e) {
     } else {
       localStorage.removeItem('pmovies_was_signed_in');
       // Still allow viewing a shared profile link even when signed out
-      if (_startupProfileUid) _maybeOpenStartupProfile();
+      if (_startupProfileUid || _startupProfileUsername) _maybeOpenStartupProfile();
       else _showLanding();
     }
   });
@@ -14887,14 +14944,156 @@ async function deleteEditorReview(key, e) {
       } else {
         _pmNickname = nickname;
         _prefillReviewNames(nickname);
-        _showWelcomeStrip(nickname, user.uid, profile);
         _updateUserChip(user, nickname);
+        // Chain to username check (hard gate before welcome strip)
+        await _checkUsername(user, profile);
       }
     } catch(e) {
       _showWelcomeStrip(user.displayName || 'Cinephile', user.uid, null);
       _updateUserChip(user, user.displayName || 'Cinephile');
     }
   }
+
+  // ── Username check & overlay ──────────────────────────────────────
+  async function _checkUsername(user, profile) {
+    var username = profile ? profile.username : null;
+    if (!username) {
+      _showUsernameOverlay(user);
+    } else {
+      _showWelcomeStrip(_pmNickname || user.displayName || 'Cinephile', user.uid, profile);
+    }
+  }
+
+  function _showUsernameOverlay(user) {
+    var ov = document.getElementById('pmUsernameOverlay');
+    if (ov) ov.style.display = 'flex';
+    // Pre-fill a sensible suggestion from display name
+    var input = document.getElementById('pmUsernameInput');
+    if (input && user.displayName) {
+      var suggestion = user.displayName.toLowerCase()
+        .replace(/[^a-z0-9_-]/g, '_')
+        .replace(/__+/g, '_')
+        .replace(/^_|_$/g, '')
+        .slice(0, 20);
+      input.value = suggestion;
+      // Trigger availability check for the suggestion
+      pmUsernameCheck();
+    }
+  }
+
+  // Debounced availability checker (called by oninput on the username field)
+  var _usernameCheckTimer = null;
+  window.pmUsernameCheck = function() {
+    var input  = document.getElementById('pmUsernameInput');
+    var status = document.getElementById('pmUsernameStatus');
+    var btn    = document.getElementById('pmUsernameSubmitBtn');
+    var raw    = (input ? input.value : '').trim().toLowerCase();
+    // Normalize to lowercase in the field itself
+    if (input && input.value !== raw) input.value = raw;
+
+    var RESERVED = ['u', 'fan', 'list', 'review', 'admin', 'editor', 'pmovies', 'api'];
+    btn.disabled = true;
+    clearTimeout(_usernameCheckTimer);
+
+    if (!raw) { status.textContent = ''; return; }
+
+    if (raw.length < 3) {
+      status.style.color = '#f55'; status.textContent = '✗ Too short (minimum 3 characters)'; return;
+    }
+    if (raw.length > 20) {
+      status.style.color = '#f55'; status.textContent = '✗ Too long (maximum 20 characters)'; return;
+    }
+    if (!/^[a-z0-9_-]+$/.test(raw)) {
+      status.style.color = '#f55'; status.textContent = '✗ Only letters, numbers, _ and - allowed'; return;
+    }
+    if (RESERVED.includes(raw)) {
+      status.style.color = '#f55'; status.textContent = '✗ That username is reserved'; return;
+    }
+
+    status.style.color = '#888'; status.textContent = 'Checking availability…';
+
+    _usernameCheckTimer = setTimeout(async function() {
+      try {
+        var res = await fetch(RTDB + '/usernames/' + encodeURIComponent(raw) + '.json');
+        var existing = res.ok ? await res.json() : null;
+        if (existing) {
+          status.style.color = '#f55'; status.textContent = '✗ @' + raw + ' is already taken';
+          btn.disabled = true;
+        } else {
+          status.style.color = '#4c4'; status.textContent = '✓ @' + raw + ' is available!';
+          btn.disabled = false;
+        }
+      } catch(e) {
+        status.style.color = '#888'; status.textContent = 'Could not check — try again';
+      }
+    }, 400);
+  };
+
+  window.pmSubmitUsername = async function() {
+    var input    = document.getElementById('pmUsernameInput');
+    var errEl    = document.getElementById('pmUsernameError');
+    var btn      = document.getElementById('pmUsernameSubmitBtn');
+    var username = (input ? input.value : '').trim().toLowerCase();
+
+    errEl.style.display = 'none';
+
+    var RESERVED = ['u', 'fan', 'list', 'review', 'admin', 'editor', 'pmovies', 'api'];
+    if (username.length < 3 || username.length > 20) {
+      errEl.textContent = 'Username must be 3–20 characters.';
+      errEl.style.display = 'block'; return;
+    }
+    if (!/^[a-z0-9_-]+$/.test(username)) {
+      errEl.textContent = 'Only lowercase letters, numbers, _ and - are allowed.';
+      errEl.style.display = 'block'; return;
+    }
+    if (RESERVED.includes(username)) {
+      errEl.textContent = 'That username is reserved.';
+      errEl.style.display = 'block'; return;
+    }
+
+    var user = _pmUser;
+    if (!user) return;
+
+    btn.textContent = 'Saving…';
+    btn.disabled = true;
+
+    try {
+      var token = await user.getIdToken();
+
+      // Claim the username slot — Firebase Rules only allow write if !data.exists()
+      var claimRes = await fetch(RTDB + '/usernames/' + encodeURIComponent(username) + '.json?auth=' + token, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(user.uid)
+      });
+      if (!claimRes.ok) {
+        btn.textContent = 'CONFIRM USERNAME';
+        btn.disabled = false;
+        errEl.textContent = 'That username is already taken. Please choose another.';
+        errEl.style.display = 'block'; return;
+      }
+
+      // Save username onto the user profile
+      await fetch(RTDB + '/users/' + user.uid + '/username.json?auth=' + token, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(username)
+      });
+
+      document.getElementById('pmUsernameOverlay').style.display = 'none';
+
+      // Fetch updated profile for welcome strip
+      var profileRes = await fetch(RTDB + '/users/' + user.uid + '.json?auth=' + token);
+      var profile2   = profileRes.ok ? await profileRes.json() : null;
+      _showWelcomeStrip(_pmNickname || user.displayName || 'Cinephile', user.uid, profile2);
+
+    } catch(e) {
+      btn.textContent = 'CONFIRM USERNAME';
+      btn.disabled = false;
+      errEl.textContent = 'Something went wrong. Please try again.';
+      errEl.style.display = 'block';
+    }
+  };
 
   function _showNicknameOverlay(user) {
     var input = document.getElementById('pmNicknameInput');
@@ -14955,7 +15154,8 @@ async function deleteEditorReview(key, e) {
       _prefillReviewNames(nickname);
       document.getElementById('pmNicknameOverlay').style.display = 'none';
       _updateUserChip(user, nickname);
-      _showWelcomeStrip(nickname, user.uid, profile);
+      // Chain to username selection (hard gate)
+      await _checkUsername(user, profile);
     } catch(e) {
       btn.textContent = 'JOIN PMOVIES';
       btn.disabled = false;
@@ -15366,9 +15566,8 @@ async function deleteEditorReview(key, e) {
     if (!overlay || !content) return;
     overlay.style.display = 'block';
     document.body.style.overflow = 'hidden';
-    // Update URL so this profile is directly linkable
-    var profileUrl = window.location.pathname + '?u=' + encodeURIComponent(uid);
-    history.pushState({ pmProfile: uid }, '', profileUrl);
+    // Provisional URL (updated to /u/{username} once profile loads)
+    history.pushState({ pmProfile: uid }, '', window.location.pathname + '?u=' + encodeURIComponent(uid));
     content.innerHTML = '<div style="height:46vh;min-height:240px;background:linear-gradient(135deg,#0a0500,#1a0e00);"></div><div style="padding:60px 28px;text-align:center;color:#555;font-size:.88rem">Loading…</div>';
 
     try {
@@ -15381,6 +15580,10 @@ async function deleteEditorReview(key, e) {
         return;
       }
       _profileData = profile;
+      // Upgrade URL to clean /u/{username} if available
+      if (profile.username) {
+        history.replaceState({ pmProfile: uid }, '', '/u/' + encodeURIComponent(profile.username));
+      }
 
       var isOwn    = _pmUser && _pmUser.uid === uid;
       var nickname = profile.nickname || 'Cinephile';
@@ -16049,9 +16252,10 @@ async function deleteEditorReview(key, e) {
     document.body.style.overflow = '';
     _profileUid  = null;
     _profileData = null;
-    // Restore clean URL if we pushed a profile URL
+    // Restore clean URL if we pushed a profile URL (handles both ?u= and /u/ forms)
     if (history.state && history.state.pmProfile) {
-      history.pushState({}, '', window.location.pathname);
+      var cleanPath = window.location.pathname.startsWith('/u/') ? '/' : window.location.pathname;
+      history.pushState({}, '', cleanPath);
     }
   };
 
@@ -16261,7 +16465,9 @@ async function deleteEditorReview(key, e) {
     } catch(e) {
       // Fallback: just copy the link
       overlay.classList.remove('open');
-      var url = window.location.origin + window.location.pathname + '?u=' + encodeURIComponent(uid);
+      var url = (_profileData && _profileData.username)
+        ? window.location.origin + '/u/' + encodeURIComponent(_profileData.username)
+        : window.location.origin + '/?u=' + encodeURIComponent(uid);
       var toast = document.getElementById('pmShareToast');
       if (navigator.clipboard) {
         navigator.clipboard.writeText(url).then(function() {
@@ -16278,7 +16484,9 @@ async function deleteEditorReview(key, e) {
 
   window.pmShareCardNative = function() {
     var uid = _shareCardUid || _profileUid;
-    var url = window.location.origin + window.location.pathname + '?u=' + encodeURIComponent(uid);
+    var url = (_profileData && _profileData.username)
+      ? window.location.origin + '/u/' + encodeURIComponent(_profileData.username)
+      : window.location.origin + '/?u=' + encodeURIComponent(uid);
     if (_shareCardBlob && navigator.share && navigator.canShare) {
       // Convert dataURL to Blob for native file share
       fetch(_shareCardBlob).then(function(r){ return r.blob(); }).then(function(blob) {
