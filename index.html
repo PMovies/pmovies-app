@@ -16324,11 +16324,11 @@ async function deleteEditorReview(key, e) {
     // ── Design tokens ────────────────────────────────────────────────
     var GOLD       = '#ffb800';
     var TEXT_PRI   = '#f4f1ea';
-    var TEXT_DIM   = 'rgba(244,241,234,0.52)';
-    var TEXT_FAINT = 'rgba(244,241,234,0.35)';
-    var PROXY      = 'https://p-movies.com/fan/img'; // CF Worker CORS proxy for TMDB images
+    var TEXT_DIM   = 'rgba(244,241,234,0.55)';
+    var TEXT_FAINT = 'rgba(244,241,234,0.38)';
+    var PROXY      = 'https://p-movies.com/fan/img'; // CF Worker CORS proxy
 
-    // Helper: rewrite any TMDB image URL through our proxy so canvas can draw it
+    // Rewrite any TMDB image URL through our proxy (canvas CORS-safe)
     function _proxyTmdb(url) {
       if (!url) return null;
       var m = url.match(/image\.tmdb\.org\/t\/p\/[^/]+(\/.+)/);
@@ -16358,12 +16358,15 @@ async function deleteEditorReview(key, e) {
       : '';
 
     // ── Layer 1: Backdrop ────────────────────────────────────────────
-    // All TMDB images go through /fan/img proxy (CORS-safe).
-    // Priority: Film of All Time TMDB backdrop → user cover → cinematic fallback
+    // Priority: user's saved cover → Film of All Time TMDB → cinematic fallback
     var backdropImg = null;
 
-    // 1a. Search TMDB for Film of All Time backdrop
-    if (favFilm) {
+    // 1a. User's own saved profile cover backdrop (highest priority)
+    if (profile.backdropUrl) {
+      backdropImg = await _loadImg(_proxyTmdb(profile.backdropUrl) || profile.backdropUrl);
+    }
+    // 1b. Film of All Time movie backdrop (only if no cover set)
+    if (!backdropImg && favFilm) {
       try {
         var apiKey = typeof getKey === 'function' ? getKey() : '';
         var br = await fetch('https://api.themoviedb.org/3/search/movie?api_key=' + apiKey
@@ -16375,37 +16378,44 @@ async function deleteEditorReview(key, e) {
         }
       } catch(_) {}
     }
-    // 1b. User's saved profile cover (route through proxy)
-    if (!backdropImg && profile.backdropUrl) {
-      backdropImg = await _loadImg(_proxyTmdb(profile.backdropUrl) || profile.backdropUrl);
-    }
 
-    // ── Base: cinematic atmospheric fallback (used when no backdrop) ──
+    // ── Base fill ────────────────────────────────────────────────────
     ctx.fillStyle = '#050505';
     ctx.fillRect(0, 0, W, H);
 
     if (backdropImg) {
-      // Full-bleed backdrop
-      var sc = Math.max(W / backdropImg.width, H / backdropImg.height);
+      // Full-bleed — slightly zoomed in so edges feel intentional
+      var sc = Math.max(W / backdropImg.width, H / backdropImg.height) * 1.05;
       var bw = backdropImg.width * sc, bh = backdropImg.height * sc;
       ctx.drawImage(backdropImg, (W - bw) / 2, (H - bh) / 2, bw, bh);
     } else {
-      // Warm cinematic vignette fallback — looks intentional, not empty
-      var fgA = ctx.createRadialGradient(W / 2, H * 0.28, 0, W / 2, H * 0.45, W * 0.72);
-      fgA.addColorStop(0,   'rgba(42,28,6,1)');
-      fgA.addColorStop(0.5, 'rgba(18,10,2,1)');
-      fgA.addColorStop(1,   '#050505');
+      // Warm cinematic radial fallback
+      var fgA = ctx.createRadialGradient(W / 2, H * 0.3, 0, W / 2, H * 0.5, W * 0.75);
+      fgA.addColorStop(0,   'rgba(52,34,8,1)');
+      fgA.addColorStop(0.5, 'rgba(22,12,2,1)');
+      fgA.addColorStop(1,   '#020202');
       ctx.fillStyle = fgA;
       ctx.fillRect(0, 0, W, H);
     }
 
-    // Dark gradient overlay (heavier at bottom for text legibility)
-    var grad = ctx.createLinearGradient(0, 0, 0, H);
-    grad.addColorStop(0,    'rgba(5,5,5,0.52)');
-    grad.addColorStop(0.42, 'rgba(5,5,5,0.68)');
-    grad.addColorStop(1,    'rgba(5,5,5,0.96)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, W, H);
+    // Heavy multi-pass overlay — makes backdrop look cinematic not busy
+    // Pass 1: overall atmospheric dark
+    var ov1 = ctx.createLinearGradient(0, 0, 0, H);
+    ov1.addColorStop(0,    'rgba(0,0,0,0.55)');
+    ov1.addColorStop(0.38, 'rgba(0,0,0,0.70)');
+    ov1.addColorStop(0.65, 'rgba(0,0,0,0.82)');
+    ov1.addColorStop(1,    'rgba(0,0,0,0.97)');
+    ctx.fillStyle = ov1; ctx.fillRect(0, 0, W, H);
+    // Pass 2: extra bottom-half crush for stats legibility
+    var ov2 = ctx.createLinearGradient(0, H * 0.50, 0, H);
+    ov2.addColorStop(0, 'rgba(0,0,0,0)');
+    ov2.addColorStop(1, 'rgba(0,0,0,0.50)');
+    ctx.fillStyle = ov2; ctx.fillRect(0, 0, W, H);
+    // Pass 3: centre vignette push (blurs the busy mid-content)
+    var ov3 = ctx.createRadialGradient(W/2, H*0.42, W*0.05, W/2, H*0.42, W*0.72);
+    ov3.addColorStop(0, 'rgba(0,0,0,0)');
+    ov3.addColorStop(1, 'rgba(0,0,0,0.38)');
+    ctx.fillStyle = ov3; ctx.fillRect(0, 0, W, H);
 
     // Film grain
     (function() {
@@ -16418,49 +16428,49 @@ async function deleteEditorReview(key, e) {
         for (var i = 0; i < d.length; i += 4) {
           var v = Math.random() * 255 | 0;
           d[i] = v; d[i+1] = v; d[i+2] = v;
-          d[i+3] = Math.random() * 36 | 0;
+          d[i+3] = Math.random() * 28 | 0;
         }
         gx.putImageData(id, 0, 0);
         ctx.save();
-        ctx.globalAlpha = 0.55;
+        ctx.globalAlpha = 0.45;
         ctx.globalCompositeOperation = 'overlay';
         ctx.drawImage(gc, 0, 0);
         ctx.restore();
       } catch(_) {}
     })();
 
-    // ── Layer 2: Top bar ─────────────────────────────────────────────
+    // ── Gold top accent line ─────────────────────────────────────────
     ctx.fillStyle = GOLD;
-    ctx.fillRect(0, 0, W, 4); // 4px gold line
+    ctx.fillRect(0, 0, W, 5);
 
-    // P icon — 44px, top-right
+    // ── PMovies icon — top-right ─────────────────────────────────────
     var pIcon = await _loadImg('https://p-movies.com/icons/icon-192.png');
     if (pIcon) {
       ctx.save();
-      ctx.globalAlpha = 0.88;
-      var iconSz = 44, iconX = W - 24 - iconSz, iconY = 22;
+      ctx.globalAlpha = 0.90;
+      var iconSz = 52, iconX = W - 28 - iconSz, iconY = 24;
       ctx.beginPath();
-      _roundRect(ctx, iconX, iconY, iconSz, iconSz, 8);
+      _roundRect(ctx, iconX, iconY, iconSz, iconSz, 10);
       ctx.clip();
       ctx.drawImage(pIcon, iconX, iconY, iconSz, iconSz);
       ctx.restore();
     }
 
-    // ── Layout constants — everything scaled up for 1080px impact ────
+    // ── Layout constants ─────────────────────────────────────────────
     var AX = W / 2;
-    var AY = 305;   // avatar centre
-    var AR = 105;   // 210px diameter
+    var AY = 290;   // avatar centre Y
+    var AR = 140;   // radius → 280px diameter
 
-    // ── Layer 3: Avatar ──────────────────────────────────────────────
-    // Wide golden glow halo
-    var glowGrad = ctx.createRadialGradient(AX, AY, AR * 0.5, AX, AY, AR + 80);
-    glowGrad.addColorStop(0,   'rgba(255,184,0,0.4)');
+    // ── Avatar ───────────────────────────────────────────────────────
+    // Golden glow halo
+    var glowGrad = ctx.createRadialGradient(AX, AY, AR * 0.4, AX, AY, AR + 90);
+    glowGrad.addColorStop(0,   'rgba(255,184,0,0.45)');
     glowGrad.addColorStop(0.5, 'rgba(255,184,0,0.15)');
     glowGrad.addColorStop(1,   'rgba(255,184,0,0)');
     ctx.fillStyle = glowGrad;
-    ctx.beginPath(); ctx.arc(AX, AY, AR + 80, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(AX, AY, AR + 90, 0, Math.PI * 2); ctx.fill();
 
-    // Clip & draw avatar
+    // Clip & draw
     ctx.save();
     ctx.beginPath(); ctx.arc(AX, AY, AR, 0, Math.PI * 2); ctx.clip();
     var avatarSrc = profile.avatarUrl || profile.photoURL || null;
@@ -16470,82 +16480,71 @@ async function deleteEditorReview(key, e) {
       var aw = avatarImg.width * as, ah = avatarImg.height * as;
       ctx.drawImage(avatarImg, AX - aw / 2, AY - ah / 2, aw, ah);
     } else {
-      ctx.fillStyle = '#1c1c1c';
+      ctx.fillStyle = '#1a1a1a';
       ctx.fillRect(AX - AR, AY - AR, AR * 2, AR * 2);
-      ctx.font = '400 ' + Math.round(AR * 1.05) + 'px "Bebas Neue", sans-serif';
+      ctx.font = '400 ' + Math.round(AR * 1.1) + 'px "Anton", sans-serif';
       ctx.fillStyle = GOLD;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText((nickname[0] || 'P').toUpperCase(), AX, AY);
     }
     ctx.restore();
 
-    // Gold ring (4px)
-    ctx.beginPath(); ctx.arc(AX, AY, AR + 4, 0, Math.PI * 2);
-    ctx.strokeStyle = GOLD; ctx.lineWidth = 4; ctx.stroke();
+    // Gold ring (5px)
+    ctx.beginPath(); ctx.arc(AX, AY, AR + 5, 0, Math.PI * 2);
+    ctx.strokeStyle = GOLD; ctx.lineWidth = 5; ctx.stroke();
 
-    // ── Layer 4: Identity block ───────────────────────────────────────
+    // ── Identity block ────────────────────────────────────────────────
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
 
-    // Name — Anton/Bebas Neue, 76px, uppercase, auto-shrink
-    var nameFontSize = 76;
+    // Name — 92px Anton, auto-shrink if too wide
+    var nameFontSize = 92;
     ctx.font = '400 ' + nameFontSize + 'px "Anton", "Bebas Neue", sans-serif';
     var nw = ctx.measureText(nickname.toUpperCase()).width;
-    if (nw > 940) {
-      nameFontSize = Math.floor(nameFontSize * 940 / nw);
+    if (nw > 960) {
+      nameFontSize = Math.floor(nameFontSize * 960 / nw);
       ctx.font = '400 ' + nameFontSize + 'px "Anton", "Bebas Neue", sans-serif';
     }
-    var nameY = AY + AR + 42 + nameFontSize / 2;
+    var nameY = AY + AR + 36 + nameFontSize / 2;
     ctx.fillStyle = TEXT_PRI;
     ctx.fillText(nickname.toUpperCase(), AX, nameY);
 
-    // @username — Inter 24px
-    var curY = nameY + nameFontSize / 2 + 14;
+    // @username — 28px Inter
+    var curY = nameY + nameFontSize / 2 + 16;
     if (username) {
-      ctx.font = '400 24px "Inter", sans-serif';
+      ctx.font = '400 28px "Inter", sans-serif';
       ctx.fillStyle = TEXT_DIM;
-      curY += 12;
-      ctx.fillText(username, AX, curY);
-      curY += 12 + 14;
-    } else {
       curY += 14;
+      ctx.fillText(username, AX, curY);
+      curY += 14 + 16;
+    } else {
+      curY += 18;
     }
 
-    // Badge pill — Inter 600 16px
+    // Badge pill — 44px tall, 18px Inter 600
     var badgeTxt = badge.icon + '  ' + badge.label;
-    ctx.font = '600 16px "Inter", sans-serif';
+    ctx.font = '600 18px "Inter", sans-serif';
     var btw    = ctx.measureText(badgeTxt).width;
-    var PILL_H = 38, PILL_PX = 26;
+    var PILL_H = 44, PILL_PX = 30;
     var PILL_W = btw + PILL_PX * 2;
     var PILL_X = AX - PILL_W / 2;
-    var PILL_Y = curY + 12;
+    var PILL_Y = curY + 14;
     _roundRect(ctx, PILL_X, PILL_Y, PILL_W, PILL_H, PILL_H / 2);
-    ctx.fillStyle = 'rgba(255,184,0,0.12)'; ctx.fill();
+    ctx.fillStyle = 'rgba(255,184,0,0.13)'; ctx.fill();
     ctx.strokeStyle = GOLD; ctx.lineWidth = 1.5; ctx.stroke();
     ctx.fillStyle = GOLD;
     ctx.textBaseline = 'middle';
     ctx.fillText(badgeTxt, AX, PILL_Y + PILL_H / 2);
 
-    // ── Layer 5: Divider ─────────────────────────────────────────────
-    var DIV_Y = PILL_Y + PILL_H + 36;
+    // ── Divider ───────────────────────────────────────────────────────
+    var DIV_Y = PILL_Y + PILL_H + 42;
     ctx.beginPath();
     ctx.moveTo(80, DIV_Y); ctx.lineTo(W - 80, DIV_Y);
-    ctx.strokeStyle = 'rgba(255,255,255,0.14)'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.16)'; ctx.lineWidth = 1; ctx.stroke();
 
-    // Optional: Film of All Time label (fills dead space between divider and stats)
-    if (favFilm) {
-      ctx.font = '400 20px "Inter", sans-serif';
-      ctx.fillStyle = 'rgba(244,241,234,0.22)';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      // Truncate long titles
-      var ftxt = '❝ ' + (favFilm.length > 38 ? favFilm.slice(0, 36) + '…' : favFilm) + ' ❞';
-      ctx.fillText(ftxt, AX, DIV_Y + 44);
-    }
-
-    // ── Layer 6: Stats strip ─────────────────────────────────────────
-    var BAR_Y   = H - 64;
-    // Place stats in lower portion, leaving comfortable breathing room
-    var STATS_MID = DIV_Y + (BAR_Y - DIV_Y) * 0.62;
-    var colW    = W / 3;
+    // ── Stats strip ───────────────────────────────────────────────────
+    var BAR_Y    = H - 68;
+    var STATS_MID = DIV_Y + (BAR_Y - DIV_Y) * 0.44; // upper half of remaining space
+    var colW     = W / 3;
 
     [
       { val: reviews, lbl: 'REVIEWS' },
@@ -16554,35 +16553,55 @@ async function deleteEditorReview(key, e) {
     ].forEach(function(s, i) {
       var cx = colW * i + colW / 2;
 
-      // Number — Anton/Bebas 58px, gold
-      ctx.font = '400 58px "Anton", "Bebas Neue", sans-serif';
+      // Number — 72px Anton, gold
+      ctx.font = '400 72px "Anton", "Bebas Neue", sans-serif';
       ctx.fillStyle = GOLD;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(String(s.val), cx, STATS_MID - 20);
+      ctx.fillText(String(s.val), cx, STATS_MID - 22);
 
-      // Label — Inter 13px, uppercase, wide tracking
-      ctx.font = '600 13px "Inter", sans-serif';
+      // Label — 14px Inter 600, dimmed
+      ctx.font = '600 14px "Inter", sans-serif';
       ctx.fillStyle = TEXT_DIM;
-      ctx.fillText(s.lbl, cx, STATS_MID + 30);
+      ctx.fillText(s.lbl, cx, STATS_MID + 38);
 
-      // Vertical divider (not after last column)
+      // Vertical divider
       if (i < 2) {
         var dvx = colW * (i + 1);
         ctx.beginPath();
-        ctx.moveTo(dvx, STATS_MID - 40); ctx.lineTo(dvx, STATS_MID + 40);
-        ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 1; ctx.stroke();
+        ctx.moveTo(dvx, STATS_MID - 48); ctx.lineTo(dvx, STATS_MID + 52);
+        ctx.strokeStyle = 'rgba(255,255,255,0.10)'; ctx.lineWidth = 1; ctx.stroke();
       }
     });
 
-    // ── Layer 7: Bottom bar ──────────────────────────────────────────
-    ctx.fillStyle = 'rgba(0,0,0,0.65)';
-    ctx.fillRect(0, BAR_Y, W, 64);
+    // ── Film of All Time — anchored just above bottom bar ─────────────
+    // Sits between stats and bottom bar — clear, intentional placement
+    if (favFilm) {
+      var ftY = BAR_Y - 44;
+      // Tiny label
+      ctx.font = '500 11px "Inter", sans-serif';
+      ctx.fillStyle = 'rgba(255,184,0,0.45)';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('FILM OF ALL TIME', AX, ftY - 14);
+      // Movie title
+      var ftTxt = favFilm.length > 42 ? favFilm.slice(0, 40) + '…' : favFilm;
+      ctx.font = 'italic 400 18px "Inter", serif';
+      ctx.fillStyle = 'rgba(244,241,234,0.52)';
+      ctx.fillText(ftTxt, AX, ftY + 8);
+    }
 
-    var barMid = BAR_Y + 32;
+    // ── Bottom bar ────────────────────────────────────────────────────
+    var grad2 = ctx.createLinearGradient(0, BAR_Y - 20, 0, H);
+    grad2.addColorStop(0, 'rgba(0,0,0,0)');
+    grad2.addColorStop(1, 'rgba(0,0,0,0.82)');
+    ctx.fillStyle = grad2; ctx.fillRect(0, BAR_Y - 20, W, H - BAR_Y + 20);
+    ctx.fillStyle = 'rgba(0,0,0,0.70)';
+    ctx.fillRect(0, BAR_Y, W, 68);
+
+    var barMid = BAR_Y + 34;
     ctx.textBaseline = 'middle';
 
-    ctx.font = '400 15px "Inter", sans-serif';
-    ctx.fillStyle = 'rgba(244,241,234,0.42)';
+    ctx.font = '400 16px "Inter", sans-serif';
+    ctx.fillStyle = 'rgba(244,241,234,0.44)';
     ctx.textAlign = 'left';
     ctx.fillText('p-movies.com', 40, barMid);
 
@@ -16593,10 +16612,9 @@ async function deleteEditorReview(key, e) {
       ctx.fillText(joinedStr, W / 2, barMid);
     }
 
-    ctx.font = '22px serif';
-    ctx.fillStyle = 'rgba(255,184,0,0.32)';
-    ctx.textAlign = 'right';
-    ctx.fillText('🎬', W - 40, barMid);
+    // Gold dot accent right side
+    ctx.fillStyle = 'rgba(255,184,0,0.55)';
+    ctx.beginPath(); ctx.arc(W - 40, barMid, 5, 0, Math.PI * 2); ctx.fill();
 
     return canvas.toDataURL('image/png');
   }
