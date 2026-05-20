@@ -6018,7 +6018,7 @@
         <div style="display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:6px">
           <div dir="auto" style="font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:2px;color:#fff;line-height:1;margin-bottom:8px">${esc(r.movie||'')}</div>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
-            <span style="font-size:.95rem;color:#f5a623">${starsHtml}</span>
+            <span class="fan-review-stars" style="font-size:.95rem">${starsHtml}</span>
             <span id="frYearLabel-${fp}" style="font-size:.6rem;font-weight:700;letter-spacing:1px;color:#666"></span>
           </div>
           <div style="font-size:.75rem;font-weight:700;color:#aaa;margin-bottom:4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">${r.uid ? `<span class="pm-profile-link" dir="auto" onclick="pmOpenProfile('${r.uid}')">${esc(r.name||'Anonymous')}</span>` : `<span dir="auto">${esc(r.name||'Anonymous')}</span>`}${_reviewBadge(r)}</div>
