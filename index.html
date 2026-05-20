@@ -15639,20 +15639,42 @@ async function deleteEditorReview(key, e) {
         ? new Date(profile.joinedAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
         : '';
 
+      // ── Review count — computed BEFORE stats HTML so display is accurate ──
+      // _allCommunityReviews may be empty if reviews haven't loaded yet;
+      // a post-render async updater handles that case below.
+      var wl = [];
+      try { wl = JSON.parse(localStorage.getItem('pmovies_wl') || '[]'); } catch(_e) {}
+      var allRevs = window._pmGetCommunityReviews ? window._pmGetCommunityReviews() : [];
+      var reviews = allRevs.filter(function(r) { return r.uid === uid; });
+      var realReviewCount = reviews.length;
+      // Correct profile.reviewCount in-place if we have a real count from cache
+      if (realReviewCount > 0 && realReviewCount !== (profile.reviewCount || 0)) {
+        profile.reviewCount = realReviewCount;
+        // Persist fix to RTDB silently
+        if (isOwn && _pmUser) {
+          _pmUser.getIdToken().then(function(tok) {
+            fetch(RTDB + '/users/' + uid + '/reviewCount.json?auth=' + tok, {
+              method: 'PUT', body: JSON.stringify(realReviewCount)
+            }).catch(function(){});
+          });
+        }
+      }
+
       // Hero backdrop
       var heroHtml = '<div class="pm-prof-hero" id="pmProfHeroWrap">'
         + '<div class="pm-prof-hero-gradient"></div>'
         + (isOwn ? '<button class="pm-prof-hero-change" onclick="pmOpenBackdropPicker(\'' + uid + '\')">🖼 Change Cover</button>' : '')
         + '</div>';
 
-      // Stats — built first, used in identity + sidebar
+      // Stats bar — now uses the already-corrected profile.reviewCount
       var statsHtml = [
-        { val: profile.reviewCount      || 0, lbl: 'Reviews'    },
-        { val: profile.likesReceived    || 0, lbl: 'Likes Rec\'d' },
-        { val: profile.commentsReceived || 0, lbl: 'Cmts Rec\'d'  },
-        { val: score,                          lbl: 'Score'       }
+        { val: profile.reviewCount      || 0, lbl: 'Reviews',    id: 'pmProfStatRevBar'  },
+        { val: profile.likesReceived    || 0, lbl: 'Likes Rec\'d', id: '' },
+        { val: profile.commentsReceived || 0, lbl: 'Cmts Rec\'d',  id: '' },
+        { val: score,                          lbl: 'Score',       id: '' }
       ].map(function(s) {
-        return '<div class="pm-prof-stat"><div class="pm-prof-stat-val">' + s.val + '</div><div class="pm-prof-stat-lbl">' + s.lbl + '</div></div>';
+        var idAttr = s.id ? ' id="' + s.id + '"' : '';
+        return '<div class="pm-prof-stat"><div class="pm-prof-stat-val"' + idAttr + '>' + s.val + '</div><div class="pm-prof-stat-lbl">' + s.lbl + '</div></div>';
       }).join('');
 
       // Avatar
@@ -15674,28 +15696,6 @@ async function deleteEditorReview(key, e) {
         + '</div>'
         + '<div class="pm-prof-stats-col"><div class="pm-prof-stats">' + statsHtml + '</div></div>'
         + '</div>';
-
-      // Tab bar
-      var wl = [];
-      try { wl = JSON.parse(localStorage.getItem('pmovies_wl') || '[]'); } catch(_e) {}
-      var allRevs = window._pmGetCommunityReviews ? window._pmGetCommunityReviews() : [];
-      var reviews = allRevs.filter(function(r) { return r.uid === uid; });
-
-      // ── Auto-sync reviewCount ─────────────────────────────────────────
-      // The RTDB field may be stale (0) if reviews were posted before tracking
-      // was added, or if the counter drifted. Correct it silently when the
-      // profile is opened by the owner, so stats bar + share card stay accurate.
-      var realReviewCount = reviews.length;
-      if (realReviewCount !== (profile.reviewCount || 0)) {
-        profile.reviewCount = realReviewCount; // fix local data immediately
-        if (isOwn && _pmUser) {
-          _pmUser.getIdToken().then(function(tok) {
-            fetch(RTDB + '/users/' + uid + '/reviewCount.json?auth=' + tok, {
-              method: 'PUT', body: JSON.stringify(realReviewCount)
-            }).catch(function(){});
-          });
-        }
-      }
 
       var isAdminUser = isOwn && (window._pmEditorAuthVerified || localStorage.getItem('pmovies_admin') === '1');
       var tabsHtml = '<div class="pm-prof-tabs">'
@@ -15858,7 +15858,7 @@ async function deleteEditorReview(key, e) {
           ].map(function(s) {
             return '<div style="background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:14px;padding:18px 14px;text-align:center">'
               + '<div style="font-size:1.3rem;margin-bottom:6px">' + s.icon + '</div>'
-              + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:2.2rem;color:#f5a623;line-height:1">' + s.val + '</div>'
+              + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:2.2rem;color:#f5a623;line-height:1"' + (s.lbl === 'Reviews Written' ? ' id="pmProfStatRevTab"' : '') + '>' + s.val + '</div>'
               + '<div style="font-size:.46rem;font-weight:700;color:#888;letter-spacing:.1em;text-transform:uppercase;margin-top:4px">' + s.lbl + '</div>'
               + '<div style="font-size:.48rem;color:#444;margin-top:3px">' + s.sub + '</div>'
               + '</div>';
@@ -15991,6 +15991,43 @@ async function deleteEditorReview(key, e) {
         +   '<div class="pm-prof-sidebar">' + sidebarHtml + '</div>'
         + '</div>'
         + '<div style="height:40px"></div>';
+
+      // ── Async: fix review count if community reviews weren't cached yet ──
+      // Polls for up to 3s after render; stops as soon as it finds reviews.
+      // Updates the header stats bar DOM directly so no page reload needed.
+      (function() {
+        if (realReviewCount > 0) return; // already corrected before render
+        var attempts = 0;
+        var timer = setInterval(function() {
+          attempts++;
+          var cached = window._pmGetCommunityReviews ? window._pmGetCommunityReviews() : [];
+          var userRevs = cached.filter(function(r) { return r.uid === uid; });
+          if (userRevs.length > 0 || attempts >= 6) {
+            clearInterval(timer);
+            if (userRevs.length === 0) return;
+            var count = userRevs.length;
+            profile.reviewCount = count;
+            if (_profileData) _profileData.reviewCount = count;
+            // Update header stats bar
+            var barEl = document.getElementById('pmProfStatRevBar');
+            if (barEl) barEl.textContent = count;
+            // Update Reviews tab label
+            var revTab = document.querySelector('#pmProfContent .pm-prof-tab[data-tab="reviews"]');
+            if (revTab) revTab.textContent = 'Reviews · ' + count;
+            // Update Stats tab grid
+            var tabEl = document.getElementById('pmProfStatRevTab');
+            if (tabEl) tabEl.textContent = count;
+            // Persist to RTDB
+            if (isOwn && _pmUser) {
+              _pmUser.getIdToken().then(function(tok) {
+                fetch(RTDB + '/users/' + uid + '/reviewCount.json?auth=' + tok, {
+                  method: 'PUT', body: JSON.stringify(count)
+                }).catch(function(){});
+              });
+            }
+          }
+        }, 500);
+      })();
 
       // Async: load profile backdrop
       var heroWrap = document.getElementById('pmProfHeroWrap');
