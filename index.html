@@ -15681,6 +15681,22 @@ async function deleteEditorReview(key, e) {
       var allRevs = window._pmGetCommunityReviews ? window._pmGetCommunityReviews() : [];
       var reviews = allRevs.filter(function(r) { return r.uid === uid; });
 
+      // ── Auto-sync reviewCount ─────────────────────────────────────────
+      // The RTDB field may be stale (0) if reviews were posted before tracking
+      // was added, or if the counter drifted. Correct it silently when the
+      // profile is opened by the owner, so stats bar + share card stay accurate.
+      var realReviewCount = reviews.length;
+      if (realReviewCount !== (profile.reviewCount || 0)) {
+        profile.reviewCount = realReviewCount; // fix local data immediately
+        if (isOwn && _pmUser) {
+          _pmUser.getIdToken().then(function(tok) {
+            fetch(RTDB + '/users/' + uid + '/reviewCount.json?auth=' + tok, {
+              method: 'PUT', body: JSON.stringify(realReviewCount)
+            }).catch(function(){});
+          });
+        }
+      }
+
       var isAdminUser = isOwn && (window._pmEditorAuthVerified || localStorage.getItem('pmovies_admin') === '1');
       var tabsHtml = '<div class="pm-prof-tabs">'
         + '<button class="pm-prof-tab active" data-tab="overview" onclick="pmProfTab(\'overview\')">Overview</button>'
