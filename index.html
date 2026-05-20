@@ -16670,7 +16670,7 @@ async function deleteEditorReview(key, e) {
     listEl.dataset.loaded = '1';
     if (countEl) countEl.textContent = 'Loading unclaimed reviews…';
     try {
-      var user  = window._pmUser;
+      var user  = window.pmGetUser && window.pmGetUser();
       var token = user ? await user.getIdToken() : '';
       var [frRes, usRes] = await Promise.all([
         fetch(RTDB + '/fanReviews.json' + (token ? '?auth=' + token : '')),
@@ -16781,7 +16781,7 @@ async function deleteEditorReview(key, e) {
     var stat = document.getElementById('pmCStat-' + safeKey);
     if (btn) { btn.disabled = true; btn.textContent = '…'; }
     try {
-      var user  = window._pmUser;
+      var user  = window.pmGetUser && window.pmGetUser();
       var token = user ? await user.getIdToken() : '';
       var res = await fetch(RTDB + '/fanReviews/' + fp + '.json?auth=' + token, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
@@ -16815,7 +16815,7 @@ async function deleteEditorReview(key, e) {
     var entries = Object.entries(map);
     if (!entries.length) { res.textContent = 'Nothing to apply.'; return; }
     res.style.color = '#888'; res.textContent = 'Applying ' + entries.length + ' claims…';
-    var user  = window._pmUser;
+    var user  = window.pmGetUser && window.pmGetUser();
     var token = user ? await user.getIdToken() : '';
     var ok = 0, fail = 0, notifMap = {};
     await Promise.all(entries.map(async function(pair) {
