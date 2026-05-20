@@ -8715,9 +8715,16 @@
 /* ══════════════════════════════════════
    COMMUNITY TOP 100
 ══════════════════════════════════════ */
-const TOP100_MAX_VOTES  = 5;
-const TOP100_MIN_VOTES  = 2;   // min votes to appear on list
-const TOP100_MAX_MOVIES = 100;
+const TOP100_MAX_VOTES        = 5;   // guest / anonymous allowance
+const TOP100_LOGIN_BONUS      = 3;   // extra votes granted to logged-in users
+const TOP100_MIN_VOTES        = 2;   // min votes to appear on list
+const TOP100_MAX_MOVIES       = 100;
+
+// Effective max — 5 for guests, 8 for logged-in users
+function top100MaxVotes() {
+  var user = window.pmGetUser && window.pmGetUser();
+  return user ? TOP100_MAX_VOTES + TOP100_LOGIN_BONUS : TOP100_MAX_VOTES;
+}
 
 // ── Browser fingerprint (survives incognito — based on hardware signals) ──
 /* ══════════════════════════════════════════════════════
@@ -9025,7 +9032,7 @@ function pendingCount() { return getPendingVotes().length; }
 // Votes remaining = max − (submitted + pending). Dev mode: unlimited.
 function votesRemaining() {
   if (IS_DEV) return 999;
-  return Math.max(0, TOP100_MAX_VOTES - getMyVotes().length - pendingCount());
+  return Math.max(0, top100MaxVotes() - getMyVotes().length - pendingCount());
 }
 
 /* ── Vote submit bar ── */
@@ -9037,10 +9044,11 @@ function updateVoteBar() {
   const label   = document.getElementById('vsbLabel');
   const btn     = document.getElementById('vsbSubmitBtn');
   if (!bar) return;
-  dots.innerHTML = Array.from({length: TOP100_MAX_VOTES}, (_, i) =>
+  const maxV = top100MaxVotes();
+  dots.innerHTML = Array.from({length: maxV}, (_, i) =>
     `<div class="vsb-dot${i < n ? ' filled' : ''}"></div>`
   ).join('');
-  label.textContent = `${n}/5 selected`;
+  label.textContent = `${n}/${maxV} selected`;
   btn.disabled = n === 0;
   bar.classList.toggle('show', n > 0);
 }
@@ -9214,7 +9222,7 @@ function addPending(id, title, poster, backdrop, year, genresStr) {
     pending.splice(idx, 1);                       // deselect — also remove its timestamp
     _latency.pickTimes = _latency.pickTimes.filter((_, i) => i !== idx);
   } else {
-    if (!IS_DEV && pending.length + myVotes.length >= TOP100_MAX_VOTES) return;
+    if (!IS_DEV && pending.length + myVotes.length >= top100MaxVotes()) return;
     const now = Date.now();
     if (!_latency.firstPickAt) _latency.firstPickAt = now;
     _latency.pickTimes.push(now);
@@ -9229,7 +9237,7 @@ function addPending(id, title, poster, backdrop, year, genresStr) {
     const right      = item.querySelector('.top100-right');
     if (right) {
       const hasPending = pending.some(v => v.id === id);
-      const newRem     = Math.max(0, TOP100_MAX_VOTES - myVotes.length - pending.length);
+      const newRem     = Math.max(0, top100MaxVotes() - myVotes.length - pending.length);
       let btnHtml;
       if (hasPending) {
         btnHtml = `<button class="top100-vote-btn picked" onclick="addPending('${id}','${escJs(title)}','${escJs(poster)}','${escJs(backdrop)}',${year},'${escJs(genresStr)}')">✓ Picked</button>`;
@@ -9251,7 +9259,7 @@ function addPending(id, title, poster, backdrop, year, genresStr) {
     }
   }
   // Disable/re-enable all unselected Vote buttons when limit reached / freed
-  const atLimit = !IS_DEV && pending.length + myVotes.length >= TOP100_MAX_VOTES;
+  const atLimit = !IS_DEV && pending.length + myVotes.length >= top100MaxVotes();
   document.querySelectorAll('.top100-vote-btn:not(.picked)').forEach(b => { b.disabled = atLimit; });
 }
 
@@ -13157,9 +13165,16 @@ async function postersReject(key) {
 /* ══════════════════════════════════════════════════════
    TOP 50 MINI-SERIES
 ══════════════════════════════════════════════════════ */
-const MINI50_MAX_VOTES = 3;
-const MINI50_MIN_VOTES = 2;
-const MINI50_MAX       = 50;
+const MINI50_MAX_VOTES    = 3;   // guest / anonymous allowance
+const MINI50_LOGIN_BONUS  = 2;   // extra votes granted to logged-in users
+const MINI50_MIN_VOTES    = 2;
+const MINI50_MAX          = 50;
+
+// Effective max — 3 for guests, 5 for logged-in users
+function mini50MaxVotes() {
+  var user = window.pmGetUser && window.pmGetUser();
+  return user ? MINI50_MAX_VOTES + MINI50_LOGIN_BONUS : MINI50_MAX_VOTES;
+}
 const MINI50_PREVIEW   = 10;
 
 /* ── Storage helpers ── */
@@ -13169,7 +13184,7 @@ function getPendingMini50()   { return JSON.parse(localStorage.getItem(lsKey('pm
 function savePendingMini50(a) { localStorage.setItem(lsKey('pmovies_pending_mini50'), JSON.stringify(a)); }
 function mini50VotesRemaining() {
   if (IS_DEV) return 999;
-  return Math.max(0, MINI50_MAX_VOTES - getMini50Votes().length - getPendingMini50().length);
+  return Math.max(0, mini50MaxVotes() - getMini50Votes().length - getPendingMini50().length);
 }
 
 /* ── Weekly snapshot (localStorage, refreshed every 7 days) ── */
@@ -13219,11 +13234,12 @@ function updateMini50VoteBar() {
   const dots  = document.getElementById('mini50VsbDots');
   const label = document.getElementById('mini50VsbLabel');
   const btn   = document.getElementById('mini50SubmitBtn');
-  if (dots)  dots.innerHTML = Array.from({length: MINI50_MAX_VOTES}).map((_, i) =>
+  const maxMini = mini50MaxVotes();
+  if (dots)  dots.innerHTML = Array.from({length: maxMini}).map((_, i) =>
     `<div class="mini50-vsb-dot${i < total ? ' filled' : ''}"></div>`).join('');
-  if (label) label.textContent = `${pending.length} / ${MINI50_MAX_VOTES} picked`;
+  if (label) label.textContent = `${pending.length} / ${maxMini} picked`;
   if (btn)   btn.disabled = pending.length === 0;
-  const rem = Math.max(0, MINI50_MAX_VOTES - total);
+  const rem = Math.max(0, maxMini - total);
   const numEl = document.getElementById('mini50VotesNum');
   if (numEl) numEl.textContent = rem;
 }
@@ -13241,7 +13257,7 @@ function addPendingMini50(id, title, poster, backdrop, year) {
     pending.splice(idx, 1);
     _mini50PickTimes.splice(idx, 1);
   } else {
-    if (!IS_DEV && pending.length + myVotes.length >= MINI50_MAX_VOTES) return;
+    if (!IS_DEV && pending.length + myVotes.length >= mini50MaxVotes()) return;
     const now = Date.now();
     if (!_mini50LatencyFirst) _mini50LatencyFirst = now;
     _mini50PickTimes.push(now);
@@ -13270,7 +13286,7 @@ function addPendingMini50(id, title, poster, backdrop, year) {
       }
     }
   }
-  const atLimit = !IS_DEV && getPendingMini50().length + getMini50Votes().length >= MINI50_MAX_VOTES;
+  const atLimit = !IS_DEV && getPendingMini50().length + getMini50Votes().length >= mini50MaxVotes();
   document.querySelectorAll('#mini50List .top100-vote-btn:not(.picked)').forEach(b => { b.disabled = atLimit; });
 }
 
@@ -17217,41 +17233,64 @@ async function deleteEditorReview(key, e) {
     _backdropPicker.timer = setTimeout(async function() {
       try {
         var apiKey = typeof getKey === 'function' ? getKey() : '';
-        var r = await fetch('https://api.themoviedb.org/3/search/movie?api_key=' + apiKey + '&query=' + encodeURIComponent(q) + '&language=en-US&page=1');
-        var data = r.ok ? await r.json() : null;
-        var hits = (data && data.results || []).filter(function(h){ return h.backdrop_path; }).slice(0, 8);
-        if (!hits.length) { if (res) res.innerHTML = '<div style="color:#555;font-size:.8rem;padding:8px 0">No results with backdrops.</div>'; return; }
+        var enc    = encodeURIComponent(q);
+        // Search movies and TV in parallel
+        var [rMovie, rTv] = await Promise.all([
+          fetch('https://api.themoviedb.org/3/search/movie?api_key=' + apiKey + '&query=' + enc + '&language=en-US&page=1'),
+          fetch('https://api.themoviedb.org/3/search/tv?api_key='    + apiKey + '&query=' + enc + '&language=en-US&page=1'),
+        ]);
+        var dMovie = rMovie.ok ? await rMovie.json() : null;
+        var dTv    = rTv.ok   ? await rTv.json()    : null;
+
+        // Tag each hit with its type so pmShowBackdrops knows which endpoint to call
+        var movies = (dMovie && dMovie.results || [])
+          .filter(function(h){ return h.backdrop_path; })
+          .map(function(h){ return Object.assign({}, h, { _type: 'movie', _label: '🎬' }); })
+          .slice(0, 5);
+        var shows = (dTv && dTv.results || [])
+          .filter(function(h){ return h.backdrop_path; })
+          .map(function(h){ return Object.assign({}, h, { _type: 'tv', _label: '📺' }); })
+          .slice(0, 5);
+
+        var hits = movies.concat(shows);
+        if (!hits.length) {
+          if (res) res.innerHTML = '<div style="color:#555;font-size:.8rem;padding:8px 0">No results with backdrops.</div>';
+          return;
+        }
         if (res) res.innerHTML = hits.map(function(h) {
-          var year = h.release_date ? h.release_date.slice(0,4) : '';
-          var thumbUrl = h.backdrop_path ? 'https://image.tmdb.org/t/p/w300' + h.backdrop_path : '';
-          var thumbHtml = thumbUrl
-            ? '<img class="pm-bdp-thumb" src="' + _esc(thumbUrl) + '" alt=""/>'
-            : '<div class="pm-bdp-thumb" style="background:#222;display:flex;align-items:center;justify-content:center">🎬</div>';
-          return '<div class="pm-bdp-item" onclick="pmShowBackdrops(' + h.id + ',\'' + _esc(h.title||'').replace(/'/g,'\\\'') + '\')">'
-            + thumbHtml
-            + '<div><div class="pm-bdp-name">' + _esc(h.title||'') + '</div><div class="pm-bdp-year">' + year + '</div></div></div>';
+          var title   = h.title || h.name || '';
+          var year    = (h.release_date || h.first_air_date || '').slice(0, 4);
+          var thumbUrl = 'https://image.tmdb.org/t/p/w300' + h.backdrop_path;
+          var safeTitle = title.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+          return '<div class="pm-bdp-item" onclick="pmShowBackdrops(' + h.id + ',\'' + safeTitle + '\',\'' + h._type + '\')">'
+            + '<img class="pm-bdp-thumb" src="' + _esc(thumbUrl) + '" alt=""/>'
+            + '<div>'
+            +   '<div class="pm-bdp-name">' + h._label + ' ' + _esc(title) + '</div>'
+            +   '<div class="pm-bdp-year">' + year + '</div>'
+            + '</div></div>';
         }).join('');
-      } catch(_) { if (res) res.innerHTML = '<div style="color:#f44;font-size:.8rem;padding:8px 0">Search failed.</div>'; }
+      } catch(e) { if (res) res.innerHTML = '<div style="color:#f44;font-size:.8rem;padding:8px 0">Search failed.</div>'; }
     }, 350);
   };
 
-  window.pmShowBackdrops = async function(movieId, movieTitle) {
+  // mediaType: 'movie' (default) or 'tv'
+  window.pmShowBackdrops = async function(mediaId, mediaTitle, mediaType) {
+    var type = mediaType || 'movie';
     var res = document.getElementById('pmBdpResults');
-    var inp = document.getElementById('pmBdpSearch');
-    var lastQ = inp ? inp.value : '';
     if (res) res.innerHTML = '<div style="color:#555;font-size:.8rem;padding:8px 0">Loading backdrops…</div>';
     try {
-      var apiKey = typeof getKey === 'function' ? getKey() : '';
-      var r = await fetch('https://api.themoviedb.org/3/movie/' + movieId + '/images?api_key=' + apiKey + '&include_image_language=en,null');
-      var data = r.ok ? await r.json() : null;
+      var apiKey   = typeof getKey === 'function' ? getKey() : '';
+      var endpoint = 'https://api.themoviedb.org/3/' + type + '/' + mediaId + '/images?api_key=' + apiKey + '&include_image_language=en,null';
+      var r        = await fetch(endpoint);
+      var data     = r.ok ? await r.json() : null;
       var backdrops = (data && data.backdrops || []).sort(function(a,b){ return b.vote_average - a.vote_average; }).slice(0, 20);
       if (!backdrops.length) { if (res) res.innerHTML = '<div style="color:#555;font-size:.8rem;padding:8px 0">No backdrops found.</div>'; return; }
       var uid = _backdropPicker.uid;
       var cells = backdrops.map(function(b) {
-        var thumb = 'https://image.tmdb.org/t/p/w780' + b.file_path;
-        var full  = 'https://image.tmdb.org/t/p/original' + b.file_path;
+        var thumb   = 'https://image.tmdb.org/t/p/w780' + b.file_path;
+        var full    = 'https://image.tmdb.org/t/p/original' + b.file_path;
         var safeUrl = full.replace(/'/g, '');
-        var score = b.vote_average ? (Math.round(b.vote_average * 10) / 10) : '';
+        var score   = b.vote_average ? (Math.round(b.vote_average * 10) / 10) : '';
         return '<div class="pm-img-gallery-cell backdrop" onclick="pmSaveBackdrop(\'' + uid + '\',\'' + safeUrl + '\')">'
           + '<img src="' + _esc(thumb) + '" loading="lazy" alt=""/>'
           + (score ? '<div class="pm-img-gallery-vote">★ ' + score + '</div>' : '')
@@ -17259,10 +17298,10 @@ async function deleteEditorReview(key, e) {
       }).join('');
       if (res) res.innerHTML = '<div class="pm-img-gallery-header">'
         + '<button class="pm-img-gallery-back" onclick="(function(){var r=document.getElementById(\'pmBdpResults\');r.innerHTML=\'<div style=&quot;color:#555;font-size:.8rem;padding:8px 0&quot;>Searching…</div>\';var i=document.getElementById(\'pmBdpSearch\');if(i)pmBackdropSearch(i.value);})()">← Back</button>'
-        + '<span class="pm-img-gallery-label">' + _esc(movieTitle) + ' — choose a backdrop</span>'
+        + '<span class="pm-img-gallery-label">' + _esc(mediaTitle) + ' — choose a backdrop</span>'
         + '</div>'
         + '<div class="pm-img-gallery-grid-backdrop">' + cells + '</div>';
-    } catch(_) { if (res) res.innerHTML = '<div style="color:#f44;font-size:.8rem;padding:8px 0">Failed to load backdrops.</div>'; }
+    } catch(e) { if (res) res.innerHTML = '<div style="color:#f44;font-size:.8rem;padding:8px 0">Failed to load backdrops.</div>'; }
   };
 
   window.pmSaveBackdrop = async function(uid, backdropUrl) {
