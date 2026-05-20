@@ -2313,17 +2313,21 @@
     .pm-prof-widget { margin: 16px 16px 0; }
   }
   @media(max-width: 640px) {
-    .pm-prof-hero-change {
-      /* Pull it out of the hero and park it in the top-bar row, left of the share button */
-      position: fixed;
-      top: calc(env(safe-area-inset-top, 44px) + 14px);
-      right: calc(16px + 42px + 8px); /* 16 padding + 42 share-btn width + 8 gap */
-      /* Shrink to an icon-size pill so it fits neatly beside the share button */
-      padding: 0 10px;
-      height: 42px;
-      border-radius: 21px;
-      font-size: .52rem;
-      letter-spacing: .06em;
+    /* On mobile the hero change-cover button is hidden — the top-bar copy is shown instead */
+    .pm-prof-hero-change { display: none !important; }
+    /* Top-bar right group: change-cover pill + share circle sit side by side */
+    .pm-prof-top-bar-right {
+      display: flex; align-items: center; gap: 8px;
+      position: relative; top: 14px;
+    }
+    /* Share button is already offset via .pm-prof-share-btn top:14px — neutralise inside the group */
+    .pm-prof-top-bar-right .pm-prof-share-btn { top: 0; }
+    .pm-prof-cover-top-btn {
+      /* Override absolute positioning inherited from .pm-prof-hero-change */
+      position: relative !important; top: 0 !important; right: auto !important;
+      padding: 0 11px; height: 42px; border-radius: 21px;
+      font-size: .52rem; letter-spacing: .06em;
+      pointer-events: auto;
     }
     .pm-prof-identity { padding: 0 16px 18px; gap: 14px; margin-top: -42px; flex-wrap: wrap; }
     /* Stats: full-width row below avatar+name on mobile */
@@ -14948,9 +14952,12 @@ async function deleteEditorReview(key, e) {
   <div id="pmProfileModal">
     <div class="pm-prof-top-bar">
       <button class="pm-prof-close-btn" onclick="pmCloseProfile()" aria-label="Close profile">←</button>
-      <button class="pm-prof-share-btn" onclick="pmShareProfile()" aria-label="Share profile" title="Share profile">
-        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-      </button>
+      <div class="pm-prof-top-bar-right">
+        <button id="pmProfChangeCoverTopBtn" class="pm-prof-hero-change pm-prof-cover-top-btn" style="display:none" aria-label="Change cover">🖼 Change Cover</button>
+        <button class="pm-prof-share-btn" onclick="pmShareProfile()" aria-label="Share profile" title="Share profile">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        </button>
+      </div>
     </div>
     <div id="pmProfContent"></div>
   </div>
@@ -16349,6 +16356,18 @@ async function deleteEditorReview(key, e) {
         +   '<div class="pm-prof-sidebar">' + sidebarHtml + '</div>'
         + '</div>'
         + '<div style="height:40px"></div>';
+
+      // ── Top-bar "Change Cover" button (mobile only — stays sticky at top) ──
+      (function() {
+        var topCoverBtn = document.getElementById('pmProfChangeCoverTopBtn');
+        if (!topCoverBtn) return;
+        if (isOwn) {
+          topCoverBtn.style.display = '';          // show for owner
+          topCoverBtn.onclick = function() { if (typeof pmOpenBackdropPicker === 'function') pmOpenBackdropPicker(uid); };
+        } else {
+          topCoverBtn.style.display = 'none';      // hide for visitors
+        }
+      })();
 
       // ── If review count was 0 (community cache cold), register a sync hook ──
       // loadFanReviews() will fire it as soon as the reviews finish loading.
