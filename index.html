@@ -3099,6 +3099,557 @@
   .pm-gs-bg-img-b { opacity: 0; }
   .pm-gs-bg-img-a.gs-vis { opacity: .32; }
   .pm-gs-bg-img-b.gs-vis { opacity: .32; }
+
+  /* ═══════════════════════════════════════════
+     THEATER RACE 2026
+  ═══════════════════════════════════════════ */
+
+  /* ── Persistent strip below tabs ── */
+  #pmTrStrip {
+    background: linear-gradient(135deg,#0d0d0d 0%,#111 100%);
+    border-bottom: 1px solid rgba(255,184,0,.18);
+    padding: 8px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    z-index: 90;
+  }
+  .pm-tr-strip-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: .9rem;
+    letter-spacing: .1em;
+    color: #ffb800;
+  }
+  .pm-tr-strip-header .pm-tr-toggles {
+    margin-left: auto;
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+  .pm-tr-toggle {
+    background: rgba(255,184,0,.08);
+    border: 1px solid rgba(255,184,0,.3);
+    border-radius: 6px;
+    color: #ffb800;
+    font-size: .56rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    padding: 3px 8px;
+    cursor: pointer;
+    transition: all .18s;
+  }
+  .pm-tr-toggle.active {
+    background: #ffb800;
+    color: #000;
+  }
+  .pm-tr-log-btn {
+    background: #ffb800;
+    border: none;
+    border-radius: 50%;
+    color: #000;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 900;
+    line-height: 1;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: transform .18s;
+  }
+  .pm-tr-log-btn:hover { transform: scale(1.12); }
+  .pm-tr-strip-board {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 1px;
+  }
+  .pm-tr-strip-board::-webkit-scrollbar { display: none; }
+  .pm-tr-entry {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+    font-size: .7rem;
+    color: #e0ddd6;
+  }
+  .pm-tr-medal { font-size: .8rem; }
+  .pm-tr-name { font-weight: 600; color: #f4f1ea; }
+  .pm-tr-cnt { color: rgba(244,241,234,.5); font-size: .62rem; }
+  .pm-tr-strip-more {
+    color: #ffb800;
+    font-size: .7rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-left: 4px;
+  }
+  .pm-tr-motiveline {
+    font-size: .62rem;
+    color: rgba(244,241,234,.45);
+    font-style: italic;
+    padding-top: 1px;
+  }
+  .pm-tr-motiveline strong { color: #ffb800; font-style: normal; }
+
+  /* ── Full leaderboard overlay ── */
+  #pmTrBoardOverlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.85);
+    z-index: 4100;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  #pmTrBoardOverlay.open { display: flex; }
+  .pm-tr-board-panel {
+    background: #0d0d0d;
+    border-top: 1px solid rgba(255,184,0,.2);
+    border-radius: 20px 20px 0 0;
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+    margin-top: auto;
+    overflow: hidden;
+  }
+  .pm-tr-board-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 18px 20px 10px;
+    border-bottom: 1px solid rgba(255,255,255,.05);
+    flex-shrink: 0;
+  }
+  .pm-tr-board-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.15rem;
+    letter-spacing: .1em;
+    color: #ffb800;
+    flex: 1;
+  }
+  .pm-tr-board-close {
+    background: none;
+    border: none;
+    color: #666;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    line-height: 1;
+  }
+  .pm-tr-board-list {
+    overflow-y: auto;
+    flex: 1;
+    padding: 0 0 80px;
+    position: relative;
+  }
+  .pm-tr-board-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    border-bottom: 1px solid rgba(255,255,255,.03);
+    transition: background .2s;
+    position: relative;
+  }
+  .pm-tr-board-row:hover { background: rgba(255,255,255,.02); }
+  .pm-tr-board-row.tr-rank-1 { border-left: 3px solid #ffd700; }
+  .pm-tr-board-row.tr-rank-2 { border-left: 3px solid #c0c0c0; }
+  .pm-tr-board-row.tr-rank-3 { border-left: 3px solid #cd7f32; }
+  .pm-tr-rank-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    color: #ffb800;
+    width: 28px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .pm-tr-av {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #222;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .9rem;
+    color: #aaa;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+  .pm-tr-av img { width: 100%; height: 100%; object-fit: cover; }
+  .pm-tr-board-name {
+    flex: 1;
+    font-size: .82rem;
+    font-weight: 600;
+    color: #f4f1ea;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .pm-tr-board-count {
+    font-size: .75rem;
+    color: rgba(244,241,234,.55);
+    flex-shrink: 0;
+  }
+  .pm-tr-pos-badge {
+    font-size: .58rem;
+    font-weight: 700;
+    border-radius: 5px;
+    padding: 2px 5px;
+    flex-shrink: 0;
+    opacity: 1;
+    transition: opacity 1s;
+  }
+  .pm-tr-pos-up   { background: rgba(76,175,80,.15); color: #4caf50; }
+  .pm-tr-pos-down { background: rgba(200,80,80,.1); color: #c85050; }
+  .pm-tr-pos-new  { background: rgba(255,184,0,.12); color: #ffb800; }
+  .pm-tr-your-anchor {
+    position: sticky;
+    bottom: 0;
+    background: #111;
+    border-top: 1px solid rgba(255,184,0,.15);
+    padding: 10px 20px;
+  }
+  .pm-tr-your-label {
+    font-size: .55rem;
+    font-weight: 700;
+    color: rgba(244,241,234,.35);
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 6px;
+  }
+  .pm-tr-fmt-breakdown {
+    font-size: .62rem;
+    color: rgba(244,241,234,.4);
+    text-align: center;
+    padding: 6px 20px 12px;
+  }
+
+  /* ── Log Modal ── */
+  #pmTrLogOverlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.75);
+    z-index: 4200;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  #pmTrLogOverlay.open { display: flex; }
+  @media (min-width: 600px) {
+    #pmTrLogOverlay { align-items: center; }
+    .pm-tr-log-modal { border-radius: 20px !important; max-width: 480px; }
+  }
+  .pm-tr-log-modal {
+    background: #0e0e0e;
+    border: 1px solid rgba(255,184,0,.2);
+    border-radius: 20px 20px 0 0;
+    width: 100%;
+    max-height: 92vh;
+    overflow-y: auto;
+    padding: 24px 20px 40px;
+    box-sizing: border-box;
+  }
+  .pm-tr-log-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.3rem;
+    letter-spacing: .12em;
+    color: #ffb800;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .pm-tr-log-title button {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: #555;
+    font-size: 1.1rem;
+    cursor: pointer;
+  }
+  .pm-tr-log-label {
+    font-size: .68rem;
+    font-weight: 700;
+    color: rgba(244,241,234,.45);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    margin-bottom: 7px;
+  }
+  .pm-tr-log-section { margin-bottom: 18px; }
+  .pm-tr-search-input {
+    width: 100%;
+    background: #171717;
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 10px;
+    color: #f4f1ea;
+    font-size: .85rem;
+    padding: 11px 14px;
+    box-sizing: border-box;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .pm-tr-search-input:focus { border-color: rgba(255,184,0,.4); }
+  .pm-tr-search-results {
+    background: #141414;
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 10px;
+    margin-top: 6px;
+    overflow: hidden;
+    display: none;
+  }
+  .pm-tr-search-results.visible { display: block; }
+  .pm-tr-search-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(255,255,255,.04);
+    transition: background .15s;
+  }
+  .pm-tr-search-item:last-child { border-bottom: none; }
+  .pm-tr-search-item:hover { background: rgba(255,255,255,.04); }
+  .pm-tr-search-thumb {
+    width: 36px;
+    height: 52px;
+    object-fit: cover;
+    border-radius: 5px;
+    background: #222;
+    flex-shrink: 0;
+  }
+  .pm-tr-selected-movie {
+    display: none;
+    background: rgba(255,184,0,.06);
+    border: 1px solid rgba(255,184,0,.2);
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: none;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .pm-tr-selected-movie.visible { display: flex; }
+  .pm-tr-selected-thumb {
+    width: 30px;
+    height: 44px;
+    object-fit: cover;
+    border-radius: 4px;
+    background: #222;
+    flex-shrink: 0;
+  }
+  .pm-tr-selected-title {
+    font-size: .82rem;
+    font-weight: 600;
+    color: #f4f1ea;
+    flex: 1;
+  }
+  .pm-tr-selected-clear {
+    background: none;
+    border: none;
+    color: #555;
+    cursor: pointer;
+    font-size: .9rem;
+  }
+  .pm-tr-date-input {
+    width: 100%;
+    background: #171717;
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 10px;
+    color: #f4f1ea;
+    font-size: .85rem;
+    padding: 11px 14px;
+    box-sizing: border-box;
+    outline: none;
+    transition: border-color .2s;
+    color-scheme: dark;
+  }
+  .pm-tr-date-input:focus { border-color: rgba(255,184,0,.4); }
+  .pm-tr-date-hint {
+    font-size: .62rem;
+    color: rgba(244,241,234,.3);
+    margin-top: 4px;
+  }
+  .pm-tr-formats {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .pm-tr-fmt-chip {
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 8px;
+    color: rgba(244,241,234,.65);
+    cursor: pointer;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .05em;
+    padding: 7px 14px;
+    transition: all .18s;
+  }
+  .pm-tr-fmt-chip.active {
+    background: rgba(255,184,0,.12);
+    border-color: #ffb800;
+    color: #ffb800;
+  }
+  .pm-tr-submit-btn {
+    width: 100%;
+    background: #ffb800;
+    border: none;
+    border-radius: 12px;
+    color: #000;
+    cursor: pointer;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    letter-spacing: .12em;
+    padding: 14px;
+    margin-top: 8px;
+    transition: opacity .2s, transform .18s;
+  }
+  .pm-tr-submit-btn:disabled { opacity: .35; cursor: not-allowed; }
+  .pm-tr-submit-btn:not(:disabled):hover { transform: translateY(-1px); }
+
+  /* ── Theater share card overlay ── */
+  #pmTrShareOverlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.82);
+    z-index: 4300;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+  #pmTrShareOverlay.open { display: flex; }
+  .pm-tr-share-modal {
+    background: #0e0e0e;
+    border: 1px solid rgba(255,184,0,.2);
+    border-radius: 18px;
+    width: 100%;
+    max-width: 420px;
+    padding: 22px;
+    box-sizing: border-box;
+  }
+  .pm-tr-share-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    letter-spacing: .1em;
+    color: #ffb800;
+    margin-bottom: 14px;
+    text-align: center;
+  }
+  #pmTrShareImg {
+    width: 100%;
+    border-radius: 10px;
+    display: block;
+    margin-bottom: 16px;
+  }
+  .pm-tr-share-actions {
+    display: flex;
+    gap: 8px;
+  }
+  .pm-tr-share-btn {
+    flex: 1;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 10px;
+    color: #f4f1ea;
+    cursor: pointer;
+    font-size: .75rem;
+    font-weight: 700;
+    padding: 10px;
+    transition: background .18s;
+  }
+  .pm-tr-share-btn:hover { background: rgba(255,255,255,.1); }
+  .pm-tr-share-btn.primary {
+    background: #ffb800;
+    border-color: #ffb800;
+    color: #000;
+  }
+  .pm-tr-share-btn.primary:hover { background: #ffc933; }
+  .pm-tr-share-close {
+    display: block;
+    width: 100%;
+    background: none;
+    border: none;
+    color: #444;
+    cursor: pointer;
+    font-size: .72rem;
+    margin-top: 12px;
+    text-align: center;
+  }
+
+  /* ── Profile theater section ── */
+  .pm-tr-prof-section {
+    padding: 18px 28px;
+    border-top: 1px solid rgba(255,255,255,.04);
+  }
+  .pm-tr-prof-badges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .pm-tr-prof-badge {
+    background: rgba(255,184,0,.1);
+    border: 1px solid rgba(255,184,0,.3);
+    border-radius: 8px;
+    color: #ffb800;
+    font-size: .65rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .pm-tr-prof-posters {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+  }
+  .pm-tr-prof-posters::-webkit-scrollbar { display: none; }
+  .pm-tr-prof-poster {
+    position: relative;
+    width: 52px;
+    height: 78px;
+    flex-shrink: 0;
+    border-radius: 5px;
+    overflow: hidden;
+    cursor: pointer;
+    background: #1a1a1a;
+    border: 1px solid rgba(255,255,255,.06);
+    transition: transform .18s;
+  }
+  .pm-tr-prof-poster:hover { transform: scale(1.05); }
+  .pm-tr-prof-poster.arabic { border-left: 2px solid #ffb800; }
+  .pm-tr-prof-poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .pm-tr-prof-poster .moon-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: .55rem;
+    background: rgba(0,0,0,.7);
+    border-radius: 3px;
+    padding: 1px 2px;
+    line-height: 1;
+  }
 </style>
 </head>
 <body class="grain">
@@ -3125,6 +3676,14 @@
   </button>
 
   <button class="pm-landing-btn-guest" onclick="pmEnterAsGuest()">Enter as Guest</button>
+
+  <!-- Theater Race CTA — hidden until we know user has zero logs -->
+  <div id="pmLandingTrCta" style="display:none;margin-top:14px;text-align:center">
+    <button onclick="pmEnterAsGuest();setTimeout(pmTrOpenLog,400)"
+            style="background:none;border:1px solid rgba(255,184,0,.35);border-radius:10px;color:#ffb800;font-size:.78rem;font-weight:700;padding:9px 18px;cursor:pointer;letter-spacing:.05em">
+      🎬 Join the 2026 Theater Race →
+    </button>
+  </div>
 
   <ul class="pm-landing-benefits">
     <li><span class="pm-bi">♥</span><span>Like and engage with reviews</span></li>
@@ -3323,6 +3882,25 @@
     <span class="tab-icon">📰</span>Weekly
   </a>
 </nav>
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!-- ║  THEATER RACE STRIP  (always visible below tab nav)     ║ -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<div id="pmTrStrip" onclick="pmTrOpenBoard()" title="Open Theater Race Leaderboard">
+  <div class="pm-tr-strip-header">
+    🎬 2026 THEATER RACE
+    <div class="pm-tr-toggles" onclick="event.stopPropagation()">
+      <button class="pm-tr-toggle active" id="pmTrToggleAll" onclick="pmTrSetMode('all')">ALL</button>
+      <button class="pm-tr-toggle" id="pmTrToggleAr"  onclick="pmTrSetMode('ar')">عربي</button>
+    </div>
+    <button class="pm-tr-log-btn" id="pmTrLogBtnStrip" style="display:none"
+            onclick="event.stopPropagation();pmTrOpenLog()" title="Log a theater visit">＋</button>
+  </div>
+  <div class="pm-tr-strip-board" id="pmTrStripBoard">
+    <span style="color:#444;font-size:.65rem">Loading…</span>
+  </div>
+  <div class="pm-tr-motiveline" id="pmTrMotiveLine"></div>
+</div>
+
 <div class="tab-panel active" id="tab-panel-discover">
 
   <!-- ── SIGNED-IN WELCOME STRIP (hidden until auth resolves) ── -->
@@ -15307,6 +15885,92 @@ async function deleteEditorReview(key, e) {
   </div>
 </div>
 
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!-- ║  THEATER RACE — Log Entry Modal                         ║ -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<div id="pmTrLogOverlay" onclick="if(event.target===this)pmTrCloseLog()">
+  <div class="pm-tr-log-modal">
+    <div class="pm-tr-log-title">
+      🎬 LOG THEATER VISIT
+      <button onclick="pmTrCloseLog()">✕</button>
+    </div>
+
+    <!-- Movie search -->
+    <div class="pm-tr-log-section">
+      <div class="pm-tr-log-label">Movie</div>
+      <input class="pm-tr-search-input" id="pmTrSearchInput"
+             placeholder="Search for a movie…"
+             oninput="pmTrSearchMovie(this.value)"
+             autocomplete="off"/>
+      <div class="pm-tr-search-results" id="pmTrSearchResults"></div>
+      <div class="pm-tr-selected-movie" id="pmTrSelectedMovie">
+        <div class="pm-tr-selected-thumb" id="pmTrSelectedThumb" style="background:#222;display:flex;align-items:center;justify-content:center;font-size:1rem">🎬</div>
+        <div class="pm-tr-selected-title" id="pmTrSelectedTitle">—</div>
+        <button class="pm-tr-selected-clear" onclick="pmTrClearMovie()">✕</button>
+      </div>
+    </div>
+
+    <!-- Date picker -->
+    <div class="pm-tr-log-section">
+      <div class="pm-tr-log-label">Watch Date</div>
+      <input class="pm-tr-date-input" id="pmTrDateInput" type="date"
+             min="2026-01-01" onchange="pmTrValidateDate(this)"/>
+      <div class="pm-tr-date-hint">You can log past visits — any date in 2026</div>
+    </div>
+
+    <!-- Format chips -->
+    <div class="pm-tr-log-section">
+      <div class="pm-tr-log-label">Format (optional)</div>
+      <div class="pm-tr-formats">
+        <button class="pm-tr-fmt-chip" data-fmt="regular"  onclick="pmTrToggleFmt(this)">Regular</button>
+        <button class="pm-tr-fmt-chip" data-fmt="imax"     onclick="pmTrToggleFmt(this)">IMAX</button>
+        <button class="pm-tr-fmt-chip" data-fmt="4dx"      onclick="pmTrToggleFmt(this)">4DX</button>
+        <button class="pm-tr-fmt-chip" data-fmt="dolby"    onclick="pmTrToggleFmt(this)">Dolby</button>
+      </div>
+    </div>
+
+    <button class="pm-tr-submit-btn" id="pmTrSubmitBtn" onclick="pmTrSubmit()" disabled>
+      🎬 LOG VISIT
+    </button>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!-- ║  THEATER RACE — Full Leaderboard Overlay                ║ -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<div id="pmTrBoardOverlay" onclick="if(event.target===this)pmTrCloseBoard()">
+  <div class="pm-tr-board-panel">
+    <div class="pm-tr-board-header">
+      <div class="pm-tr-board-title">🎬 2026 THEATER RACE</div>
+      <div class="pm-tr-toggles">
+        <button class="pm-tr-toggle active" id="pmTrBoardToggleAll" onclick="pmTrSetMode('all')">ALL</button>
+        <button class="pm-tr-toggle" id="pmTrBoardToggleAr" onclick="pmTrSetMode('ar')">عربي</button>
+      </div>
+      <button class="pm-tr-board-close" onclick="pmTrCloseBoard()">✕</button>
+    </div>
+    <div class="pm-tr-board-list" id="pmTrBoardList">
+      <div style="color:#444;font-size:.75rem;text-align:center;padding:40px">Loading…</div>
+    </div>
+    <div class="pm-tr-fmt-breakdown" id="pmTrFmtBreakdown"></div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!-- ║  THEATER RACE — Share Card Overlay                      ║ -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<div id="pmTrShareOverlay" onclick="if(event.target===this)pmTrCloseShare()">
+  <div class="pm-tr-share-modal">
+    <div class="pm-tr-share-title">🎬 SHARE YOUR VISIT</div>
+    <img id="pmTrShareImg" src="" alt="Theater race card"/>
+    <div class="pm-tr-share-actions">
+      <button class="pm-tr-share-btn primary" onclick="pmTrShareNative()">Share</button>
+      <button class="pm-tr-share-btn" onclick="pmTrShareDownload()">↓ Save</button>
+    </div>
+    <button class="pm-tr-share-close" onclick="pmTrCloseShare()">Skip</button>
+  </div>
+</div>
+<canvas id="pmTrShareCanvas" style="display:none"></canvas>
+
 <!-- Share card modal -->
 <div id="pmShareCardOverlay" onclick="if(event.target===this)pmCloseShareCard()">
   <div class="pm-sc-modal">
@@ -16418,6 +17082,7 @@ async function deleteEditorReview(key, e) {
         + '<button class="pm-prof-tab" data-tab="lists" onclick="pmProfTab(\'lists\')">Lists</button>'
         + '<button class="pm-prof-tab" data-tab="followers" onclick="pmProfTab(\'followers\')">Followers</button>'
         + '<button class="pm-prof-tab" data-tab="following" onclick="pmProfTab(\'following\')">Following</button>'
+        + '<button class="pm-prof-tab" data-tab="theater"   onclick="pmProfTab(\'theater\')">🎬 Theater</button>'
         + (!isEditorProfile ? '<button class="pm-prof-tab" data-tab="stats" onclick="pmProfTab(\'stats\')">Stats</button>' : '')
         + (isAdminUser ? '<button class="pm-prof-tab" data-tab="admin" onclick="pmProfTab(\'admin\')">⚡ Admin</button>' : '')
         + '</div>';
@@ -16735,6 +17400,7 @@ async function deleteEditorReview(key, e) {
         +     '<div class="pm-prof-tab-panel" id="pmProfPanel-lists" style="display:none">' + listsTabHtml + '</div>'
         +     '<div class="pm-prof-tab-panel" id="pmProfPanel-followers" style="display:none"><div class="pm-follow-list-loading">Loading…</div></div>'
         +     '<div class="pm-prof-tab-panel" id="pmProfPanel-following" style="display:none"><div class="pm-follow-list-loading">Loading…</div></div>'
+        +     '<div class="pm-prof-tab-panel" id="pmProfPanel-theater"  style="display:none"><div style="color:#444;font-size:.75rem;padding:28px 28px">Loading theater log…</div></div>'
         +     '<div class="pm-prof-tab-panel" id="pmProfPanel-stats" style="display:none">' + statsTabHtml + '</div>'
         +     (isAdminUser ? '<div class="pm-prof-tab-panel" id="pmProfPanel-admin" style="display:none">' + adminTabHtml + '</div>' : '')
         +   '</div>'
@@ -17996,6 +18662,16 @@ async function deleteEditorReview(key, e) {
         panel.dataset.loaded = '1';
         if (typeof window._pmLoadFollowTab === 'function')
           window._pmLoadFollowTab(window._pmCurrentProfUid, tab, panel);
+      }
+    }
+    // Lazy-load theater log tab
+    if (tab === 'theater' && window._pmCurrentProfUid) {
+      var theatPanel = document.getElementById('pmProfPanel-theater');
+      if (theatPanel && !theatPanel.dataset.loaded) {
+        theatPanel.dataset.loaded = '1';
+        var isOwnTheater = (window.pmGetUser && window.pmGetUser() && window.pmGetUser().uid === window._pmCurrentProfUid);
+        if (typeof window.pmTrLoadProfileSection === 'function')
+          window.pmTrLoadProfileSection(window._pmCurrentProfUid, isOwnTheater, theatPanel);
       }
     }
   };
@@ -19780,6 +20456,858 @@ async function deleteEditorReview(key, e) {
       // If guest, journey already initialised by the original switchTab
     }
   };
+
+})();
+</script>
+
+<!-- ╔══════════════════════════════════════════════════════════════╗ -->
+<!-- ║  THEATER RACE 2026  — full feature script                   ║ -->
+<!-- ╚══════════════════════════════════════════════════════════════╝ -->
+<script>
+(function() {
+  'use strict';
+
+  var TR_RTDB  = 'https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app';
+  var TR_YEAR  = 2026;
+  var TR_PROXY = 'https://p-movies.com/fan/img';
+
+  /* ── Runtime state ─────────────────────────────────────────── */
+  var _trMode        = 'all';       // 'all' | 'ar'
+  var _trBoard       = {};          // uid → entry (live from Firebase)
+  var _trMyCount     = 0;
+  var _trMyArCount   = 0;
+  var _trMyLogs      = [];          // cached array of own log entries
+  var _trFbListener  = null;        // Firebase onValue ref handle
+  var _trSearchTimer = null;
+  var _trSearchResults = [];
+  var _trSelectedMovie = null;      // the TMDB movie object chosen
+  var _trSelectedFmt   = null;      // 'regular'|'imax'|'4dx'|'dolby'|null
+  var _trLastLogEntry  = null;      // the just-submitted log entry (for share card)
+  var _trShareDataUrl  = null;
+
+  /* ── Helpers ───────────────────────────────────────────────── */
+  function _trGetUser() { return window.pmGetUser && window.pmGetUser(); }
+  function _trToken() {
+    var u = _trGetUser();
+    return u ? u.getIdToken() : Promise.resolve(null);
+  }
+  function _esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function _trFmt(date) {
+    // Format YYYY-MM-DD to "May 20, 2026"
+    try {
+      var d = new Date(date + 'T12:00:00');
+      return d.toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' });
+    } catch(e) { return date; }
+  }
+
+  /* ── Firebase leaderboard real-time listener ─────────────────── */
+  function _trStartListener() {
+    // Use Firebase SDK if available, else fall back to REST polling
+    if (window.firebase && window.firebase.database) {
+      try {
+        var ref = window.firebase.database().ref('theaterLeaderboard/' + TR_YEAR);
+        ref.on('value', function(snap) {
+          _trBoard = snap.val() || {};
+          _trRenderStrip();
+          _trRenderBoard();
+        });
+        _trFbListener = ref;
+        return;
+      } catch(e) {}
+    }
+    // REST fallback: poll every 15s
+    _trPollBoard();
+    setInterval(_trPollBoard, 15000);
+  }
+
+  function _trPollBoard() {
+    fetch(TR_RTDB + '/theaterLeaderboard/' + TR_YEAR + '.json')
+      .then(function(r) { return r.ok ? r.json() : null; })
+      .then(function(data) {
+        if (data) { _trBoard = data; _trRenderStrip(); _trRenderBoard(); }
+      }).catch(function(){});
+  }
+
+  /* ── Sorted board entries ──────────────────────────────────── */
+  function _trSorted() {
+    return Object.entries(_trBoard)
+      .map(function(kv) { return Object.assign({ uid: kv[0] }, kv[1]); })
+      .sort(function(a, b) {
+        var av = _trMode === 'ar' ? (b.arabicCount||0) : (b.count||0);
+        var bv = _trMode === 'ar' ? (a.arabicCount||0) : (a.count||0);
+        return av - bv;
+      })
+      .filter(function(e) { return (_trMode === 'ar' ? (e.arabicCount||0) : (e.count||0)) > 0; });
+  }
+
+  /* ── Strip renderer ────────────────────────────────────────── */
+  function _trRenderStrip() {
+    var board  = document.getElementById('pmTrStripBoard');
+    var motive = document.getElementById('pmTrMotiveLine');
+    var logBtn = document.getElementById('pmTrLogBtnStrip');
+    if (!board) return;
+
+    var sorted = _trSorted();
+    var medals = ['🥇','🥈','🥉'];
+
+    if (!sorted.length) {
+      board.innerHTML = '<span style="color:#444;font-size:.65rem">No entries yet — be first!</span>';
+    } else {
+      board.innerHTML = sorted.slice(0,5).map(function(e, i) {
+        var cnt = _trMode === 'ar' ? (e.arabicCount||0) : (e.count||0);
+        return '<span class="pm-tr-entry">'
+          + '<span class="pm-tr-medal">' + (medals[i] || '#'+(i+1)) + '</span>'
+          + '<span class="pm-tr-name">' + _esc((e.username ? '@'+e.username : e.displayName) || '?') + '</span>'
+          + '<span class="pm-tr-cnt">·' + cnt + '</span>'
+          + '</span>';
+      }).join('')
+      + (sorted.length > 5 ? '<span class="pm-tr-strip-more">→</span>' : '');
+    }
+
+    // Motivational line
+    if (motive) {
+      var me = _trGetUser();
+      if (!me) {
+        motive.innerHTML = '🎬 Sign in to join the 2026 Theater Race';
+      } else {
+        var myCount = _trMode === 'ar' ? _trMyArCount : _trMyCount;
+        if (myCount === 0) {
+          motive.innerHTML = '🎬 Log your first theater visit and get on the board';
+        } else {
+          var myRank = sorted.findIndex(function(e) { return e.uid === me.uid; }) + 1;
+          if (myRank === 0) myRank = sorted.length + 1;
+          if (myRank === 1) {
+            motive.innerHTML = '👑 You\'re leading the 2026 Theater Race';
+          } else if (myRank <= 10) {
+            var above = sorted[myRank - 2];
+            var aboveCnt = above ? (_trMode === 'ar' ? (above.arabicCount||0) : (above.count||0)) : 0;
+            var diff = aboveCnt - myCount;
+            motive.innerHTML = 'You\'re <strong>#' + myRank + '</strong> · ' + diff + ' film' + (diff!==1?'s':'') + ' behind #' + (myRank-1);
+          } else {
+            var top10 = sorted[9];
+            var top10Cnt = top10 ? (_trMode === 'ar' ? (top10.arabicCount||0) : (top10.count||0)) : 0;
+            var gap = top10Cnt - myCount;
+            motive.innerHTML = 'You\'re <strong>#' + myRank + '</strong> · ' + gap + ' film' + (gap!==1?'s':'') + ' behind #10. Go watch something!';
+          }
+        }
+        if (logBtn) logBtn.style.display = 'flex';
+      }
+    }
+    if (me && logBtn) logBtn.style.display = 'flex';
+  }
+
+  /* ── Mode toggle ───────────────────────────────────────────── */
+  window.pmTrSetMode = function(mode) {
+    _trMode = mode;
+    ['All','Ar'].forEach(function(k) {
+      var active = (k.toLowerCase() === mode || (mode==='all' && k==='All'));
+      ['pmTrToggle'+k, 'pmTrBoardToggle'+k].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.classList.toggle('active', active);
+      });
+    });
+    _trRenderStrip();
+    _trRenderBoard();
+  };
+
+  /* ── Full board renderer ───────────────────────────────────── */
+  function _trRenderBoard() {
+    var list = document.getElementById('pmTrBoardList');
+    if (!list) return;
+    var sorted = _trSorted();
+    var me = _trGetUser();
+    var myIdx = me ? sorted.findIndex(function(e) { return e.uid === me.uid; }) : -1;
+    var medals = ['🥇','🥈','🥉'];
+    var borderClass = ['tr-rank-1','tr-rank-2','tr-rank-3'];
+
+    if (!sorted.length) {
+      list.innerHTML = '<div style="color:#444;font-size:.75rem;text-align:center;padding:40px">No entries yet</div>';
+      return;
+    }
+
+    list.innerHTML = sorted.map(function(e, i) {
+      var cnt = _trMode === 'ar' ? (e.arabicCount||0) : (e.count||0);
+      var isMe = me && e.uid === me.uid;
+      var avHtml = e.avatar
+        ? '<img src="' + _esc(e.avatar) + '" alt="" style="width:36px;height:36px;border-radius:50%;object-fit:cover">'
+        : '<div style="width:36px;height:36px;border-radius:50%;background:#222;display:flex;align-items:center;justify-content:center;font-size:.9rem;color:#888">' + (e.displayName||'?').charAt(0).toUpperCase() + '</div>';
+      return '<div class="pm-tr-board-row' + (borderClass[i] ? ' ' + borderClass[i] : '') + (isMe ? '" style="background:rgba(255,184,0,.04)' : '') + '">'
+        + '<div class="pm-tr-rank-num">' + (medals[i] || (i+1)) + '</div>'
+        + '<div class="pm-tr-av">' + avHtml + '</div>'
+        + '<div class="pm-tr-board-name">' + _esc((e.username ? '@'+e.username : e.displayName) || '?') + (isMe ? ' <span style="color:#ffb800;font-size:.6rem">(you)</span>' : '') + '</div>'
+        + '<div class="pm-tr-board-count">' + cnt + ' film' + (cnt!==1?'s':'') + '</div>'
+        + '</div>';
+    }).join('');
+
+    // Your position anchor (if outside visible top)
+    var anchor = document.createElement('div');
+    if (me && myIdx >= 0) {
+      var myEntry = sorted[myIdx];
+      var myC = _trMode === 'ar' ? (myEntry.arabicCount||0) : (myEntry.count||0);
+      var showAnchor = myIdx >= 10; // only pin if not in first 10 visible
+      anchor.className = 'pm-tr-your-anchor';
+      anchor.innerHTML = showAnchor
+        ? '<div class="pm-tr-your-label">── YOUR POSITION ──</div>'
+          + '<div class="pm-tr-board-row" style="padding:0">'
+          + '<div class="pm-tr-rank-num">' + (myIdx+1) + '</div>'
+          + '<div class="pm-tr-av">' + (myEntry.avatar ? '<img src="'+_esc(myEntry.avatar)+'" alt="" style="width:36px;height:36px;border-radius:50%;object-fit:cover">' : '<div style="width:36px;height:36px;border-radius:50%;background:#222;font-size:.9rem;color:#888;display:flex;align-items:center;justify-content:center">' + (myEntry.displayName||'?').charAt(0).toUpperCase() + '</div>') + '</div>'
+          + '<div class="pm-tr-board-name">you</div>'
+          + '<div class="pm-tr-board-count">' + myC + ' film' + (myC!==1?'s':'') + '</div>'
+          + '</div>'
+        : '';
+      list.appendChild(anchor);
+    } else if (me) {
+      // User is signed in but not on board yet
+      anchor.className = 'pm-tr-your-anchor';
+      anchor.innerHTML = '<div style="color:#444;font-size:.7rem;text-align:center">You\'re not on the board yet — log a visit!</div>';
+      list.appendChild(anchor);
+    }
+
+    // Format breakdown for current user
+    var fmt = document.getElementById('pmTrFmtBreakdown');
+    if (fmt && me && _trMyLogs.length) {
+      var fmtCounts = {};
+      _trMyLogs.forEach(function(l) { if (l.format) fmtCounts[l.format] = (fmtCounts[l.format]||0)+1; });
+      var parts = Object.entries(fmtCounts).map(function(kv) { return kv[1] + ' ' + kv[0].toUpperCase(); });
+      fmt.textContent = parts.length ? 'Your formats: ' + parts.join(' · ') : '';
+    }
+  }
+
+  /* ── Open / close board overlay ─────────────────────────────── */
+  window.pmTrOpenBoard = function() {
+    var ov = document.getElementById('pmTrBoardOverlay');
+    if (ov) { ov.classList.add('open'); _trRenderBoard(); }
+  };
+  window.pmTrCloseBoard = function() {
+    var ov = document.getElementById('pmTrBoardOverlay');
+    if (ov) ov.classList.remove('open');
+  };
+
+  /* ── Log modal ──────────────────────────────────────────────── */
+  window.pmTrOpenLog = function() {
+    var me = _trGetUser();
+    if (!me) { if (window.pmRequireAuth) window.pmRequireAuth(); return; }
+    // Reset state
+    _trSelectedMovie = null;
+    _trSelectedFmt   = null;
+    var inp = document.getElementById('pmTrSearchInput');
+    var res = document.getElementById('pmTrSearchResults');
+    var sel = document.getElementById('pmTrSelectedMovie');
+    var date = document.getElementById('pmTrDateInput');
+    var btn  = document.getElementById('pmTrSubmitBtn');
+    var chips = document.querySelectorAll('.pm-tr-fmt-chip');
+    if (inp)  { inp.value = ''; }
+    if (res)  { res.innerHTML = ''; res.classList.remove('visible'); }
+    if (sel)  sel.classList.remove('visible');
+    if (date) {
+      var today = new Date();
+      var yyyy = today.getFullYear();
+      var mm   = String(today.getMonth()+1).padStart(2,'0');
+      var dd   = String(today.getDate()).padStart(2,'0');
+      date.value = yyyy + '-' + mm + '-' + dd;
+      date.max   = yyyy + '-' + mm + '-' + dd;
+    }
+    chips.forEach(function(c) { c.classList.remove('active'); });
+    if (btn) btn.disabled = true;
+    var ov = document.getElementById('pmTrLogOverlay');
+    if (ov) { ov.classList.add('open'); setTimeout(function() { if (inp) inp.focus(); }, 80); }
+  };
+
+  window.pmTrCloseLog = function() {
+    var ov = document.getElementById('pmTrLogOverlay');
+    if (ov) ov.classList.remove('open');
+    clearTimeout(_trSearchTimer);
+  };
+
+  /* ── Movie search in log modal ───────────────────────────────── */
+  window.pmTrSearchMovie = function(q) {
+    clearTimeout(_trSearchTimer);
+    var res = document.getElementById('pmTrSearchResults');
+    q = (q||'').trim();
+    if (q.length < 2) {
+      if (res) { res.innerHTML = ''; res.classList.remove('visible'); }
+      return;
+    }
+    _trSearchTimer = setTimeout(function() {
+      var key = typeof getKey === 'function' ? getKey() : '';
+      if (!key) return;
+      fetch('https://api.themoviedb.org/3/search/movie?api_key='+key+'&query='+encodeURIComponent(q)+'&language=en-US&page=1')
+        .then(function(r) { return r.ok ? r.json() : null; })
+        .then(function(data) {
+          _trSearchResults = (data && data.results || []).slice(0,7);
+          var resEl = document.getElementById('pmTrSearchResults');
+          if (!resEl) return;
+          if (!_trSearchResults.length) {
+            resEl.innerHTML = '<div style="color:#555;font-size:.75rem;padding:10px 12px">No results</div>';
+            resEl.classList.add('visible');
+            return;
+          }
+          resEl.innerHTML = _trSearchResults.map(function(m, i) {
+            var yr = m.release_date ? m.release_date.slice(0,4) : '';
+            var thumb = m.poster_path
+              ? '<img class="pm-tr-search-thumb" src="https://image.tmdb.org/t/p/w92'+m.poster_path+'" alt="">'
+              : '<div class="pm-tr-search-thumb" style="display:flex;align-items:center;justify-content:center;font-size:1rem">🎬</div>';
+            return '<div class="pm-tr-search-item" onclick="pmTrSelectMovie('+i+')">'
+              + thumb
+              + '<div><div style="font-size:.8rem;font-weight:600;color:#f4f1ea">'+_esc(m.title||'')+'</div>'
+              + (yr ? '<div style="font-size:.66rem;color:#666">'+yr+'</div>' : '')
+              + '</div></div>';
+          }).join('');
+          resEl.classList.add('visible');
+        }).catch(function(){});
+    }, 320);
+  };
+
+  window.pmTrSelectMovie = function(idx) {
+    var m = _trSearchResults[idx];
+    if (!m) return;
+    _trSelectedMovie = m;
+    var inp   = document.getElementById('pmTrSearchInput');
+    var res   = document.getElementById('pmTrSearchResults');
+    var sel   = document.getElementById('pmTrSelectedMovie');
+    var thumb = document.getElementById('pmTrSelectedThumb');
+    var title = document.getElementById('pmTrSelectedTitle');
+    if (inp) inp.value = '';
+    if (res) { res.innerHTML = ''; res.classList.remove('visible'); }
+    if (sel) sel.classList.add('visible');
+    if (thumb) {
+      if (m.poster_path) {
+        thumb.innerHTML = '<img src="https://image.tmdb.org/t/p/w92'+m.poster_path+'" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:4px">';
+      } else {
+        thumb.textContent = '🎬';
+      }
+    }
+    if (title) title.textContent = m.title || '—';
+    _trUpdateSubmit();
+  };
+
+  window.pmTrClearMovie = function() {
+    _trSelectedMovie = null;
+    var sel = document.getElementById('pmTrSelectedMovie');
+    if (sel) sel.classList.remove('visible');
+    _trUpdateSubmit();
+  };
+
+  window.pmTrToggleFmt = function(btn) {
+    var fmt = btn.dataset.fmt;
+    document.querySelectorAll('.pm-tr-fmt-chip').forEach(function(c) { c.classList.remove('active'); });
+    if (_trSelectedFmt === fmt) {
+      _trSelectedFmt = null;
+    } else {
+      _trSelectedFmt = fmt;
+      btn.classList.add('active');
+    }
+  };
+
+  window.pmTrValidateDate = function(inp) {
+    var val = inp.value;
+    var today = new Date().toISOString().slice(0,10);
+    if (val > today) { inp.value = today; }
+    if (val < '2026-01-01') { inp.value = '2026-01-01'; }
+    _trUpdateSubmit();
+  };
+
+  function _trUpdateSubmit() {
+    var btn  = document.getElementById('pmTrSubmitBtn');
+    var date = document.getElementById('pmTrDateInput');
+    if (btn) btn.disabled = !(_trSelectedMovie && date && date.value >= '2026-01-01');
+  }
+
+  /* ── Submit log entry ───────────────────────────────────────── */
+  window.pmTrSubmit = async function() {
+    var me = _trGetUser();
+    if (!me || !_trSelectedMovie) return;
+    var btn  = document.getElementById('pmTrSubmitBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+    var date = (document.getElementById('pmTrDateInput') || {}).value || new Date().toISOString().slice(0,10);
+
+    try {
+      var tok     = await _trToken();
+      var authQ   = tok ? '?auth=' + tok : '';
+      var apiKey  = typeof getKey === 'function' ? getKey() : '';
+      var m       = _trSelectedMovie;
+
+      // Fetch movie details to get original_language & backdrop
+      var isArabic = false, backdropPath = m.backdrop_path || '';
+      var releaseDate = m.release_date || '';
+      try {
+        var det = await fetch('https://api.themoviedb.org/3/movie/'+m.id+'?api_key='+apiKey+'&language=en-US');
+        if (det.ok) {
+          var dd = await det.json();
+          isArabic    = dd.original_language === 'ar';
+          backdropPath = dd.backdrop_path || backdropPath;
+          releaseDate  = dd.release_date  || releaseDate;
+        }
+      } catch(e) {}
+
+      // Opening weekend check (within 3 days of release)
+      var openingWeekend = false;
+      if (releaseDate && date) {
+        var rdMs  = new Date(releaseDate + 'T00:00:00').getTime();
+        var logMs = new Date(date + 'T00:00:00').getTime();
+        openingWeekend = logMs >= rdMs && logMs <= rdMs + 3*86400000;
+      }
+
+      // Push log entry
+      var logEntry = {
+        movieId:       m.id,
+        movieTitle:    m.title || '',
+        posterPath:    m.poster_path || '',
+        backdropPath:  backdropPath,
+        date:          date,
+        format:        _trSelectedFmt || null,
+        isArabic:      isArabic,
+        openingWeekend: openingWeekend,
+        timestamp:     Date.now()
+      };
+
+      // Generate a push ID client-side
+      var pushId = '-' + Math.random().toString(36).slice(2,17) + Date.now().toString(36);
+      var logUrl = TR_RTDB + '/theaterLogs/' + me.uid + '/' + TR_YEAR + '/' + pushId + '.json' + authQ;
+      await fetch(logUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(logEntry)
+      });
+
+      // Update leaderboard counts
+      // Read current, increment, write back
+      var lbUrl = TR_RTDB + '/theaterLeaderboard/' + TR_YEAR + '/' + me.uid + '.json' + authQ;
+      var curRes = await fetch(lbUrl.replace(authQ, '') + authQ);
+      var cur = curRes.ok ? await curRes.json() : null;
+      var newCount   = ((cur && cur.count)       || 0) + 1;
+      var newArCount = ((cur && cur.arabicCount)  || 0) + (isArabic ? 1 : 0);
+      var nickname   = (window.pmGetNickname && window.pmGetNickname()) || me.displayName || 'Film Lover';
+      var username   = (window._pmMyProfile && window._pmMyProfile.username) || '';
+      var avatar     = (window._pmMyProfile && window._pmMyProfile.photoURL) || me.photoURL || '';
+
+      await fetch(lbUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ count: newCount, arabicCount: newArCount,
+          displayName: nickname, username: username, avatar: avatar })
+      });
+
+      // Update local state
+      _trMyCount    = newCount;
+      _trMyArCount  = newArCount;
+      _trMyLogs.unshift(logEntry);
+
+      // Update board cache
+      _trBoard[me.uid] = { count: newCount, arabicCount: newArCount,
+        displayName: nickname, username: username, avatar: avatar };
+
+      _trLastLogEntry = logEntry;
+      pmTrCloseLog();
+      _trRenderStrip();
+      _trRenderBoard();
+      _trShowMilestone(newCount, isArabic, openingWeekend);
+
+      // Show landing CTA as done
+      localStorage.setItem('pmTrLogged2026','1');
+      var cta = document.getElementById('pmLandingTrCta');
+      if (cta) cta.style.display = 'none';
+
+    } catch(e) {
+      if (btn) { btn.disabled = false; btn.textContent = '🎬 LOG VISIT'; }
+      if (typeof showToast === 'function') showToast('Failed to save — please try again');
+    }
+  };
+
+  /* ── Milestone toasts ───────────────────────────────────────── */
+  function _trShowMilestone(count, isArabic, openingWeekend) {
+    var milestones = {1:'🎬 First Ticket! You\'re on the Theater Race board.',
+      5:'Five films in theaters this year. Respect.',
+      10:'Cinema Addict badge unlocked 🏆',
+      20:'20 films in theaters. You basically live there.'};
+    var mainMsg = milestones[count] || ('🎬 Visit #' + count + ' logged!');
+    var extra = '';
+    if (openingWeekend) extra += ' 🌙 Opening Weekend!';
+    if (isArabic)       extra += (extra ? ' · ' : ' ') + 'عربي · Arabic film logged ✦';
+
+    // Use existing rank-alert-toast style
+    var t = document.createElement('div');
+    t.className = 'rank-alert-toast';
+    t.innerHTML = '<div style="flex:1"><div style="font-size:.82rem;font-weight:700;color:#f4f1ea">' + mainMsg + '</div>'
+      + (extra ? '<div style="font-size:.7rem;color:#ffb800;margin-top:3px">' + extra + '</div>' : '')
+      + '</div>'
+      + '<button class="rat-close" onclick="this.closest(\'.rank-alert-toast\').remove()">✕</button>';
+    document.body.appendChild(t);
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() { t.classList.add('rat-in'); });
+    });
+    setTimeout(function() {
+      t.classList.remove('rat-in');
+      setTimeout(function() { t.remove(); _trPromptShare(); }, 400);
+    }, 2500);
+  }
+
+  /* ── Share card prompt ──────────────────────────────────────── */
+  function _trPromptShare() {
+    if (!_trLastLogEntry) return;
+    _trBuildShareCard(_trLastLogEntry).then(function(url) {
+      if (!url) return;
+      _trShareDataUrl = url;
+      var img = document.getElementById('pmTrShareImg');
+      if (img) { img.src = url; }
+      var ov = document.getElementById('pmTrShareOverlay');
+      if (ov) ov.classList.add('open');
+    });
+  }
+
+  window.pmTrCloseShare = function() {
+    var ov = document.getElementById('pmTrShareOverlay');
+    if (ov) ov.classList.remove('open');
+  };
+
+  window.pmTrShareNative = function() {
+    if (!_trShareDataUrl) return;
+    var entry = _trLastLogEntry;
+    var slug  = (entry && entry.movieTitle || 'theater').toLowerCase().replace(/[^a-z0-9]+/g,'-');
+    if (navigator.share) {
+      fetch(_trShareDataUrl).then(function(r) { return r.blob(); }).then(function(blob) {
+        var file = new File([blob], 'pmovies-theater-'+slug+'.png', { type:'image/png' });
+        return navigator.share({ title: entry.movieTitle + ' — Theater Race', files: [file] });
+      }).catch(function() {
+        if (navigator.share) navigator.share({ title: entry.movieTitle + ' — Theater Race', url: location.origin });
+      });
+    } else {
+      pmTrShareDownload();
+    }
+    pmTrCloseShare();
+  };
+
+  window.pmTrShareDownload = function() {
+    if (!_trShareDataUrl) return;
+    var entry = _trLastLogEntry;
+    var slug  = (entry && entry.movieTitle || 'theater').toLowerCase().replace(/[^a-z0-9]+/g,'-');
+    var a = document.createElement('a');
+    a.href = _trShareDataUrl;
+    a.download = 'pmovies-theater-' + slug + '.png';
+    a.click();
+    pmTrCloseShare();
+  };
+
+  /* ── Share card canvas builder ──────────────────────────────── */
+  async function _trBuildShareCard(entry) {
+    var W = 1080, H = 1080;
+    var canvas = document.getElementById('pmTrShareCanvas');
+    if (!canvas) return null;
+    canvas.width = W; canvas.height = H;
+    var ctx = canvas.getContext('2d');
+
+    var GOLD     = '#ffb800';
+    var TEXT_PRI = '#f4f1ea';
+    var TEXT_DIM = 'rgba(244,241,234,0.55)';
+
+    function _proxyTmdb(path) {
+      if (!path) return null;
+      return path.startsWith('http') ? path : TR_PROXY + path;
+    }
+    function _loadImg(src) {
+      return new Promise(function(res, rej) {
+        var img = new Image(); img.crossOrigin = 'anonymous';
+        img.onload = function() { res(img); };
+        img.onerror = function() { res(null); };
+        img.src = src;
+      });
+    }
+
+    // Base fill
+    ctx.fillStyle = '#050505';
+    ctx.fillRect(0, 0, W, H);
+
+    // Backdrop
+    if (entry.backdropPath) {
+      var bdImg = await _loadImg(_proxyTmdb(entry.backdropPath));
+      if (bdImg) {
+        var sc = Math.max(W / bdImg.width, H / bdImg.height) * 1.05;
+        var bw = bdImg.width*sc, bh = bdImg.height*sc;
+        ctx.drawImage(bdImg, (W-bw)/2, (H-bh)/2, bw, bh);
+      }
+    }
+
+    // Gradient overlay
+    var grad = ctx.createLinearGradient(0,0,0,H);
+    grad.addColorStop(0,   'rgba(5,5,5,0.5)');
+    grad.addColorStop(0.6, 'rgba(5,5,5,0.8)');
+    grad.addColorStop(1,   'rgba(5,5,5,0.97)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0,0,W,H);
+
+    // Film grain
+    var gCanvas = document.createElement('canvas');
+    gCanvas.width = W; gCanvas.height = H;
+    var gCtx = gCanvas.getContext('2d');
+    var gData = gCtx.createImageData(W, H);
+    for (var gi=0; gi<gData.data.length; gi+=4) {
+      var v = Math.random()*30|0;
+      gData.data[gi]=gData.data[gi+1]=gData.data[gi+2]=v; gData.data[gi+3]=18;
+    }
+    gCtx.putImageData(gData,0,0);
+    ctx.drawImage(gCanvas,0,0);
+
+    // Golden top bar
+    ctx.fillStyle = GOLD;
+    ctx.fillRect(0, 0, W, 3);
+
+    // App icon top-right
+    var iconImg = await _loadImg(window.location.origin + '/icons/icon-192.png');
+    if (iconImg) ctx.drawImage(iconImg, W-56, 18, 40, 40);
+
+    // Poster centered
+    var PW = 200, PH = 300, PX = (W-PW)/2, PY = 180;
+    var posterImg = entry.posterPath ? await _loadImg(_proxyTmdb(entry.posterPath)) : null;
+    if (posterImg) {
+      ctx.save();
+      ctx.shadowColor = 'rgba(0,0,0,0.7)';
+      ctx.shadowBlur  = 24;
+      ctx.drawImage(posterImg, PX, PY, PW, PH);
+      ctx.restore();
+      ctx.strokeStyle = GOLD;
+      ctx.lineWidth   = 2;
+      ctx.strokeRect(PX, PY, PW, PH);
+    } else {
+      ctx.fillStyle = '#1a1a1a';
+      ctx.fillRect(PX, PY, PW, PH);
+      ctx.fillStyle = '#333';
+      ctx.font = 'bold 80px serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('🎬', W/2, PY + PH/2 + 20);
+    }
+
+    var yPos = PY + PH + 48;
+
+    // Movie title
+    await document.fonts.ready;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = TEXT_PRI;
+    ctx.font = 'bold 42px "Bebas Neue", "Anton", sans-serif';
+    var titleWords = (entry.movieTitle || '').toUpperCase();
+    // Wrap title if too long
+    var maxW = W - 120;
+    var words = titleWords.split(' ');
+    var lines = [], line = '';
+    words.forEach(function(w) {
+      var test = line ? line+' '+w : w;
+      if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = w; }
+      else line = test;
+    });
+    if (line) lines.push(line);
+    lines.forEach(function(l, i) {
+      ctx.fillText(l, W/2, yPos + i*50);
+    });
+    yPos += lines.length * 50 + 16;
+
+    // Watch date
+    ctx.fillStyle = TEXT_DIM;
+    ctx.font = '28px "Montserrat", sans-serif';
+    ctx.fillText(_trFmt(entry.date), W/2, yPos);
+    yPos += 50;
+
+    // Format + Arabic badges
+    var badges = [];
+    if (entry.format)   badges.push(entry.format.toUpperCase());
+    if (entry.isArabic) badges.push('عربي');
+    if (badges.length) {
+      var totalBW = 0;
+      var badgePads = badges.map(function(b) {
+        ctx.font = '24px "Montserrat", sans-serif';
+        return { text: b, w: ctx.measureText(b).width + 32 };
+      });
+      badgePads.forEach(function(b) { totalBW += b.w + 12; });
+      var bx = (W - totalBW) / 2;
+      badgePads.forEach(function(b) {
+        ctx.fillStyle = 'rgba(255,184,0,0.12)';
+        _roundRect(ctx, bx, yPos-24, b.w, 36, 8);
+        ctx.fill();
+        ctx.strokeStyle = GOLD;
+        ctx.lineWidth = 1;
+        _roundRect(ctx, bx, yPos-24, b.w, 36, 8);
+        ctx.stroke();
+        ctx.fillStyle = GOLD;
+        ctx.font = '22px "Montserrat", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(b.text, bx+16, yPos+4);
+        ctx.textAlign = 'center';
+        bx += b.w + 12;
+      });
+      yPos += 56;
+    }
+
+    // Divider
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(80, yPos); ctx.lineTo(W-80, yPos);
+    ctx.stroke();
+    yPos += 40;
+
+    // Stats row: count | rank | format
+    var sorted = _trSorted();
+    var me = _trGetUser();
+    var rank = me ? sorted.findIndex(function(e) { return e.uid === me.uid; }) + 1 : 0;
+    var myTotalCount = _trMyCount;
+    var fmtLabel = entry.format ? entry.format.toUpperCase() : '—';
+
+    var cols = [
+      { val: String(myTotalCount), label: 'FILMS IN '+TR_YEAR },
+      { val: rank > 0 ? '#'+rank : '—',  label: 'THEATER RACE' },
+      { val: fmtLabel, label: 'FORMAT' }
+    ];
+    var colW = W / 3;
+    cols.forEach(function(c, ci) {
+      var cx = colW * ci + colW/2;
+      ctx.fillStyle = GOLD;
+      ctx.font = 'bold 68px "Bebas Neue", "Anton", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(c.val, cx, yPos+50);
+      ctx.fillStyle = 'rgba(244,241,234,0.5)';
+      ctx.font = '600 20px "Montserrat", sans-serif';
+      ctx.fillText(c.label, cx, yPos+80);
+    });
+    yPos += 110;
+
+    // Bottom bar
+    var BAR_Y = H - 70;
+    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    ctx.fillRect(0, BAR_Y-1, W, 70);
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0,BAR_Y-1); ctx.lineTo(W,BAR_Y-1); ctx.stroke();
+
+    ctx.fillStyle = TEXT_DIM;
+    ctx.font = '600 22px "Montserrat", sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('p-movies.com', 40, H-28);
+
+    var username = (window._pmMyProfile && window._pmMyProfile.username)
+      ? '@' + window._pmMyProfile.username : '';
+    if (username) {
+      ctx.textAlign = 'center';
+      ctx.fillText(username, W/2, H-28);
+    }
+
+    ctx.fillStyle = GOLD;
+    ctx.beginPath();
+    ctx.arc(W-44, H-36, 5, 0, Math.PI*2);
+    ctx.fill();
+
+    return canvas.toDataURL('image/png');
+  }
+
+  function _roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.lineTo(x+w-r, y);
+    ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+    ctx.lineTo(x+w, y+h-r);
+    ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+    ctx.lineTo(x+r, y+h);
+    ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+    ctx.lineTo(x, y+r);
+    ctx.quadraticCurveTo(x, y, x+r, y);
+    ctx.closePath();
+  }
+
+  /* ── Profile: load & inject theater section ──────────────────── */
+  window.pmTrLoadProfileSection = async function(uid, isOwn, container) {
+    if (!container) return;
+    try {
+      var tok = isOwn ? await _trToken() : null;
+      var authQ = tok ? '?auth='+tok : '';
+      var url = TR_RTDB + '/theaterLogs/' + uid + '/' + TR_YEAR + '.json' + authQ;
+      var r = await fetch(url);
+      if (!r.ok) return;
+      var data = await r.json();
+      if (!data) return;
+      var logs = Object.values(data).filter(Boolean).sort(function(a,b){ return (b.timestamp||0)-(a.timestamp||0); });
+      if (!logs.length) return;
+
+      var totalCount = logs.length;
+      var arCount    = logs.filter(function(l) { return l.isArabic; }).length;
+
+      // Find rank
+      var sorted = _trSorted();
+      var rank   = sorted.findIndex(function(e){ return e.uid === uid; }) + 1;
+
+      var badgesHtml = '<span class="pm-tr-prof-badge">🎬 '+totalCount+' film'+(totalCount!==1?'s':'')+'</span>'
+        + (arCount > 0 ? '<span class="pm-tr-prof-badge">عربي '+arCount+'</span>' : '')
+        + (rank > 0 ? '<span class="pm-tr-prof-badge">#'+rank+' Theater Race</span>' : '');
+
+      var postersHtml = logs.slice(0,12).map(function(l, i) {
+        var arClass = l.isArabic ? ' arabic' : '';
+        var moon    = l.openingWeekend ? '<span class="moon-badge">🌙</span>' : '';
+        var img     = l.posterPath
+          ? '<img src="https://image.tmdb.org/t/p/w92'+l.posterPath+'" alt="'+_esc(l.movieTitle||'')+'" loading="lazy">'
+          : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.3rem">🎬</div>';
+        return '<div class="pm-tr-prof-poster'+arClass+'" title="'+_esc(l.movieTitle||'')+'">'
+          + img + moon + '</div>';
+      }).join('');
+
+      container.innerHTML = '<div class="pm-prof-section-title">🎬 THEATER LOG '+TR_YEAR+'</div>'
+        + '<div class="pm-tr-prof-section">'
+        + '<div class="pm-tr-prof-badges">' + badgesHtml + '</div>'
+        + '<div class="pm-tr-prof-posters">' + postersHtml + '</div>'
+        + '</div>';
+    } catch(e) {}
+  };
+
+  /* ── Load own logs on auth ──────────────────────────────────── */
+  async function _trLoadMyLogs() {
+    var me = _trGetUser();
+    if (!me) return;
+    try {
+      var tok = await _trToken();
+      var authQ = tok ? '?auth='+tok : '';
+      var r = await fetch(TR_RTDB + '/theaterLogs/' + me.uid + '/' + TR_YEAR + '.json' + authQ);
+      if (!r.ok) return;
+      var data = await r.json();
+      if (!data) { _trMyCount = 0; _trMyArCount = 0; _trMyLogs = []; }
+      else {
+        _trMyLogs    = Object.values(data).filter(Boolean).sort(function(a,b){ return (b.timestamp||0)-(a.timestamp||0); });
+        _trMyCount   = _trMyLogs.length;
+        _trMyArCount = _trMyLogs.filter(function(l){ return l.isArabic; }).length;
+      }
+      _trRenderStrip();
+      _trRenderBoard();
+
+      // Show landing CTA only if zero logs and not previously shown
+      if (_trMyCount === 0 && !localStorage.getItem('pmTrLogged2026')) {
+        var cta = document.getElementById('pmLandingTrCta');
+        if (cta && document.getElementById('pmLandingScreen') &&
+            document.getElementById('pmLandingScreen').style.display !== 'none') {
+          cta.style.display = 'block';
+        }
+      }
+    } catch(e) {}
+  }
+
+  /* ── Init ─────────────────────────────────────────────────── */
+  // Start Firebase listener immediately
+  _trStartListener();
+
+  // Hook into auth state
+  var _trAuthChecked = false;
+  function _trOnAuth() {
+    if (_trAuthChecked) return;
+    var me = _trGetUser();
+    if (!me) return;
+    _trAuthChecked = true;
+    _trLoadMyLogs();
+    // Show log button on strip
+    var btn = document.getElementById('pmTrLogBtnStrip');
+    if (btn) btn.style.display = 'flex';
+  }
+
+  // Poll for user (Firebase auth may resolve at different times)
+  var _trAuthPoll = setInterval(function() {
+    if (_trGetUser()) { clearInterval(_trAuthPoll); _trOnAuth(); }
+  }, 400);
+  setTimeout(function() { clearInterval(_trAuthPoll); }, 10000);
+
+  // Expose open log for external callers
+  window.pmTrOpenLog = window.pmTrOpenLog; // already set above
 
 })();
 </script>
