@@ -15647,7 +15647,10 @@ async function submitEditorReview() {
 
   const record = { title, tmdbId, poster, backdrop, year, rating, festival, headline, review, tags, slug: _editorSlug(title), publishedAt: Date.now() };
   try {
-    const res = await fetch(`${RTDB}/editorReviews.json`, {
+    const _erUser = window.pmGetUser ? window.pmGetUser() : null;
+    const _erTok  = _erUser?.getIdToken ? await _erUser.getIdToken() : null;
+    const _erAuth = _erTok ? `?auth=${_erTok}` : '';
+    const res = await fetch(`${RTDB}/editorReviews.json${_erAuth}`, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify(record)
@@ -15668,7 +15671,10 @@ async function deleteEditorReview(key, e) {
   e.stopPropagation();
   if (!confirm('Delete this review?')) return;
   try {
-    await fetch(`${RTDB}/editorReviews/${encodeURIComponent(key)}.json`, { method: 'DELETE' });
+    const _delUser = window.pmGetUser ? window.pmGetUser() : null;
+    const _delTok  = _delUser?.getIdToken ? await _delUser.getIdToken() : null;
+    const _delAuth = _delTok ? `?auth=${_delTok}` : '';
+    await fetch(`${RTDB}/editorReviews/${encodeURIComponent(key)}.json${_delAuth}`, { method: 'DELETE' });
     editorLoaded = false;
     loadEditorReviews();
   } catch(_) {}
