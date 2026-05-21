@@ -2802,6 +2802,19 @@
     overflow-y: auto; flex: 1;
     padding: 8px 0 12px;
   }
+  /* mode picker */
+  #pmSearchModes { padding: 24px 20px 28px; }
+  .pgs-mode-hint { font-family:'Montserrat',sans-serif; font-size:.62rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:#555; margin-bottom:18px; text-align:center; }
+  .pgs-mode-btns { display:flex; gap:10px; }
+  .pgs-mode-btn { flex:1; display:flex; flex-direction:column; align-items:center; gap:8px; background:#181818; border:1px solid #222; border-radius:14px; padding:18px 8px; cursor:pointer; transition:all .18s; }
+  .pgs-mode-btn:hover { border-color:rgba(245,166,35,.5); background:rgba(245,166,35,.06); }
+  .pgs-mode-icon { font-size:1.6rem; line-height:1; }
+  .pgs-mode-lbl { font-family:'Montserrat',sans-serif; font-size:.6rem; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:#bbb; }
+  /* search bar */
+  #pmSearchBack { background:none; border:none; color:#888; font-size:1.1rem; cursor:pointer; padding:0 4px; line-height:1; flex-shrink:0; }
+  #pmSearchBack:hover { color:#ddd; }
+  #pmSearchModeTag { font-family:'Montserrat',sans-serif; font-size:.58rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:#f5a623; background:rgba(245,166,35,.12); border:1px solid rgba(245,166,35,.25); border-radius:8px; padding:3px 8px; flex-shrink:0; white-space:nowrap; }
+
   /* section label */
   .pgs-label {
     font-family: 'Montserrat', sans-serif; font-size: .56rem; font-weight: 800;
@@ -3238,10 +3251,31 @@
 <!-- ── Global Search Overlay ── -->
 <div id="pmSearchOverlay" onclick="if(event.target===this)pmCloseSearch()">
   <div id="pmSearchModal">
-    <div id="pmSearchBar">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input id="pmSearchInput" type="text" placeholder="Search movies, series, people…" autocomplete="off" oninput="pmSearchDebounce()" onkeydown="if(event.key==='Escape')pmCloseSearch()"/>
-      <button id="pmSearchClear" onclick="pmSearchClear()" aria-label="Clear">✕</button>
+    <!-- Step 1: choose category -->
+    <div id="pmSearchModes">
+      <div class="pgs-mode-hint">What are you looking for?</div>
+      <div class="pgs-mode-btns">
+        <button class="pgs-mode-btn" onclick="_gsSetMode('movies')">
+          <span class="pgs-mode-icon">🎬</span>
+          <span class="pgs-mode-lbl">Movies</span>
+        </button>
+        <button class="pgs-mode-btn" onclick="_gsSetMode('series')">
+          <span class="pgs-mode-icon">📺</span>
+          <span class="pgs-mode-lbl">Series</span>
+        </button>
+        <button class="pgs-mode-btn" onclick="_gsSetMode('people')">
+          <span class="pgs-mode-icon">👤</span>
+          <span class="pgs-mode-lbl">People</span>
+        </button>
+      </div>
+    </div>
+    <!-- Step 2: type to search -->
+    <div id="pmSearchBar" style="display:none">
+      <button id="pmSearchBack" onclick="_gsSetMode(null)" aria-label="Back">←</button>
+      <span id="pmSearchModeTag"></span>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="pmSearchInput" type="text" autocomplete="off" oninput="pmSearchDebounce()" onkeydown="if(event.key==='Escape')pmCloseSearch()"/>
+      <button id="pmSearchClear" onclick="pmSearchClear()" aria-label="Clear" style="display:none">✕</button>
     </div>
     <div id="pmSearchResults"></div>
   </div>
@@ -16607,9 +16641,10 @@ async function deleteEditorReview(key, e) {
       // ── Async: load follower + following counts (all profiles) ──
       (async function() {
         try {
+          var authParam = token ? '&auth=' + token : '';
           var [frRes, fgRes] = await Promise.all([
-            fetch(RTDB + '/followers/' + uid + '.json?shallow=true'),
-            fetch(RTDB + '/follows/'   + uid + '.json?shallow=true')
+            fetch(RTDB + '/followers/' + uid + '.json?shallow=true' + authParam),
+            fetch(RTDB + '/follows/'   + uid + '.json?shallow=true' + authParam)
           ]);
           var frCount = frRes.ok ? (await frRes.json() || {}) : {};
           var fgCount = fgRes.ok ? (await fgRes.json() || {}) : {};
@@ -18955,12 +18990,17 @@ async function deleteEditorReview(key, e) {
         window._pmFeedDirty = true;
       }
 
-      // Refresh follower count in stats bar
+      // Refresh follower + following counts in stats bar
       try {
-        var frR = await fetch(RTDB + '/followers/' + theirUid + '.json?shallow=true');
-        var frD = frR.ok ? (await frR.json() || {}) : {};
-        var el  = document.getElementById('pmProfStatFollowers');
-        if (el) el.textContent = Object.keys(frD).length;
+        var authQ = token ? '?shallow=true&auth=' + token : '?shallow=true';
+        var [frR2, fgR2] = await Promise.all([
+          fetch(RTDB + '/followers/' + theirUid + '.json' + authQ),
+          fetch(RTDB + '/follows/'   + theirUid + '.json' + authQ)
+        ]);
+        var elFr2 = document.getElementById('pmProfStatFollowers');
+        var elFg2 = document.getElementById('pmProfStatFollowing');
+        if (elFr2 && frR2.ok) elFr2.textContent = Object.keys((await frR2.json()) || {}).length;
+        if (elFg2 && fgR2.ok) elFg2.textContent = Object.keys((await fgR2.json()) || {}).length;
       } catch(_e) {}
 
     } catch(e) {
@@ -19405,23 +19445,65 @@ async function deleteEditorReview(key, e) {
   /* ════════════════════════════════════════════
      GLOBAL SEARCH
   ════════════════════════════════════════════ */
-  var _gsTimer = null;
-  var _gsAbort = null;
+  /* ════════════════════════════════════════════
+     GLOBAL SEARCH — 3-mode (Movies · Series · People)
+  ════════════════════════════════════════════ */
+  var _gsTimer  = null;
+  var _gsAbort  = null;
+  var _gsMode   = null;   // 'movies' | 'series' | 'people' | null
+  var _gsPeopleCache = null; // all user profiles fetched once per session
+
+  var _gsModeLabels = { movies:'🎬 Movies', series:'📺 Series', people:'👤 People' };
+  var _gsModeHints  = { movies:'Search any film title…', series:'Search any series title…', people:'Search by name or @username…' };
 
   window.pmOpenSearch = function() {
     var overlay = document.getElementById('pmSearchOverlay');
     if (!overlay) return;
     overlay.style.display = 'block';
-    requestAnimationFrame(function() {
-      var inp = document.getElementById('pmSearchInput');
-      if (inp) inp.focus();
-    });
+    _gsSetMode(null); // always start at mode picker
   };
 
   window.pmCloseSearch = function() {
     var overlay = document.getElementById('pmSearchOverlay');
     if (overlay) overlay.style.display = 'none';
-    pmSearchClear();
+    _gsSetMode(null);
+  };
+
+  window._gsSetMode = function(mode) {
+    _gsMode = mode;
+    clearTimeout(_gsTimer);
+    if (_gsAbort) { _gsAbort.abort(); _gsAbort = null; }
+
+    var modesEl = document.getElementById('pmSearchModes');
+    var barEl   = document.getElementById('pmSearchBar');
+    var resEl   = document.getElementById('pmSearchResults');
+    var inp     = document.getElementById('pmSearchInput');
+    var clr     = document.getElementById('pmSearchClear');
+    var tagEl   = document.getElementById('pmSearchModeTag');
+
+    if (!mode) {
+      // Show mode picker, hide input + results
+      if (modesEl) modesEl.style.display = '';
+      if (barEl)   barEl.style.display   = 'none';
+      if (resEl)   resEl.innerHTML        = '';
+      if (inp)     inp.value              = '';
+      if (clr)     clr.style.display     = 'none';
+    } else {
+      // Show search bar for selected mode
+      if (modesEl) modesEl.style.display = 'none';
+      if (barEl)   barEl.style.display   = '';
+      if (tagEl)   tagEl.textContent     = _gsModeLabels[mode] || mode;
+      if (inp) {
+        inp.placeholder = _gsModeHints[mode] || 'Search…';
+        inp.value       = '';
+        inp.focus();
+      }
+      if (resEl) resEl.innerHTML = '';
+      if (clr)   clr.style.display = 'none';
+
+      // Pre-fetch all user profiles in background so People search is instant
+      if (mode === 'people' && !_gsPeopleCache) _gsPreloadPeople();
+    }
   };
 
   window.pmSearchClear = function() {
@@ -19436,169 +19518,122 @@ async function deleteEditorReview(key, e) {
   };
 
   window.pmSearchDebounce = function() {
-    var q = (document.getElementById('pmSearchInput') || {}).value || '';
+    var q   = (document.getElementById('pmSearchInput') || {}).value || '';
     var clr = document.getElementById('pmSearchClear');
     if (clr) clr.style.display = q.length ? '' : 'none';
     clearTimeout(_gsTimer);
-    if (!q.trim()) {
-      var res = document.getElementById('pmSearchResults');
-      if (res) res.innerHTML = '';
-      return;
-    }
-    _gsTimer = setTimeout(function() { _gsRun(q.trim()); }, 320);
+    var res = document.getElementById('pmSearchResults');
+    if (!q.trim()) { if (res) res.innerHTML = ''; return; }
+    _gsTimer = setTimeout(function() { _gsRun(q.trim()); }, 300);
   };
 
   // Escape closes search overlay
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
       var overlay = document.getElementById('pmSearchOverlay');
-      if (overlay && overlay.style.display !== 'none') { pmCloseSearch(); e.stopPropagation(); }
+      if (overlay && overlay.style.display !== 'none') {
+        if (_gsMode) _gsSetMode(null); // back to mode picker first
+        else pmCloseSearch();
+        e.stopPropagation();
+      }
     }
   }, true);
 
+  // Pre-load all user profiles (one request) for instant People search
+  async function _gsPreloadPeople() {
+    try {
+      var r = await fetch(RTDB + '/users.json');
+      if (!r.ok) return;
+      var raw = await r.json() || {};
+      _gsPeopleCache = Object.entries(raw).map(function(e) {
+        return Object.assign({ uid: e[0] }, e[1]);
+      });
+    } catch(_e) {}
+  }
+
   async function _gsRun(q) {
+    if (!_gsMode) return;
     var res = document.getElementById('pmSearchResults');
     if (!res) return;
     res.innerHTML = '<div class="pgs-empty">Searching…</div>';
 
     if (_gsAbort) _gsAbort.abort();
     _gsAbort = new AbortController();
-    var sig  = _gsAbort.signal;
-
+    var sig    = _gsAbort.signal;
     var apiKey = typeof getKey === 'function' ? getKey() : '';
     var TMDB_B = 'https://api.themoviedb.org/3';
     var IMG    = 'https://image.tmdb.org/t/p/w92';
 
     try {
-      // Run all three searches in parallel
-      var [movRes, tvRes, usersRes] = await Promise.all([
-        fetch(TMDB_B + '/search/movie?api_key=' + apiKey + '&query=' + encodeURIComponent(q) + '&language=en-US&page=1', { signal: sig }),
-        fetch(TMDB_B + '/search/tv?api_key='    + apiKey + '&query=' + encodeURIComponent(q) + '&language=en-US&page=1', { signal: sig }),
-        fetch(RTDB + '/users.json?shallow=true', { signal: sig })
-      ]);
-
-      var movies  = movRes.ok  ? ((await movRes.json()).results  || []).slice(0, 5) : [];
-      var shows   = tvRes.ok   ? ((await tvRes.json()).results   || []).slice(0, 5) : [];
-      var allUids = usersRes.ok ? Object.keys((await usersRes.json()) || {}) : [];
-
-      // Client-side user search: fetch profiles for a manageable sample
-      // and filter by nickname/username matching query
-      var ql = q.toLowerCase();
-      var matchedUsers = [];
-      if (allUids.length) {
-        var sample = allUids.slice(0, 80); // reasonable cap
-        var profs  = await Promise.all(sample.map(async function(uid) {
-          try {
-            var r = await fetch(RTDB + '/users/' + uid + '.json', { signal: sig });
-            return r.ok ? { uid: uid, ...(await r.json()) } : null;
-          } catch(_e) { return null; }
-        }));
-        matchedUsers = profs
-          .filter(function(p) {
-            if (!p) return false;
-            var nick = (p.nickname || '').toLowerCase();
-            var user = (p.username || '').toLowerCase();
-            return nick.includes(ql) || user.includes(ql);
-          })
-          .slice(0, 5);
-      }
-
-      if (!movies.length && !shows.length && !matchedUsers.length) {
-        res.innerHTML = '<div class="pgs-empty">No results for "' + _esc(q) + '"</div>';
-        return;
-      }
-
-      var html = '';
-
-      // ── Movies ──
-      if (movies.length) {
-        html += '<div class="pgs-label">Movies</div>';
-        html += movies.map(function(m) {
+      if (_gsMode === 'movies') {
+        // ── Movies ──
+        var r = await fetch(TMDB_B + '/search/movie?api_key=' + apiKey + '&query=' + encodeURIComponent(q) + '&language=en-US&page=1', { signal: sig });
+        var movies = r.ok ? ((await r.json()).results || []).slice(0, 10) : [];
+        if (!movies.length) { res.innerHTML = '<div class="pgs-empty">No movies found for "' + _esc(q) + '"</div>'; return; }
+        res.innerHTML = movies.map(function(m) {
           var year  = m.release_date ? m.release_date.slice(0,4) : '';
-          var thumb = m.poster_path
-            ? '<img src="' + IMG + m.poster_path + '" alt="' + _esc(m.title) + '" loading="lazy">'
-            : '🎬';
-          var enc = encodeURIComponent(JSON.stringify({
-            id: m.id, title: m.title, poster: m.poster_path || '',
-            backdrop: m.backdrop_path || '', year: parseInt(year)||0,
-            overview: m.overview || '', vote_average: m.vote_average || 0,
-            media_type: 'movie'
-          }));
-          return '<div class="pgs-row" onclick=\'_gsOpenMovie(' + JSON.stringify({
-            id:m.id, title:m.title, poster_path:m.poster_path||'',
-            backdrop_path:m.backdrop_path||'', release_date:m.release_date||'',
-            overview:m.overview||'', vote_average:m.vote_average||0, media_type:'movie'
-          }) + ')\'>'
+          var thumb = m.poster_path ? '<img src="' + IMG + m.poster_path + '" alt="' + _esc(m.title) + '" loading="lazy">' : '🎬';
+          var obj   = { id:m.id, title:m.title, poster_path:m.poster_path||'', backdrop_path:m.backdrop_path||'', release_date:m.release_date||'', overview:m.overview||'', vote_average:m.vote_average||0, media_type:'movie' };
+          return '<div class="pgs-row" onclick="_gsOpenMovie(' + _esc(JSON.stringify(obj)) + ')">'
             + '<div class="pgs-thumb">' + thumb + '</div>'
-            + '<div class="pgs-info">'
-            +   '<div class="pgs-title">' + _esc(m.title) + '</div>'
-            +   '<div class="pgs-meta">' + (year ? year + ' · ' : '') + 'Movie</div>'
-            + '</div>'
+            + '<div class="pgs-info"><div class="pgs-title">' + _esc(m.title) + '</div><div class="pgs-meta">' + (year||'—') + ' · Movie</div></div>'
             + '</div>';
         }).join('');
-      }
 
-      // ── Series ──
-      if (shows.length) {
-        if (movies.length) html += '<div class="pgs-divider"></div>';
-        html += '<div class="pgs-label">Series</div>';
-        html += shows.map(function(s) {
+      } else if (_gsMode === 'series') {
+        // ── Series ──
+        var r = await fetch(TMDB_B + '/search/tv?api_key=' + apiKey + '&query=' + encodeURIComponent(q) + '&language=en-US&page=1', { signal: sig });
+        var shows = r.ok ? ((await r.json()).results || []).slice(0, 10) : [];
+        if (!shows.length) { res.innerHTML = '<div class="pgs-empty">No series found for "' + _esc(q) + '"</div>'; return; }
+        res.innerHTML = shows.map(function(s) {
           var year  = s.first_air_date ? s.first_air_date.slice(0,4) : '';
-          var thumb = s.poster_path
-            ? '<img src="' + IMG + s.poster_path + '" alt="' + _esc(s.name) + '" loading="lazy">'
-            : '📺';
-          return '<div class="pgs-row" onclick=\'_gsOpenTv(' + JSON.stringify({
-            id:s.id, name:s.name, poster_path:s.poster_path||'',
-            backdrop_path:s.backdrop_path||'', first_air_date:s.first_air_date||'',
-            overview:s.overview||'', vote_average:s.vote_average||0, media_type:'tv'
-          }) + ')\'>'
+          var thumb = s.poster_path ? '<img src="' + IMG + s.poster_path + '" alt="' + _esc(s.name) + '" loading="lazy">' : '📺';
+          var obj   = { id:s.id, name:s.name, poster_path:s.poster_path||'', backdrop_path:s.backdrop_path||'', first_air_date:s.first_air_date||'', overview:s.overview||'', vote_average:s.vote_average||0, media_type:'tv' };
+          return '<div class="pgs-row" onclick="_gsOpenTv(' + _esc(JSON.stringify(obj)) + ')">'
             + '<div class="pgs-thumb">' + thumb + '</div>'
-            + '<div class="pgs-info">'
-            +   '<div class="pgs-title">' + _esc(s.name) + '</div>'
-            +   '<div class="pgs-meta">' + (year ? year + ' · ' : '') + 'Series</div>'
-            + '</div>'
+            + '<div class="pgs-info"><div class="pgs-title">' + _esc(s.name) + '</div><div class="pgs-meta">' + (year||'—') + ' · Series</div></div>'
             + '</div>';
         }).join('');
-      }
 
-      // ── Users ──
-      if (matchedUsers.length) {
-        if (movies.length || shows.length) html += '<div class="pgs-divider"></div>';
-        html += '<div class="pgs-label">People</div>';
-        html += matchedUsers.map(function(p) {
+      } else if (_gsMode === 'people') {
+        // ── People — client-side filter against cached profiles ──
+        if (!_gsPeopleCache) await _gsPreloadPeople();
+        var ql = q.toLowerCase();
+        var matched = (_gsPeopleCache || []).filter(function(p) {
+          return (p.nickname||'').toLowerCase().includes(ql)
+              || (p.username||'').toLowerCase().includes(ql);
+        }).slice(0, 15);
+        if (!matched.length) { res.innerHTML = '<div class="pgs-empty">No members found for "' + _esc(q) + '"</div>'; return; }
+        res.innerHTML = matched.map(function(p) {
           var name   = p.nickname || p.username || 'Member';
           var handle = p.username ? '@' + p.username : '';
-          var av     = p.photoURL
-            ? '<img src="' + _esc(p.photoURL) + '" alt="' + _esc(name) + '">'
-            : name.charAt(0).toUpperCase();
-          var badge  = p.isEditor ? '<span class="pgs-badge">🔑 Founder</span>' : '';
+          var av     = p.photoURL ? '<img src="' + _esc(p.photoURL) + '" alt="' + _esc(name) + '">' : name.charAt(0).toUpperCase();
+          var badge  = p.isEditor ? ' <span class="pgs-badge">🔑 Founder</span>' : '';
+          var meta   = [handle, p.reviewCount ? p.reviewCount + ' review' + (p.reviewCount!==1?'s':'') : ''].filter(Boolean).join(' · ');
           return '<div class="pgs-row" onclick="pmCloseSearch();pmOpenProfile(\'' + _esc(p.uid) + '\')">'
             + '<div class="pgs-av">' + av + '</div>'
-            + '<div class="pgs-info">'
-            +   '<div class="pgs-title">' + _esc(name) + badge + '</div>'
-            +   (handle ? '<div class="pgs-meta">' + _esc(handle) + (p.reviewCount ? ' · ' + p.reviewCount + ' review' + (p.reviewCount!==1?'s':'') : '') + '</div>' : '')
-            + '</div>'
+            + '<div class="pgs-info"><div class="pgs-title">' + _esc(name) + badge + '</div>' + (meta ? '<div class="pgs-meta">' + _esc(meta) + '</div>' : '') + '</div>'
             + '</div>';
         }).join('');
       }
 
-      res.innerHTML = html;
-
     } catch(e) {
-      if (e.name === 'AbortError') return; // user typed again — ignore
+      if (e.name === 'AbortError') return;
       res.innerHTML = '<div class="pgs-empty">Something went wrong. Try again.</div>';
     }
   }
 
-  // Open helpers (close search first, then delegate to existing modal functions)
-  window._gsOpenMovie = function(m) {
+  window._gsOpenMovie = function(mStr) {
     pmCloseSearch();
-    if (typeof openModal === 'function') openModal(m);
+    try { var m = typeof mStr === 'string' ? JSON.parse(mStr) : mStr; if (typeof openModal === 'function') openModal(m); } catch(_e) {}
   };
-  window._gsOpenTv = function(s) {
+  window._gsOpenTv = function(sStr) {
     pmCloseSearch();
-    if (typeof openTvModal === 'function') openTvModal(s);
-    else if (typeof openModal === 'function') openModal(Object.assign({}, s, { title: s.name, release_date: s.first_air_date }));
+    try {
+      var s = typeof sStr === 'string' ? JSON.parse(sStr) : sStr;
+      if (typeof openTvModal === 'function') openTvModal(s);
+      else if (typeof openModal === 'function') openModal(Object.assign({}, s, { title: s.name, release_date: s.first_air_date }));
+    } catch(_e) {}
   };
 
   // Hook into switchTab to trigger the social feed
