@@ -16338,6 +16338,9 @@ async function deleteEditorReview(key, e) {
       // Build isolated profile review map — not shared with the community registry,
       // so community re-renders can never overwrite these entries.
       window._pmProfileRevMap = {};
+      // Also store as an indexed array so onclick can use numeric index
+      // instead of fp string — avoids collisions when two reviews share the same fp.
+      window._pmProfileRevsList = reviews.slice();
       if (typeof fanReviewFp === 'function') {
         reviews.forEach(function(r) {
           var fp = fanReviewFp(r);
@@ -16478,12 +16481,10 @@ async function deleteEditorReview(key, e) {
         : (function() {
             var recentRevs = reviews.slice(0, 8);
             var items = recentRevs.map(function(r, i) {
-              var fp = typeof fanReviewFp === 'function' ? fanReviewFp(r) : '';
-              var safeFp = (fp || '').replace(/"/g, '');
               var safeUid = (uid || '').replace(/'/g, '');
-              // posterPath starts null — async-filled below after render
+              // Use numeric index (not fp string) so colliding fingerprints never open the wrong review
               return { posterPath: null, title: r.movie, frameId: 'pmProfRevFrame-' + i,
-                onclick: 'window._pmReviewReturnUid=\'' + safeUid + '\';pmCloseProfile();_pmOpenReviewFromProfile(\'' + safeFp + '\')', _r: r };
+                onclick: 'window._pmReviewReturnUid=\'' + safeUid + '\';pmCloseProfile();_pmOpenReviewFromProfile(' + i + ')', _r: r };
             });
             var navToReview = 'pmCloseProfile();switchTab(\'movies\');setTimeout(function(){var s=document.getElementById(\'fanSection\');if(s)s.scrollIntoView({behavior:\'smooth\'});setTimeout(function(){if(typeof toggleFanForm===\'function\')toggleFanForm();},300);},350)';
             // Build strip with frame IDs
@@ -16537,12 +16538,11 @@ async function deleteEditorReview(key, e) {
             if (reviews.length) {
               var safeProfileUid = (uid || '').replace(/'/g, '');
               var cards = reviews.map(function(r, rIdx) {
-                var fp = typeof fanReviewFp === 'function' ? fanReviewFp(r) : '';
                 var stars = typeof _starsHtml === 'function' ? _starsHtml(r.rating || 0) : '';
-                var safeFp = (fp || '').replace(/"/g, '');
-                // Use index-based poster ID — fp collisions cause duplicate DOM ids
-                // which make getElementById return the wrong element for one card.
-                return '<div class="pm-prof-rev-card" onclick="window._pmReviewReturnUid=\'' + safeProfileUid + '\';pmCloseProfile();_pmOpenReviewFromProfile(\'' + safeFp + '\')">'
+                // Use numeric index for onclick — avoids fp collision bug where two reviews
+                // share the same fingerprint and one always opens the wrong review.
+                // Index-based poster ID (ppRvPoster-{rIdx}) is already collision-free.
+                return '<div class="pm-prof-rev-card" onclick="window._pmReviewReturnUid=\'' + safeProfileUid + '\';pmCloseProfile();_pmOpenReviewFromProfile(' + rIdx + ')">'
                   + '<div class="pm-prof-rev-poster" id="ppRvPoster-' + rIdx + '">🎬</div>'
                   + '<div class="pm-prof-rev-meta">'
                   + '<div class="pm-prof-rev-title" title="' + _esc(r.movie || '') + '">' + _esc(r.movie || 'Unknown') + '</div>'
@@ -16965,20 +16965,11 @@ async function deleteEditorReview(key, e) {
       _loadFilmPoster('favFilmAllTime', false);
       _loadFilmPoster('favFilm2026', true);
 
-      // Lazy-load review posters + pre-register
+      // Pre-register all profile reviews in the community registry (fp → review)
+      // Poster injection is handled index-based in the Reviews tab render block above.
       reviews.forEach(function(r) {
         var fp = typeof fanReviewFp === 'function' ? fanReviewFp(r) : '';
-        if (!fp) return;
-        var el = document.getElementById('ppRvPoster-' + fp);
-        if (!el) return;
-        var isTV = r._mediaType === 'tv' || r.mediaType === 'tv';
-        var _fpFn = window._pmFetchPoster || (typeof fetchPoster === 'function' ? fetchPoster : null);
-        if (_fpFn) {
-          _fpFn(r.movie, isTV ? 'tv' : 'movie', r.tmdbId || null).then(function(imgUrl) {
-            if (imgUrl && el) el.innerHTML = '<img src="' + imgUrl + '" alt="' + _esc(r.movie || '') + '" loading="lazy"/>';
-          });
-        }
-        if (typeof window._pmRegisterReview === 'function') window._pmRegisterReview(fp, r);
+        if (fp && typeof window._pmRegisterReview === 'function') window._pmRegisterReview(fp, r);
       });
 
       // Async: load user lists into Lists tab (visible to all)
@@ -17471,7 +17462,8 @@ async function deleteEditorReview(key, e) {
     document.body.style.overflow = '';
     _profileUid  = null;
     _profileData = null;
-    window._pmProfileRevMap = null; // clear isolated review map
+    window._pmProfileRevMap  = null; // clear isolated review map
+    window._pmProfileRevsList = null; // clear indexed list
     // Restore clean URL if we pushed a profile URL (handles both ?u= and /u/ forms)
     if (history.state && history.state.pmProfile) {
       var cleanPath = window.location.pathname.startsWith('/u/') ? '/' : window.location.pathname;
@@ -18006,20 +17998,35 @@ async function deleteEditorReview(key, e) {
     }
   };
 
-  window._pmOpenReviewFromProfile = function(fp) {
+  window._pmOpenReviewFromProfile = function(idxOrFp) {
     // Small delay so pmCloseProfile animation finishes first
     setTimeout(function() {
       if (typeof openFanReviewPage !== 'function') return;
-      // If the review isn't in the registry yet, try to find it in the community cache
-      if (window._pmRegisterReview && window._pmGetCommunityReviews) {
-        var allR = window._pmGetCommunityReviews();
-        for (var i = 0; i < allR.length; i++) {
-          var r = allR[i];
-          var rFp = typeof fanReviewFp === 'function' ? fanReviewFp(r) : '';
-          if (rFp === fp) { window._pmRegisterReview(fp, r); break; }
+      var r = null, fp = null;
+      if (typeof idxOrFp === 'number' && window._pmProfileRevsList) {
+        // Index-based path — collision-safe, always picks the exact review
+        r  = window._pmProfileRevsList[idxOrFp];
+        fp = r && typeof fanReviewFp === 'function' ? fanReviewFp(r) : null;
+      } else {
+        // Legacy fp string path (notifications, feed cards, etc.)
+        fp = String(idxOrFp);
+        r  = (window._pmProfileRevMap && window._pmProfileRevMap[fp]) || null;
+        // Also try community cache for reviews not in the profile map
+        if (!r && window._pmRegisterReview && window._pmGetCommunityReviews) {
+          var allR = window._pmGetCommunityReviews();
+          for (var i = 0; i < allR.length; i++) {
+            var cr = allR[i];
+            var crFp = typeof fanReviewFp === 'function' ? fanReviewFp(cr) : '';
+            if (crFp === fp) { r = cr; break; }
+          }
         }
       }
-      openFanReviewPage(fp);
+      // Force-register the exact review before opening — wins any collision in the registry
+      if (r && fp) {
+        if (window._pmProfileRevMap) window._pmProfileRevMap[fp] = r;
+        if (window._pmRegisterReview) window._pmRegisterReview(fp, r);
+      }
+      if (fp) openFanReviewPage(fp);
     }, 80);
   };
 
