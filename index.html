@@ -1940,7 +1940,7 @@
   }
   .pm-prof-close-btn, .pm-prof-share-btn {
     pointer-events: auto;
-    position: relative; top: 14px;
+    position: relative; top: 20px;
     background: rgba(0,0,0,.72); border: 1px solid rgba(255,255,255,.14);
     width: 42px; height: 42px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
@@ -2033,7 +2033,7 @@
     );
   }
   .pm-prof-hero-change {
-    position: absolute; top: 14px; right: 14px;
+    position: absolute; top: 20px; right: calc(16px + 42px + 10px); /* clears the 42px share btn + gap */
     background: rgba(0,0,0,.7); border: 1px solid rgba(255,255,255,.2);
     color: #ddd; font-size: .58rem; font-weight: 700; letter-spacing: .08em;
     text-transform: uppercase; padding: 6px 12px; border-radius: 20px;
@@ -4673,6 +4673,9 @@
       if (e.key === 'Escape') {
         const overlay = document.getElementById('modalOverlay');
         if (overlay.classList.contains('visible')) closeModal(null);
+        // Escape also closes the profile overlay
+        const profOverlay = document.getElementById('pmProfileOverlay');
+        if (profOverlay && profOverlay.style.display !== 'none' && typeof pmCloseProfile === 'function') pmCloseProfile();
       }
       // Arrow keys browse similar movies in modal
       const overlay = document.getElementById('modalOverlay');
