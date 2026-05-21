@@ -2738,12 +2738,6 @@
   /* Mobile — push chips below system status bar.
      Uses env() for Dynamic Island/notch + a 64px floor so it works even
      when env() is unsupported. 768px breakpoint covers all phones. */
-  @media(max-width:768px) {
-    #pmUserChip    { top: calc(env(safe-area-inset-top, 64px) + 16px); right: 58px; }
-    #pmHomeToggleBtn { top: calc(env(safe-area-inset-top, 64px) + 16px); left: 12px; }
-    #pmBellBtn     { top: calc(env(safe-area-inset-top, 64px) + 16px); right: 12px; }
-  }
-
   /* ════ BELL + NOTIFICATIONS PANEL ════ */
   #pmBellBtn {
     display: none; position: fixed; top: 12px; right: 14px; z-index: 201;
@@ -2761,8 +2755,91 @@
     align-items: center; justify-content: center;
     font-family: 'Montserrat', sans-serif; pointer-events: none;
   }
-  /* shift chip left to make room for bell */
-  #pmUserChip { right: 60px; }
+  /* shift chip + bell left to make room for search button */
+  #pmUserChip { right: 106px; }
+
+  /* ════ GLOBAL SEARCH BUTTON ════ */
+  #pmGlobalSearchBtn {
+    display: flex; position: fixed; top: 12px; right: 60px; z-index: 201;
+    width: 38px; height: 38px; border-radius: 50%;
+    background: rgba(10,10,10,.88); border: 1px solid rgba(255,255,255,.18);
+    cursor: pointer; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    color: #aaa; transition: color .2s, border-color .2s;
+    align-items: center; justify-content: center; padding: 0;
+  }
+  #pmGlobalSearchBtn:hover { border-color: rgba(245,166,35,.55); color: #f5a623; }
+
+  /* ════ GLOBAL SEARCH OVERLAY ════ */
+  #pmSearchOverlay {
+    display: none; position: fixed; inset: 0; z-index: 99998;
+    background: rgba(0,0,0,.75); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    padding: 14vh 16px 0; box-sizing: border-box;
+  }
+  #pmSearchModal {
+    max-width: 680px; margin: 0 auto;
+    background: #111; border: 1px solid rgba(255,255,255,.1);
+    border-radius: 16px; overflow: hidden;
+    box-shadow: 0 24px 80px rgba(0,0,0,.7);
+    max-height: 72vh; display: flex; flex-direction: column;
+  }
+  #pmSearchBar {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,.07);
+    flex-shrink: 0;
+  }
+  #pmSearchInput {
+    flex: 1; background: none; border: none; outline: none;
+    color: #eee; font-size: .95rem; font-family: inherit;
+    caret-color: #f5a623;
+  }
+  #pmSearchInput::placeholder { color: #444; }
+  #pmSearchClear {
+    background: none; border: none; color: #555; font-size: .85rem;
+    cursor: pointer; padding: 0; line-height: 1; display: none;
+  }
+  #pmSearchClear:hover { color: #aaa; }
+  #pmSearchResults {
+    overflow-y: auto; flex: 1;
+    padding: 8px 0 12px;
+  }
+  /* section label */
+  .pgs-label {
+    font-family: 'Montserrat', sans-serif; font-size: .56rem; font-weight: 800;
+    letter-spacing: .14em; text-transform: uppercase; color: #555;
+    padding: 10px 18px 6px;
+  }
+  /* result row */
+  .pgs-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 9px 18px; cursor: pointer; transition: background .15s;
+  }
+  .pgs-row:hover { background: rgba(255,255,255,.05); }
+  .pgs-thumb {
+    width: 36px; height: 54px; border-radius: 5px; overflow: hidden;
+    background: #1a1a1a; flex-shrink: 0; display: flex;
+    align-items: center; justify-content: center; font-size: 1.1rem; color: #333;
+  }
+  .pgs-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .pgs-av {
+    width: 36px; height: 36px; border-radius: 50%; overflow: hidden;
+    background: linear-gradient(135deg,#2a1800,#4a3000); flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .9rem; color: #f5a623; font-weight: 700; font-family: 'Bebas Neue', sans-serif;
+  }
+  .pgs-av img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+  .pgs-info { flex: 1; min-width: 0; }
+  .pgs-title { font-family: 'Montserrat', sans-serif; font-size: .8rem; font-weight: 700; color: #eee; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pgs-meta  { font-size: .65rem; color: #666; margin-top: 2px; }
+  .pgs-badge { font-size: .55rem; font-weight: 700; color: #f5a623; letter-spacing: .06em; text-transform: uppercase; background: rgba(245,166,35,.12); border: 1px solid rgba(245,166,35,.25); border-radius: 8px; padding: 2px 6px; margin-left: 6px; vertical-align: middle; }
+  .pgs-empty { padding: 32px 18px; text-align: center; color: #555; font-size: .8rem; }
+  .pgs-divider { height: 1px; background: rgba(255,255,255,.05); margin: 6px 0; }
+
+  @media(max-width: 768px) {
+    #pmGlobalSearchBtn { top: calc(env(safe-area-inset-top, 64px) + 16px); right: 58px; }
+    #pmBellBtn         { top: calc(env(safe-area-inset-top, 64px) + 16px); right: 12px; }
+    #pmUserChip        { top: calc(env(safe-area-inset-top, 64px) + 16px); right: 104px; }
+    #pmSearchOverlay   { padding-top: calc(env(safe-area-inset-top, 0px) + 70px); }
+  }
 
   #pmNotifOverlay {
     display: none; position: fixed; inset: 0; z-index: 99995;
@@ -3154,6 +3231,21 @@
   🔔
   <span id="pmBellBadge"></span>
 </button>
+<button id="pmGlobalSearchBtn" onclick="pmOpenSearch()" aria-label="Search">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+</button>
+
+<!-- ── Global Search Overlay ── -->
+<div id="pmSearchOverlay" onclick="if(event.target===this)pmCloseSearch()">
+  <div id="pmSearchModal">
+    <div id="pmSearchBar">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="pmSearchInput" type="text" placeholder="Search movies, series, people…" autocomplete="off" oninput="pmSearchDebounce()" onkeydown="if(event.key==='Escape')pmCloseSearch()"/>
+      <button id="pmSearchClear" onclick="pmSearchClear()" aria-label="Clear">✕</button>
+    </div>
+    <div id="pmSearchResults"></div>
+  </div>
+</div>
 
 <main style="max-width:1100px;margin:0 auto;padding:0 20px">
 
@@ -19308,6 +19400,205 @@ async function deleteEditorReview(key, e) {
         if (panel && panel.classList.contains('active')) _loadFeed();
       }, 500);
     } catch(_e) { btn.disabled = false; }
+  };
+
+  /* ════════════════════════════════════════════
+     GLOBAL SEARCH
+  ════════════════════════════════════════════ */
+  var _gsTimer = null;
+  var _gsAbort = null;
+
+  window.pmOpenSearch = function() {
+    var overlay = document.getElementById('pmSearchOverlay');
+    if (!overlay) return;
+    overlay.style.display = 'block';
+    requestAnimationFrame(function() {
+      var inp = document.getElementById('pmSearchInput');
+      if (inp) inp.focus();
+    });
+  };
+
+  window.pmCloseSearch = function() {
+    var overlay = document.getElementById('pmSearchOverlay');
+    if (overlay) overlay.style.display = 'none';
+    pmSearchClear();
+  };
+
+  window.pmSearchClear = function() {
+    var inp = document.getElementById('pmSearchInput');
+    var clr = document.getElementById('pmSearchClear');
+    var res = document.getElementById('pmSearchResults');
+    if (inp) inp.value = '';
+    if (clr) clr.style.display = 'none';
+    if (res) res.innerHTML = '';
+    clearTimeout(_gsTimer);
+    if (_gsAbort) { _gsAbort.abort(); _gsAbort = null; }
+  };
+
+  window.pmSearchDebounce = function() {
+    var q = (document.getElementById('pmSearchInput') || {}).value || '';
+    var clr = document.getElementById('pmSearchClear');
+    if (clr) clr.style.display = q.length ? '' : 'none';
+    clearTimeout(_gsTimer);
+    if (!q.trim()) {
+      var res = document.getElementById('pmSearchResults');
+      if (res) res.innerHTML = '';
+      return;
+    }
+    _gsTimer = setTimeout(function() { _gsRun(q.trim()); }, 320);
+  };
+
+  // Escape closes search overlay
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      var overlay = document.getElementById('pmSearchOverlay');
+      if (overlay && overlay.style.display !== 'none') { pmCloseSearch(); e.stopPropagation(); }
+    }
+  }, true);
+
+  async function _gsRun(q) {
+    var res = document.getElementById('pmSearchResults');
+    if (!res) return;
+    res.innerHTML = '<div class="pgs-empty">Searching…</div>';
+
+    if (_gsAbort) _gsAbort.abort();
+    _gsAbort = new AbortController();
+    var sig  = _gsAbort.signal;
+
+    var apiKey = typeof getKey === 'function' ? getKey() : '';
+    var TMDB_B = 'https://api.themoviedb.org/3';
+    var IMG    = 'https://image.tmdb.org/t/p/w92';
+
+    try {
+      // Run all three searches in parallel
+      var [movRes, tvRes, usersRes] = await Promise.all([
+        fetch(TMDB_B + '/search/movie?api_key=' + apiKey + '&query=' + encodeURIComponent(q) + '&language=en-US&page=1', { signal: sig }),
+        fetch(TMDB_B + '/search/tv?api_key='    + apiKey + '&query=' + encodeURIComponent(q) + '&language=en-US&page=1', { signal: sig }),
+        fetch(RTDB + '/users.json?shallow=true', { signal: sig })
+      ]);
+
+      var movies  = movRes.ok  ? ((await movRes.json()).results  || []).slice(0, 5) : [];
+      var shows   = tvRes.ok   ? ((await tvRes.json()).results   || []).slice(0, 5) : [];
+      var allUids = usersRes.ok ? Object.keys((await usersRes.json()) || {}) : [];
+
+      // Client-side user search: fetch profiles for a manageable sample
+      // and filter by nickname/username matching query
+      var ql = q.toLowerCase();
+      var matchedUsers = [];
+      if (allUids.length) {
+        var sample = allUids.slice(0, 80); // reasonable cap
+        var profs  = await Promise.all(sample.map(async function(uid) {
+          try {
+            var r = await fetch(RTDB + '/users/' + uid + '.json', { signal: sig });
+            return r.ok ? { uid: uid, ...(await r.json()) } : null;
+          } catch(_e) { return null; }
+        }));
+        matchedUsers = profs
+          .filter(function(p) {
+            if (!p) return false;
+            var nick = (p.nickname || '').toLowerCase();
+            var user = (p.username || '').toLowerCase();
+            return nick.includes(ql) || user.includes(ql);
+          })
+          .slice(0, 5);
+      }
+
+      if (!movies.length && !shows.length && !matchedUsers.length) {
+        res.innerHTML = '<div class="pgs-empty">No results for "' + _esc(q) + '"</div>';
+        return;
+      }
+
+      var html = '';
+
+      // ── Movies ──
+      if (movies.length) {
+        html += '<div class="pgs-label">Movies</div>';
+        html += movies.map(function(m) {
+          var year  = m.release_date ? m.release_date.slice(0,4) : '';
+          var thumb = m.poster_path
+            ? '<img src="' + IMG + m.poster_path + '" alt="' + _esc(m.title) + '" loading="lazy">'
+            : '🎬';
+          var enc = encodeURIComponent(JSON.stringify({
+            id: m.id, title: m.title, poster: m.poster_path || '',
+            backdrop: m.backdrop_path || '', year: parseInt(year)||0,
+            overview: m.overview || '', vote_average: m.vote_average || 0,
+            media_type: 'movie'
+          }));
+          return '<div class="pgs-row" onclick=\'_gsOpenMovie(' + JSON.stringify({
+            id:m.id, title:m.title, poster_path:m.poster_path||'',
+            backdrop_path:m.backdrop_path||'', release_date:m.release_date||'',
+            overview:m.overview||'', vote_average:m.vote_average||0, media_type:'movie'
+          }) + ')\'>'
+            + '<div class="pgs-thumb">' + thumb + '</div>'
+            + '<div class="pgs-info">'
+            +   '<div class="pgs-title">' + _esc(m.title) + '</div>'
+            +   '<div class="pgs-meta">' + (year ? year + ' · ' : '') + 'Movie</div>'
+            + '</div>'
+            + '</div>';
+        }).join('');
+      }
+
+      // ── Series ──
+      if (shows.length) {
+        if (movies.length) html += '<div class="pgs-divider"></div>';
+        html += '<div class="pgs-label">Series</div>';
+        html += shows.map(function(s) {
+          var year  = s.first_air_date ? s.first_air_date.slice(0,4) : '';
+          var thumb = s.poster_path
+            ? '<img src="' + IMG + s.poster_path + '" alt="' + _esc(s.name) + '" loading="lazy">'
+            : '📺';
+          return '<div class="pgs-row" onclick=\'_gsOpenTv(' + JSON.stringify({
+            id:s.id, name:s.name, poster_path:s.poster_path||'',
+            backdrop_path:s.backdrop_path||'', first_air_date:s.first_air_date||'',
+            overview:s.overview||'', vote_average:s.vote_average||0, media_type:'tv'
+          }) + ')\'>'
+            + '<div class="pgs-thumb">' + thumb + '</div>'
+            + '<div class="pgs-info">'
+            +   '<div class="pgs-title">' + _esc(s.name) + '</div>'
+            +   '<div class="pgs-meta">' + (year ? year + ' · ' : '') + 'Series</div>'
+            + '</div>'
+            + '</div>';
+        }).join('');
+      }
+
+      // ── Users ──
+      if (matchedUsers.length) {
+        if (movies.length || shows.length) html += '<div class="pgs-divider"></div>';
+        html += '<div class="pgs-label">People</div>';
+        html += matchedUsers.map(function(p) {
+          var name   = p.nickname || p.username || 'Member';
+          var handle = p.username ? '@' + p.username : '';
+          var av     = p.photoURL
+            ? '<img src="' + _esc(p.photoURL) + '" alt="' + _esc(name) + '">'
+            : name.charAt(0).toUpperCase();
+          var badge  = p.isEditor ? '<span class="pgs-badge">🔑 Founder</span>' : '';
+          return '<div class="pgs-row" onclick="pmCloseSearch();pmOpenProfile(\'' + _esc(p.uid) + '\')">'
+            + '<div class="pgs-av">' + av + '</div>'
+            + '<div class="pgs-info">'
+            +   '<div class="pgs-title">' + _esc(name) + badge + '</div>'
+            +   (handle ? '<div class="pgs-meta">' + _esc(handle) + (p.reviewCount ? ' · ' + p.reviewCount + ' review' + (p.reviewCount!==1?'s':'') : '') + '</div>' : '')
+            + '</div>'
+            + '</div>';
+        }).join('');
+      }
+
+      res.innerHTML = html;
+
+    } catch(e) {
+      if (e.name === 'AbortError') return; // user typed again — ignore
+      res.innerHTML = '<div class="pgs-empty">Something went wrong. Try again.</div>';
+    }
+  }
+
+  // Open helpers (close search first, then delegate to existing modal functions)
+  window._gsOpenMovie = function(m) {
+    pmCloseSearch();
+    if (typeof openModal === 'function') openModal(m);
+  };
+  window._gsOpenTv = function(s) {
+    pmCloseSearch();
+    if (typeof openTvModal === 'function') openTvModal(s);
+    else if (typeof openModal === 'function') openModal(Object.assign({}, s, { title: s.name, release_date: s.first_air_date }));
   };
 
   // Hook into switchTab to trigger the social feed
