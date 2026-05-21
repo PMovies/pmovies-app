@@ -3208,20 +3208,23 @@
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,.85);
+    background: rgba(0,0,0,.75);
     z-index: 4100;
     flex-direction: column;
+    align-items: center;
+    justify-content: center;
     overflow: hidden;
   }
   #pmTrBoardOverlay.open { display: flex; }
   .pm-tr-board-panel {
     background: #0d0d0d;
-    border-top: 1px solid rgba(255,184,0,.2);
-    border-radius: 20px 20px 0 0;
+    border: 1px solid rgba(255,184,0,.2);
+    border-radius: 18px;
     display: flex;
     flex-direction: column;
-    max-height: 90vh;
-    margin-top: auto;
+    max-height: 80vh;
+    width: 100%;
+    max-width: 480px;
     overflow: hidden;
   }
   .pm-tr-board-header {
@@ -20626,10 +20629,11 @@ async function deleteEditorReview(key, e) {
       var avHtml = e.avatar
         ? '<img src="' + _esc(e.avatar) + '" alt="" style="width:36px;height:36px;border-radius:50%;object-fit:cover">'
         : '<div style="width:36px;height:36px;border-radius:50%;background:#222;display:flex;align-items:center;justify-content:center;font-size:.9rem;color:#888">' + (e.displayName||'?').charAt(0).toUpperCase() + '</div>';
+      var nameClick = 'pmTrCloseBoard();setTimeout(function(){pmOpenProfile(\'' + e.uid + '\')},80)';
       return '<div class="pm-tr-board-row' + (borderClass[i] ? ' ' + borderClass[i] : '') + (isMe ? '" style="background:rgba(255,184,0,.04)' : '') + '">'
         + '<div class="pm-tr-rank-num">' + (medals[i] || (i+1)) + '</div>'
-        + '<div class="pm-tr-av">' + avHtml + '</div>'
-        + '<div class="pm-tr-board-name">'
+        + '<div class="pm-tr-av" style="cursor:pointer" onclick="' + nameClick + '">' + avHtml + '</div>'
+        + '<div class="pm-tr-board-name" style="cursor:pointer" onclick="' + nameClick + '">'
         + _esc(e.displayName || (e.username ? '@'+e.username : '?'))
         + (e.username ? '<span style="color:rgba(244,241,234,.3);font-size:.65rem;font-weight:400;margin-left:5px">@' + _esc(e.username) + '</span>' : '')
         + (isMe ? ' <span style="color:#ffb800;font-size:.6rem">(you)</span>' : '')
@@ -21298,6 +21302,17 @@ async function deleteEditorReview(key, e) {
     var btn = document.getElementById('pmTrLogBtnStrip');
     if (btn) btn.style.display = 'flex';
   }
+
+  // ESC key closes any open Theater Race overlay
+  document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Escape') return;
+    var board = document.getElementById('pmTrBoardOverlay');
+    var log   = document.getElementById('pmTrLogOverlay');
+    var share = document.getElementById('pmTrShareOverlay');
+    if (share && share.classList.contains('open')) { pmTrCloseShare(); return; }
+    if (log   && log.classList.contains('open'))   { pmTrCloseLog();   return; }
+    if (board && board.classList.contains('open')) { pmTrCloseBoard(); return; }
+  });
 
   // Poll for user (Firebase auth may resolve at different times)
   var _trAuthPoll = setInterval(function() {
