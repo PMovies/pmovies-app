@@ -17062,7 +17062,9 @@ async function deleteEditorReview(key, e) {
         + '<div class="pm-prof-info-col">'
         +   '<div class="pm-prof-name-row">'
         +     '<div class="pm-prof-nickname">' + _esc(nickname) + '</div>'
-        +     '<span class="pm-prof-badge">' + badge.icon + ' ' + badge.label + '</span>'
+        +     (profile.specialBadge
+                ? '<span class="pm-prof-badge" style="background:rgba(255,80,120,.12);border-color:rgba(255,80,120,.4);color:#ff6b9d">' + _esc(profile.specialBadge) + '</span>'
+                : '<span class="pm-prof-badge">' + badge.icon + ' ' + badge.label + '</span>')
         +     (isOwn ? '<button class="pm-prof-edit-btn" onclick="pmOpenEditProfile()">✏️ Edit</button>'
                      : '<button class="pm-follow-btn pf-loading" id="pmProfFollowBtn" onclick="pmToggleFollow(\'' + uid + '\')">…</button>')
         +   '</div>'
