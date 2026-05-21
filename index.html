@@ -17304,7 +17304,7 @@ async function deleteEditorReview(key, e) {
         meta: ''
       });
 
-      var timelineHtml = '<div class="pm-timeline">'
+      var timelineHtml = '<div class="pm-timeline" id="pmProfActivityTimeline">'
         + _tlEvents.map(function(ev, i) {
             return '<div class="pm-tl-item">'
               + '<div class="pm-tl-spine"><div class="pm-tl-dot"></div><div class="pm-tl-line"></div></div>'
@@ -17341,20 +17341,23 @@ async function deleteEditorReview(key, e) {
         +     '<div class="pm-prof-game-sub">Challenge your friends to film quizzes</div></div>'
         +   '</div>'
         + '</div>'
-        // Recent activity: last 3 reviews
-        + (reviews.length ? (function() {
-            var recent = reviews.slice(0, 3).map(function(r) {
-              var stars = typeof _starsHtml === 'function' ? _starsHtml(r.rating || 0) : '';
+        // Recent activity: last 3 reviews + theater visits (theater injected async below)
+        + (function() {
+            var recentItems = reviews.slice(0, 3).map(function(r) {
+              // Wrap in pm-prof-rev-stars so s-full/s-empty CSS classes apply correctly
+              var stars = typeof _starsHtml === 'function'
+                ? '<span class="pm-prof-rev-stars">' + _starsHtml(r.rating || 0) + '</span>'
+                : '';
               return '<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)">'
                 + '<div style="font-size:.72rem;color:#ccc;font-weight:600;margin-bottom:2px">' + _esc(r.movie || 'Unknown') + '</div>'
-                + '<div style="font-size:.6rem;color:#f5a623">' + stars + '</div>'
+                + (stars ? '<div style="font-size:.6rem">' + stars + '</div>' : '')
                 + '</div>';
             }).join('');
-            return '<div class="pm-prof-widget" style="margin-top:16px">'
+            return '<div class="pm-prof-widget" style="margin-top:16px" id="pmProfRecentActivity">'
               + '<div class="pm-prof-widget-title">Recent Activity</div>'
-              + recent
+              + (recentItems || '<div style="color:#444;font-size:.7rem;padding:8px 0">No activity yet</div>')
               + '</div>';
-          })() : '');
+          })();
 
       // Admin tab panel — lazy-loaded on first switch
       var adminTabHtml = isAdminUser
@@ -21253,6 +21256,41 @@ async function deleteEditorReview(key, e) {
         + '<div class="pm-tr-prof-badges">' + badgesHtml + '</div>'
         + '<div class="pm-tr-prof-posters">' + postersHtml + '</div>'
         + '</div>';
+
+      // ── Inject theater events into Activity timeline ──────────────
+      var timeline = document.getElementById('pmProfActivityTimeline');
+      if (timeline) {
+        var trItems = logs.slice(0, 5).map(function(l) {
+          return '<div class="pm-tl-item">'
+            + '<div class="pm-tl-spine"><div class="pm-tl-dot" style="background:#ffb800"></div><div class="pm-tl-line"></div></div>'
+            + '<div class="pm-tl-body">'
+            + '<div class="pm-tl-action">🎬 Watched <span class="pm-tl-film">' + _esc(l.movieTitle || 'a film') + '</span> in theaters'
+            + (l.format ? ' <span style="color:#ffb800;font-size:.6rem">· ' + l.format.toUpperCase() + '</span>' : '')
+            + (l.isArabic ? ' <span style="font-size:.6rem;color:rgba(244,241,234,.4)">· عربي</span>' : '')
+            + '</div>'
+            + '<div class="pm-tl-meta">' + _trFmt(l.date) + '</div>'
+            + '</div>'
+            + '</div>';
+        }).join('');
+        // Prepend theater items before the first existing item
+        timeline.insertAdjacentHTML('afterbegin', trItems);
+      }
+
+      // ── Inject theater visits into Recent Activity widget ─────────
+      var recentWidget = document.getElementById('pmProfRecentActivity');
+      if (recentWidget) {
+        var trRecent = logs.slice(0, 2).map(function(l) {
+          return '<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)">'
+            + '<div style="font-size:.6rem;color:#ffb800;font-weight:700;letter-spacing:.06em;margin-bottom:2px">🎬 IN THEATERS</div>'
+            + '<div style="font-size:.72rem;color:#ccc;font-weight:600">' + _esc(l.movieTitle || 'Unknown') + '</div>'
+            + '<div style="font-size:.6rem;color:rgba(244,241,234,.3);margin-top:1px">' + _trFmt(l.date) + '</div>'
+            + '</div>';
+        }).join('');
+        // Append after the title
+        var title = recentWidget.querySelector('.pm-prof-widget-title');
+        if (title) title.insertAdjacentHTML('afterend', trRecent);
+      }
+
     } catch(e) {}
   };
 
