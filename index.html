@@ -6365,7 +6365,10 @@
 
   // ── Full-screen fan review reading page ──────────────────────────
   function openFanReviewPage(fp) {
-    const r = _reviewCardRegistry.get(fp) || _srReviewCardRegistry.get(fp);
+    // Profile reviews take priority — isolated from the shared community registry
+    const r = (window._pmProfileRevMap && window._pmProfileRevMap[fp])
+      || _reviewCardRegistry.get(fp)
+      || _srReviewCardRegistry.get(fp);
     if (!r) return;
     _closeAllShareMenus();
     const isTV     = r._mediaType === 'tv' || r.mediaType === 'tv';
@@ -16331,6 +16334,16 @@ async function deleteEditorReview(key, e) {
       var allRevs = window._pmGetCommunityReviews ? window._pmGetCommunityReviews() : [];
       var reviews = allRevs.filter(function(r) { return r.uid === uid; });
       var realReviewCount = reviews.length;
+
+      // Build isolated profile review map — not shared with the community registry,
+      // so community re-renders can never overwrite these entries.
+      window._pmProfileRevMap = {};
+      if (typeof fanReviewFp === 'function') {
+        reviews.forEach(function(r) {
+          var fp = fanReviewFp(r);
+          if (fp) window._pmProfileRevMap[fp] = r;
+        });
+      }
       // Correct profile.reviewCount in-place if we have a real count from cache
       if (realReviewCount > 0 && realReviewCount !== (profile.reviewCount || 0)) {
         profile.reviewCount = realReviewCount;
@@ -16467,8 +16480,6 @@ async function deleteEditorReview(key, e) {
             var items = recentRevs.map(function(r, i) {
               var fp = typeof fanReviewFp === 'function' ? fanReviewFp(r) : '';
               var safeFp = (fp || '').replace(/"/g, '');
-              // Pin review in registry so openFanReviewPage finds the right object
-              if (fp && window._pmRegisterReview) window._pmRegisterReview(fp, r);
               var safeUid = (uid || '').replace(/'/g, '');
               // posterPath starts null — async-filled below after render
               return { posterPath: null, title: r.movie, frameId: 'pmProfRevFrame-' + i,
@@ -16527,8 +16538,6 @@ async function deleteEditorReview(key, e) {
                 var fp = typeof fanReviewFp === 'function' ? fanReviewFp(r) : '';
                 var stars = typeof _starsHtml === 'function' ? _starsHtml(r.rating || 0) : '';
                 var safeFp = (fp || '').replace(/"/g, '');
-                // Pin review in registry to prevent mismatch from collisions
-                if (fp && window._pmRegisterReview) window._pmRegisterReview(fp, r);
                 return '<div class="pm-prof-rev-card" onclick="window._pmReviewReturnUid=\'' + safeProfileUid + '\';pmCloseProfile();_pmOpenReviewFromProfile(\'' + safeFp + '\')">'
                   + '<div class="pm-prof-rev-poster" id="ppRvPoster-' + safeFp + '">🎬</div>'
                   + '<div class="pm-prof-rev-meta">'
@@ -17459,6 +17468,7 @@ async function deleteEditorReview(key, e) {
     document.body.style.overflow = '';
     _profileUid  = null;
     _profileData = null;
+    window._pmProfileRevMap = null; // clear isolated review map
     // Restore clean URL if we pushed a profile URL (handles both ?u= and /u/ forms)
     if (history.state && history.state.pmProfile) {
       var cleanPath = window.location.pathname.startsWith('/u/') ? '/' : window.location.pathname;
