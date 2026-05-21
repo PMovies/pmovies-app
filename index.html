@@ -20160,7 +20160,12 @@ async function deleteEditorReview(key, e) {
         } catch(_e) {}
       }));
 
-      // 4. Render cards
+      // 4. Register reviews so openFanReviewPage() can find them by fp
+      feedRevs.forEach(function(r) {
+        if (r._fp && window._pmRegisterReview) window._pmRegisterReview(r._fp, r);
+      });
+
+      // 5. Render cards
       var cards = feedRevs.map(function(r) {
         var prof     = (r.uid && profileMap[r.uid]) || {};
         var name     = prof.nickname || r.name || 'Anonymous';
