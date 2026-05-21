@@ -17409,6 +17409,21 @@ async function deleteEditorReview(key, e) {
         + '</div>'
         + '<div style="height:40px"></div>';
 
+      // ── Async: load theater log immediately (populates sidebar + pre-fills tab) ──
+      if (typeof window.pmTrLoadProfileSection === 'function') {
+        (function() {
+          var theatPanel = document.getElementById('pmProfPanel-theater');
+          var isOwnTheater = !!(window.pmGetUser && window.pmGetUser() && window.pmGetUser().uid === uid);
+          if (theatPanel) {
+            theatPanel.dataset.loaded = '1'; // mark loaded so tab click doesn't re-fetch
+            window.pmTrLoadProfileSection(uid, isOwnTheater, theatPanel);
+          } else {
+            // Panel not found yet — still run for sidebar injection only
+            window.pmTrLoadProfileSection(uid, isOwnTheater, null);
+          }
+        })();
+      }
+
       // ── Async: sync watchlist from Firebase and refresh the profile panel ──
       if (isOwn && typeof window._wlLoadFromFirebase === 'function') {
         (async function() {
@@ -21218,7 +21233,7 @@ async function deleteEditorReview(key, e) {
 
   /* ── Profile: load & inject theater section ──────────────────── */
   window.pmTrLoadProfileSection = async function(uid, isOwn, container) {
-    if (!container) return;
+    // container may be null when called early for sidebar-only injection
     try {
       var tok = await _trToken(); // always auth — rules require auth != null for all reads
       var authQ = tok ? '?auth='+tok : '';
@@ -21251,11 +21266,13 @@ async function deleteEditorReview(key, e) {
           + img + moon + '</div>';
       }).join('');
 
-      container.innerHTML = '<div class="pm-prof-section-title">🎬 THEATER LOG '+TR_YEAR+'</div>'
-        + '<div class="pm-tr-prof-section">'
-        + '<div class="pm-tr-prof-badges">' + badgesHtml + '</div>'
-        + '<div class="pm-tr-prof-posters">' + postersHtml + '</div>'
-        + '</div>';
+      if (container) {
+        container.innerHTML = '<div class="pm-prof-section-title">🎬 THEATER LOG '+TR_YEAR+'</div>'
+          + '<div class="pm-tr-prof-section">'
+          + '<div class="pm-tr-prof-badges">' + badgesHtml + '</div>'
+          + '<div class="pm-tr-prof-posters">' + postersHtml + '</div>'
+          + '</div>';
+      }
 
       // ── Inject theater events into Activity timeline ──────────────
       var timeline = document.getElementById('pmProfActivityTimeline');
