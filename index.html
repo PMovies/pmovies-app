@@ -20552,7 +20552,7 @@ async function deleteEditorReview(key, e) {
         var cnt = _trMode === 'ar' ? (e.arabicCount||0) : (e.count||0);
         return '<span class="pm-tr-entry">'
           + '<span class="pm-tr-medal">' + (medals[i] || '#'+(i+1)) + '</span>'
-          + '<span class="pm-tr-name">' + _esc((e.username ? '@'+e.username : e.displayName) || '?') + '</span>'
+          + '<span class="pm-tr-name">' + _esc(e.displayName || (e.username ? '@'+e.username : '?')) + '</span>'
           + '<span class="pm-tr-cnt">·' + cnt + '</span>'
           + '</span>';
       }).join('')
@@ -20629,7 +20629,11 @@ async function deleteEditorReview(key, e) {
       return '<div class="pm-tr-board-row' + (borderClass[i] ? ' ' + borderClass[i] : '') + (isMe ? '" style="background:rgba(255,184,0,.04)' : '') + '">'
         + '<div class="pm-tr-rank-num">' + (medals[i] || (i+1)) + '</div>'
         + '<div class="pm-tr-av">' + avHtml + '</div>'
-        + '<div class="pm-tr-board-name">' + _esc((e.username ? '@'+e.username : e.displayName) || '?') + (isMe ? ' <span style="color:#ffb800;font-size:.6rem">(you)</span>' : '') + '</div>'
+        + '<div class="pm-tr-board-name">'
+        + _esc(e.displayName || (e.username ? '@'+e.username : '?'))
+        + (e.username ? '<span style="color:rgba(244,241,234,.3);font-size:.65rem;font-weight:400;margin-left:5px">@' + _esc(e.username) + '</span>' : '')
+        + (isMe ? ' <span style="color:#ffb800;font-size:.6rem">(you)</span>' : '')
+        + '</div>'
         + '<div class="pm-tr-board-count">' + cnt + ' film' + (cnt!==1?'s':'') + '</div>'
         + '</div>';
     }).join('');
@@ -20646,7 +20650,7 @@ async function deleteEditorReview(key, e) {
           + '<div class="pm-tr-board-row" style="padding:0">'
           + '<div class="pm-tr-rank-num">' + (myIdx+1) + '</div>'
           + '<div class="pm-tr-av">' + (myEntry.avatar ? '<img src="'+_esc(myEntry.avatar)+'" alt="" style="width:36px;height:36px;border-radius:50%;object-fit:cover">' : '<div style="width:36px;height:36px;border-radius:50%;background:#222;font-size:.9rem;color:#888;display:flex;align-items:center;justify-content:center">' + (myEntry.displayName||'?').charAt(0).toUpperCase() + '</div>') + '</div>'
-          + '<div class="pm-tr-board-name">you</div>'
+          + '<div class="pm-tr-board-name">' + _esc(myEntry.displayName || (myEntry.username ? '@'+myEntry.username : 'you')) + ' <span style="color:#ffb800;font-size:.6rem">(you)</span></div>'
           + '<div class="pm-tr-board-count">' + myC + ' film' + (myC!==1?'s':'') + '</div>'
           + '</div>'
         : '';
