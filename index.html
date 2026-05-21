@@ -16139,7 +16139,8 @@ async function deleteEditorReview(key, e) {
         statsHtml = [
           { val: '…', lbl: 'Published', id: 'pmEditorStatPublished' },
           { val: '…', lbl: 'Members',   id: 'pmEditorStatMembers'   },
-          { val: '…', lbl: 'Fan Art',   id: 'pmEditorStatFanArt'    }
+          { val: '…', lbl: 'Followers', id: 'pmProfStatFollowers'   },
+          { val: '…', lbl: 'Following', id: 'pmProfStatFollowing'   }
         ].map(function(s) {
           return '<div class="pm-prof-stat"><div class="pm-prof-stat-val" id="' + s.id + '">' + s.val + '</div><div class="pm-prof-stat-lbl">' + s.lbl + '</div></div>';
         }).join('');
@@ -16511,26 +16512,26 @@ async function deleteEditorReview(key, e) {
         window._pmPendingReviewSync = { uid: uid, isOwn: !!isOwn };
       }
 
-      // ── Follow state + follower/following counts (non-editor profiles only) ──
-      if (!isEditorProfile) {
-        // Async: load follower + following counts into stats bar
-        (async function() {
-          try {
-            var [frRes, fgRes] = await Promise.all([
-              fetch(RTDB + '/followers/' + uid + '.json?shallow=true'),
-              fetch(RTDB + '/follows/'   + uid + '.json?shallow=true')
-            ]);
-            var frCount = frRes.ok ? (await frRes.json() || {}) : {};
-            var fgCount = fgRes.ok ? (await fgRes.json() || {}) : {};
-            var frN = Object.keys(frCount).length;
-            var fgN = Object.keys(fgCount).length;
-            var elFr = document.getElementById('pmProfStatFollowers');
-            var elFg = document.getElementById('pmProfStatFollowing');
-            if (elFr) elFr.textContent = frN;
-            if (elFg) elFg.textContent = fgN;
-          } catch(_e) {}
-        })();
+      // ── Async: load follower + following counts (all profiles) ──
+      (async function() {
+        try {
+          var [frRes, fgRes] = await Promise.all([
+            fetch(RTDB + '/followers/' + uid + '.json?shallow=true'),
+            fetch(RTDB + '/follows/'   + uid + '.json?shallow=true')
+          ]);
+          var frCount = frRes.ok ? (await frRes.json() || {}) : {};
+          var fgCount = fgRes.ok ? (await fgRes.json() || {}) : {};
+          var frN = Object.keys(frCount).length;
+          var fgN = Object.keys(fgCount).length;
+          var elFr = document.getElementById('pmProfStatFollowers');
+          var elFg = document.getElementById('pmProfStatFollowing');
+          if (elFr) elFr.textContent = frN;
+          if (elFg) elFg.textContent = fgN;
+        } catch(_e) {}
+      })();
 
+      // ── Follow state + tab wiring (non-editor profiles only) ──
+      if (!isEditorProfile) {
         // Async: determine follow button state for non-own profiles
         if (!isOwn) {
           (async function() {
