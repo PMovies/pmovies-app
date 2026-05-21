@@ -21217,7 +21217,7 @@ async function deleteEditorReview(key, e) {
   window.pmTrLoadProfileSection = async function(uid, isOwn, container) {
     if (!container) return;
     try {
-      var tok = isOwn ? await _trToken() : null;
+      var tok = await _trToken(); // always auth — rules require auth != null for all reads
       var authQ = tok ? '?auth='+tok : '';
       var url = TR_RTDB + '/theaterLogs/' + uid + '/' + TR_YEAR + '.json' + authQ;
       var r = await fetch(url);
