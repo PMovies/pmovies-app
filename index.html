@@ -6029,6 +6029,27 @@
     const entry = _fanLikeData[_fpKey(fp)];
     return !!(entry && entry.byUser && entry.byUser[uid]);
   }
+  /* ── Central notification writer ── */
+  const _NOTIF_RTDB = 'https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app';
+  window._pmNotify = async function(toUid, data) {
+    var u = window.pmGetUser && window.pmGetUser();
+    if (!u || !toUid || u.uid === toUid) return;
+    try {
+      var tok  = await u.getIdToken();
+      var name = (window.pmGetNickname && window.pmGetNickname())
+                 || (window._pmMyProfile && window._pmMyProfile.nickname)
+                 || u.displayName || 'Someone';
+      var av   = (window._pmMyProfile && window._pmMyProfile.photoURL) || u.photoURL || '';
+      var key  = Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+      await fetch(_NOTIF_RTDB + '/notifications/' + toUid + '/' + key + '.json?auth=' + tok, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(Object.assign(
+          { read: false, timestamp: Date.now(), fromUid: u.uid, fromName: name, fromAvatar: av }, data
+        ))
+      });
+    } catch(_e) {}
+  };
+
   async function toggleFanLike(btn) {
     if (!window.pmRequireAuth || !window.pmRequireAuth()) return;
 
@@ -6068,6 +6089,10 @@
         await fetch(`${base}/count.json?auth=${token}`, opts(newCount));
         window._pmUpdateScore && window._pmUpdateScore(uid, 1, { likesGiven: 1 });
         if (authorUid && authorUid !== uid) window._pmUpdateScore && window._pmUpdateScore(authorUid, 3, { likesReceived: 1 });
+        // Notify review author of new like
+        if (authorUid && authorUid !== uid && window._pmNotify) {
+          window._pmNotify(authorUid, { type: 'like', targetId: fp, targetTitle: btn.dataset.movie || '' });
+        }
       }
     } catch(_) {
       // Revert on error
@@ -6204,12 +6229,16 @@
       }
       _cmtCountCache[fp] = (_cmtCountCache[fp] || 0) + 1;
 
-      // Contribution scores
+      // Contribution scores + comment notification
       if (user && window._pmUpdateScore) {
         window._pmUpdateScore(user.uid, 1, { commentCount: 1 });
         const authorUid = panel.dataset.authorUid;
         if (authorUid && authorUid !== user.uid) {
           window._pmUpdateScore(authorUid, 1, { commentsReceived: 1 });
+          // Notify review author
+          if (window._pmNotify) {
+            window._pmNotify(authorUid, { type: 'comment', targetId: fp, targetTitle: panel.dataset.movie || '' });
+          }
         }
       }
     } catch(e) {
@@ -6394,7 +6423,7 @@
         ${r.headline ? `<div dir="auto" style="font-size:1.05rem;font-style:italic;color:#ddd;line-height:1.65;margin-bottom:22px;padding:14px 18px;border-inline-start:3px solid #f5a623;background:rgba(245,166,35,.05);border-radius:0 8px 8px 0;text-align:start">"${esc(r.headline)}"</div>` : ''}
         ${r.text   ? `<div dir="auto" style="font-size:.95rem;color:#aaa;line-height:1.95;white-space:pre-line;margin-bottom:24px;text-align:start">${esc(r.text)}</div>` : ''}
         <div class="fan-review-actions" style="flex-wrap:wrap;gap:12px">
-          <button class="fan-like-btn${liked?' liked':''}" id="frLikeBtn-${fp}" data-fp="${fp}" data-type="${likeType}" data-author-uid="${r.uid||''}" onclick="toggleFanLike(this);_updateFrLikeBtn('${fp}','${likeType}')">
+          <button class="fan-like-btn${liked?' liked':''}" id="frLikeBtn-${fp}" data-fp="${fp}" data-type="${likeType}" data-author-uid="${r.uid||''}" data-movie="${esc(r.movie||'')}" onclick="toggleFanLike(this);_updateFrLikeBtn('${fp}','${likeType}')">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
             <span class="like-count">${likes > 0 ? likes : ''}</span>
             <span style="margin-left:2px">Like</span>
@@ -6404,7 +6433,7 @@
             <span class="cmt-lbl">Comment</span>
           </button>
         </div>
-        <div class="fan-comments-panel" id="cmt-${fp}" data-author-uid="${r.uid||''}">
+        <div class="fan-comments-panel" id="cmt-${fp}" data-author-uid="${r.uid||''}" data-movie="${esc(r.movie||'')}">
           <div class="fan-comment-list"></div>
           <div class="fan-comment-form">
             <input class="cmt-name-input" placeholder="Your name" maxlength="60"/>
@@ -15604,6 +15633,7 @@ async function deleteEditorReview(key, e) {
       var res = await fetch(RTDB + '/users/' + user.uid + '.json?auth=' + token);
       var profile = res.ok ? await res.json() : null;
       var nickname = profile ? profile.nickname : null;
+      if (profile) window._pmMyProfile = profile; // cache for notifications
       if (!nickname) {
         _showNicknameOverlay(user);
       } else {
@@ -19016,14 +19046,6 @@ async function deleteEditorReview(key, e) {
         }
       } else {
         // ── FOLLOW ──
-        var myProfile = null;
-        try {
-          var pr = await fetch(RTDB + '/users/' + me.uid + '.json');
-          if (pr.ok) myProfile = await pr.json();
-        } catch(_e) {}
-        var myName   = (myProfile && myProfile.nickname) || me.displayName || 'Someone';
-        var myAvatar = (myProfile && myProfile.photoURL)  || me.photoURL   || null;
-
         await Promise.all([
           fetch(RTDB + '/follows/'   + me.uid   + '/' + theirUid + '.json' + auth,
             { method:'PUT', headers, body: JSON.stringify(true) }),
@@ -19031,16 +19053,8 @@ async function deleteEditorReview(key, e) {
             { method:'PUT', headers, body: JSON.stringify(true) })
         ]);
 
-        // Write follow notification
-        var notifKey = Date.now() + '_' + Math.random().toString(36).slice(2,7);
-        fetch(RTDB + '/notifications/' + theirUid + '/' + notifKey + '.json' + auth, {
-          method: 'PUT', headers,
-          body: JSON.stringify({
-            type: 'follow', fromUid: me.uid,
-            fromName: myName, fromAvatar: myAvatar || '',
-            read: false, timestamp: Date.now()
-          })
-        }).catch(function(){});
+        // Notify the person being followed
+        if (window._pmNotify) window._pmNotify(theirUid, { type: 'follow' });
 
         // Check if they follow me
         var tfr2 = await fetch(RTDB + '/followers/' + me.uid + '/' + theirUid + '.json' + auth);
