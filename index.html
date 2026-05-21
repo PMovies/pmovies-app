@@ -17826,21 +17826,26 @@ async function deleteEditorReview(key, e) {
           try {
             var token = _pmUser ? await _pmUser.getIdToken() : '';
             var auth  = token ? '?auth=' + token : '';
-            var [uR, fR, eR, sR, pR, stR] = await Promise.all([
+            var [uR, unR, fR, eR, sR, pR, stR] = await Promise.all([
               fetch(RTDB + '/users.json?shallow=true' + (token ? '&auth=' + token : '')),
+              fetch(RTDB + '/usernames.json?shallow=true'),
               fetch(RTDB + '/fanReviews.json?shallow=true' + (token ? '&auth=' + token : '')),
               fetch(RTDB + '/editorReviews.json?shallow=true'),
               fetch(RTDB + '/seriesFanReviews.json?shallow=true' + (token ? '&auth=' + token : '')),
               fetch(RTDB + '/posterUploads/approved.json?shallow=true'),
               fetch(RTDB + '/siteStats.json')
             ]);
-            var uData = uR.ok ? await uR.json() : null;
-            var fData = fR.ok ? await fR.json() : null;
-            var eData = eR.ok ? await eR.json() : null;
-            var sData = sR.ok ? await sR.json() : null;
-            var pData = pR.ok ? await pR.json() : null;
+            var uData  = uR.ok  ? await uR.json()  : null;
+            var unData = unR.ok ? await unR.json() : null;
+            var fData  = fR.ok  ? await fR.json()  : null;
+            var eData  = eR.ok  ? await eR.json()  : null;
+            var sData  = sR.ok  ? await sR.json()  : null;
+            var pData  = pR.ok  ? await pR.json()  : null;
             var stData = stR.ok ? await stR.json() : null;
-            var totalUsers   = uData ? Object.keys(uData).length : 0;
+            // Use whichever count is higher — /usernames has every user who finished setup
+            var uCount   = uData  ? Object.keys(uData).length  : 0;
+            var unCount  = unData ? Object.keys(unData).length : 0;
+            var totalUsers = Math.max(uCount, unCount);
             var totalRevs    = fData ? Object.keys(fData).length : 0;
             var totalSeries  = sData ? Object.keys(sData).length : 0;
             var totalEditor  = eData ? Object.keys(eData).length : 0;
