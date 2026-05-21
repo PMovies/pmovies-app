@@ -4230,8 +4230,56 @@
       return raw.map(m => m.status ? m : { ...m, status: 'want' });
     } catch { return []; }
   }
-  function saveWatchlist(wl) { localStorage.setItem('pmovies_wl', JSON.stringify(wl)); }
+  function saveWatchlist(wl) {
+    localStorage.setItem('pmovies_wl', JSON.stringify(wl));
+    _wlQueueSync();
+  }
   function getMovieStatus(id) { const m = getWatchlist().find(m => m.id === id); return m ? m.status : null; }
+
+  /* ── Firebase watchlist sync ── */
+  var _wlSyncTimer = null;
+  function _wlQueueSync() {
+    clearTimeout(_wlSyncTimer);
+    _wlSyncTimer = setTimeout(_wlPushToFirebase, 1500);
+  }
+  async function _wlPushToFirebase() {
+    var u = window.pmGetUser && window.pmGetUser();
+    if (!u) return;
+    try {
+      var tok = await u.getIdToken();
+      var wl  = getWatchlist();
+      var map = null;
+      if (wl.length) { map = {}; wl.forEach(function(m) { map['m' + m.id] = m; }); }
+      await fetch('https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app'
+        + '/userVotes/' + u.uid + '/watchlist.json?auth=' + tok, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(map)
+      });
+    } catch(_e) {}
+  }
+  window._wlLoadFromFirebase = async function() {
+    var u = window.pmGetUser && window.pmGetUser();
+    if (!u) return null;
+    try {
+      var tok = await u.getIdToken();
+      var r = await fetch('https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app'
+        + '/userVotes/' + u.uid + '/watchlist.json?auth=' + tok);
+      if (!r.ok) return null;
+      var map = await r.json();
+      if (!map) return [];
+      var fbWl = Object.values(map).filter(Boolean)
+        .map(function(m) { return m.status ? m : Object.assign({ status: 'want' }, m); });
+      // Merge: cloud wins; keep local-only items added while offline
+      var localWl = getWatchlist();
+      var fbIds   = {};
+      fbWl.forEach(function(m) { fbIds[m.id] = true; });
+      var localOnly = localWl.filter(function(m) { return !fbIds[m.id]; });
+      var merged = fbWl.concat(localOnly);
+      localStorage.setItem('pmovies_wl', JSON.stringify(merged));
+      if (localOnly.length) _wlQueueSync(); // push any offline edits back
+      return merged;
+    } catch(_e) { return null; }
+  };
   function isInWatchlist(id) { return !!getMovieStatus(id); }
 
   function setMovieStatus(movie, status) {
@@ -15410,6 +15458,12 @@ async function deleteEditorReview(key, e) {
       var bellBtn = document.getElementById('pmBellBtn');
       if (bellBtn) bellBtn.style.display = 'flex';
       if (typeof window._pmLoadNotifBadge === 'function') window._pmLoadNotifBadge(user);
+      // Sync watchlist from cloud → localStorage, then re-render watchlist section
+      if (typeof window._wlLoadFromFirebase === 'function') {
+        window._wlLoadFromFirebase().then(function(merged) {
+          if (merged !== null && typeof renderWatchlist === 'function') renderWatchlist();
+        });
+      }
     } else if (sessionStorage.getItem('pmovies_guest') === '1') {
       _hideLanding();
       _maybeOpenStartupProfile();
@@ -16631,6 +16685,23 @@ async function deleteEditorReview(key, e) {
         +   '<div class="pm-prof-sidebar">' + sidebarHtml + '</div>'
         + '</div>'
         + '<div style="height:40px"></div>';
+
+      // ── Async: sync watchlist from Firebase and refresh the profile panel ──
+      if (isOwn && typeof window._wlLoadFromFirebase === 'function') {
+        (async function() {
+          var merged = await window._wlLoadFromFirebase();
+          if (!merged) return;
+          var panel = document.getElementById('pmProfPanel-watchlist');
+          if (!panel) return;
+          var items = merged.map(function(m) { return { posterPath: m.poster_path, title: m.title }; });
+          var html = '<div class="pm-prof-section-title">My Watchlist · ' + merged.length + ' films</div>'
+            + _buildStrip(items, 'Your watchlist is empty<br>Add films to track them →', 'pmCloseWlSearch&&pmOpenWlSearch()');
+          panel.innerHTML = html;
+          // Update the Watchlist tab label with fresh count
+          var tabBtn = document.querySelector('#pmProfContent .pm-prof-tab[data-tab="watchlist"]');
+          if (tabBtn) tabBtn.textContent = 'Watchlist' + (merged.length ? ' · ' + merged.length : '');
+        })();
+      }
 
       // ── If review count was 0 (community cache cold), register a sync hook ──
       // loadFanReviews() will fire it as soon as the reviews finish loading.
