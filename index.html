@@ -16309,8 +16309,8 @@ async function deleteEditorReview(key, e) {
         + '<button class="pm-prof-tab" data-tab="reviews" onclick="pmProfTab(\'reviews\')">Reviews</button>'
         + (isOwn && !isEditorProfile ? '<button class="pm-prof-tab" data-tab="watchlist" onclick="pmProfTab(\'watchlist\')">Watchlist' + (wl.length ? ' · ' + wl.length : '') + '</button>' : '')
         + '<button class="pm-prof-tab" data-tab="lists" onclick="pmProfTab(\'lists\')">Lists</button>'
-        + (!isEditorProfile ? '<button class="pm-prof-tab" data-tab="followers" onclick="pmProfTab(\'followers\')">Followers</button>' : '')
-        + (!isEditorProfile ? '<button class="pm-prof-tab" data-tab="following" onclick="pmProfTab(\'following\')">Following</button>' : '')
+        + '<button class="pm-prof-tab" data-tab="followers" onclick="pmProfTab(\'followers\')">Followers</button>'
+        + '<button class="pm-prof-tab" data-tab="following" onclick="pmProfTab(\'following\')">Following</button>'
         + (!isEditorProfile ? '<button class="pm-prof-tab" data-tab="stats" onclick="pmProfTab(\'stats\')">Stats</button>' : '')
         + (isAdminUser ? '<button class="pm-prof-tab" data-tab="admin" onclick="pmProfTab(\'admin\')">⚡ Admin</button>' : '')
         + '</div>';
@@ -16623,8 +16623,8 @@ async function deleteEditorReview(key, e) {
         +     '<div class="pm-prof-tab-panel" id="pmProfPanel-reviews" style="display:none">' + fullReviewsHtml + '</div>'
         +     (isOwn ? '<div class="pm-prof-tab-panel" id="pmProfPanel-watchlist" style="display:none">' + watchlistTabHtml + '</div>' : '')
         +     '<div class="pm-prof-tab-panel" id="pmProfPanel-lists" style="display:none">' + listsTabHtml + '</div>'
-        +     (!isEditorProfile ? '<div class="pm-prof-tab-panel" id="pmProfPanel-followers" style="display:none"><div class="pm-follow-list-loading">Loading…</div></div>' : '')
-        +     (!isEditorProfile ? '<div class="pm-prof-tab-panel" id="pmProfPanel-following" style="display:none"><div class="pm-follow-list-loading">Loading…</div></div>' : '')
+        +     '<div class="pm-prof-tab-panel" id="pmProfPanel-followers" style="display:none"><div class="pm-follow-list-loading">Loading…</div></div>'
+        +     '<div class="pm-prof-tab-panel" id="pmProfPanel-following" style="display:none"><div class="pm-follow-list-loading">Loading…</div></div>'
         +     '<div class="pm-prof-tab-panel" id="pmProfPanel-stats" style="display:none">' + statsTabHtml + '</div>'
         +     (isAdminUser ? '<div class="pm-prof-tab-panel" id="pmProfPanel-admin" style="display:none">' + adminTabHtml + '</div>' : '')
         +   '</div>'
@@ -16657,64 +16657,51 @@ async function deleteEditorReview(key, e) {
         } catch(_e) {}
       })();
 
-      // ── Follow state + tab wiring (non-editor profiles only) ──
-      if (!isEditorProfile) {
-        // Async: determine follow button state for non-own profiles
-        if (!isOwn) {
-          (async function() {
-            var me = window.pmGetUser && window.pmGetUser();
-            if (!me) {
-              var btn = document.getElementById('pmProfFollowBtn');
-              if (btn) btn.style.display = 'none'; // hide if guest
-              return;
-            }
-            try {
-              var [iFollowRes, theyFollowRes] = await Promise.all([
-                fetch(RTDB + '/follows/'    + me.uid + '/' + uid + '.json'),
-                fetch(RTDB + '/followers/'  + me.uid + '/' + uid + '.json')
-              ]);
-              var iFollow    = iFollowRes.ok   && (await iFollowRes.json())   === true;
-              var theyFollow = theyFollowRes.ok && (await theyFollowRes.json()) === true;
-              var btn = document.getElementById('pmProfFollowBtn');
-              if (!btn) return;
-              btn.classList.remove('pf-loading');
-              if (iFollow && theyFollow) {
-                btn.className = 'pm-follow-btn pf-mutual';
-                btn.textContent = '♥ Mutual';
-              } else if (iFollow) {
-                btn.className = 'pm-follow-btn pf-following';
-                btn.textContent = 'Following ✓';
-              } else if (theyFollow) {
-                btn.className = 'pm-follow-btn pf-followback';
-                btn.textContent = 'Follow Back';
-              } else {
-                btn.className = 'pm-follow-btn';
-                btn.textContent = '+ Follow';
-              }
-            } catch(_e) {
-              var btn = document.getElementById('pmProfFollowBtn');
-              if (btn) { btn.classList.remove('pf-loading'); btn.textContent = '+ Follow'; }
-            }
-          })();
-        }
+      // ── Follow state + tab wiring (all profiles) ──
 
-        // Wire followers/following tab lazy-load
-        (function() {
-          var profUid = uid;
-          var _followTabsWired = false;
-          var _origPmProfTab = window.pmProfTab;
-          window.pmProfTab = function(tabName) {
-            if (typeof _origPmProfTab === 'function') _origPmProfTab(tabName);
-            if (tabName === 'followers' || tabName === 'following') {
-              var panel = document.getElementById('pmProfPanel-' + tabName);
-              if (!panel || panel.dataset.loaded) return;
-              panel.dataset.loaded = '1';
-              if (typeof window._pmLoadFollowTab === 'function')
-                window._pmLoadFollowTab(profUid, tabName, panel);
+      // Async: determine follow button state for non-own profiles
+      if (!isOwn) {
+        (async function() {
+          var me = window.pmGetUser && window.pmGetUser();
+          if (!me) {
+            var btn = document.getElementById('pmProfFollowBtn');
+            if (btn) btn.style.display = 'none'; // hide if guest
+            return;
+          }
+          try {
+            var tok = await me.getIdToken();
+            var ap  = tok ? '?auth=' + tok : '';
+            var [iFollowRes, theyFollowRes] = await Promise.all([
+              fetch(RTDB + '/follows/'   + me.uid + '/' + uid + '.json' + ap),
+              fetch(RTDB + '/followers/' + me.uid + '/' + uid + '.json' + ap)
+            ]);
+            var iFollow    = iFollowRes.ok   && (await iFollowRes.json())   === true;
+            var theyFollow = theyFollowRes.ok && (await theyFollowRes.json()) === true;
+            var btn = document.getElementById('pmProfFollowBtn');
+            if (!btn) return;
+            btn.classList.remove('pf-loading');
+            if (iFollow && theyFollow) {
+              btn.className = 'pm-follow-btn pf-mutual';
+              btn.textContent = '♥ Mutual';
+            } else if (iFollow) {
+              btn.className = 'pm-follow-btn pf-following';
+              btn.textContent = 'Following ✓';
+            } else if (theyFollow) {
+              btn.className = 'pm-follow-btn pf-followback';
+              btn.textContent = 'Follow Back';
+            } else {
+              btn.className = 'pm-follow-btn';
+              btn.textContent = '+ Follow';
             }
-          };
+          } catch(_e) {
+            var btn = document.getElementById('pmProfFollowBtn');
+            if (btn) { btn.classList.remove('pf-loading'); btn.textContent = '+ Follow'; }
+          }
         })();
       }
+
+      // Register current profile UID for the base pmProfTab's follow-tab loader
+      window._pmCurrentProfUid = uid;
 
       // ── Editor profile: load site-wide stats asynchronously ──
       if (isEditorProfile) {
@@ -17881,6 +17868,15 @@ async function deleteEditorReview(key, e) {
     if (tab === 'lists' && typeof window._pmLoadUserLists === 'function') {
       window._pmLoadUserLists(window._pmListsTabUid, window._pmListsTabIsOwn);
     }
+    // Lazy-load followers/following tabs (single implementation, no wrapper chain)
+    if ((tab === 'followers' || tab === 'following') && window._pmCurrentProfUid) {
+      var panel = document.getElementById('pmProfPanel-' + tab);
+      if (panel && !panel.dataset.loaded) {
+        panel.dataset.loaded = '1';
+        if (typeof window._pmLoadFollowTab === 'function')
+          window._pmLoadFollowTab(window._pmCurrentProfUid, tab, panel);
+      }
+    }
   };
 
   window._pmOpenReviewFromProfile = function(fp) {
@@ -19029,11 +19025,12 @@ async function deleteEditorReview(key, e) {
       // Fetch all profiles in parallel (max 30)
       var slice = uids.slice(0, 30);
       var me = window.pmGetUser && window.pmGetUser();
-      var profiles = await Promise.all(slice.map(async function(uid) {
+      var profiles = await Promise.all(slice.map(async function(u) {
         try {
-          var pr = await fetch(RTDB + '/users/' + uid + '.json');
-          return pr.ok ? { uid: uid, ...(await pr.json()) } : { uid: uid };
-        } catch(_e) { return { uid: uid }; }
+          var pr = await fetch(RTDB + '/users/' + u + '.json');
+          var data = pr.ok ? (await pr.json()) : null;
+          return Object.assign({ uid: u }, data || {});
+        } catch(_e) { return { uid: u }; }
       }));
 
       // Determine my follow states if logged in
