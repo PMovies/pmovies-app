@@ -18927,7 +18927,7 @@ async function deleteEditorReview(key, e) {
       var auth = token ? '?auth=' + token : '';
 
       // Check current state
-      var r = await fetch(RTDB + '/follows/' + me.uid + '/' + theirUid + '.json');
+      var r = await fetch(RTDB + '/follows/' + me.uid + '/' + theirUid + '.json' + auth);
       var isFollowing = r.ok && (await r.json()) === true;
 
       if (isFollowing) {
@@ -18937,7 +18937,7 @@ async function deleteEditorReview(key, e) {
           fetch(RTDB + '/followers/' + theirUid + '/' + me.uid   + '.json' + auth, { method: 'DELETE' })
         ]);
         // Check if they still follow me
-        var tfr = await fetch(RTDB + '/followers/' + me.uid + '/' + theirUid + '.json');
+        var tfr = await fetch(RTDB + '/followers/' + me.uid + '/' + theirUid + '.json' + auth);
         var theyFollow = tfr.ok && (await tfr.json()) === true;
         if (btn) {
           btn.disabled = false; btn.classList.remove('pf-loading');
@@ -18976,7 +18976,7 @@ async function deleteEditorReview(key, e) {
         }).catch(function(){});
 
         // Check if they follow me
-        var tfr2 = await fetch(RTDB + '/followers/' + me.uid + '/' + theirUid + '.json');
+        var tfr2 = await fetch(RTDB + '/followers/' + me.uid + '/' + theirUid + '.json' + auth);
         var theyFollow2 = tfr2.ok && (await tfr2.json()) === true;
         if (btn) {
           btn.disabled = false; btn.classList.remove('pf-loading');
@@ -19014,9 +19014,11 @@ async function deleteEditorReview(key, e) {
   window._pmLoadFollowTab = async function(profUid, tabName, panel) {
     panel.innerHTML = '<div class="pm-follow-list-loading">Loading…</div>';
     try {
+      var token = await _getToken();
+      var authQ = token ? '&auth=' + token : '';
       var path = tabName === 'followers'
-        ? RTDB + '/followers/' + profUid + '.json?shallow=true'
-        : RTDB + '/follows/'   + profUid + '.json?shallow=true';
+        ? RTDB + '/followers/' + profUid + '.json?shallow=true' + authQ
+        : RTDB + '/follows/'   + profUid + '.json?shallow=true' + authQ;
       var r = await fetch(path);
       var uids = r.ok ? Object.keys((await r.json()) || {}) : [];
       if (!uids.length) {
@@ -19037,7 +19039,8 @@ async function deleteEditorReview(key, e) {
       // Determine my follow states if logged in
       var myFollows = {};
       if (me) {
-        var fgR = await fetch(RTDB + '/follows/' + me.uid + '.json?shallow=true');
+        var fgAuthQ = token ? '?shallow=true&auth=' + token : '?shallow=true';
+        var fgR = await fetch(RTDB + '/follows/' + me.uid + '.json' + fgAuthQ);
         myFollows = fgR.ok ? ((await fgR.json()) || {}) : {};
       }
 
@@ -19079,7 +19082,7 @@ async function deleteEditorReview(key, e) {
     try {
       var token = await _getToken();
       var auth = token ? '?auth=' + token : '';
-      var r = await fetch(RTDB + '/follows/' + me.uid + '/' + theirUid + '.json');
+      var r = await fetch(RTDB + '/follows/' + me.uid + '/' + theirUid + '.json' + auth);
       var isFollowing = r.ok && (await r.json()) === true;
       if (isFollowing) {
         await Promise.all([
