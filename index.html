@@ -2313,9 +2313,9 @@
     .pm-prof-widget { margin: 16px 16px 0; }
   }
   @media(max-width: 640px) {
-    /* Align change-cover button with the share button (same top offset, clears notch) */
+    /* Align change-cover button with the share button — hero already starts below safe-area, so just match the button's top offset */
     .pm-prof-hero-change {
-      top: calc(env(safe-area-inset-top, 0px) + 14px);
+      top: 20px;
       right: calc(16px + 42px + 8px); /* 16px padding + 42px share btn + 8px gap */
     }
     .pm-prof-identity { padding: 0 16px 18px; gap: 14px; margin-top: -42px; flex-wrap: wrap; }
