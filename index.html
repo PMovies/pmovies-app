@@ -17463,7 +17463,9 @@ async function deleteEditorReview(key, e) {
     _profileUid  = null;
     _profileData = null;
     window._pmProfileRevMap  = null; // clear isolated review map
-    window._pmProfileRevsList = null; // clear indexed list
+    // NOTE: _pmProfileRevsList is intentionally NOT cleared here.
+    // The onclick sequence is: pmCloseProfile() → _pmOpenReviewFromProfile(idx)
+    // so the list must survive the close call. It gets replaced on the next pmOpenProfile().
     // Restore clean URL if we pushed a profile URL (handles both ?u= and /u/ forms)
     if (history.state && history.state.pmProfile) {
       var cleanPath = window.location.pathname.startsWith('/u/') ? '/' : window.location.pathname;
