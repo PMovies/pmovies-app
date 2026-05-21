@@ -16515,10 +16515,12 @@ async function deleteEditorReview(key, e) {
                   }
                   var fn = window._pmFetchPoster || (typeof fetchPoster === 'function' ? fetchPoster : null);
                   if (fn) {
-                    fn(r.movie, r._mediaType || 'movie', r.tmdbId || null).then(function(url) {
-                      var f = document.getElementById('pmProfRevFrame-' + i);
-                      if (f && url) f.innerHTML = '<img src="' + url + '" alt="' + _esc(r.movie || '') + '" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block"/>';
-                    });
+                    (function(idx) {
+                      fn(r.movie, r._mediaType || 'movie', r.tmdbId || null).then(function(url) {
+                        var f = document.getElementById('pmProfRevFrame-' + idx);
+                        if (f && url) f.innerHTML = '<img src="' + url + '" alt="' + _esc(r.movie || '') + '" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block"/>';
+                      });
+                    }(i));
                   }
                 });
               }, 0);
@@ -16534,12 +16536,14 @@ async function deleteEditorReview(key, e) {
         : (function() {
             if (reviews.length) {
               var safeProfileUid = (uid || '').replace(/'/g, '');
-              var cards = reviews.map(function(r) {
+              var cards = reviews.map(function(r, rIdx) {
                 var fp = typeof fanReviewFp === 'function' ? fanReviewFp(r) : '';
                 var stars = typeof _starsHtml === 'function' ? _starsHtml(r.rating || 0) : '';
                 var safeFp = (fp || '').replace(/"/g, '');
+                // Use index-based poster ID — fp collisions cause duplicate DOM ids
+                // which make getElementById return the wrong element for one card.
                 return '<div class="pm-prof-rev-card" onclick="window._pmReviewReturnUid=\'' + safeProfileUid + '\';pmCloseProfile();_pmOpenReviewFromProfile(\'' + safeFp + '\')">'
-                  + '<div class="pm-prof-rev-poster" id="ppRvPoster-' + safeFp + '">🎬</div>'
+                  + '<div class="pm-prof-rev-poster" id="ppRvPoster-' + rIdx + '">🎬</div>'
                   + '<div class="pm-prof-rev-meta">'
                   + '<div class="pm-prof-rev-title" title="' + _esc(r.movie || '') + '">' + _esc(r.movie || 'Unknown') + '</div>'
                   + '<div class="pm-prof-rev-stars">' + stars + '</div>'
@@ -16856,10 +16860,8 @@ async function deleteEditorReview(key, e) {
       // Falls back to title search only when no id is stored.
       if (!isEditorProfile && reviews.length) {
         setTimeout(function() {
-          reviews.forEach(function(r) {
-            var fp     = typeof fanReviewFp === 'function' ? fanReviewFp(r) : '';
-            var safeFp = (fp || '').replace(/"/g, '');
-            var el     = document.getElementById('ppRvPoster-' + safeFp);
+          reviews.forEach(function(r, rIdx) {
+            var el = document.getElementById('ppRvPoster-' + rIdx);
             if (!el) return;
             // Priority 1 — poster path already stored on the review record
             if (r.poster) {
@@ -16867,18 +16869,19 @@ async function deleteEditorReview(key, e) {
                 + '" alt="' + _esc(r.movie || '') + '" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block">';
               return;
             }
-            // Priority 2 — tmdbId known: direct lookup (accurate, fast)
-            // Priority 3 — title search (may mismatch for ambiguous titles)
+            // Priority 2 — tmdbId direct lookup; Priority 3 — title search
             var _fn = window._pmFetchPoster || (typeof fetchPoster === 'function' ? fetchPoster : null);
             if (_fn) {
               var isTV = r._mediaType === 'tv';
-              _fn(r.movie, isTV ? 'tv' : 'movie', r.tmdbId || null).then(function(url) {
-                var cel = document.getElementById('ppRvPoster-' + safeFp);
-                if (cel && url) {
-                  cel.innerHTML = '<img src="' + url + '" alt="' + _esc(r.movie || '')
-                    + '" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block">';
-                }
-              });
+              (function(idx) {
+                _fn(r.movie, isTV ? 'tv' : 'movie', r.tmdbId || null).then(function(url) {
+                  var cel = document.getElementById('ppRvPoster-' + idx);
+                  if (cel && url) {
+                    cel.innerHTML = '<img src="' + url + '" alt="' + _esc(r.movie || '')
+                      + '" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block">';
+                  }
+                });
+              }(rIdx));
             }
           });
         }, 0);
