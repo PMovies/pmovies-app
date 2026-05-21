@@ -2739,9 +2739,124 @@
      Uses env() for Dynamic Island/notch + a 64px floor so it works even
      when env() is unsupported. 768px breakpoint covers all phones. */
   @media(max-width:768px) {
-    #pmUserChip    { top: calc(env(safe-area-inset-top, 64px) + 16px); right: 12px; }
+    #pmUserChip    { top: calc(env(safe-area-inset-top, 64px) + 16px); right: 58px; }
     #pmHomeToggleBtn { top: calc(env(safe-area-inset-top, 64px) + 16px); left: 12px; }
+    #pmBellBtn     { top: calc(env(safe-area-inset-top, 64px) + 16px); right: 12px; }
   }
+
+  /* ════ BELL + NOTIFICATIONS PANEL ════ */
+  #pmBellBtn {
+    display: none; position: fixed; top: 12px; right: 14px; z-index: 201;
+    width: 38px; height: 38px; border-radius: 50%;
+    background: rgba(10,10,10,.88); border: 1px solid rgba(255,255,255,.18);
+    cursor: pointer; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    color: #aaa; font-size: 1.05rem; transition: color .2s, border-color .2s;
+    align-items: center; justify-content: center; padding: 0;
+  }
+  #pmBellBtn:hover { border-color: rgba(245,166,35,.55); color: #f5a623; }
+  #pmBellBadge {
+    position: absolute; top: -3px; right: -3px; background: #d94040; color: #fff;
+    font-size: .5rem; font-weight: 800; min-width: 15px; height: 15px;
+    border-radius: 8px; padding: 0 3px; display: none;
+    align-items: center; justify-content: center;
+    font-family: 'Montserrat', sans-serif; pointer-events: none;
+  }
+  /* shift chip left to make room for bell */
+  #pmUserChip { right: 60px; }
+
+  #pmNotifOverlay {
+    display: none; position: fixed; inset: 0; z-index: 99995;
+  }
+  #pmNotifBg {
+    position: absolute; inset: 0; background: rgba(0,0,0,.55);
+    -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+  }
+  #pmNotifPanel {
+    position: absolute; top: 0; right: 0; bottom: 0; width: 360px; max-width: 100vw;
+    background: #0b0b0b; border-left: 1px solid rgba(255,255,255,.07);
+    overflow-y: auto; transform: translateX(100%);
+    transition: transform .28s cubic-bezier(.4,0,.2,1);
+    display: flex; flex-direction: column;
+  }
+  #pmNotifPanel.pn-open { transform: none; }
+  .pn-header {
+    padding: 20px 20px 14px; border-bottom: 1px solid rgba(255,255,255,.07);
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0; position: sticky; top: 0; background: #0b0b0b; z-index: 2;
+  }
+  .pn-title { font-family:'Montserrat',sans-serif; font-size:.72rem; font-weight:800; letter-spacing:.12em; color:#eee; text-transform:uppercase; }
+  .pn-mark-read { background:none; border:1px solid rgba(255,255,255,.15); color:#888; font-size:.58rem; font-weight:700; letter-spacing:.04em; padding:5px 10px; border-radius:12px; cursor:pointer; text-transform:uppercase; }
+  .pn-mark-read:hover { border-color:#f5a623; color:#f5a623; }
+  .pn-list { flex:1; padding:6px 0; }
+  .pn-row { display:flex; align-items:center; gap:10px; padding:11px 18px; cursor:pointer; transition:background .15s; position:relative; }
+  .pn-row:hover { background:rgba(255,255,255,.04); }
+  .pn-row.pn-unread { background:rgba(245,166,35,.05); }
+  .pn-row.pn-unread::before { content:''; position:absolute; left:7px; top:50%; transform:translateY(-50%); width:5px; height:5px; border-radius:50%; background:#f5a623; }
+  .pn-avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,#2a1800,#4a3000); display:flex; align-items:center; justify-content:center; font-size:.9rem; color:#f5a623; font-weight:700; font-family:'Bebas Neue',sans-serif; overflow:hidden; flex-shrink:0; }
+  .pn-avatar img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+  .pn-body { flex:1; min-width:0; }
+  .pn-text { font-size:.72rem; color:#ccc; line-height:1.4; }
+  .pn-time { font-size:.58rem; color:#555; margin-top:2px; }
+  .pn-action { flex-shrink:0; }
+  .pn-act-btn { background:rgba(245,166,35,.12); border:1px solid rgba(245,166,35,.3); color:#f5a623; font-size:.56rem; font-weight:700; padding:5px 10px; border-radius:10px; cursor:pointer; white-space:nowrap; text-transform:uppercase; letter-spacing:.04em; font-family:'Montserrat',sans-serif; }
+  .pn-act-btn:hover { background:rgba(245,166,35,.25); }
+  .pn-empty { padding:52px 24px; text-align:center; color:#555; font-size:.82rem; }
+
+  /* ════ FOLLOW BUTTON ════ */
+  .pm-follow-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    border: 1px solid rgba(255,255,255,.28); background: none; color: #ddd;
+    font-size: .58rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+    padding: 7px 14px; border-radius: 20px; cursor: pointer;
+    transition: all .18s; font-family: 'Montserrat', sans-serif; white-space: nowrap; flex-shrink: 0;
+  }
+  .pm-follow-btn:hover { border-color: rgba(245,166,35,.5); color: #f5a623; }
+  .pm-follow-btn.pf-following { border-color: #f5a623; color: #f5a623; }
+  .pm-follow-btn.pf-followback { background: #f5a623; border-color: #f5a623; color: #000; font-weight: 800; }
+  .pm-follow-btn.pf-mutual { background: linear-gradient(135deg,#f5a623,#e08a00); border-color: transparent; color: #000; font-weight: 800; }
+  .pm-follow-btn.pf-loading { opacity: .4; pointer-events: none; }
+
+  /* ════ FOLLOWERS / FOLLOWING TABS ════ */
+  .pm-follow-list { padding: 8px 0 32px; }
+  .pm-follow-row { display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:1px solid rgba(255,255,255,.05); }
+  .pm-follow-row-av { width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg,#2a1800,#4a3000); display:flex; align-items:center; justify-content:center; font-size:1rem; color:#f5a623; font-weight:700; font-family:'Bebas Neue',sans-serif; overflow:hidden; flex-shrink:0; cursor:pointer; }
+  .pm-follow-row-av img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+  .pm-follow-row-info { flex:1; min-width:0; cursor:pointer; }
+  .pm-follow-row-name { font-family:'Montserrat',sans-serif; font-size:.74rem; font-weight:700; color:#eee; }
+  .pm-follow-row-handle { font-size:.63rem; color:#666; margin-top:1px; }
+  .pm-follow-list-empty { color:#555; font-size:.78rem; padding:28px 0; }
+  .pm-follow-list-loading { color:#555; font-size:.78rem; padding:20px 0; }
+
+  /* ════ FOR YOU SOCIAL FEED ════ */
+  #pmFeedApp { min-height: 50vh; }
+  .pmf-feed-card { background:#111; border:1px solid #1e1e1e; border-radius:14px; margin-bottom:14px; overflow:hidden; cursor:pointer; transition:border-color .2s; }
+  .pmf-feed-card:hover { border-color:#2e2e2e; }
+  .pmf-feed-hdr { display:flex; align-items:center; gap:9px; padding:12px 14px 8px; }
+  .pmf-feed-av { width:26px; height:26px; border-radius:50%; background:linear-gradient(135deg,#2a1800,#4a3000); display:flex; align-items:center; justify-content:center; font-size:.72rem; color:#f5a623; font-weight:700; font-family:'Bebas Neue',sans-serif; overflow:hidden; flex-shrink:0; }
+  .pmf-feed-av img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+  .pmf-feed-by { font-size:.65rem; color:#888; }
+  .pmf-feed-by strong { color:#ddd; }
+  .pmf-feed-body { display:flex; gap:14px; padding:0 14px 14px; }
+  .pmf-feed-poster { width:64px; height:96px; border-radius:8px; background:#1a1a1a; flex-shrink:0; overflow:hidden; }
+  .pmf-feed-poster img { width:100%; height:100%; object-fit:cover; display:block; }
+  .pmf-feed-info { flex:1; min-width:0; }
+  .pmf-feed-title { font-family:'Montserrat',sans-serif; font-size:.8rem; font-weight:800; color:#eee; margin-bottom:4px; }
+  .pmf-feed-stars { font-size:.7rem; color:#f5a623; margin-bottom:6px; }
+  .pmf-feed-stars .s-empty { color:#333; }
+  .pmf-feed-headline { font-size:.72rem; color:#999; line-height:1.45; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+  .pmf-empty-state { padding:48px 0; text-align:center; }
+  .pmf-empty-title { font-family:'Montserrat',sans-serif; font-size:1rem; font-weight:800; color:#ddd; margin-bottom:8px; }
+  .pmf-empty-sub { font-size:.8rem; color:#666; margin-bottom:28px; line-height:1.6; }
+  .pmf-suggest-label { font-family:'Montserrat',sans-serif; font-size:.58rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:#555; margin-bottom:14px; }
+  .pmf-suggest-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; }
+  .pmf-suggest-card { background:#111; border:1px solid #1e1e1e; border-radius:12px; padding:14px 10px; text-align:center; }
+  .pmf-suggest-av { width:48px; height:48px; border-radius:50%; background:linear-gradient(135deg,#2a1800,#4a3000); display:flex; align-items:center; justify-content:center; font-size:1.15rem; color:#f5a623; font-weight:700; font-family:'Bebas Neue',sans-serif; overflow:hidden; margin:0 auto 8px; }
+  .pmf-suggest-av img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+  .pmf-suggest-name { font-family:'Montserrat',sans-serif; font-size:.66rem; font-weight:700; color:#ddd; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .pmf-suggest-meta { font-size:.58rem; color:#666; margin-bottom:9px; }
+  .pmf-journey-link { margin-top:32px; padding-top:24px; border-top:1px solid rgba(255,255,255,.06); text-align:center; }
+  .pmf-journey-link button { background:none; border:1px solid rgba(255,255,255,.12); color:#666; font-size:.66rem; padding:8px 18px; border-radius:20px; cursor:pointer; font-family:'Montserrat',sans-serif; transition:all .2s; }
+  .pmf-journey-link button:hover { border-color:rgba(245,166,35,.4); color:#f5a623; }
 
   /* ─── Taste Picker Overlay ─── */
   #pmTastePickerOverlay {
@@ -3035,6 +3150,10 @@
   <div class="pm-chip-avatar" id="pmChipAvatar">P</div>
   <span class="pm-chip-name" id="pmChipName"></span>
 </button>
+<button id="pmBellBtn" onclick="pmOpenNotifPanel()" aria-label="Notifications" style="display:none">
+  🔔
+  <span id="pmBellBadge"></span>
+</button>
 
 <main style="max-width:1100px;margin:0 auto;padding:0 20px">
 
@@ -3177,6 +3296,13 @@
 </div><!-- /tab-panel-discover -->
 
 <div class="tab-panel" id="tab-panel-foryou">
+  <!-- Social feed — shown to logged-in users instead of journey -->
+  <div id="pmFeedApp" style="display:none">
+    <div id="pmFeedContent"></div>
+    <div class="pmf-journey-link">
+      <button onclick="pmShowJourney()">✦ Try the Cinematic Journey</button>
+    </div>
+  </div>
   <div id="journeyApp">
 
     <!-- QUESTION PHASE -->
@@ -14910,6 +15036,22 @@ async function deleteEditorReview(key, e) {
 
 <input type="file" id="pmAvatarFileInput" accept="image/*" style="display:none" onchange="pmUploadAvatar(this)"/>
 
+<!-- ╔══════════════════════════════════════════════════════════════╗ -->
+<!-- ║  Notifications Panel                                         ║ -->
+<!-- ╚══════════════════════════════════════════════════════════════╝ -->
+<div id="pmNotifOverlay" onclick="if(event.target===this||event.target.id==='pmNotifBg')pmCloseNotifPanel()">
+  <div id="pmNotifBg"></div>
+  <div id="pmNotifPanel" role="dialog" aria-label="Notifications">
+    <div class="pn-header">
+      <div class="pn-title">Notifications</div>
+      <button class="pn-mark-read" onclick="pmMarkAllNotifsRead()">Mark all read</button>
+    </div>
+    <div class="pn-list" id="pmNotifList">
+      <div class="pn-empty">Loading…</div>
+    </div>
+  </div>
+</div>
+
 <!-- Watchlist search overlay -->
 <div id="pmWlSearchOverlay" onclick="if(event.target===this)pmCloseWlSearch()">
   <div class="pm-bdp-card">
@@ -15138,6 +15280,10 @@ async function deleteEditorReview(key, e) {
       _silentDeviceClaim(user);
       _maybeOpenStartupProfile();
       if (typeof window._pmCheckReviewClaims === 'function') window._pmCheckReviewClaims(user);
+      // Show bell and load notification badge
+      var bellBtn = document.getElementById('pmBellBtn');
+      if (bellBtn) bellBtn.style.display = 'flex';
+      if (typeof window._pmLoadNotifBadge === 'function') window._pmLoadNotifBadge(user);
     } else if (sessionStorage.getItem('pmovies_guest') === '1') {
       _hideLanding();
       _maybeOpenStartupProfile();
@@ -15999,10 +16145,10 @@ async function deleteEditorReview(key, e) {
         }).join('');
       } else {
         statsHtml = [
-          { val: profile.reviewCount      || 0, lbl: 'Reviews',    id: 'pmProfStatRevBar'  },
-          { val: profile.likesReceived    || 0, lbl: 'Likes Rec\'d', id: '' },
-          { val: profile.commentsReceived || 0, lbl: 'Cmts Rec\'d',  id: '' },
-          { val: score,                          lbl: 'Score',       id: '' }
+          { val: profile.reviewCount || 0, lbl: 'Reviews',   id: 'pmProfStatRevBar'   },
+          { val: '…',                       lbl: 'Followers', id: 'pmProfStatFollowers' },
+          { val: '…',                       lbl: 'Following', id: 'pmProfStatFollowing' },
+          { val: score,                     lbl: 'Score',     id: ''                   }
         ].map(function(s) {
           var idAttr = s.id ? ' id="' + s.id + '"' : '';
           return '<div class="pm-prof-stat"><div class="pm-prof-stat-val"' + idAttr + '>' + s.val + '</div><div class="pm-prof-stat-lbl">' + s.lbl + '</div></div>';
@@ -16021,7 +16167,8 @@ async function deleteEditorReview(key, e) {
         +   '<div class="pm-prof-name-row">'
         +     '<div class="pm-prof-nickname">' + _esc(nickname) + '</div>'
         +     '<span class="pm-prof-badge">' + badge.icon + ' ' + badge.label + '</span>'
-        +     (isOwn ? '<button class="pm-prof-edit-btn" onclick="pmOpenEditProfile()">✏️ Edit</button>' : '')
+        +     (isOwn ? '<button class="pm-prof-edit-btn" onclick="pmOpenEditProfile()">✏️ Edit</button>'
+                     : '<button class="pm-follow-btn pf-loading" id="pmProfFollowBtn" onclick="pmToggleFollow(\'' + uid + '\')">…</button>')
         +   '</div>'
         +   '<div class="pm-prof-joined" id="pmProfMemberLine">' + (memberLine || '') + '</div>'
         +   (profile.bio ? '<div class="pm-prof-bio">' + _esc(profile.bio) + '</div>' : '')
@@ -16035,6 +16182,8 @@ async function deleteEditorReview(key, e) {
         + '<button class="pm-prof-tab" data-tab="reviews" onclick="pmProfTab(\'reviews\')">Reviews</button>'
         + (isOwn && !isEditorProfile ? '<button class="pm-prof-tab" data-tab="watchlist" onclick="pmProfTab(\'watchlist\')">Watchlist' + (wl.length ? ' · ' + wl.length : '') + '</button>' : '')
         + '<button class="pm-prof-tab" data-tab="lists" onclick="pmProfTab(\'lists\')">Lists</button>'
+        + (!isEditorProfile ? '<button class="pm-prof-tab" data-tab="followers" onclick="pmProfTab(\'followers\')">Followers</button>' : '')
+        + (!isEditorProfile ? '<button class="pm-prof-tab" data-tab="following" onclick="pmProfTab(\'following\')">Following</button>' : '')
         + (!isEditorProfile ? '<button class="pm-prof-tab" data-tab="stats" onclick="pmProfTab(\'stats\')">Stats</button>' : '')
         + (isAdminUser ? '<button class="pm-prof-tab" data-tab="admin" onclick="pmProfTab(\'admin\')">⚡ Admin</button>' : '')
         + '</div>';
@@ -16347,6 +16496,8 @@ async function deleteEditorReview(key, e) {
         +     '<div class="pm-prof-tab-panel" id="pmProfPanel-reviews" style="display:none">' + fullReviewsHtml + '</div>'
         +     (isOwn ? '<div class="pm-prof-tab-panel" id="pmProfPanel-watchlist" style="display:none">' + watchlistTabHtml + '</div>' : '')
         +     '<div class="pm-prof-tab-panel" id="pmProfPanel-lists" style="display:none">' + listsTabHtml + '</div>'
+        +     (!isEditorProfile ? '<div class="pm-prof-tab-panel" id="pmProfPanel-followers" style="display:none"><div class="pm-follow-list-loading">Loading…</div></div>' : '')
+        +     (!isEditorProfile ? '<div class="pm-prof-tab-panel" id="pmProfPanel-following" style="display:none"><div class="pm-follow-list-loading">Loading…</div></div>' : '')
         +     '<div class="pm-prof-tab-panel" id="pmProfPanel-stats" style="display:none">' + statsTabHtml + '</div>'
         +     (isAdminUser ? '<div class="pm-prof-tab-panel" id="pmProfPanel-admin" style="display:none">' + adminTabHtml + '</div>' : '')
         +   '</div>'
@@ -16358,6 +16509,83 @@ async function deleteEditorReview(key, e) {
       // loadFanReviews() will fire it as soon as the reviews finish loading.
       if (realReviewCount === 0 && !isEditorProfile) {
         window._pmPendingReviewSync = { uid: uid, isOwn: !!isOwn };
+      }
+
+      // ── Follow state + follower/following counts (non-editor profiles only) ──
+      if (!isEditorProfile) {
+        // Async: load follower + following counts into stats bar
+        (async function() {
+          try {
+            var [frRes, fgRes] = await Promise.all([
+              fetch(RTDB + '/followers/' + uid + '.json?shallow=true'),
+              fetch(RTDB + '/follows/'   + uid + '.json?shallow=true')
+            ]);
+            var frCount = frRes.ok ? (await frRes.json() || {}) : {};
+            var fgCount = fgRes.ok ? (await fgRes.json() || {}) : {};
+            var frN = Object.keys(frCount).length;
+            var fgN = Object.keys(fgCount).length;
+            var elFr = document.getElementById('pmProfStatFollowers');
+            var elFg = document.getElementById('pmProfStatFollowing');
+            if (elFr) elFr.textContent = frN;
+            if (elFg) elFg.textContent = fgN;
+          } catch(_e) {}
+        })();
+
+        // Async: determine follow button state for non-own profiles
+        if (!isOwn) {
+          (async function() {
+            var me = window.pmGetUser && window.pmGetUser();
+            if (!me) {
+              var btn = document.getElementById('pmProfFollowBtn');
+              if (btn) btn.style.display = 'none'; // hide if guest
+              return;
+            }
+            try {
+              var [iFollowRes, theyFollowRes] = await Promise.all([
+                fetch(RTDB + '/follows/'    + me.uid + '/' + uid + '.json'),
+                fetch(RTDB + '/followers/'  + me.uid + '/' + uid + '.json')
+              ]);
+              var iFollow    = iFollowRes.ok   && (await iFollowRes.json())   === true;
+              var theyFollow = theyFollowRes.ok && (await theyFollowRes.json()) === true;
+              var btn = document.getElementById('pmProfFollowBtn');
+              if (!btn) return;
+              btn.classList.remove('pf-loading');
+              if (iFollow && theyFollow) {
+                btn.className = 'pm-follow-btn pf-mutual';
+                btn.textContent = '♥ Mutual';
+              } else if (iFollow) {
+                btn.className = 'pm-follow-btn pf-following';
+                btn.textContent = 'Following ✓';
+              } else if (theyFollow) {
+                btn.className = 'pm-follow-btn pf-followback';
+                btn.textContent = 'Follow Back';
+              } else {
+                btn.className = 'pm-follow-btn';
+                btn.textContent = '+ Follow';
+              }
+            } catch(_e) {
+              var btn = document.getElementById('pmProfFollowBtn');
+              if (btn) { btn.classList.remove('pf-loading'); btn.textContent = '+ Follow'; }
+            }
+          })();
+        }
+
+        // Wire followers/following tab lazy-load
+        (function() {
+          var profUid = uid;
+          var _followTabsWired = false;
+          var _origPmProfTab = window.pmProfTab;
+          window.pmProfTab = function(tabName) {
+            if (typeof _origPmProfTab === 'function') _origPmProfTab(tabName);
+            if (tabName === 'followers' || tabName === 'following') {
+              var panel = document.getElementById('pmProfPanel-' + tabName);
+              if (!panel || panel.dataset.loaded) return;
+              panel.dataset.loaded = '1';
+              if (typeof window._pmLoadFollowTab === 'function')
+                window._pmLoadFollowTab(profUid, tabName, panel);
+            }
+          };
+        })();
       }
 
       // ── Editor profile: load site-wide stats asynchronously ──
@@ -18520,6 +18748,580 @@ async function deleteEditorReview(key, e) {
       };
     }
   }, 0);
+
+})();
+</script>
+
+<!-- ╔══════════════════════════════════════════════════════════════════╗ -->
+<!-- ║  Social Layer — Follow System · Notifications · For You Feed    ║ -->
+<!-- ╚══════════════════════════════════════════════════════════════════╝ -->
+<script>
+(function() {
+  'use strict';
+
+  var RTDB = (function() {
+    var s = document.querySelector('script[src*="firebase"]');
+    // Reuse the RTDB constant already defined in the page
+    return window.RTDB || 'https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app';
+  })();
+
+  /* ── Helpers ── */
+  function _esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function _relTime(ms) {
+    var diff = Date.now() - ms, m = 60000, h = 3600000, d = 86400000;
+    if (diff < m)   return 'just now';
+    if (diff < h)   return Math.floor(diff/m)  + 'm ago';
+    if (diff < d)   return Math.floor(diff/h)  + 'h ago';
+    return Math.floor(diff/d) + 'd ago';
+  }
+  function _getToken() {
+    var u = window.pmGetUser && window.pmGetUser();
+    return u ? u.getIdToken() : Promise.resolve(null);
+  }
+  function _avHtml(photoURL, name) {
+    var init = (name||'?').charAt(0).toUpperCase();
+    if (photoURL) return '<img src="' + _esc(photoURL) + '" alt="' + _esc(name||'') + '" onerror="this.style.display=\'none\'">';
+    return init;
+  }
+
+  /* ════════════════════════════════════════════
+     FOLLOW / UNFOLLOW
+  ════════════════════════════════════════════ */
+  window.pmToggleFollow = async function(theirUid) {
+    var me = window.pmGetUser && window.pmGetUser();
+    if (!me) { if (window.pmRequireAuth) window.pmRequireAuth(); return; }
+    var btn = document.getElementById('pmProfFollowBtn');
+    if (btn) { btn.disabled = true; btn.classList.add('pf-loading'); }
+
+    try {
+      var token = await _getToken();
+      var headers = { 'Content-Type': 'application/json' };
+      var auth = token ? '?auth=' + token : '';
+
+      // Check current state
+      var r = await fetch(RTDB + '/follows/' + me.uid + '/' + theirUid + '.json');
+      var isFollowing = r.ok && (await r.json()) === true;
+
+      if (isFollowing) {
+        // ── UNFOLLOW ──
+        await Promise.all([
+          fetch(RTDB + '/follows/'   + me.uid   + '/' + theirUid + '.json' + auth, { method: 'DELETE' }),
+          fetch(RTDB + '/followers/' + theirUid + '/' + me.uid   + '.json' + auth, { method: 'DELETE' })
+        ]);
+        // Check if they still follow me
+        var tfr = await fetch(RTDB + '/followers/' + me.uid + '/' + theirUid + '.json');
+        var theyFollow = tfr.ok && (await tfr.json()) === true;
+        if (btn) {
+          btn.disabled = false; btn.classList.remove('pf-loading');
+          if (theyFollow) {
+            btn.className = 'pm-follow-btn pf-followback'; btn.textContent = 'Follow Back';
+          } else {
+            btn.className = 'pm-follow-btn'; btn.textContent = '+ Follow';
+          }
+        }
+      } else {
+        // ── FOLLOW ──
+        var myProfile = null;
+        try {
+          var pr = await fetch(RTDB + '/users/' + me.uid + '.json');
+          if (pr.ok) myProfile = await pr.json();
+        } catch(_e) {}
+        var myName   = (myProfile && myProfile.nickname) || me.displayName || 'Someone';
+        var myAvatar = (myProfile && myProfile.photoURL)  || me.photoURL   || null;
+
+        await Promise.all([
+          fetch(RTDB + '/follows/'   + me.uid   + '/' + theirUid + '.json' + auth,
+            { method:'PUT', headers, body: JSON.stringify(true) }),
+          fetch(RTDB + '/followers/' + theirUid + '/' + me.uid   + '.json' + auth,
+            { method:'PUT', headers, body: JSON.stringify(true) })
+        ]);
+
+        // Write follow notification
+        var notifKey = Date.now() + '_' + Math.random().toString(36).slice(2,7);
+        fetch(RTDB + '/notifications/' + theirUid + '/' + notifKey + '.json' + auth, {
+          method: 'PUT', headers,
+          body: JSON.stringify({
+            type: 'follow', fromUid: me.uid,
+            fromName: myName, fromAvatar: myAvatar || '',
+            read: false, timestamp: Date.now()
+          })
+        }).catch(function(){});
+
+        // Check if they follow me
+        var tfr2 = await fetch(RTDB + '/followers/' + me.uid + '/' + theirUid + '.json');
+        var theyFollow2 = tfr2.ok && (await tfr2.json()) === true;
+        if (btn) {
+          btn.disabled = false; btn.classList.remove('pf-loading');
+          if (theyFollow2) {
+            btn.className = 'pm-follow-btn pf-mutual'; btn.textContent = '♥ Mutual';
+          } else {
+            btn.className = 'pm-follow-btn pf-following'; btn.textContent = 'Following ✓';
+          }
+        }
+        // Refresh feed so new follow appears
+        window._pmFeedDirty = true;
+      }
+
+      // Refresh follower count in stats bar
+      try {
+        var frR = await fetch(RTDB + '/followers/' + theirUid + '.json?shallow=true');
+        var frD = frR.ok ? (await frR.json() || {}) : {};
+        var el  = document.getElementById('pmProfStatFollowers');
+        if (el) el.textContent = Object.keys(frD).length;
+      } catch(_e) {}
+
+    } catch(e) {
+      if (btn) { btn.disabled = false; btn.classList.remove('pf-loading'); }
+    }
+  };
+
+  /* ════════════════════════════════════════════
+     FOLLOWERS / FOLLOWING TAB CONTENT
+  ════════════════════════════════════════════ */
+  window._pmLoadFollowTab = async function(profUid, tabName, panel) {
+    panel.innerHTML = '<div class="pm-follow-list-loading">Loading…</div>';
+    try {
+      var path = tabName === 'followers'
+        ? RTDB + '/followers/' + profUid + '.json?shallow=true'
+        : RTDB + '/follows/'   + profUid + '.json?shallow=true';
+      var r = await fetch(path);
+      var uids = r.ok ? Object.keys((await r.json()) || {}) : [];
+      if (!uids.length) {
+        panel.innerHTML = '<div class="pm-follow-list-loading">No ' + tabName + ' yet.</div>';
+        return;
+      }
+
+      // Fetch all profiles in parallel (max 30)
+      var slice = uids.slice(0, 30);
+      var me = window.pmGetUser && window.pmGetUser();
+      var profiles = await Promise.all(slice.map(async function(uid) {
+        try {
+          var pr = await fetch(RTDB + '/users/' + uid + '.json');
+          return pr.ok ? { uid: uid, ...(await pr.json()) } : { uid: uid };
+        } catch(_e) { return { uid: uid }; }
+      }));
+
+      // Determine my follow states if logged in
+      var myFollows = {};
+      if (me) {
+        var fgR = await fetch(RTDB + '/follows/' + me.uid + '.json?shallow=true');
+        myFollows = fgR.ok ? ((await fgR.json()) || {}) : {};
+      }
+
+      var rows = profiles.map(function(p) {
+        var name   = p.nickname || 'Unknown';
+        var handle = p.username ? '@' + p.username : '';
+        var av     = p.photoURL
+          ? '<img src="' + _esc(p.photoURL) + '" alt="' + _esc(name) + '">'
+          : name.charAt(0).toUpperCase();
+
+        var iFollow = !!myFollows[p.uid];
+        var btnCls  = iFollow ? 'pm-follow-btn pf-following' : 'pm-follow-btn';
+        var btnTxt  = iFollow ? 'Following ✓' : '+ Follow';
+        var followBtn = (me && me.uid !== p.uid)
+          ? '<button class="' + btnCls + '" onclick="pmFollowRowToggle(\'' + _esc(p.uid) + '\',this)">' + btnTxt + '</button>'
+          : '';
+
+        return '<div class="pm-follow-row">'
+          + '<div class="pm-follow-row-av" onclick="pmOpenProfile(\'' + _esc(p.uid) + '\')">' + av + '</div>'
+          + '<div class="pm-follow-row-info" onclick="pmOpenProfile(\'' + _esc(p.uid) + '\')">'
+          +   '<div class="pm-follow-row-name">' + _esc(name) + '</div>'
+          +   (handle ? '<div class="pm-follow-row-handle">' + _esc(handle) + '</div>' : '')
+          + '</div>'
+          + (followBtn ? '<div>' + followBtn + '</div>' : '')
+          + '</div>';
+      }).join('');
+
+      panel.innerHTML = '<div class="pm-follow-list">' + rows + '</div>';
+    } catch(e) {
+      panel.innerHTML = '<div class="pm-follow-list-loading">Could not load ' + tabName + '.</div>';
+    }
+  };
+
+  // Inline follow/unfollow within followers/following list rows
+  window.pmFollowRowToggle = async function(theirUid, btn) {
+    var me = window.pmGetUser && window.pmGetUser();
+    if (!me) { if (window.pmRequireAuth) window.pmRequireAuth(); return; }
+    btn.disabled = true;
+    try {
+      var token = await _getToken();
+      var auth = token ? '?auth=' + token : '';
+      var r = await fetch(RTDB + '/follows/' + me.uid + '/' + theirUid + '.json');
+      var isFollowing = r.ok && (await r.json()) === true;
+      if (isFollowing) {
+        await Promise.all([
+          fetch(RTDB + '/follows/'   + me.uid   + '/' + theirUid + '.json' + auth, { method:'DELETE' }),
+          fetch(RTDB + '/followers/' + theirUid + '/' + me.uid   + '.json' + auth, { method:'DELETE' })
+        ]);
+        btn.className = 'pm-follow-btn'; btn.textContent = '+ Follow';
+      } else {
+        await Promise.all([
+          fetch(RTDB + '/follows/'   + me.uid   + '/' + theirUid + '.json' + auth,
+            { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(true) }),
+          fetch(RTDB + '/followers/' + theirUid + '/' + me.uid   + '.json' + auth,
+            { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(true) })
+        ]);
+        btn.className = 'pm-follow-btn pf-following'; btn.textContent = 'Following ✓';
+        window._pmFeedDirty = true;
+      }
+    } catch(_e) {}
+    btn.disabled = false;
+  };
+
+  /* ════════════════════════════════════════════
+     NOTIFICATIONS PANEL
+  ════════════════════════════════════════════ */
+  var _notifMarkTimer = null;
+
+  window._pmLoadNotifBadge = async function(user) {
+    try {
+      var token = await user.getIdToken();
+      var r = await fetch(RTDB + '/notifications/' + user.uid + '.json?auth=' + token);
+      if (!r.ok) return;
+      var data = await r.json() || {};
+      var unread = Object.values(data).filter(function(n) { return n && !n.read; }).length;
+      _setBadge(unread);
+    } catch(_e) {}
+  };
+
+  function _setBadge(count) {
+    var badge = document.getElementById('pmBellBadge');
+    if (!badge) return;
+    if (count > 0) {
+      badge.textContent = count > 99 ? '99+' : count;
+      badge.style.display = 'flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  window.pmOpenNotifPanel = async function() {
+    var overlay = document.getElementById('pmNotifOverlay');
+    var panel   = document.getElementById('pmNotifPanel');
+    var list    = document.getElementById('pmNotifList');
+    if (!overlay || !panel) return;
+    overlay.style.display = 'block';
+    requestAnimationFrame(function() { panel.classList.add('pn-open'); });
+
+    var me = window.pmGetUser && window.pmGetUser();
+    if (!me) { list.innerHTML = '<div class="pn-empty">Sign in to see notifications.</div>'; return; }
+
+    list.innerHTML = '<div class="pn-empty">Loading…</div>';
+
+    try {
+      var token = await me.getIdToken();
+      var r = await fetch(RTDB + '/notifications/' + me.uid + '.json?auth=' + token);
+      var raw = r.ok ? (await r.json() || {}) : {};
+
+      // Sort newest first (skip reviewClaim legacy node — different structure)
+      var notifs = Object.entries(raw)
+        .filter(function(e) { return e[0] !== 'reviewClaim' && e[1] && e[1].timestamp; })
+        .sort(function(a,b) { return b[1].timestamp - a[1].timestamp });
+
+      // Handle legacy reviewClaim toast separately
+      var rc = raw.reviewClaim;
+      if (rc && !rc.read && rc.count) {
+        notifs.unshift(['reviewClaim', {
+          type:'reviewClaim', fromName:'PMovies', fromAvatar:'',
+          read: rc.read || false, timestamp: rc.timestamp || 0,
+          _count: rc.count
+        }]);
+      }
+
+      if (!notifs.length) {
+        list.innerHTML = '<div class="pn-empty">You\'re all caught up 🎬</div>';
+        _setBadge(0);
+        return;
+      }
+
+      list.innerHTML = notifs.map(function(entry) {
+        var key = entry[0], n = entry[1];
+        var unreadCls = n.read ? '' : ' pn-unread';
+        var avHtml    = '<div class="pn-avatar">' + _avHtml(n.fromAvatar, n.fromName) + '</div>';
+        var text = '', actionBtn = '';
+
+        if (n.type === 'follow') {
+          text = '<strong>' + _esc(n.fromName) + '</strong> started following you';
+          if (n.fromUid) {
+            actionBtn = '<button class="pn-act-btn" onclick="pmOpenProfile(\'' + _esc(n.fromUid) + '\');pmCloseNotifPanel()">View</button>';
+          }
+        } else if (n.type === 'like') {
+          text = '<strong>' + _esc(n.fromName) + '</strong> liked your review'
+               + (n.targetTitle ? ' of <em>' + _esc(n.targetTitle) + '</em>' : '');
+          if (n.targetId) actionBtn = '<button class="pn-act-btn" onclick="_pmOpenReviewFromProfile(\'' + _esc(n.targetId) + '\');pmCloseNotifPanel()">View</button>';
+        } else if (n.type === 'comment') {
+          text = '<strong>' + _esc(n.fromName) + '</strong> commented on your'
+               + (n.targetTitle ? ' <em>' + _esc(n.targetTitle) + '</em>' : '') + ' review';
+          if (n.targetId) actionBtn = '<button class="pn-act-btn" onclick="_pmOpenReviewFromProfile(\'' + _esc(n.targetId) + '\');pmCloseNotifPanel()">View</button>';
+        } else if (n.type === 'reviewClaim') {
+          text = '🔑 ' + (n._count||'Some') + ' of your old review' + (n._count!==1?'s have':' has') + ' been claimed to your profile';
+        } else {
+          text = _esc(n.fromName || 'Notification');
+        }
+
+        var timeStr = n.timestamp ? _relTime(n.timestamp) : '';
+        return '<div class="pn-row' + unreadCls + '" data-key="' + _esc(key) + '">'
+          + avHtml
+          + '<div class="pn-body"><div class="pn-text">' + text + '</div><div class="pn-time">' + timeStr + '</div></div>'
+          + (actionBtn ? '<div class="pn-action">' + actionBtn + '</div>' : '')
+          + '</div>';
+      }).join('');
+
+      // Auto mark all read after 2 s
+      clearTimeout(_notifMarkTimer);
+      _notifMarkTimer = setTimeout(function() { pmMarkAllNotifsRead(); }, 2000);
+      _setBadge(0);
+
+    } catch(e) {
+      list.innerHTML = '<div class="pn-empty">Could not load notifications.</div>';
+    }
+  };
+
+  window.pmCloseNotifPanel = function() {
+    var overlay = document.getElementById('pmNotifOverlay');
+    var panel   = document.getElementById('pmNotifPanel');
+    if (!overlay || !panel) return;
+    panel.classList.remove('pn-open');
+    setTimeout(function() { overlay.style.display = 'none'; }, 280);
+  };
+
+  window.pmMarkAllNotifsRead = async function() {
+    var me = window.pmGetUser && window.pmGetUser();
+    if (!me) return;
+    try {
+      var token = await me.getIdToken();
+      // Fetch all keys, patch read:true on each unread entry
+      var r = await fetch(RTDB + '/notifications/' + me.uid + '.json?auth=' + token + '&shallow=true');
+      var keys = r.ok ? Object.keys((await r.json()) || {}) : [];
+      await Promise.all(keys.map(function(k) {
+        return fetch(RTDB + '/notifications/' + me.uid + '/' + k + '/read.json?auth=' + token,
+          { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(true) });
+      }));
+      _setBadge(0);
+      // Update row styles
+      document.querySelectorAll('#pmNotifList .pn-row.pn-unread').forEach(function(el) {
+        el.classList.remove('pn-unread');
+      });
+    } catch(_e) {}
+  };
+
+  // Escape closes notif panel
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      var overlay = document.getElementById('pmNotifOverlay');
+      if (overlay && overlay.style.display !== 'none') { pmCloseNotifPanel(); e.stopPropagation(); }
+    }
+  }, true);
+
+  /* ════════════════════════════════════════════
+     FOR YOU — SOCIAL FEED
+  ════════════════════════════════════════════ */
+  window._pmFeedDirty = true;
+  window._pmFeedLoaded = false;
+
+  window.pmShowJourney = function() {
+    var feedApp  = document.getElementById('pmFeedApp');
+    var journey  = document.getElementById('journeyApp');
+    if (feedApp)  feedApp.style.display  = 'none';
+    if (journey)  journey.style.display  = '';
+    if (typeof _journeyInit === 'function') _journeyInit();
+  };
+
+  async function _loadFeed() {
+    var feedApp = document.getElementById('pmFeedApp');
+    var journey = document.getElementById('journeyApp');
+    var content = document.getElementById('pmFeedContent');
+    if (!feedApp || !content) return;
+
+    var me = window.pmGetUser && window.pmGetUser();
+    if (!me) {
+      // Guest: show journey
+      if (feedApp) feedApp.style.display = 'none';
+      if (journey) journey.style.display = '';
+      return;
+    }
+
+    // Show feed, hide journey
+    feedApp.style.display = '';
+    if (journey) journey.style.display = 'none';
+
+    if (!window._pmFeedDirty && window._pmFeedLoaded) return;
+    window._pmFeedDirty = false;
+    window._pmFeedLoaded = true;
+
+    content.innerHTML = '<div style="color:#555;font-size:.8rem;padding:20px 0">Loading your feed…</div>';
+
+    try {
+      // 1. Get followed UIDs
+      var token = await me.getIdToken();
+      var fgR = await fetch(RTDB + '/follows/' + me.uid + '.json?shallow=true');
+      var followedUids = fgR.ok ? Object.keys((await fgR.json()) || {}) : [];
+
+      if (!followedUids.length) {
+        content.innerHTML = _feedEmptyHtml('Follow people to see their reviews here',
+          'Discover reviewers and follow them to build your personal feed.');
+        _loadSuggestedUsers(content, token, me.uid);
+        return;
+      }
+
+      // 2. Fetch all fan reviews and filter to followed users (client-side filter)
+      var allR = await fetch(RTDB + '/fanReviews.json');
+      var allRevs = allR.ok ? (await allR.json() || {}) : {};
+      var feedRevs = Object.entries(allRevs)
+        .filter(function(e) { return followedUids.indexOf(e[1].uid) !== -1; })
+        .map(function(e) { e[1]._fp = e[0]; return e[1]; })
+        .sort(function(a,b) { return (b.timestamp||0) - (a.timestamp||0) })
+        .slice(0, 30);
+
+      if (!feedRevs.length) {
+        content.innerHTML = _feedEmptyHtml(
+          'The people you follow haven\'t reviewed anything yet',
+          'Their reviews will appear here once they share one.');
+        _loadSuggestedUsers(content, token, me.uid);
+        return;
+      }
+
+      // 3. Fetch reviewer profiles (deduplicated)
+      var authorUids = [...new Set(feedRevs.map(function(r){return r.uid;}).filter(Boolean))];
+      var profileMap = {};
+      await Promise.all(authorUids.map(async function(uid) {
+        try {
+          var pr = await fetch(RTDB + '/users/' + uid + '.json');
+          if (pr.ok) profileMap[uid] = await pr.json();
+        } catch(_e) {}
+      }));
+
+      // 4. Render cards
+      var cards = feedRevs.map(function(r) {
+        var prof     = (r.uid && profileMap[r.uid]) || {};
+        var name     = prof.nickname || r.name || 'Anonymous';
+        var photoURL = prof.photoURL  || r.photoURL || '';
+        var av       = photoURL
+          ? '<img src="' + _esc(photoURL) + '" alt="' + _esc(name) + '">'
+          : name.charAt(0).toUpperCase();
+        var starsHtml = typeof _starsHtml === 'function' ? _starsHtml(r.rating||0) : '';
+        var fp = r._fp || '';
+
+        return '<div class="pmf-feed-card" onclick="typeof _pmOpenReviewFromProfile===\'function\'&&_pmOpenReviewFromProfile(\'' + _esc(fp) + '\')">'
+          + '<div class="pmf-feed-hdr" onclick="event.stopPropagation();typeof pmOpenProfile===\'function\'&&pmOpenProfile(\'' + _esc(r.uid||'') + '\')">'
+          +   '<div class="pmf-feed-av">' + av + '</div>'
+          +   '<div class="pmf-feed-by"><strong>' + _esc(name) + '</strong> reviewed:</div>'
+          + '</div>'
+          + '<div class="pmf-feed-body">'
+          +   '<div class="pmf-feed-poster" id="pmfd-' + _esc(fp) + '">🎬</div>'
+          +   '<div class="pmf-feed-info">'
+          +     '<div class="pmf-feed-title">' + _esc(r.movie||'Unknown') + '</div>'
+          +     '<div class="pmf-feed-stars">' + starsHtml + '</div>'
+          +     (r.headline ? '<div class="pmf-feed-headline">' + _esc(r.headline) + '</div>' : '')
+          +   '</div>'
+          + '</div>'
+          + '</div>';
+      }).join('');
+
+      content.innerHTML = cards;
+
+      // 5. Lazy-load posters
+      setTimeout(function() {
+        feedRevs.forEach(function(r) {
+          var fp  = r._fp || '';
+          var el  = document.getElementById('pmfd-' + fp);
+          if (!el) return;
+          var fn  = window._pmFetchPoster || (typeof fetchPoster === 'function' ? fetchPoster : null);
+          if (!fn) return;
+          fn(r.movie, r._mediaType || 'movie', r.tmdbId || null).then(function(url) {
+            var cel = document.getElementById('pmfd-' + fp);
+            if (cel && url) cel.innerHTML = '<img src="' + url + '" alt="' + _esc(r.movie||'') + '" loading="lazy">';
+          });
+        });
+      }, 0);
+
+    } catch(e) {
+      content.innerHTML = '<div style="color:#555;font-size:.8rem;padding:20px 0">Could not load feed. Please try again.</div>';
+    }
+  }
+
+  function _feedEmptyHtml(title, sub) {
+    return '<div class="pmf-empty-state">'
+      + '<div class="pmf-empty-title">' + _esc(title) + '</div>'
+      + '<div class="pmf-empty-sub">' + _esc(sub) + '</div>'
+      + '<div class="pmf-suggest-label">Suggested reviewers</div>'
+      + '<div id="pmFeedSuggest" class="pmf-suggest-grid"></div>'
+      + '</div>';
+  }
+
+  async function _loadSuggestedUsers(container, token, myUid) {
+    try {
+      var r = await fetch(RTDB + '/users.json?shallow=true');
+      var uids = r.ok ? Object.keys((await r.json()) || {}) : [];
+      // Exclude self
+      uids = uids.filter(function(u){ return u !== myUid; }).slice(0, 12);
+
+      var profiles = await Promise.all(uids.map(async function(uid) {
+        try {
+          var pr = await fetch(RTDB + '/users/' + uid + '.json');
+          return pr.ok ? { uid: uid, ...(await pr.json()) } : null;
+        } catch(_e) { return null; }
+      }));
+
+      profiles = profiles.filter(Boolean)
+        .sort(function(a,b){ return (b.reviewCount||0) - (a.reviewCount||0); })
+        .slice(0,6);
+
+      var grid = container.querySelector('#pmFeedSuggest');
+      if (!grid) return;
+      grid.innerHTML = profiles.map(function(p) {
+        var name = p.nickname || 'Member';
+        var av   = p.photoURL
+          ? '<img src="' + _esc(p.photoURL) + '" alt="' + _esc(name) + '">'
+          : name.charAt(0).toUpperCase();
+        var meta = (p.reviewCount||0) + ' review' + ((p.reviewCount||0)!==1?'s':'');
+        return '<div class="pmf-suggest-card">'
+          + '<div class="pmf-suggest-av" onclick="pmOpenProfile(\'' + _esc(p.uid) + '\')">' + av + '</div>'
+          + '<div class="pmf-suggest-name">' + _esc(name) + '</div>'
+          + '<div class="pmf-suggest-meta">' + meta + '</div>'
+          + '<button class="pm-follow-btn" onclick="pmFollowSuggest(\'' + _esc(p.uid) + '\',this)">+ Follow</button>'
+          + '</div>';
+      }).join('');
+    } catch(_e) {}
+  }
+
+  window.pmFollowSuggest = async function(theirUid, btn) {
+    var me = window.pmGetUser && window.pmGetUser();
+    if (!me) { if (window.pmRequireAuth) window.pmRequireAuth(); return; }
+    btn.disabled = true;
+    try {
+      var token = await _getToken();
+      var auth = token ? '?auth=' + token : '';
+      await Promise.all([
+        fetch(RTDB + '/follows/'   + me.uid   + '/' + theirUid + '.json' + auth,
+          { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(true) }),
+        fetch(RTDB + '/followers/' + theirUid + '/' + me.uid   + '.json' + auth,
+          { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(true) })
+      ]);
+      btn.className = 'pm-follow-btn pf-following'; btn.textContent = 'Following ✓';
+      btn.disabled = false;
+      window._pmFeedDirty = true;
+      // Refresh feed
+      setTimeout(function() {
+        var panel = document.getElementById('tab-panel-foryou');
+        if (panel && panel.classList.contains('active')) _loadFeed();
+      }, 500);
+    } catch(_e) { btn.disabled = false; }
+  };
+
+  // Hook into switchTab to trigger the social feed
+  var _origSwitchSocial = window.switchTab;
+  window.switchTab = function(name) {
+    if (typeof _origSwitchSocial === 'function') _origSwitchSocial.apply(this, arguments);
+    if (name === 'foryou') {
+      var me = window.pmGetUser && window.pmGetUser();
+      if (me) {
+        // Slight delay so the tab panel becomes visible first
+        setTimeout(_loadFeed, 50);
+      }
+      // If guest, journey already initialised by the original switchTab
+    }
+  };
 
 })();
 </script>
