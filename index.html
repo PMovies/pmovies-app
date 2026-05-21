@@ -20117,7 +20117,7 @@ async function deleteEditorReview(key, e) {
     try {
       // 1. Get followed UIDs
       var token = await me.getIdToken();
-      var fgR = await fetch(RTDB + '/follows/' + me.uid + '.json?shallow=true');
+      var fgR = await fetch(RTDB + '/follows/' + me.uid + '.json?shallow=true&auth=' + token);
       var followedUids = fgR.ok ? Object.keys((await fgR.json()) || {}) : [];
 
       if (!followedUids.length) {
