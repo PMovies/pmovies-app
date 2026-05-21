@@ -16328,6 +16328,14 @@ async function deleteEditorReview(key, e) {
         +   '<button onclick="pmAdminDeleteProfile(\'' + uid + '\')" class="pm-del-profile-btn" style="display:none">🗑 Delete This Profile</button>'
         +   '</div>'
         + '</div>'
+        // ── Nickname Cooldown Reset ──
+        + '<div class="pm-admin-section" style="margin-top:32px">'
+        +   '<div class="pm-admin-section-title">⏱ Reset Nickname Cooldown</div>'
+        +   '<div style="color:#666;font-size:.72rem;margin-bottom:12px">Clear the 30-day cooldown for any user so they can change their nickname immediately.</div>'
+        +   '<input id="pmCooldownSearch" oninput="window._pmCooldownSearch(this.value)" placeholder="Search user by name or @username…" style="width:100%;background:#111;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 14px;color:#f4f1ea;font-size:.78rem;margin-bottom:8px;box-sizing:border-box">'
+        +   '<div id="pmCooldownDrop" style="display:none;background:#1a1a1a;border:1px solid rgba(255,255,255,.1);border-radius:8px;overflow:hidden;margin-bottom:12px"></div>'
+        +   '<div id="pmCooldownResult" style="font-size:.72rem;min-height:18px"></div>'
+        + '</div>'
         // ── Claim Reviews Tool ──
         + '<div class="pm-admin-section" style="margin-top:32px">'
         +   '<div class="pm-admin-section-title">✎ Claim Reviews</div>'
@@ -16933,6 +16941,49 @@ async function deleteEditorReview(key, e) {
     // Reload the list
     var listEl = document.getElementById('pmClaimList');
     if (listEl) { listEl.dataset.loaded = '0'; await window._pmLoadClaimData(); }
+  };
+
+  // ── Nickname Cooldown Reset ──
+  window._pmCooldownSearch = function(q) {
+    var drop = document.getElementById('pmCooldownDrop');
+    if (!drop) return;
+    if (!q || !window._pmClaimUsers) { drop.style.display = 'none'; return; }
+    var hits = window._pmClaimUsers.filter(function(u) {
+      return u.nickname.toLowerCase().includes(q.toLowerCase())
+          || u.username.toLowerCase().includes(q.toLowerCase());
+    }).slice(0, 8);
+    if (!hits.length) { drop.style.display = 'none'; return; }
+    drop.style.display = 'block';
+    drop.innerHTML = hits.map(function(u) {
+      return '<div onclick="window._pmResetCooldown(\'' + u.uid + '\',\'' + (u.nickname || u.username) + '\')" '
+        + 'style="padding:10px 14px;cursor:pointer;font-size:.78rem;color:#f4f1ea;border-bottom:1px solid rgba(255,255,255,.05);display:flex;align-items:center;gap:10px" '
+        + 'onmouseover="this.style.background=\'#222\'" onmouseout="this.style.background=\'\'">'
+        + (u.photoURL ? '<img src="' + u.photoURL + '" style="width:28px;height:28px;border-radius:50%;object-fit:cover">' : '<div style="width:28px;height:28px;border-radius:50%;background:#333;display:flex;align-items:center;justify-content:center;font-size:.7rem">' + (u.nickname[0] || '?').toUpperCase() + '</div>')
+        + '<span>' + (u.nickname || '—') + ' <span style="color:#666">@' + (u.username || '—') + '</span></span>'
+        + '</div>';
+    }).join('');
+  };
+
+  window._pmResetCooldown = async function(uid, name) {
+    var drop   = document.getElementById('pmCooldownDrop');
+    var result = document.getElementById('pmCooldownResult');
+    var input  = document.getElementById('pmCooldownSearch');
+    if (drop)  drop.style.display = 'none';
+    if (input) input.value = '';
+    if (result) { result.style.color = '#888'; result.textContent = 'Resetting cooldown for ' + name + '…'; }
+    try {
+      var user  = window.pmGetUser && window.pmGetUser();
+      var token = user ? await user.getIdToken() : '';
+      var r = await fetch(RTDB + '/users/' + uid + '.json?auth=' + token, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nicknameLastChanged: 0 })
+      });
+      if (!r.ok) throw new Error(r.status);
+      if (result) { result.style.color = '#4caf50'; result.textContent = '✓ Cooldown cleared for ' + name + ' — they can change their nickname now.'; }
+    } catch(_) {
+      if (result) { result.style.color = '#f44336'; result.textContent = '✕ Failed to reset cooldown. Try again.'; }
+    }
   };
 
   window._pmIncrNotif = async function(uid, count, token) {
