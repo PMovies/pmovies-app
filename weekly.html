@@ -495,6 +495,101 @@
     .creator-link.platform-blog:hover,
     .creator-link.platform-other:hover { background: #1e1e1e; }
 
+    /* ── Mini Series Top 50 ── */
+    .mini-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+    .mini-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      transition: border-color .2s;
+    }
+    .mini-row:hover { border-color: #333; }
+    .mini-rank {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--orange);
+      min-width: 22px;
+      flex-shrink: 0;
+      text-align: right;
+    }
+    .mini-title {
+      font-size: 12px;
+      font-weight: 600;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .mini-year {
+      font-size: 10px;
+      color: var(--muted2);
+      flex-shrink: 0;
+    }
+    .mini-votes {
+      font-size: 10px;
+      color: var(--muted2);
+      flex-shrink: 0;
+    }
+    @media (max-width: 600px) { .mini-list { grid-template-columns: 1fr; } }
+
+    /* ── Theater Race ── */
+    .tr-list { display: flex; flex-direction: column; gap: 8px; }
+    .tr-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      transition: border-color .2s;
+    }
+    .tr-row:hover { border-color: rgba(255,184,0,.3); }
+    .tr-row.tr-first  { border-color: rgba(255,184,0,.35); background: #111008; }
+    .tr-row.tr-second { border-color: rgba(200,200,200,.2); }
+    .tr-row.tr-third  { border-color: rgba(180,120,60,.25); }
+    .tr-medal {
+      font-size: 22px;
+      min-width: 32px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .tr-rank-num {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--muted2);
+      min-width: 32px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .tr-name {
+      flex: 1;
+      min-width: 0;
+    }
+    .tr-display { font-size: 14px; font-weight: 700; color: #fff; }
+    .tr-handle  { font-size: 11px; color: var(--muted2); margin-top: 1px; }
+    .tr-count {
+      text-align: right;
+      flex-shrink: 0;
+    }
+    .tr-count-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px;
+      color: var(--orange);
+      line-height: 1;
+      letter-spacing: .02em;
+    }
+    .tr-count-label { font-size: 10px; color: var(--muted2); letter-spacing: .5px; }
+
     /* ── Share ── */
     .share-section {
       padding: 32px 0;
@@ -898,6 +993,59 @@ function renderCreators(creators){
     </div>`;
 }
 
+/* ─── Render Mini Series Top 50 ─── */
+function renderMiniSeries(list){
+  if(!list||!list.length) return '';
+  const rows = list.map(m=>`
+    <div class="mini-row">
+      <span class="mini-rank">${esc(m.rank)}</span>
+      <span class="mini-title" title="${esc(m.title)}">${esc(m.title)}</span>
+      <span class="mini-year">${esc(m.year)}</span>
+      <span class="mini-votes">${esc(m.votes)}v</span>
+    </div>`).join('');
+  return `
+    <div class="section">
+      <div class="sec-header">
+        <div class="section-label">Top ${list.length} Mini Series</div>
+        <a href="${SITE_URL}/#series" class="vote-btn">Vote now →</a>
+      </div>
+      <div class="mini-list">${rows}</div>
+    </div>`;
+}
+
+/* ─── Render Theater Race Top 5 ─── */
+function renderTheaterRace(list){
+  if(!list||!list.length) return '';
+  const medals = ['🥇','🥈','🥉'];
+  const rowClass = ['tr-first','tr-second','tr-third'];
+  const rows = list.map((e,i)=>{
+    const medal = medals[i] || null;
+    const cls   = rowClass[i] || '';
+    return `
+    <div class="tr-row ${cls}">
+      ${medal
+        ? `<div class="tr-medal">${medal}</div>`
+        : `<div class="tr-rank-num">#${esc(e.rank)}</div>`}
+      <div class="tr-name">
+        <div class="tr-display">${esc(e.displayName)}</div>
+        ${e.username ? `<div class="tr-handle">@${esc(e.username)}</div>` : ''}
+      </div>
+      <div class="tr-count">
+        <div class="tr-count-num">${esc(e.count)}</div>
+        <div class="tr-count-label">film${e.count!==1?'s':''} in cinema</div>
+      </div>
+    </div>`;
+  }).join('');
+  return `
+    <div class="section">
+      <div class="sec-header">
+        <div class="section-label">🎬 2026 Theater Race — Top 5</div>
+        <a href="${SITE_URL}/" class="vote-btn">Log a visit →</a>
+      </div>
+      ${rows}
+    </div>`;
+}
+
 /* ─── Render Share ─── */
 function renderShare(data){
   const shareUrl   = `${SITE_URL}/weekly`;
@@ -1013,8 +1161,10 @@ function renderAll(data){
   const html =
     renderHeader(data) +
     renderMovers(data.movers) +
+    renderMiniSeries(data.miniSeries) +
     renderStats(data.stats, data.quotes) +
     renderCinemas(data.cinemas) +
+    renderTheaterRace(data.theaterRace) +
     renderYouTube(data.youtube) +
     renderFanArt(data.fanArt) +
     renderCreators(data.creators) +
