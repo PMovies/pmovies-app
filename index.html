@@ -7673,7 +7673,7 @@
         const _srReadToken = _srReadUser?.getIdToken ? await _srReadUser.getIdToken() : null;
         const res  = await fetch(`${RTDB}/seriesFanReviews.json${_srReadToken ? '?auth=' + _srReadToken : ''}`);
         const data = res.ok ? await res.json() : null;
-        if (data) reviews = Object.values(data);
+        if (data) reviews = Object.entries(data).map(([k, r]) => ({ ...r, _key: k }));
       } catch(_) {}
 
       reviews.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
