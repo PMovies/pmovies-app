@@ -17399,7 +17399,8 @@ async function deleteEditorReview(key, e) {
         // ── Data Cleanup Tool ──
         + '<div class="pm-admin-section" style="margin-top:32px">'
         +   '<div class="pm-admin-section-title">🧹 Data Cleanup</div>'
-        +   '<div style="color:#666;font-size:.72rem;margin-bottom:12px">Scan for duplicate reviews and orphaned like entries.</div>'
+        +   '<div style="color:#666;font-size:.72rem;margin-bottom:10px">Finds duplicate reviews. Paste a user UID below to also scan their stale likes (the 7-likes bug).</div>'
+        +   '<input id="pmCleanupUid" placeholder="Optional: paste user UID to scan their likes…" style="width:100%;background:#111;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:9px 14px;color:#f4f1ea;font-size:.75rem;margin-bottom:10px;box-sizing:border-box;font-family:monospace">'
         +   '<button onclick="window._pmRunCleanupScan()" style="background:#1a1a1a;border:1px solid rgba(255,184,0,.3);color:#ffb800;font-family:\'Montserrat\',sans-serif;font-size:.72rem;font-weight:700;padding:10px 18px;border-radius:8px;cursor:pointer;letter-spacing:.05em">▶ Run Scan</button>'
         +   '<div id="pmCleanupResult" style="margin-top:16px"></div>'
         + '</div>'
@@ -19095,84 +19096,134 @@ async function deleteEditorReview(key, e) {
     if (!isAdmin) return;
     var out = document.getElementById('pmCleanupResult');
     if (!out) return;
+
+    var uidInput = document.getElementById('pmCleanupUid');
+    var targetUid = uidInput ? uidInput.value.trim() : '';
+
     out.innerHTML = '<div style="color:#555;font-size:.75rem">Scanning…</div>';
 
     try {
       var token = await _pmUser.getIdToken();
 
-      // Fetch all reviews from both paths + fanLikes
+      // Fetch reviews + fanLikes
       var [movRes, serRes, likRes] = await Promise.all([
         fetch(RTDB + '/fanReviews.json?auth=' + token),
         fetch(RTDB + '/seriesFanReviews.json?auth=' + token),
         fetch(RTDB + '/fanLikes.json?auth=' + token),
       ]);
-      var movData  = movRes.ok  ? (await movRes.json()  || {}) : {};
-      var serData  = serRes.ok  ? (await serRes.json()  || {}) : {};
-      var likData  = likRes.ok  ? (await likRes.json()  || {}) : {};
+      var movData = movRes.ok ? (await movRes.json() || {}) : {};
+      var serData = serRes.ok ? (await serRes.json() || {}) : {};
+      var likData = likRes.ok ? (await likRes.json() || {}) : {};
 
-      // ── 1. Find duplicate reviews ──
-      var allKeys = new Set([...Object.keys(movData), ...Object.keys(serData)]);
-      var seen = {}, dupes = [];
+      // Build a set of all valid computed fps from live reviews
+      var validFps = new Set();
+      var allReviews = [];
       Object.entries(movData).forEach(function([k, r]) {
-        var sig = (r.uid||'') + '|' + (r.movie||r.series||'') + '|' + (r.text||'').slice(0,60).toLowerCase().trim();
-        if (seen[sig]) { dupes.push({ key: k, path: 'fanReviews',       r: r, sig: sig }); }
-        else seen[sig] = k;
+        if (!r) return;
+        r._rtdbKey = k; r._path = 'fanReviews';
+        allReviews.push(r);
+        if (typeof fanReviewFp === 'function') {
+          var fp = fanReviewFp(r);
+          if (fp) validFps.add(fp.replace(/\//g,'_'));
+        }
+        validFps.add(k); // RTDB push key is also valid
       });
       Object.entries(serData).forEach(function([k, r]) {
-        var sig = (r.uid||'') + '|' + (r.movie||r.series||'') + '|' + (r.text||'').slice(0,60).toLowerCase().trim();
-        if (seen[sig]) { dupes.push({ key: k, path: 'seriesFanReviews', r: r, sig: sig }); }
-        else seen[sig] = k;
+        if (!r) return;
+        r._rtdbKey = k; r._path = 'seriesFanReviews';
+        allReviews.push(r);
+        if (typeof fanReviewFp === 'function') {
+          var fp = fanReviewFp(r);
+          if (fp) validFps.add(fp.replace(/\//g,'_'));
+        }
+        validFps.add(k);
       });
 
-      // ── 2. Find orphaned like entries (key has likes but no matching review) ──
-      var orphanLikes = Object.entries(likData).filter(function([k]) {
-        // like keys have '/' replaced with '_' — convert back for comparison
-        var orig = k.replace(/_/g, '/');
-        return !allKeys.has(k) && !allKeys.has(orig);
-      }).filter(function([, v]) {
-        return v && (v.count || 0) > 0;
-      });
-
-      // ── Render results ──
       var html = '';
 
-      if (!dupes.length && !orphanLikes.length) {
-        html = '<div style="color:#4caf50;font-size:.78rem;padding:12px 0">✓ No duplicates or orphaned likes found.</div>';
-      }
+      // ── 1. Duplicates: same uid + movie + rating + EXACT text ──
+      var sigMap = {}, dupes = [];
+      allReviews.forEach(function(r) {
+        var sig = (r.uid||'') + '|' + (r.movie||r.series||'').toLowerCase() + '|' + (r.rating||0) + '|' + (r.text||'').toLowerCase().trim();
+        if (sigMap[sig]) {
+          dupes.push({ key: r._rtdbKey, path: r._path, r: r });
+        } else {
+          sigMap[sig] = r._rtdbKey;
+        }
+      });
 
       if (dupes.length) {
         html += '<div style="color:#ffb800;font-size:.72rem;font-weight:700;letter-spacing:.05em;margin-bottom:8px">DUPLICATE REVIEWS (' + dupes.length + ')</div>';
         dupes.forEach(function(d) {
-          html += '<div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:12px">'
-            + '<div style="font-size:.72rem;line-height:1.5;flex:1;min-width:0">'
-            + '<div style="color:#ccc;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (d.r.movie || d.r.series || 'Unknown') + '</div>'
-            + '<div style="color:#555">by ' + (d.r.name || d.r.uid || '?') + ' · key: <code style="color:#888">' + d.key + '</code></div>'
-            + '</div>'
-            + '<button onclick="window._pmCleanupDelete(\'' + d.path + '\',\'' + d.key + '\',this)" '
-            + 'style="flex-shrink:0;background:#2a0a0a;border:1px solid rgba(255,80,80,.3);color:#e05252;font-size:.7rem;font-weight:700;padding:6px 12px;border-radius:6px;cursor:pointer">Delete</button>'
-            + '</div>';
+          html += _cleanupRow(d.r.movie || d.r.series || 'Unknown', 'by ' + (d.r.name||'?') + ' · ' + d.path, d.path, d.key);
         });
       }
 
-      if (orphanLikes.length) {
-        html += '<div style="color:#ffb800;font-size:.72rem;font-weight:700;letter-spacing:.05em;margin:16px 0 8px">ORPHANED LIKES (' + orphanLikes.length + ')</div>';
-        orphanLikes.forEach(function([k, v]) {
-          html += '<div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:12px">'
-            + '<div style="font-size:.72rem;line-height:1.5;flex:1;min-width:0">'
-            + '<div style="color:#ccc;font-weight:600">key: <code style="color:#888">' + k + '</code></div>'
-            + '<div style="color:#555">Count: ' + (v.count || 0) + ' likes · no matching review</div>'
-            + '</div>'
-            + '<button onclick="window._pmCleanupDelete(\'fanLikes\',\'' + k + '\',this)" '
-            + 'style="flex-shrink:0;background:#2a0a0a;border:1px solid rgba(255,80,80,.3);color:#e05252;font-size:.7rem;font-weight:700;padding:6px 12px;border-radius:6px;cursor:pointer">Delete</button>'
-            + '</div>';
+      // ── 2. Stale likes for a specific user (the 7-likes bug) ──
+      if (targetUid) {
+        var userRevs = allReviews.filter(function(r){ return r.uid === targetUid; });
+        var userFps  = new Set();
+        userRevs.forEach(function(r) {
+          if (typeof fanReviewFp === 'function') userFps.add(fanReviewFp(r).replace(/\//g,'_'));
+          userFps.add(r._rtdbKey);
         });
+
+        // Find all fanLikes entries whose byUser contains this uid (they liked something)
+        // AND all entries whose key matches their review fps
+        var staleLikes = [];
+        Object.entries(likData).forEach(function([k, v]) {
+          if (!v) return;
+          var isTheirReview = userFps.has(k);
+          // A "stale" like is one tied to their review but the review no longer exists
+          // or has more likes than expected (byUser count mismatch)
+          if (isTheirReview) {
+            var byUserCount = v.byUser ? Object.keys(v.byUser).length : 0;
+            var storedCount = v.count || 0;
+            if (storedCount !== byUserCount) {
+              staleLikes.push({ k: k, v: v, reason: 'count mismatch: stored=' + storedCount + ' vs byUser=' + byUserCount });
+            }
+          }
+          if (!validFps.has(k) && v && (v.count||0) > 0) {
+            staleLikes.push({ k: k, v: v, reason: 'no matching review' });
+          }
+        });
+
+        // Deduplicate
+        var seenK = {};
+        staleLikes = staleLikes.filter(function(s){ if(seenK[s.k]) return false; seenK[s.k]=1; return true; });
+
+        if (staleLikes.length) {
+          html += '<div style="color:#ffb800;font-size:.72rem;font-weight:700;letter-spacing:.05em;margin:16px 0 8px">STALE LIKES FOR THIS USER (' + staleLikes.length + ')</div>';
+          staleLikes.forEach(function(s) {
+            html += _cleanupRow('key: ' + s.k, 'Count: ' + (s.v.count||0) + ' · ' + s.reason, 'fanLikes', s.k);
+          });
+        } else {
+          html += '<div style="color:#4caf50;font-size:.78rem;padding:8px 0">✓ No stale likes found for this user.</div>';
+        }
       }
 
-      out.innerHTML = html;
+      if (!dupes.length && !targetUid) {
+        html += '<div style="color:#4caf50;font-size:.78rem;padding:12px 0">✓ No duplicate reviews found.</div>';
+      }
+
+      out.innerHTML = html || '<div style="color:#4caf50;font-size:.78rem;padding:12px 0">✓ All clean.</div>';
     } catch(e) {
       out.innerHTML = '<div style="color:#e05252;font-size:.75rem">Scan failed: ' + e.message + '</div>';
     }
   };
+
+  function _cleanupRow(title, sub, path, key) {
+    var safeKey = key.replace(/'/g, "\\'");
+    var safePath = path.replace(/'/g, "\\'");
+    return '<div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:12px">'
+      + '<div style="font-size:.72rem;line-height:1.5;flex:1;min-width:0">'
+      + '<div style="color:#ccc;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + title + '</div>'
+      + '<div style="color:#555">' + sub + '</div>'
+      + '</div>'
+      + '<button onclick="window._pmCleanupDelete(\'' + safePath + '\',\'' + safeKey + '\',this)" '
+      + 'style="flex-shrink:0;background:#2a0a0a;border:1px solid rgba(255,80,80,.3);color:#e05252;font-size:.7rem;font-weight:700;padding:6px 12px;border-radius:6px;cursor:pointer">Delete</button>'
+      + '</div>';
+  }
 
   window._pmCleanupDelete = async function(path, key, btn) {
     if (!confirm('Delete this entry from ' + path + '?')) return;
@@ -19181,7 +19232,7 @@ async function deleteEditorReview(key, e) {
       var url = RTDB + '/' + path + '/' + encodeURIComponent(key) + '.json?auth=' + token;
       var res = await fetch(url, { method: 'DELETE' });
       if (!res.ok) throw new Error('Firebase error ' + res.status);
-      btn.closest('div[style]').remove();
+      btn.closest('div[style*="background:#1a1a1a"]').remove();
     } catch(e) { alert('Delete failed: ' + e.message); }
   };
 
