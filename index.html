@@ -20133,14 +20133,26 @@ async function deleteEditorReview(key, e) {
         return;
       }
 
-      // 2. Fetch all fan reviews and filter to followed users (client-side filter)
-      var allR = await fetch(RTDB + '/fanReviews.json');
-      var allRevs = allR.ok ? (await allR.json() || {}) : {};
-      var feedRevs = Object.entries(allRevs)
-        .filter(function(e) { return followedUids.indexOf(e[1].uid) !== -1; })
-        .map(function(e) { e[1]._fp = e[0]; return e[1]; })
+      // 2. Fetch movie + series reviews in parallel, filter to followed users
+      var [movR, serR] = await Promise.all([
+        fetch(RTDB + '/fanReviews.json'),
+        fetch(RTDB + '/seriesFanReviews.json'),
+      ]);
+      var movRevs = movR.ok ? (await movR.json() || {}) : {};
+      var serRevs = serR.ok ? (await serR.json() || {}) : {};
+
+      var toEntries = function(obj, mediaType) {
+        return Object.entries(obj)
+          .filter(function(e) { return followedUids.indexOf(e[1].uid) !== -1; })
+          .map(function(e) { e[1]._fp = e[0]; e[1]._mediaType = mediaType; return e[1]; });
+      };
+
+      // Deduplicate by _fp (RTDB key) — guarantees no duplicate cards
+      var seen = {};
+      var feedRevs = toEntries(movRevs, 'movie').concat(toEntries(serRevs, 'tv'))
+        .filter(function(r) { if (seen[r._fp]) return false; seen[r._fp] = true; return true; })
         .sort(function(a,b) { return (b.timestamp||0) - (a.timestamp||0) })
-        .slice(0, 30);
+        .slice(0, 40);
 
       if (!feedRevs.length) {
         content.innerHTML = _feedEmptyHtml(
@@ -20150,7 +20162,10 @@ async function deleteEditorReview(key, e) {
         return;
       }
 
-      // 3. Fetch reviewer profiles (deduplicated)
+      // 3. Load like counts (needed for hasFanLiked to work cross-device)
+      if (typeof loadFanLikeCounts === 'function') await loadFanLikeCounts();
+
+      // 4. Fetch reviewer profiles (deduplicated)
       var authorUids = [...new Set(feedRevs.map(function(r){return r.uid;}).filter(Boolean))];
       var profileMap = {};
       await Promise.all(authorUids.map(async function(uid) {
@@ -20160,12 +20175,12 @@ async function deleteEditorReview(key, e) {
         } catch(_e) {}
       }));
 
-      // 4. Register reviews so openFanReviewPage() can find them by fp
+      // 5. Register reviews so openFanReviewPage() can find them by fp
       feedRevs.forEach(function(r) {
         if (r._fp && window._pmRegisterReview) window._pmRegisterReview(r._fp, r);
       });
 
-      // 5. Render cards
+      // 6. Render cards
       var cards = feedRevs.map(function(r) {
         var prof     = (r.uid && profileMap[r.uid]) || {};
         var name     = prof.nickname || r.name || 'Anonymous';
