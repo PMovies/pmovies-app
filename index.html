@@ -13160,6 +13160,23 @@ async function initFilmOfDay() {
 
   if (!_fotdFilmData || !_fotdFilmData.id) return;
 
+  // Restore cross-device vote: if signed in, fetch the user's stored vote from Firebase
+  const _fotdAuthUser = window.pmGetUser ? window.pmGetUser() : null;
+  if (_fotdAuthUser) {
+    try {
+      const voteRes = await fetch(`${RTDB}/filmOfDay/${_fotdToday}/votes/${_fotdAuthUser.uid}.json`);
+      if (voteRes.ok) {
+        const storedVote = await voteRes.json();
+        if (storedVote && storedVote > 0) {
+          // User has already voted on another device — restore and mark seen locally
+          _fotdSelected = storedVote;
+          localStorage.setItem(lsKey('pmovies_fotd_seen'), _fotdToday);
+          localStorage.setItem(lsKey('pmovies_fotd_rating_' + _fotdToday), String(storedVote));
+        }
+      }
+    } catch(e) {}
+  }
+
   // Render the discovery strip below the search bar
   _renderFOTDStrip();
 
@@ -13282,18 +13299,37 @@ async function _submitFOTDRating() {
   const btn = document.getElementById('fotdRateBtn');
   if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
 
-  // Atomic increment
+  const _fotdAuthUser = window.pmGetUser ? window.pmGetUser() : null;
+
+  // Atomic increment — only count vote if user hasn't already voted (per-uid in Firebase)
   try {
     const res  = await fetch(`${RTDB}/filmOfDay/${_fotdToday}.json`);
     const curr = res.ok ? await res.json() : {};
-    const newTotal = (curr.ratingTotal || 0) + _fotdSelected;
-    const newCount = (curr.ratingCount || 0) + 1;
+
+    // Check if this user has a previous vote stored in Firebase (to avoid double-counting)
+    let prevVote = 0;
+    if (_fotdAuthUser && curr.votes && curr.votes[_fotdAuthUser.uid]) {
+      prevVote = curr.votes[_fotdAuthUser.uid];
+    }
+
+    // Adjust totals: remove previous vote if exists, add new one
+    const newTotal = (curr.ratingTotal || 0) - prevVote + _fotdSelected;
+    const newCount = prevVote > 0 ? (curr.ratingCount || 1) : (curr.ratingCount || 0) + 1;
+
     await fetch(`${RTDB}/filmOfDay/${_fotdToday}/ratingTotal.json`, {
       method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(newTotal)
     });
     await fetch(`${RTDB}/filmOfDay/${_fotdToday}/ratingCount.json`, {
       method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(newCount)
     });
+
+    // Store user's vote in Firebase under votes/{uid} for cross-device sync
+    if (_fotdAuthUser) {
+      await fetch(`${RTDB}/filmOfDay/${_fotdToday}/votes/${_fotdAuthUser.uid}.json`, {
+        method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(_fotdSelected)
+      });
+    }
+
     _fotdFilmData.ratingTotal = newTotal;
     _fotdFilmData.ratingCount = newCount;
   } catch(e) {}
@@ -13370,10 +13406,27 @@ function _renderFOTDStrip() {
   if (!wrap || !_fotdFilmData) return;
   wrap.style.display = '';
 }
-function _fotdStripClick() {
-  const rated = localStorage.getItem(lsKey('pmovies_fotd_seen')) === _fotdToday;
-  if (rated) openFOTDSummary();
-  else _showFOTDRating();
+async function _fotdStripClick() {
+  const localRated = localStorage.getItem(lsKey('pmovies_fotd_seen')) === _fotdToday;
+  if (localRated) { openFOTDSummary(); return; }
+  // Check Firebase in case the user voted on another device
+  const _fotdAuthUser = window.pmGetUser ? window.pmGetUser() : null;
+  if (_fotdAuthUser && _fotdToday) {
+    try {
+      const voteRes = await fetch(`${RTDB}/filmOfDay/${_fotdToday}/votes/${_fotdAuthUser.uid}.json`);
+      if (voteRes.ok) {
+        const storedVote = await voteRes.json();
+        if (storedVote && storedVote > 0) {
+          _fotdSelected = storedVote;
+          localStorage.setItem(lsKey('pmovies_fotd_seen'), _fotdToday);
+          localStorage.setItem(lsKey('pmovies_fotd_rating_' + _fotdToday), String(storedVote));
+          openFOTDSummary();
+          return;
+        }
+      }
+    } catch(e) {}
+  }
+  _showFOTDRating();
 }
 function _skipFOTD() {
   localStorage.setItem(lsKey('pmovies_fotd_seen'), _fotdToday);
