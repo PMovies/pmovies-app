@@ -3254,8 +3254,7 @@
   .pm-tr-board-list {
     overflow-y: auto;
     flex: 1;
-    padding: 0 0 80px;
-    position: relative;
+    padding: 0 0 8px;
   }
   .pm-tr-board-row {
     display: flex;
@@ -3321,11 +3320,10 @@
   .pm-tr-pos-down { background: rgba(200,80,80,.1); color: #c85050; }
   .pm-tr-pos-new  { background: rgba(255,184,0,.12); color: #ffb800; }
   .pm-tr-your-anchor {
-    position: sticky;
-    bottom: 0;
-    background: #111;
     border-top: 1px solid rgba(255,184,0,.15);
+    background: #0d0d0d;
     padding: 10px 20px;
+    flex-shrink: 0;
   }
   .pm-tr-your-label {
     font-size: .55rem;
@@ -16015,6 +16013,7 @@ async function deleteEditorReview(key, e) {
     <div class="pm-tr-board-list" id="pmTrBoardList">
       <div style="color:#444;font-size:.75rem;text-align:center;padding:40px">Loading…</div>
     </div>
+    <div id="pmTrYourPos"></div>
     <div class="pm-tr-fmt-breakdown" id="pmTrFmtBreakdown"></div>
     <div class="pm-tr-my-visits" id="pmTrMyVisits" style="display:none">
       <div class="pm-tr-my-visits-title">✏ My Visits</div>
@@ -20987,28 +20986,33 @@ async function deleteEditorReview(key, e) {
         + '</div>';
     }).join('');
 
-    // Your position anchor (if outside visible top)
-    var anchor = document.createElement('div');
-    if (me && myIdx >= 0) {
-      var myEntry = sorted[myIdx];
-      var myC = _trMode === 'ar' ? (myEntry.arabicCount||0) : (myEntry.count||0);
-      var showAnchor = myIdx >= 10; // only pin if not in first 10 visible
-      anchor.className = 'pm-tr-your-anchor';
-      anchor.innerHTML = showAnchor
-        ? '<div class="pm-tr-your-label">── YOUR POSITION ──</div>'
-          + '<div class="pm-tr-board-row" style="padding:0">'
-          + '<div class="pm-tr-rank-num">' + (myIdx+1) + '</div>'
-          + '<div class="pm-tr-av">' + (myEntry.avatar ? '<img src="'+_esc(myEntry.avatar)+'" alt="" style="width:36px;height:36px;border-radius:50%;object-fit:cover">' : '<div style="width:36px;height:36px;border-radius:50%;background:#222;font-size:.9rem;color:#888;display:flex;align-items:center;justify-content:center">' + (myEntry.displayName||'?').charAt(0).toUpperCase() + '</div>') + '</div>'
-          + '<div class="pm-tr-board-name">' + _esc(myEntry.displayName || (myEntry.username ? '@'+myEntry.username : 'you')) + ' <span style="color:#ffb800;font-size:.6rem">(you)</span></div>'
-          + '<div class="pm-tr-board-count">' + myC + ' film' + (myC!==1?'s':'') + '</div>'
-          + '</div>'
-        : '';
-      list.appendChild(anchor);
-    } else if (me) {
-      // User is signed in but not on board yet
-      anchor.className = 'pm-tr-your-anchor';
-      anchor.innerHTML = '<div style="color:#444;font-size:.7rem;text-align:center">You\'re not on the board yet — log a visit!</div>';
-      list.appendChild(anchor);
+    // Your position — rendered OUTSIDE the scrollable list so it never overlaps entries
+    var posSlot = document.getElementById('pmTrYourPos');
+    if (posSlot) {
+      if (me && myIdx >= 0) {
+        var myEntry = sorted[myIdx];
+        var myC = _trMode === 'ar' ? (myEntry.arabicCount||0) : (myEntry.count||0);
+        // Only show when the user isn't already visible in the top results
+        if (myIdx >= 10) {
+          posSlot.className = 'pm-tr-your-anchor';
+          posSlot.innerHTML = '<div class="pm-tr-your-label">── YOUR POSITION ──</div>'
+            + '<div class="pm-tr-board-row" style="padding:0">'
+            + '<div class="pm-tr-rank-num">' + (myIdx+1) + '</div>'
+            + '<div class="pm-tr-av">' + (myEntry.avatar ? '<img src="'+_esc(myEntry.avatar)+'" alt="" style="width:36px;height:36px;border-radius:50%;object-fit:cover">' : '<div style="width:36px;height:36px;border-radius:50%;background:#222;font-size:.9rem;color:#888;display:flex;align-items:center;justify-content:center">' + (myEntry.displayName||'?').charAt(0).toUpperCase() + '</div>') + '</div>'
+            + '<div class="pm-tr-board-name">' + _esc(myEntry.displayName || (myEntry.username ? '@'+myEntry.username : 'you')) + ' <span style="color:#ffb800;font-size:.6rem">(you)</span></div>'
+            + '<div class="pm-tr-board-count">' + myC + ' film' + (myC!==1?'s':'') + '</div>'
+            + '</div>';
+        } else {
+          posSlot.className = '';
+          posSlot.innerHTML = '';
+        }
+      } else if (me) {
+        posSlot.className = 'pm-tr-your-anchor';
+        posSlot.innerHTML = '<div style="color:#444;font-size:.7rem;text-align:center;padding:4px 0">You\'re not on the board yet — log a visit!</div>';
+      } else {
+        posSlot.className = '';
+        posSlot.innerHTML = '';
+      }
     }
 
     // Format breakdown for current user
