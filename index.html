@@ -3684,19 +3684,15 @@
     gap: 4px;
   }
   .pm-tr-prof-posters {
-    display: flex;
-    gap: 6px;
-    overflow-x: auto;
-    scrollbar-width: none;
-    padding-bottom: 4px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(68px, 1fr));
+    gap: 8px;
   }
-  .pm-tr-prof-posters::-webkit-scrollbar { display: none; }
   .pm-tr-prof-poster {
     position: relative;
-    width: 52px;
-    height: 78px;
-    flex-shrink: 0;
-    border-radius: 5px;
+    width: 100%;
+    aspect-ratio: 2/3;
+    border-radius: 6px;
     overflow: hidden;
     cursor: pointer;
     background: #1a1a1a;
@@ -21672,7 +21668,7 @@ async function deleteEditorReview(key, e) {
         + (arCount > 0 ? '<span class="pm-tr-prof-badge">عربي '+arCount+'</span>' : '')
         + (rank > 0 ? '<span class="pm-tr-prof-badge">#'+rank+' Theater Race</span>' : '');
 
-      var postersHtml = logs.slice(0,12).map(function(l, i) {
+      var postersHtml = logs.map(function(l) {
         var arClass = l.isArabic ? ' arabic' : '';
         var moon    = l.openingWeekend ? '<span class="moon-badge">🌙</span>' : '';
         var img     = l.posterPath
