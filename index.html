@@ -16019,6 +16019,7 @@ async function deleteEditorReview(key, e) {
         <div class="pm-tr-selected-title" id="pmTrSelectedTitle">—</div>
         <button class="pm-tr-selected-clear" onclick="pmTrClearMovie()">✕</button>
       </div>
+      <div id="pmTrRepeatNote" style="display:none;font-size:.68rem;color:#ffb800;background:rgba(255,184,0,.08);border:1px solid rgba(255,184,0,.2);border-radius:8px;padding:7px 12px;margin-top:8px;line-height:1.4;"></div>
     </div>
 
     <!-- Date picker -->
@@ -21084,6 +21085,13 @@ async function deleteEditorReview(key, e) {
     if (!sec || !list) return;
     if (!me || !_trMyLogs.length) { sec.style.display = 'none'; return; }
     sec.style.display = 'block';
+
+    // Count how many times each movieId appears (for repeat-view badge)
+    var movieCounts = {};
+    _trMyLogs.forEach(function(l) {
+      if (l.movieId) movieCounts[l.movieId] = (movieCounts[l.movieId] || 0) + 1;
+    });
+
     list.innerHTML = _trMyLogs.map(function(l) {
       var key    = l._key || '';
       var poster = l.posterPath
@@ -21095,10 +21103,13 @@ async function deleteEditorReview(key, e) {
         l.isArabic ? 'عربي' : '',
         l.openingWeekend ? '🌙 Opening' : ''
       ].filter(Boolean).join(' · ');
+      var repeatBadge = (l.movieId && movieCounts[l.movieId] > 1)
+        ? '<span style="display:inline-block;margin-left:5px;background:rgba(255,184,0,.15);border:1px solid rgba(255,184,0,.3);color:#ffb800;font-size:.55rem;font-weight:700;border-radius:4px;padding:1px 4px;vertical-align:middle">🔁 ×'+movieCounts[l.movieId]+'</span>'
+        : '';
       return '<div class="pm-tr-visit-row" id="pmTrVisitRow-' + _esc(key) + '">'
         + poster
         + '<div class="pm-tr-visit-info">'
-        + '<div class="pm-tr-visit-title">' + _esc(l.movieTitle || 'Unknown') + '</div>'
+        + '<div class="pm-tr-visit-title">' + _esc(l.movieTitle || 'Unknown') + repeatBadge + '</div>'
         + '<div class="pm-tr-visit-meta">' + _esc(meta) + '</div>'
         + '</div>'
         + (key ? '<button class="pm-tr-visit-del" onclick="window._trDeleteLog(\'' + _esc(key) + '\')" title="Remove this visit">✕</button>' : '')
@@ -21232,9 +21243,14 @@ async function deleteEditorReview(key, e) {
             var thumb = m.poster_path
               ? '<img class="pm-tr-search-thumb" src="https://image.tmdb.org/t/p/w92'+m.poster_path+'" alt="">'
               : '<div class="pm-tr-search-thumb" style="display:flex;align-items:center;justify-content:center;font-size:1rem">🎬</div>';
+            // Count how many times this movie is already in the user's log
+            var prevCount = _trMyLogs.filter(function(l) { return l.movieId == m.id; }).length;
+            var repeatBadge = prevCount > 0
+              ? '<span style="margin-left:6px;background:rgba(255,184,0,.15);border:1px solid rgba(255,184,0,.35);color:#ffb800;font-size:.58rem;font-weight:700;border-radius:5px;padding:1px 5px;vertical-align:middle">🔁 ×'+prevCount+' seen</span>'
+              : '';
             return '<div class="pm-tr-search-item" onclick="pmTrSelectMovie('+i+')">'
               + thumb
-              + '<div><div style="font-size:.8rem;font-weight:600;color:#f4f1ea">'+_esc(m.title||'')+'</div>'
+              + '<div><div style="font-size:.8rem;font-weight:600;color:#f4f1ea">'+_esc(m.title||'')+repeatBadge+'</div>'
               + (yr ? '<div style="font-size:.66rem;color:#666">'+yr+'</div>' : '')
               + '</div></div>';
           }).join('');
@@ -21252,6 +21268,7 @@ async function deleteEditorReview(key, e) {
     var sel   = document.getElementById('pmTrSelectedMovie');
     var thumb = document.getElementById('pmTrSelectedThumb');
     var title = document.getElementById('pmTrSelectedTitle');
+    var note  = document.getElementById('pmTrRepeatNote');
     if (inp) inp.value = '';
     if (res) { res.innerHTML = ''; res.classList.remove('visible'); }
     if (sel) sel.classList.add('visible');
@@ -21263,11 +21280,23 @@ async function deleteEditorReview(key, e) {
       }
     }
     if (title) title.textContent = m.title || '—';
+    // Show repeat-visit note if movie already logged
+    if (note) {
+      var prevCount = _trMyLogs.filter(function(l) { return l.movieId == m.id; }).length;
+      if (prevCount > 0) {
+        note.textContent = '🔁 Repeat visit — you\'ve seen this ' + prevCount + ' time' + (prevCount > 1 ? 's' : '') + ' already. Logging another!';
+        note.style.display = 'block';
+      } else {
+        note.style.display = 'none';
+      }
+    }
     _trUpdateSubmit();
   };
 
   window.pmTrClearMovie = function() {
     _trSelectedMovie = null;
+    var note = document.getElementById('pmTrRepeatNote');
+    if (note) note.style.display = 'none';
     var sel = document.getElementById('pmTrSelectedMovie');
     if (sel) sel.classList.remove('visible');
     _trUpdateSubmit();
