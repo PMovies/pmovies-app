@@ -3340,8 +3340,72 @@
     font-size: .62rem;
     color: rgba(244,241,234,.4);
     text-align: center;
-    padding: 6px 20px 12px;
+    padding: 6px 20px 8px;
   }
+  /* ── My Visits section ── */
+  .pm-tr-my-visits {
+    border-top: 1px solid rgba(255,255,255,.07);
+    padding: 0 0 12px;
+    flex-shrink: 0;
+    max-height: 260px;
+    overflow-y: auto;
+  }
+  .pm-tr-my-visits-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: .7rem;
+    letter-spacing: .12em;
+    color: rgba(255,184,0,.7);
+    padding: 10px 20px 6px;
+    text-transform: uppercase;
+  }
+  .pm-tr-visit-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 16px 7px 20px;
+    border-bottom: 1px solid rgba(255,255,255,.03);
+    transition: background .15s;
+  }
+  .pm-tr-visit-row:last-child { border-bottom: none; }
+  .pm-tr-visit-row:hover { background: rgba(255,255,255,.03); }
+  .pm-tr-visit-poster {
+    width: 28px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 4px;
+    background: #1a1a1a;
+    flex-shrink: 0;
+  }
+  .pm-tr-visit-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .pm-tr-visit-title {
+    font-size: .75rem;
+    font-weight: 600;
+    color: #f4f1ea;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .pm-tr-visit-meta {
+    font-size: .6rem;
+    color: rgba(244,241,234,.4);
+    margin-top: 1px;
+  }
+  .pm-tr-visit-del {
+    background: none;
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 6px;
+    color: #666;
+    font-size: .75rem;
+    cursor: pointer;
+    padding: 3px 7px;
+    line-height: 1;
+    transition: .15s;
+    flex-shrink: 0;
+  }
+  .pm-tr-visit-del:hover { border-color: #c0392b; color: #c0392b; background: rgba(192,57,43,.08); }
 
   /* ── Log Modal ── */
   #pmTrLogOverlay {
@@ -15952,6 +16016,10 @@ async function deleteEditorReview(key, e) {
       <div style="color:#444;font-size:.75rem;text-align:center;padding:40px">Loading…</div>
     </div>
     <div class="pm-tr-fmt-breakdown" id="pmTrFmtBreakdown"></div>
+    <div class="pm-tr-my-visits" id="pmTrMyVisits" style="display:none">
+      <div class="pm-tr-my-visits-title">✏ My Visits</div>
+      <div id="pmTrMyVisitsList"></div>
+    </div>
   </div>
 </div>
 
@@ -20951,7 +21019,91 @@ async function deleteEditorReview(key, e) {
       var parts = Object.entries(fmtCounts).map(function(kv) { return kv[1] + ' ' + kv[0].toUpperCase(); });
       fmt.textContent = parts.length ? 'Your formats: ' + parts.join(' · ') : '';
     }
+
+    // Render editable "My Visits" section for the current user
+    _trRenderMyVisits();
   }
+
+  function _trRenderMyVisits() {
+    var sec  = document.getElementById('pmTrMyVisits');
+    var list = document.getElementById('pmTrMyVisitsList');
+    var me   = _trGetUser();
+    if (!sec || !list) return;
+    if (!me || !_trMyLogs.length) { sec.style.display = 'none'; return; }
+    sec.style.display = 'block';
+    list.innerHTML = _trMyLogs.map(function(l) {
+      var key    = l._key || '';
+      var poster = l.posterPath
+        ? '<img class="pm-tr-visit-poster" src="https://image.tmdb.org/t/p/w92' + l.posterPath + '" alt="" loading="lazy">'
+        : '<div class="pm-tr-visit-poster" style="display:flex;align-items:center;justify-content:center;font-size:.9rem">🎬</div>';
+      var meta = [
+        l.date || '',
+        l.format ? l.format.toUpperCase() : '',
+        l.isArabic ? 'عربي' : '',
+        l.openingWeekend ? '🌙 Opening' : ''
+      ].filter(Boolean).join(' · ');
+      return '<div class="pm-tr-visit-row" id="pmTrVisitRow-' + _esc(key) + '">'
+        + poster
+        + '<div class="pm-tr-visit-info">'
+        + '<div class="pm-tr-visit-title">' + _esc(l.movieTitle || 'Unknown') + '</div>'
+        + '<div class="pm-tr-visit-meta">' + _esc(meta) + '</div>'
+        + '</div>'
+        + (key ? '<button class="pm-tr-visit-del" onclick="window._trDeleteLog(\'' + _esc(key) + '\')" title="Remove this visit">✕</button>' : '')
+        + '</div>';
+    }).join('');
+  }
+
+  /* ── Delete a log entry ──────────────────────────────────────── */
+  window._trDeleteLog = async function(logKey) {
+    var me = _trGetUser();
+    if (!me || !logKey) return;
+    if (!confirm('Remove this theater visit? This will update your count on the leaderboard.')) return;
+
+    // Optimistic UI: fade out the row immediately
+    var row = document.getElementById('pmTrVisitRow-' + logKey);
+    if (row) { row.style.opacity = '0.3'; row.style.pointerEvents = 'none'; }
+
+    try {
+      var tok   = await _trToken();
+      var authQ = tok ? '?auth=' + tok : '';
+
+      // 1. Delete the log entry from Firebase
+      await fetch(TR_RTDB + '/theaterLogs/' + me.uid + '/' + TR_YEAR + '/' + encodeURIComponent(logKey) + '.json' + authQ, { method: 'DELETE' });
+
+      // 2. Remove from local cache
+      _trMyLogs = _trMyLogs.filter(function(l) { return l._key !== logKey; });
+      _trMyCount   = _trMyLogs.length;
+      _trMyArCount = _trMyLogs.filter(function(l) { return l.isArabic; }).length;
+
+      // 3. Update leaderboard entry (or remove if zero)
+      var lbUrl = TR_RTDB + '/theaterLeaderboard/' + TR_YEAR + '/' + me.uid + '.json' + authQ;
+      if (_trMyCount === 0) {
+        await fetch(lbUrl, { method: 'DELETE' });
+        delete _trBoard[me.uid];
+      } else {
+        var nickname = (window.pmGetNickname && window.pmGetNickname()) || me.displayName || 'Film Lover';
+        var username = (window._pmMyProfile && window._pmMyProfile.username) || '';
+        var avatar   = (window._pmMyProfile && window._pmMyProfile.photoURL) || me.photoURL || '';
+        var updated  = { count: _trMyCount, arabicCount: _trMyArCount,
+          displayName: nickname, username: username, avatar: avatar };
+        await fetch(lbUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updated)
+        });
+        _trBoard[me.uid] = updated;
+      }
+
+      // 4. Re-render everything
+      _trRenderStrip();
+      _trRenderBoard();
+
+    } catch(e) {
+      // Restore row on failure
+      if (row) { row.style.opacity = ''; row.style.pointerEvents = ''; }
+      if (typeof showToast === 'function') showToast('Delete failed — please try again');
+    }
+  };
 
   /* ── Open / close board overlay ─────────────────────────────── */
   window.pmTrOpenBoard = function() {
@@ -21129,7 +21281,11 @@ async function deleteEditorReview(key, e) {
       }
 
       // Push log entry
+      // Generate a push ID client-side (before building logEntry so _key is included)
+      var pushId = '-' + Math.random().toString(36).slice(2,17) + Date.now().toString(36);
+
       var logEntry = {
+        _key:          pushId,
         movieId:       m.id,
         movieTitle:    m.title || '',
         posterPath:    m.poster_path || '',
@@ -21140,9 +21296,6 @@ async function deleteEditorReview(key, e) {
         openingWeekend: openingWeekend,
         timestamp:     Date.now()
       };
-
-      // Generate a push ID client-side
-      var pushId = '-' + Math.random().toString(36).slice(2,17) + Date.now().toString(36);
       var logUrl = TR_RTDB + '/theaterLogs/' + me.uid + '/' + TR_YEAR + '/' + pushId + '.json' + authQ;
       await fetch(logUrl, {
         method: 'PUT',
@@ -21582,7 +21735,9 @@ async function deleteEditorReview(key, e) {
       var data = await r.json();
       if (!data) { _trMyCount = 0; _trMyArCount = 0; _trMyLogs = []; }
       else {
-        _trMyLogs    = Object.values(data).filter(Boolean).sort(function(a,b){ return (b.timestamp||0)-(a.timestamp||0); });
+        _trMyLogs    = Object.entries(data).filter(function(e){ return e[1]; })
+                         .map(function(e){ return Object.assign({}, e[1], { _key: e[0] }); })
+                         .sort(function(a,b){ return (b.timestamp||0)-(a.timestamp||0); });
         _trMyCount   = _trMyLogs.length;
         _trMyArCount = _trMyLogs.filter(function(l){ return l.isArabic; }).length;
       }
