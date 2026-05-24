@@ -22317,6 +22317,14 @@ async function deleteEditorReview(key, e) {
     _loadFilmPage(tmdbId);
   };
 
+  // Escape key closes film page
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      var page = document.getElementById('filmPage');
+      if (page && page.classList.contains('open')) { closeFilmPage(); e.stopPropagation(); }
+    }
+  }, true);
+
   window.closeFilmPage = function() {
     var page = document.getElementById('filmPage');
     if (page) page.classList.remove('open');
@@ -22357,41 +22365,46 @@ async function deleteEditorReview(key, e) {
     _renderFilmPage(tmdbId, results[0], results[1], results[2], results[3]);
   }
 
-  // Get reviews for a film — uses cached community reviews if available, else fetches
+  // Get reviews for a film — uses cached community reviews if available, else fetches all
   async function _getReviewsForFilm(tmdbId) {
     var tid = String(tmdbId);
-    // 1. Try the in-memory cache first (already loaded by Movies tab)
+    var idx = {};
+
+    // Helper: add review to index (keeps latest per uid, but also allows multiple)
+    function _addRev(r, rKey) {
+      if (!r || !r.uid) return;
+      // Compute fp so we can open the full review on click
+      var fp = '';
+      try { fp = typeof fanReviewFp === 'function' ? fanReviewFp(r) : ''; } catch(_e) {}
+      var slug = '';
+      try { slug = typeof _reviewSlug === 'function' ? _reviewSlug(fp, r.movie||r.title||'') : ''; } catch(_e) {}
+      // Use uid+timestamp as key to allow multiple reviews per user for same film
+      var entryKey = r.uid + '_' + (r.timestamp||0);
+      idx[entryKey] = { rating: r.rating||0, snippet: (r.text||r.review||'').slice(0,120), timestamp: r.timestamp||0, reviewId: rKey||r._key||'', name: r.name||'', photoURL: r.photoURL||null, fp: fp, slug: slug, uid: r.uid };
+    }
+
+    // 1. Try the in-memory cache first (already loaded if user visited Movies tab)
     var cached = window._pmGetCommunityReviews ? window._pmGetCommunityReviews() : [];
     var fromCache = cached.filter(function(r){ return String(r.tmdbId) === tid && r._mediaType !== 'tv'; });
     if (fromCache.length > 0) {
-      // Convert to reviewIndex format: { uid: { rating, snippet, timestamp, reviewId, name, photoURL } }
-      var idx = {};
-      fromCache.forEach(function(r) {
-        if (r.uid) idx[r.uid] = { rating: r.rating||0, snippet: (r.text||'').slice(0,120), timestamp: r.timestamp||0, reviewId: r._key||'', name: r.name||'', photoURL: r.photoURL||'' };
-      });
-      return Object.keys(idx).length ? idx : null;
+      fromCache.forEach(function(r){ _addRev(r, r._key||''); });
+      if (Object.keys(idx).length) return idx;
     }
-    // 2. Fetch fanReviews filtered by tmdbId via Firebase ordered query
-    // (requires .indexOn: ["tmdbId"] rule — falls back to filmReviews index if unavailable)
+
+    // 2. Fetch all fanReviews and filter by tmdbId (no index required)
     try {
-      var r = await fetch(_RTDB+'/fanReviews.json?orderBy="tmdbId"&equalTo='+encodeURIComponent(JSON.stringify(parseInt(tid)||tid)));
+      var r = await fetch(_RTDB+'/fanReviews.json');
       if (r.ok) {
         var raw = await r.json();
         if (raw) {
-          var idx2 = {};
           Object.entries(raw).forEach(function(e) {
             var rev = e[1], rKey = e[0];
-            if (rev && rev.uid) idx2[rev.uid] = { rating: rev.rating||0, snippet: (rev.text||'').slice(0,120), timestamp: rev.timestamp||0, reviewId: rKey, name: rev.name||'', photoURL: rev.photoURL||'' };
+            if (rev && String(rev.tmdbId) === tid) _addRev(Object.assign({},rev,{_key:rKey}), rKey);
           });
-          if (Object.keys(idx2).length) return idx2;
         }
       }
     } catch(_e) {}
-    // 3. Fall back to filmReviews index (populated only by reviews written after the update)
-    try {
-      var r2 = await fetch(_RTDB+'/filmReviews/'+tid+'.json');
-      return r2.ok ? await r2.json() : null;
-    } catch(_e2) { return null; }
+    return Object.keys(idx).length ? idx : null;
   }
 
   function _renderFilmPage(tmdbId, film, reviewIndex, filmMeta, lobbyPosts) {
@@ -22474,12 +22487,14 @@ async function deleteEditorReview(key, e) {
       +'<div id="fpReviewList">'
       +( sortedReviews.length
         ? sortedReviews.slice(0,10).map(function(e){
-            var uid=e[0], rev=e[1];
+            var key=e[0], rev=e[1];
+            var uid = rev.uid || key;
             var displayName = rev.name || uid.slice(0,12);
             var avHtml = rev.photoURL
               ? '<img class="fp-review-av" src="'+_esc(rev.photoURL)+'" alt="" loading="lazy" style="border-radius:50%">'
               : '<div class="fp-review-av" style="background:#2a1800;display:flex;align-items:center;justify-content:center;color:#f5a623;font-size:.8rem;font-weight:700;font-family:\'Bebas Neue\',sans-serif">'+_esc(displayName.slice(0,1).toUpperCase())+'</div>';
-            return '<div class="fp-review-card" onclick="fpOpenReview(\''+_esc(uid)+'\',\''+_esc(rev.reviewId||'')+'\',\''+_esc(tmdbId)+'\')">'+
+            var clickFn = 'fpOpenReview(\''+_esc(uid)+'\',\''+_esc(rev.slug||'')+'\',\''+_esc(rev.fp||'')+'\')';
+            return '<div class="fp-review-card" onclick="'+clickFn+'">'+
               '<div class="fp-review-card-head">'+
               avHtml+
               '<div class="fp-review-card-meta">'+
@@ -22543,6 +22558,12 @@ async function deleteEditorReview(key, e) {
       +castHtml
       +'</div></div>';
 
+    // Editor review placeholder — filled async
+    var editorSectionHtml = '<div class="fp-section" id="fpEditorSection" style="display:none">'
+      +'<div class="fp-section-title"><span>✍️</span> Editor\'s Review</div>'
+      +'<div id="fpEditorBody"></div>'
+      +'</div>';
+
     fpContent.innerHTML = backdropHtml
       +'<div class="fp-hero">'+posterHtml+'<div class="fp-hero-info">'
         +'<div class="fp-title">'+_esc(title)+'</div>'
@@ -22551,19 +22572,62 @@ async function deleteEditorReview(key, e) {
       +'</div></div>'
       +activityHtml
       +friendsHtml
+      +editorSectionHtml
       +reviewsHtml
       +lobbyHtml
       +theaterSectionHtml
       +infoHtml;
 
-    // Kick off theater fetch (async)
+    // Kick off async fetches
     _fetchFilmTheater(tmdbId);
+    _fetchEditorReview(tmdbId);
   }
 
-  function _fetchFilmTheater(tmdbId) {
+  // Fetch editor review for this film
+  async function _fetchEditorReview(tmdbId) {
+    try {
+      var r = await fetch(_RTDB+'/editorReviews.json');
+      if (!r.ok || _fpCurrentId !== String(tmdbId)) return;
+      var raw = await r.json();
+      if (!raw) return;
+      var editorRev = null;
+      Object.entries(raw).forEach(function(e) {
+        var rev = e[1];
+        if (rev && String(rev.tmdbId) === String(tmdbId)) editorRev = rev;
+      });
+      if (!editorRev) return;
+      var sec  = document.getElementById('fpEditorSection');
+      var body = document.getElementById('fpEditorBody');
+      if (!sec || !body) return;
+      var stars = '';
+      for (var i=1;i<=5;i++) stars += i <= Math.round(editorRev.rating||0) ? '★' : '☆';
+      var slug = editorRev.slug || '';
+      body.innerHTML = '<div class="fp-review-card" style="cursor:'+(slug?'pointer':'default')+'"'
+        +(slug?' onclick="_loadAndShowReview(\''+_esc(slug)+'\')"':'')+'>'+
+        '<div class="fp-review-card-head">'+
+        '<div class="fp-review-av" style="background:#1a0a00;display:flex;align-items:center;justify-content:center;font-size:1rem">✍️</div>'+
+        '<div class="fp-review-card-meta">'+
+        '<div class="fp-review-card-name" style="color:#f5a623">PMovies Editor</div>'+
+        '<div class="fp-review-stars">'+stars+'</div>'+
+        '</div>'+
+        '<div class="fp-review-date">'+_relTime(editorRev.publishedAt||0)+'</div>'+
+        '</div>'+
+        (editorRev.headline?'<div style="font-size:.78rem;font-weight:700;color:#eee;margin-bottom:6px">'+_esc(editorRev.headline)+'</div>':'')+
+        '<div class="fp-review-snippet">'+_esc((editorRev.review||'').slice(0,180))+(editorRev.review&&editorRev.review.length>180?'…':'')+'</div>'+
+        (slug?'<div class="fp-review-more">Read full review →</div>':'')+
+        '</div>';
+      sec.style.display = '';
+    } catch(_e) {}
+  }
+
+  async function _fetchFilmTheater(tmdbId) {
     // theaterLogs structure: /theaterLogs/{uid}/2026/{logKey} → {movieId, movieTitle, userName, cinemaName, timestamp}
-    var year = new Date().getFullYear();
-    fetch(_RTDB+'/theaterLogs.json').then(function(r){return r.ok?r.json():null;}).then(function(allUsers){
+    var authSuffix = '';
+    try {
+      var me = window.pmGetUser && window.pmGetUser();
+      if (me) { var tok = await me.getIdToken(); authSuffix = '?auth=' + tok; }
+    } catch(_e) {}
+    fetch(_RTDB+'/theaterLogs.json'+authSuffix).then(function(r){return r.ok?r.json():null;}).then(function(allUsers){
       if (!allUsers || _fpCurrentId !== String(tmdbId)) return;
       var sightings = [];
       Object.entries(allUsers).forEach(function(e){
@@ -22619,10 +22683,26 @@ async function deleteEditorReview(key, e) {
     // Full re-sort would require re-fetching — acceptable for now
   };
 
-  window.fpOpenReview = function(uid, reviewId, tmdbId) {
-    // Open via existing review system if available
-    if (reviewId && typeof _pmOpenReviewFromProfile === 'function') {
-      _pmOpenReviewFromProfile(reviewId);
+  window.fpOpenReview = function(uid, slug, fp) {
+    // slug takes priority (human-readable review URL)
+    if (slug && typeof _loadAndShowReview === 'function') {
+      _loadAndShowReview(slug);
+      return;
+    }
+    // fp fallback — open via fan review page
+    if (fp && typeof openFanReviewPage === 'function') {
+      openFanReviewPage(fp);
+      return;
+    }
+    // Last resort: try to find in community reviews by uid
+    if (uid && window._pmGetCommunityReviews) {
+      var all = window._pmGetCommunityReviews();
+      var found = all.find(function(r){ return r.uid === uid; });
+      if (found && typeof fanReviewFp === 'function' && typeof _loadAndShowReview === 'function') {
+        var foundFp   = fanReviewFp(found);
+        var foundSlug = typeof _reviewSlug === 'function' ? _reviewSlug(foundFp, found.movie||'') : '';
+        if (foundSlug) _loadAndShowReview(foundSlug);
+      }
     }
   };
 
