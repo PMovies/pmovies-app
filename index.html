@@ -22349,16 +22349,52 @@ async function deleteEditorReview(key, e) {
     try {
       results = await Promise.all([
         fetch(_TMDB+'/movie/'+tmdbId+'?api_key='+key+'&append_to_response=credits,similar').then(function(r){return r.ok?r.json():null;}),
-        fetch(_RTDB+'/filmReviews/'+tmdbId+'.json').then(function(r){return r.ok?r.json():null;}),
+        _getReviewsForFilm(tmdbId),
         fetch(_RTDB+'/filmMeta/'+tmdbId+'.json').then(function(r){return r.ok?r.json():null;}),
-        fetch(_RTDB+'/community/posts.json?orderBy="filmId"&equalTo="'+tmdbId+'"&limitToFirst=5').then(function(r){return r.ok?r.json():null;}),
-        fetch(_RTDB+'/theaterLogs.json?shallow=true').then(function(r){return r.ok?r.json():null;})
+        fetch(_RTDB+'/community/posts.json?orderBy="filmId"&equalTo="'+tmdbId+'"&limitToFirst=5').then(function(r){return r.ok?r.json():null;})
       ]);
-    } catch(_e) { results = [null,null,null,null,null]; }
-    _renderFilmPage(tmdbId, results[0], results[1], results[2], results[3], results[4]);
+    } catch(_e) { results = [null,null,null,null]; }
+    _renderFilmPage(tmdbId, results[0], results[1], results[2], results[3]);
   }
 
-  function _renderFilmPage(tmdbId, film, reviewIndex, filmMeta, lobbyPosts, theaterShallow) {
+  // Get reviews for a film — uses cached community reviews if available, else fetches
+  async function _getReviewsForFilm(tmdbId) {
+    var tid = String(tmdbId);
+    // 1. Try the in-memory cache first (already loaded by Movies tab)
+    var cached = window._pmGetCommunityReviews ? window._pmGetCommunityReviews() : [];
+    var fromCache = cached.filter(function(r){ return String(r.tmdbId) === tid && r._mediaType !== 'tv'; });
+    if (fromCache.length > 0) {
+      // Convert to reviewIndex format: { uid: { rating, snippet, timestamp, reviewId, name, photoURL } }
+      var idx = {};
+      fromCache.forEach(function(r) {
+        if (r.uid) idx[r.uid] = { rating: r.rating||0, snippet: (r.text||'').slice(0,120), timestamp: r.timestamp||0, reviewId: r._key||'', name: r.name||'', photoURL: r.photoURL||'' };
+      });
+      return Object.keys(idx).length ? idx : null;
+    }
+    // 2. Fetch fanReviews filtered by tmdbId via Firebase ordered query
+    // (requires .indexOn: ["tmdbId"] rule — falls back to filmReviews index if unavailable)
+    try {
+      var r = await fetch(_RTDB+'/fanReviews.json?orderBy="tmdbId"&equalTo='+encodeURIComponent(JSON.stringify(parseInt(tid)||tid)));
+      if (r.ok) {
+        var raw = await r.json();
+        if (raw) {
+          var idx2 = {};
+          Object.entries(raw).forEach(function(e) {
+            var rev = e[1], rKey = e[0];
+            if (rev && rev.uid) idx2[rev.uid] = { rating: rev.rating||0, snippet: (rev.text||'').slice(0,120), timestamp: rev.timestamp||0, reviewId: rKey, name: rev.name||'', photoURL: rev.photoURL||'' };
+          });
+          if (Object.keys(idx2).length) return idx2;
+        }
+      }
+    } catch(_e) {}
+    // 3. Fall back to filmReviews index (populated only by reviews written after the update)
+    try {
+      var r2 = await fetch(_RTDB+'/filmReviews/'+tid+'.json');
+      return r2.ok ? await r2.json() : null;
+    } catch(_e2) { return null; }
+  }
+
+  function _renderFilmPage(tmdbId, film, reviewIndex, filmMeta, lobbyPosts) {
     if (_fpCurrentId !== String(tmdbId)) return; // stale response
     var page = document.getElementById('filmPage');
     var fpContent = document.getElementById('fpContent');
@@ -22467,11 +22503,15 @@ async function deleteEditorReview(key, e) {
       +( sortedReviews.length
         ? sortedReviews.slice(0,10).map(function(e){
             var uid=e[0], rev=e[1];
+            var displayName = rev.name || uid.slice(0,12);
+            var avHtml = rev.photoURL
+              ? '<img class="fp-review-av" src="'+_esc(rev.photoURL)+'" alt="" loading="lazy" style="border-radius:50%">'
+              : '<div class="fp-review-av" style="background:#2a1800;display:flex;align-items:center;justify-content:center;color:#f5a623;font-size:.8rem;font-weight:700;font-family:\'Bebas Neue\',sans-serif">'+_esc(displayName.slice(0,1).toUpperCase())+'</div>';
             return '<div class="fp-review-card" onclick="fpOpenReview(\''+_esc(uid)+'\',\''+_esc(rev.reviewId||'')+'\',\''+_esc(tmdbId)+'\')">'+
               '<div class="fp-review-card-head">'+
-              '<div class="fp-review-av" style="background:#2a1800;display:flex;align-items:center;justify-content:center;color:#f5a623;font-size:.8rem;font-weight:700;font-family:\'Bebas Neue\',sans-serif">'+_esc(uid.slice(0,1).toUpperCase())+'</div>'+
+              avHtml+
               '<div class="fp-review-card-meta">'+
-              '<div class="fp-review-card-name">'+_esc(uid.slice(0,12))+'</div>'+
+              '<div class="fp-review-card-name">'+_esc(displayName)+'</div>'+
               '<div class="fp-review-stars">'+_stars(rev.rating||0)+'</div>'+
               '</div>'+
               '<div class="fp-review-date">'+_relTime(rev.timestamp||0)+'</div>'+
@@ -22549,14 +22589,26 @@ async function deleteEditorReview(key, e) {
   }
 
   function _fetchFilmTheater(tmdbId) {
-    fetch(_RTDB+'/theaterLogs.json').then(function(r){return r.ok?r.json():null;}).then(function(allLogs){
-      if (!allLogs || _fpCurrentId !== String(tmdbId)) return;
+    // theaterLogs structure: /theaterLogs/{uid}/2026/{logKey} → {movieId, movieTitle, userName, cinemaName, timestamp}
+    var year = new Date().getFullYear();
+    fetch(_RTDB+'/theaterLogs.json').then(function(r){return r.ok?r.json():null;}).then(function(allUsers){
+      if (!allUsers || _fpCurrentId !== String(tmdbId)) return;
       var sightings = [];
-      Object.entries(allLogs).forEach(function(e){
-        var uid=e[0], userLogs=e[1];
-        if (!userLogs) return;
-        Object.values(userLogs).forEach(function(log){
-          if (String(log.movieId)===String(tmdbId)) sightings.push(Object.assign({},log,{uid:uid}));
+      Object.entries(allUsers).forEach(function(e){
+        var uid=e[0], yearMap=e[1];
+        if (!yearMap) return;
+        // Support both /theaterLogs/{uid}/{year}/{key} and legacy /theaterLogs/{uid}/{key}
+        Object.entries(yearMap).forEach(function(ye){
+          var yearOrKey=ye[0], val=ye[1];
+          if (val && typeof val === 'object' && !val.movieId) {
+            // It's a year bucket: val = { logKey: logData, ... }
+            Object.values(val).forEach(function(log){
+              if (log && String(log.movieId)===String(tmdbId)) sightings.push(Object.assign({},log,{uid:uid}));
+            });
+          } else if (val && String(val.movieId)===String(tmdbId)) {
+            // Legacy flat structure
+            sightings.push(Object.assign({},val,{uid:uid}));
+          }
         });
       });
       sightings.sort(function(a,b){return (b.timestamp||0)-(a.timestamp||0);});
@@ -22569,8 +22621,11 @@ async function deleteEditorReview(key, e) {
           }).join('')
         : '<div style="color:#555;font-size:.75rem">No theater sightings yet</div>';
       var pill = document.getElementById('fpTheaterPill');
-      if (pill) pill.textContent = sightings.length;
-    }).catch(function(){});
+      if (pill) pill.textContent = sightings.length || '0';
+    }).catch(function(){
+      var el = document.getElementById('fpTheaterList');
+      if (el) el.innerHTML = '<div style="color:#555;font-size:.75rem">Could not load sightings</div>';
+    });
   }
 
   window.fpToggleInfo = function() {
