@@ -22370,17 +22370,20 @@ async function deleteEditorReview(key, e) {
     var tid = String(tmdbId);
     var idx = {};
 
-    // Helper: add review to index (keeps latest per uid, but also allows multiple)
+    // Reset film review cache for new film
+    _fpReviewCache = {};
+
+    // Helper: add review to index (allows multiple per uid for same film)
     function _addRev(r, rKey) {
       if (!r || !r.uid) return;
-      // Compute fp so we can open the full review on click
+      // Compute fp so we can register in _reviewCardRegistry and open on click
       var fp = '';
       try { fp = typeof fanReviewFp === 'function' ? fanReviewFp(r) : ''; } catch(_e) {}
-      var slug = '';
-      try { slug = typeof _reviewSlug === 'function' ? _reviewSlug(fp, r.movie||r.title||'') : ''; } catch(_e) {}
+      // Cache full review object for fpOpenReview
+      if (fp) _fpReviewCache[fp] = r;
       // Use uid+timestamp as key to allow multiple reviews per user for same film
       var entryKey = r.uid + '_' + (r.timestamp||0);
-      idx[entryKey] = { rating: r.rating||0, snippet: (r.text||r.review||'').slice(0,120), timestamp: r.timestamp||0, reviewId: rKey||r._key||'', name: r.name||'', photoURL: r.photoURL||null, fp: fp, slug: slug, uid: r.uid };
+      idx[entryKey] = { rating: r.rating||0, snippet: (r.text||r.review||'').slice(0,120), timestamp: r.timestamp||0, reviewId: rKey||r._key||'', name: r.name||'', photoURL: r.photoURL||null, fp: fp, uid: r.uid };
     }
 
     // 1. Try the in-memory cache first (already loaded if user visited Movies tab)
@@ -22621,47 +22624,68 @@ async function deleteEditorReview(key, e) {
   }
 
   async function _fetchFilmTheater(tmdbId) {
-    // theaterLogs structure: /theaterLogs/{uid}/2026/{logKey} → {movieId, movieTitle, userName, cinemaName, timestamp}
     var authSuffix = '';
+    var year = new Date().getFullYear();
     try {
-      var me = window.pmGetUser && window.pmGetUser();
-      if (me) { var tok = await me.getIdToken(); authSuffix = '?auth=' + tok; }
+      var _me = window.pmGetUser && window.pmGetUser();
+      if (_me) { var _tok = await _me.getIdToken(); authSuffix = '?auth=' + _tok; }
     } catch(_e) {}
-    fetch(_RTDB+'/theaterLogs.json'+authSuffix).then(function(r){return r.ok?r.json():null;}).then(function(allUsers){
-      if (!allUsers || _fpCurrentId !== String(tmdbId)) return;
-      var sightings = [];
-      Object.entries(allUsers).forEach(function(e){
+
+    // Fetch logs + leaderboard in parallel (leaderboard has displayName per uid)
+    var logsRes, lbRes;
+    try {
+      var pair = await Promise.all([
+        fetch(_RTDB+'/theaterLogs.json'+authSuffix).then(function(r){return r.ok?r.json():null;}),
+        fetch(_RTDB+'/theaterLeaderboard/'+year+'.json').then(function(r){return r.ok?r.json():null;})
+      ]);
+      logsRes = pair[0]; lbRes = pair[1];
+    } catch(_e) { logsRes = null; lbRes = null; }
+
+    if (_fpCurrentId !== String(tmdbId)) return;
+
+    // Build uid→displayName map from leaderboard
+    var nameMap = {};
+    if (lbRes) {
+      Object.entries(lbRes).forEach(function(e){
+        if (e[1] && e[1].displayName) nameMap[e[0]] = e[1].displayName;
+      });
+    }
+
+    var sightings = [];
+    if (logsRes) {
+      Object.entries(logsRes).forEach(function(e){
         var uid=e[0], yearMap=e[1];
         if (!yearMap) return;
-        // Support both /theaterLogs/{uid}/{year}/{key} and legacy /theaterLogs/{uid}/{key}
         Object.entries(yearMap).forEach(function(ye){
-          var yearOrKey=ye[0], val=ye[1];
+          var val=ye[1];
           if (val && typeof val === 'object' && !val.movieId) {
-            // It's a year bucket: val = { logKey: logData, ... }
+            // Year bucket: { logKey: { movieId, ... }, ... }
             Object.values(val).forEach(function(log){
-              if (log && String(log.movieId)===String(tmdbId)) sightings.push(Object.assign({},log,{uid:uid}));
+              if (log && String(log.movieId)===String(tmdbId)) {
+                sightings.push(Object.assign({}, log, { uid: uid, _displayName: nameMap[uid]||null }));
+              }
             });
           } else if (val && String(val.movieId)===String(tmdbId)) {
-            // Legacy flat structure
-            sightings.push(Object.assign({},val,{uid:uid}));
+            sightings.push(Object.assign({}, val, { uid: uid, _displayName: nameMap[uid]||null }));
           }
         });
       });
-      sightings.sort(function(a,b){return (b.timestamp||0)-(a.timestamp||0);});
-      var el = document.getElementById('fpTheaterList');
-      if (el) el.innerHTML = sightings.length
-        ? sightings.slice(0,8).map(function(s){
-            return '<div class="fp-theater-item"><span class="fp-theater-icon">🎟</span>'
-              +'<div class="fp-theater-info"><b>'+_esc(s.userName||'User')+'</b>'+(s.cinemaName?' · '+_esc(s.cinemaName):'')+'</div>'
-              +'<div class="fp-theater-date">'+_relTime(s.timestamp||0)+'</div></div>';
-          }).join('')
-        : '<div style="color:#555;font-size:.75rem">No theater sightings yet</div>';
-      var pill = document.getElementById('fpTheaterPill');
-      if (pill) pill.textContent = sightings.length || '0';
-    }).catch(function(){
-      var el = document.getElementById('fpTheaterList');
-      if (el) el.innerHTML = '<div style="color:#555;font-size:.75rem">Could not load sightings</div>';
-    });
+    }
+
+    sightings.sort(function(a,b){return (b.timestamp||0)-(a.timestamp||0);});
+
+    var el   = document.getElementById('fpTheaterList');
+    var pill = document.getElementById('fpTheaterPill');
+    if (el) el.innerHTML = sightings.length
+      ? sightings.slice(0,8).map(function(s){
+          var name = s._displayName || s.userName || ('User ' + s.uid.slice(0,4));
+          var fmt  = s.format ? ' · '+_esc(s.format) : '';
+          return '<div class="fp-theater-item"><span class="fp-theater-icon">🎟</span>'
+            +'<div class="fp-theater-info"><b>'+_esc(name)+'</b>'+fmt+'</div>'
+            +'<div class="fp-theater-date">'+_relTime(s.timestamp||0)+'</div></div>';
+        }).join('')
+      : '<div style="color:#555;font-size:.75rem">No theater sightings yet</div>';
+    if (pill) pill.textContent = sightings.length || '0';
   }
 
   window.fpToggleInfo = function() {
@@ -22683,28 +22707,87 @@ async function deleteEditorReview(key, e) {
     // Full re-sort would require re-fetching — acceptable for now
   };
 
+  // Intercept closeFanReviewPage + closeEditorRead to return to film page when opened from it
+  (function() {
+    function _patchClose() {
+      // Patch fan review close
+      if (typeof closeFanReviewPage === 'function' && !closeFanReviewPage._fpPatched) {
+        var _origFan = closeFanReviewPage;
+        closeFanReviewPage = function() {
+          var filmId = window._fpReviewReturnFilm;
+          window._fpReviewReturnFilm = null;
+          if (filmId) {
+            var pg = document.getElementById('frPage');
+            if (pg) pg.style.display = 'none';
+            document.body.style.overflow = '';
+            setTimeout(function(){ openFilmPage(filmId); }, 80);
+            return;
+          }
+          _origFan.apply(this, arguments);
+        };
+        closeFanReviewPage._fpPatched = true;
+      }
+      // Patch editor review close
+      if (typeof closeEditorRead === 'function' && !closeEditorRead._fpPatched) {
+        var _origEditor = closeEditorRead;
+        closeEditorRead = function() {
+          var filmId = window._fpReviewReturnFilm;
+          window._fpReviewReturnFilm = null;
+          if (filmId) {
+            var pg = document.getElementById('erPage');
+            if (pg) pg.style.display = 'none';
+            document.body.style.overflow = '';
+            setTimeout(function(){ openFilmPage(filmId); }, 80);
+            return;
+          }
+          _origEditor.apply(this, arguments);
+        };
+        closeEditorRead._fpPatched = true;
+      }
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', _patchClose);
+    } else {
+      _patchClose();
+    }
+  })();
+
   window.fpOpenReview = function(uid, slug, fp) {
-    // slug takes priority (human-readable review URL)
-    if (slug && typeof _loadAndShowReview === 'function') {
-      _loadAndShowReview(slug);
-      return;
-    }
-    // fp fallback — open via fan review page
+    // Mark that we should return to the current film page on close
+    window._fpReviewReturnFilm = _fpCurrentId || null;
+
+    // Fan reviews: must use openFanReviewPage(fp) — NOT _loadAndShowReview (that's editor-only)
+    // Find the review in the cache and register it in _reviewCardRegistry before opening
     if (fp && typeof openFanReviewPage === 'function') {
-      openFanReviewPage(fp);
-      return;
+      // Try to find the full review object from our film-page cache
+      var fullRev = _fpReviewCache[fp] || null;
+      if (!fullRev) {
+        // Search community reviews cache
+        var all = window._pmGetCommunityReviews ? window._pmGetCommunityReviews() : [];
+        fullRev = all.find(function(r){ return typeof fanReviewFp==='function' && fanReviewFp(r)===fp; }) || null;
+      }
+      if (fullRev && typeof _reviewCardRegistry !== 'undefined') {
+        _reviewCardRegistry.set(fp, fullRev);
+      }
+      if (fullRev) {
+        openFanReviewPage(fp);
+        return;
+      }
     }
-    // Last resort: try to find in community reviews by uid
-    if (uid && window._pmGetCommunityReviews) {
-      var all = window._pmGetCommunityReviews();
-      var found = all.find(function(r){ return r.uid === uid; });
-      if (found && typeof fanReviewFp === 'function' && typeof _loadAndShowReview === 'function') {
-        var foundFp   = fanReviewFp(found);
-        var foundSlug = typeof _reviewSlug === 'function' ? _reviewSlug(foundFp, found.movie||'') : '';
-        if (foundSlug) _loadAndShowReview(foundSlug);
+    // Fallback: fetch the review by reviewId key from Firebase, then open
+    if (uid && typeof openFanReviewPage === 'function') {
+      var all2 = window._pmGetCommunityReviews ? window._pmGetCommunityReviews() : [];
+      var found = all2.find(function(r){ return r.uid === uid; });
+      if (found && typeof fanReviewFp === 'function') {
+        var foundFp = fanReviewFp(found);
+        if (typeof _reviewCardRegistry !== 'undefined') _reviewCardRegistry.set(foundFp, found);
+        openFanReviewPage(foundFp);
       }
     }
   };
+
+  // Per-film full review object cache, keyed by fp — populated by _getReviewsForFilm
+  var _fpReviewCache = {};
 
   window.fpOpenWriteReview = function(tmdbId, title) {
     closeFilmPage();
