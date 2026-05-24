@@ -15890,6 +15890,26 @@ function openEditorRead(r) {
 }
 
 function _renderReviewPage(r) {
+  // Write editorReviewMeta so the Cloudflare Worker can build OG cards for /review/{slug}
+  // without scanning the entire collection. Matches the fanReviewMeta pattern.
+  try {
+    var _erSlug = r.slug || _editorSlug(r.title || '') || r._key || '';
+    if (_erSlug) {
+      fetch('https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app/editorReviewMeta/' + encodeURIComponent(_erSlug) + '.json', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slug:     _erSlug,
+          title:    r.title    || '',
+          year:     r.year     || '',
+          headline: r.headline || '',
+          backdrop: r.backdrop || null,
+          rating:   r.rating   || 0
+        })
+      });
+    }
+  } catch(_) {}
+
   let page = document.getElementById('erPage');
   if (!page) {
     page = document.createElement('div');
