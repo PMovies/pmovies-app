@@ -4919,6 +4919,10 @@
   <div class="lobby-thread-header">
     <button class="lobby-thread-back" onclick="closeLobbyThread()">←</button>
     <div class="lobby-thread-title" id="lobbyThreadTitle">Discussion</div>
+    <button id="lobbyShareBtn" onclick="shareLobbyThread()" title="Share this discussion"
+      style="margin-left:auto;background:none;border:1px solid rgba(255,255,255,.12);border-radius:20px;color:#888;font-size:.7rem;font-weight:700;font-family:'Montserrat',sans-serif;padding:5px 12px;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .15s;white-space:nowrap">
+      <span style="font-size:.85rem">↗</span> Share
+    </button>
   </div>
   <div class="lobby-thread-body" id="lobbyThreadBody"></div>
 </div>
@@ -22435,8 +22439,15 @@ async function deleteEditorReview(key, e) {
   window.addEventListener('popstate', function(e) {
     if (e.state && e.state.filmId) {
       openFilmPage(e.state.filmId);
-    } else if (document.getElementById('filmPage') && document.getElementById('filmPage').classList.contains('open')) {
-      closeFilmPage();
+    } else if (e.state && e.state.lobbyPostId) {
+      if (typeof openLobbyThread === 'function') openLobbyThread(e.state.lobbyPostId);
+    } else {
+      if (document.getElementById('filmPage') && document.getElementById('filmPage').classList.contains('open')) closeFilmPage();
+      var lobbyOv = document.getElementById('lobbyThreadOverlay');
+      if (lobbyOv && lobbyOv.classList.contains('open')) {
+        lobbyOv.classList.remove('open');
+        _lobbyCurrentThread = null;
+      }
     }
   });
 
@@ -23206,10 +23217,33 @@ async function deleteEditorReview(key, e) {
     if (btn) btn.style.display = me ? '' : 'none';
     if (!_lobbyLoaded) {
       _lobbyLoaded = true;
-      // Fetch first, then ensure weekly thread (so we can check _lobbyPosts for existing pinned)
-      _fetchLobbyPosts().then(function() { _ensureWeeklyThread(); });
+      _fetchLobbyPosts().then(function() {
+        _ensureWeeklyThread();
+        // Handle deep-link from /lobby/{postId}
+        if (window._pendingLobbyThread) {
+          var pid = window._pendingLobbyThread;
+          window._pendingLobbyThread = null;
+          openLobbyThread(pid);
+        }
+      });
+    } else if (window._pendingLobbyThread) {
+      var pid2 = window._pendingLobbyThread;
+      window._pendingLobbyThread = null;
+      openLobbyThread(pid2);
     }
   };
+
+  // Also handle the deep-link at page load (before Lobby tab is opened)
+  (function() {
+    if (window._pendingLobbyThread) {
+      // Switch to Lobby tab and open thread once app is ready
+      document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+          if (typeof switchTab === 'function') switchTab('lobby');
+        }, 600);
+      });
+    }
+  })();
 
   window.refreshLobbyFeed = function() {
     _lobbyLoaded = true; // keep as loaded (prevents double-init)
@@ -23600,6 +23634,8 @@ async function deleteEditorReview(key, e) {
     if (!ov || !title || !threadBody) return;
     title.textContent = post.body ? post.body.slice(0,50)+(post.body.length>50?'…':'') : 'Discussion';
     ov.classList.add('open');
+    // Update URL so browser back works and URL is shareable
+    try { history.pushState({ lobbyPostId: post._id }, '', '/lobby/' + post._id); } catch(_e) {}
     // Render post + comment box + load comments
     var me = window.pmGetUser && window.pmGetUser();
     var commentBox = me
@@ -23633,8 +23669,81 @@ async function deleteEditorReview(key, e) {
   window.closeLobbyThread = function() {
     var ov = document.getElementById('lobbyThreadOverlay');
     if (ov) ov.classList.remove('open');
+    // Restore URL if we navigated to a /lobby/ deep link
+    try {
+      if (location.pathname.match(/^\/lobby\//)) history.pushState({}, '', '/');
+    } catch(_e) {}
     _lobbyCurrentThread = null;
   };
+
+  window.shareLobbyThread = function() {
+    var post = _lobbyCurrentThread;
+    if (!post) return;
+    var url   = 'https://p-movies.com/lobby/' + post._id;
+    var title = (post.fromName || 'PMovies') + ' in The Lobby';
+    var text  = (post.body || '').slice(0, 100) + (post.body && post.body.length > 100 ? '…' : '');
+    var shareText = '"' + text + '" — ' + title + ' on PMovies';
+
+    var btn = document.getElementById('lobbyShareBtn');
+
+    // Native share sheet (mobile)
+    if (navigator.share) {
+      navigator.share({ title: title, text: shareText, url: url }).catch(function(){});
+      return;
+    }
+    // Desktop: show mini share popup
+    _showLobbySharePopup(url, shareText, title, btn);
+  };
+
+  function _showLobbySharePopup(url, text, title, anchorBtn) {
+    // Remove any existing popup
+    var old = document.getElementById('lobbySharePopup');
+    if (old) { old.remove(); return; }
+
+    var pop = document.createElement('div');
+    pop.id = 'lobbySharePopup';
+    pop.style.cssText = 'position:fixed;top:56px;right:16px;z-index:10200;background:#1a1a1a;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px 16px;box-shadow:0 12px 40px rgba(0,0,0,.7);min-width:220px;animation:fpSlideUp .18s ease';
+    pop.innerHTML =
+      '<div style="font-size:.58rem;color:#666;font-family:\'Montserrat\',sans-serif;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;font-weight:700">Share this discussion</div>'
+      + _lobbyShareBtn('whatsapp', '🟢', 'WhatsApp', url, text)
+      + _lobbyShareBtn('x',        '✖', 'X / Twitter', url, text)
+      + _lobbyShareBtn('copy',     '🔗', 'Copy link', url, text)
+      + '<div id="lobbyShareCopyFeedback" style="font-size:.65rem;color:#f5a623;font-family:\'Montserrat\',sans-serif;margin-top:6px;height:14px;text-align:center"></div>';
+
+    document.body.appendChild(pop);
+    // Close on outside click
+    setTimeout(function() {
+      document.addEventListener('click', function _dismiss(e) {
+        if (!pop.contains(e.target) && e.target !== anchorBtn) { pop.remove(); document.removeEventListener('click', _dismiss); }
+      });
+    }, 50);
+  }
+
+  function _lobbyShareBtn(platform, icon, label, url, text) {
+    var safeUrl  = url.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    var safeText = text.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,' ');
+    var safePlatform = platform;
+    var js = "(function(){"
+      + "var u='" + safeUrl  + "';"
+      + "var t='" + safeText + "';"
+      + "if('" + safePlatform + "'==='whatsapp'){window.open('https://wa.me/?text='+encodeURIComponent(t+'\\n\\n'+u),'_blank');}"
+      + "else if('" + safePlatform + "'==='x'){window.open('https://x.com/intent/tweet?text='+encodeURIComponent(t)+'&url='+encodeURIComponent(u)+'&via=PMovies155','_blank');}"
+      + "else if('" + safePlatform + "'==='copy'){navigator.clipboard.writeText(u).then(function(){var f=document.getElementById('lobbyShareCopyFeedback');if(f){f.textContent='✓ Link copied!';setTimeout(function(){f.textContent='';},1800);}}).catch(function(){});}"
+      + "})()";
+    return '<button onclick="' + js.replace(/"/g,'&quot;') + '" '
+      + 'style="display:flex;align-items:center;gap:10px;width:100%;background:none;border:none;border-bottom:1px solid rgba(255,255,255,.05);color:#ccc;font-size:.78rem;font-family:\'Montserrat\',sans-serif;padding:9px 0;cursor:pointer;text-align:left;transition:color .12s" '
+      + 'onmouseover="this.style.color=\'#f5a623\'" onmouseout="this.style.color=\'#ccc\'">'
+      + icon + ' ' + label + '</button>';
+  }
+
+  // Deep-link: open thread directly from /lobby/{postId} URL
+  (function() {
+    var lobbyMatch = location.pathname.match(/^\/lobby\/([\w-]+)$/);
+    if (lobbyMatch) {
+      var deepPostId = lobbyMatch[1];
+      window._pendingLobbyThread = deepPostId;
+    }
+  })();
 
   async function _loadLobbyComments(postId) {
     var list = document.getElementById('lobbyCommentList');
