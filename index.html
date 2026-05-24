@@ -8335,7 +8335,7 @@
     if (name === 'posters') { postersInit(); }
     if (name === 'lobby') { if (typeof initLobby === 'function') initLobby(); }
     if (name === 'editor') {
-      if (_isEditorAdmin()) { const wb = document.getElementById('editorWriteBtn'); if (wb) wb.style.display = ''; }
+      if (typeof _isEditorAdmin === 'function' && _isEditorAdmin()) { const wb = document.getElementById('editorWriteBtn'); if (wb) wb.style.display = ''; }
       if (!editorLoaded) loadEditorReviews();
     }
 
@@ -8678,8 +8678,17 @@
     // DON'T clear it here — let initLobby's .then() callback open the thread after
     // _fetchLobbyPosts completes, so the post is already in _lobbyPosts when it opens.
     if (window._pendingLobbyThread) {
+      var _deepLobbyId = window._pendingLobbyThread; // capture before any clearing
+      window._deepLobbyOpened = false;              // flag so fallback won't double-open
       if (typeof switchTab === 'function') switchTab('lobby');
-      // switchTab → initLobby → _fetchLobbyPosts → .then(openLobbyThread)
+      // Primary path: switchTab → initLobby → _fetchLobbyPosts → .then(openLobbyThread)
+      // Fallback: if the chain hasn't opened the thread after 2.5s, do it directly
+      setTimeout(function() {
+        if (_deepLobbyId && !window._deepLobbyOpened && typeof openLobbyThread === 'function') {
+          window._pendingLobbyThread = null;
+          openLobbyThread(_deepLobbyId);
+        }
+      }, 2500);
     }
 
     const hash = location.hash.replace('#', '');
@@ -8733,7 +8742,7 @@
     const tabName = hash.split('?')[0]; // strip any ?admin=... from the hash before matching
     if (['discover','foryou','movies','lists','series','backed','posters','lobby','editor'].includes(tabName)) switchTab(tabName);
     // Show Write Review button immediately if admin (button hidden by default via inline style)
-    if (_isEditorAdmin()) {
+    if (typeof _isEditorAdmin === 'function' && _isEditorAdmin()) {
       const wb = document.getElementById('editorWriteBtn');
       if (wb) wb.style.display = '';
     }
@@ -23703,6 +23712,7 @@ async function deleteEditorReview(key, e) {
 
   /* ── Thread Detail ── */
   window.openLobbyThread = async function(postId) {
+    window._deepLobbyOpened = true; // prevent startup fallback timer from double-opening
     var post = _lobbyPosts.find(function(p){return p._id===postId;});
     if (!post) {
       // Fetch it
