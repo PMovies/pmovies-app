@@ -16,11 +16,15 @@
     } catch(e) {}
   })();
   </script>
-  <!-- Deep-link detection — runs first, before ANY other script -->
+  <!-- Deep-link detection — runs first, before ANY other script.
+       Reads location.pathname so it works even when the Service Worker intercepts
+       the navigation and returns index.html without changing the URL bar. -->
   <script>
   (function(){
-    var m = location.pathname.match(/^\/lobby\/([\w-]+)$/);
-    if (m) window._pendingLobbyThread = m[1];
+    var p = location.pathname, m;
+    if ((m = p.match(/^\/lobby\/([\w-]+)$/)))  window._pendingLobbyThread  = m[1];
+    if ((m = p.match(/^\/fan\/([\w-]+)$/)))    window._pendingFanSlug      = m[1];
+    if ((m = p.match(/^\/review\/([\w-]+)$/))) window._pendingEditorReview = m[1];
   })();
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
@@ -8689,6 +8693,51 @@
           openLobbyThread(_deepLobbyId);
         }
       }, 2500);
+    }
+
+    // Fan review deep-link via /fan/{slug} path
+    // Worker serves index.html directly; <head> detection sets _pendingFanSlug from pathname.
+    if (window._pendingFanSlug) {
+      var _fanSlug = window._pendingFanSlug;
+      window._pendingFanSlug = null;
+      var _RTDB_FMETA = 'https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app';
+      (async function() {
+        // Resolve slug → fp via fanReviewMeta
+        var fp = null;
+        try {
+          var _mr = await fetch(_RTDB_FMETA + '/fanReviewMeta/' + encodeURIComponent(_fanSlug) + '.json');
+          var _md = _mr.ok ? await _mr.json() : null;
+          fp = (_md && _md.fp) ? _md.fp : null;
+        } catch(_) {}
+        if (!fp) { console.warn('[PMovies] no meta for fan slug:', _fanSlug); return; }
+        // Fetch the actual review data
+        var rev = null;
+        try {
+          var _r1 = await fetch(_RTDB_FMETA + '/fanReviews/' + fp + '.json');
+          var _d1 = _r1.ok ? await _r1.json() : null;
+          if (_d1 && typeof _d1 === 'object') rev = _d1;
+        } catch(_) {}
+        if (!rev) {
+          try {
+            var _r2 = await fetch(_RTDB_FMETA + '/seriesFanReviews/' + fp + '.json');
+            var _d2 = _r2.ok ? await _r2.json() : null;
+            if (_d2 && typeof _d2 === 'object') { rev = _d2; rev._mediaType = 'tv'; }
+          } catch(_) {}
+        }
+        if (!rev) { console.warn('[PMovies] fan review not found for fp:', fp); return; }
+        // Inject review so openFanReviewPage can render it without needing the grid loaded
+        window._pmProfileRevMap = window._pmProfileRevMap || {};
+        window._pmProfileRevMap[fp] = rev;
+        if (typeof openFanReviewPage === 'function') openFanReviewPage(fp);
+      })();
+    }
+
+    // Editor review deep-link via /review/{slug} path
+    // Worker serves index.html directly; <head> detection sets _pendingEditorReview from pathname.
+    if (window._pendingEditorReview) {
+      var _edSlug = window._pendingEditorReview;
+      window._pendingEditorReview = null;
+      if (typeof _loadAndShowReview === 'function') _loadAndShowReview(_edSlug);
     }
 
     const hash = location.hash.replace('#', '');
