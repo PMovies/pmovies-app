@@ -22247,6 +22247,36 @@ async function deleteEditorReview(key, e) {
 <!-- ══════════════════════════════════════════════════════════════
      FILM FULL PAGE + THE LOBBY
      ══════════════════════════════════════════════════════════════ -->
+<!-- openModal intercept: route movie clicks → Film Full Page -->
+<script>
+(function() {
+  // Wait for all scripts to finish evaluating before patching
+  var _patch = function() {
+    if (typeof openModal !== 'function') return;
+    var _orig = openModal;
+    openModal = function(m) {
+      // TV shows & items without an id still use the old modal
+      if (!m || !m.id || m.media_type === 'tv') {
+        return _orig(m);
+      }
+      // Movies → Film Full Page
+      if (typeof navigateToFilm === 'function') {
+        navigateToFilm(m.id, m.title || '');
+      } else if (typeof openFilmPage === 'function') {
+        openFilmPage(m.id);
+      } else {
+        _orig(m); // fallback if our scripts haven't loaded yet
+      }
+    };
+  };
+  // Run after all deferred scripts are done
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _patch);
+  } else {
+    _patch();
+  }
+})();
+</script>
 <script>
 (function() {
   'use strict';
