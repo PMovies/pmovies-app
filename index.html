@@ -227,7 +227,9 @@
       --radius:12px;--radius-lg:18px;
     }
     html{scroll-behavior:smooth}
-    body{background:var(--bg);color:var(--text);font-family:'Open Sans',sans-serif;min-height:100vh;overflow-x:hidden}
+    body{background:var(--bg);color:var(--text);font-family:'Open Sans',sans-serif;min-height:100vh;overflow-x:hidden;
+    /* iOS notch / Dynamic Island: push page content below the safe area */
+    padding-top:env(safe-area-inset-top,0px);}
 
     /* ── HERO ── */
     .hero{position:relative;text-align:center;padding:80px 20px 56px;overflow:hidden;min-height:380px;display:flex;flex-direction:column;align-items:center;justify-content:center}
@@ -3798,10 +3800,14 @@
 /* Thread Detail Overlay */
 .lobby-thread-overlay { display:none; position:fixed; inset:0; z-index:9998; background:#0a0a0a; overflow-y:auto; }
 .lobby-thread-overlay.open { display:block; }
-.lobby-thread-header { position:sticky; top:0; z-index:2; background:#0a0a0a; border-bottom:1px solid rgba(255,255,255,.07); padding:14px 16px; display:flex; align-items:center; gap:12px; }
+.lobby-thread-header { position:sticky; top:0; z-index:2; background:#0a0a0a; border-bottom:1px solid rgba(255,255,255,.07); padding:14px 16px; padding-top:max(14px,calc(env(safe-area-inset-top,0px) + 10px)); display:flex; align-items:center; gap:12px; }
 .lobby-thread-back { background:none; border:none; color:#f5a623; font-size:1.1rem; cursor:pointer; padding:4px 8px 4px 0; }
 .lobby-thread-title { font-family:'Bebas Neue',sans-serif; font-size:1.1rem; color:#eee; letter-spacing:.05em; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .lobby-thread-body { max-width:680px; margin:0 auto; padding:16px; }
+.lobby-thread-hero { width:100%; padding:32px 16px 28px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; position:relative; overflow:hidden; }
+.lobby-thread-hero::before { content:''; position:absolute; inset:0; pointer-events:none; }
+.lobby-thread-hero-icon { font-size:2.8rem; line-height:1; position:relative; z-index:1; }
+.lobby-thread-hero-label { font-size:.6rem; font-family:'Montserrat',sans-serif; font-weight:700; letter-spacing:.14em; text-transform:uppercase; opacity:.7; position:relative; z-index:1; }
 .lobby-comment-box { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:12px 14px; margin-bottom:16px; }
 .lobby-comment-input { width:100%; background:none; border:none; color:#eee; font-size:.82rem; font-family:inherit; resize:none; min-height:60px; outline:none; }
 .lobby-comment-actions { display:flex; justify-content:flex-end; margin-top:6px; }
@@ -3821,7 +3827,7 @@
 #filmPage.open { display:block; }
 /* Centered content wrapper — gives the Letterboxd "breathing room" feel */
 .fp-inner { max-width:780px; margin:0 auto; position:relative; }
-.fp-header { position:sticky; top:0; z-index:10; background:rgba(13,13,13,.94); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border-bottom:1px solid rgba(255,255,255,.06); padding:11px 16px; display:flex; align-items:center; gap:12px; }
+.fp-header { position:sticky; top:0; z-index:10; background:rgba(13,13,13,.94); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border-bottom:1px solid rgba(255,255,255,.06); padding:11px 16px; padding-top:max(11px,calc(env(safe-area-inset-top,0px) + 8px)); display:flex; align-items:center; gap:12px; }
 .fp-back-btn { background:none; border:none; color:#f5a623; font-size:1.1rem; cursor:pointer; padding:4px 8px 4px 2px; flex-shrink:0; }
 .fp-header-title { flex:1; font-family:'Bebas Neue',sans-serif; font-size:1.1rem; color:#eee; letter-spacing:.06em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 /* Backdrop — full width of inner container, taller on desktop */
@@ -23682,10 +23688,26 @@ async function deleteEditorReview(key, e) {
       : '<div style="color:#555;font-size:.75rem;padding:12px 0">Sign in to reply.</div>';
 
     var filmTag = '';
+    var threadHeroHtml = '';
     if (post.filmId && post.filmTitle) {
       var ps = post.filmPoster ? 'https://image.tmdb.org/t/p/w92'+post.filmPoster : '';
       filmTag = '<div class="lobby-film-tag" style="margin-bottom:12px" onclick="closeLobbyThread();setTimeout(function(){openFilmPage(\''+_esc(post.filmId)+'\');},80)">'
         +(ps?'<img src="'+ps+'" alt="">':'🎬')+' '+_esc(post.filmTitle)+'</div>';
+    } else {
+      // No film — render a gradient hero banner themed by post type
+      var _hm = {
+        discussion:{ grad:'linear-gradient(160deg,#111827 0%,#0d111c 60%,#0a0a0a 100%)', accent:'#5b8dd9', icon:'💬', label:'Discussion' },
+        hottake:   { grad:'linear-gradient(160deg,#1f1209 0%,#180e06 60%,#0a0a0a 100%)', accent:'#f5a623', icon:'🔥', label:'Hot Take'  },
+        question:  { grad:'linear-gradient(160deg,#091626 0%,#071018 60%,#0a0a0a 100%)', accent:'#4ab3e8', icon:'❓', label:'Question'   },
+        poll:      { grad:'linear-gradient(160deg,#14092a 0%,#0e061e 60%,#0a0a0a 100%)', accent:'#a07ee8', icon:'📊', label:'Poll'       }
+      };
+      var _h = _hm[post.type] || _hm.discussion;
+      threadHeroHtml =
+        '<div class="lobby-thread-hero" style="background:'+_h.grad+';border-bottom:1px solid rgba(255,255,255,.05)">'
+          +'<div style="position:absolute;width:200px;height:200px;border-radius:50%;background:'+_h.accent+';opacity:.07;filter:blur(55px);top:50%;left:50%;transform:translate(-50%,-50%)"></div>'
+          +'<div class="lobby-thread-hero-icon">'+_h.icon+'</div>'
+          +'<div class="lobby-thread-hero-label" style="color:'+_h.accent+'">'+_h.label+'</div>'
+        +'</div>';
     }
 
     var threadAdminBar = _lobbyIsAdmin()
@@ -23693,7 +23715,7 @@ async function deleteEditorReview(key, e) {
           +'<button class="lobby-admin-delete-btn" onclick="deleteLobbyPost(\''+_esc(postId)+'\',true)" style="font-size:.75rem;padding:6px 14px">🗑 Delete post</button>'
         +'</div>'
       : '';
-    threadBody.innerHTML = '<div class="lobby-card" style="margin-bottom:16px;cursor:default">'
+    threadBody.innerHTML = threadHeroHtml+'<div class="lobby-card" style="margin-bottom:16px;cursor:default">'
       +'<div class="lobby-card-head">'+_lobbyAvatarHtml(post.uid,post.avatar||null)
         +'<div class="lobby-card-meta"><div class="lobby-card-name">'+_esc(post.fromName||'User')+'</div>'
         +'<div class="lobby-card-time">'+_relTime(post.createdAt||0)+'</div></div>'
