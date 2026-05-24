@@ -16,6 +16,13 @@
     } catch(e) {}
   })();
   </script>
+  <!-- Deep-link detection — runs first, before ANY other script -->
+  <script>
+  (function(){
+    var m = location.pathname.match(/^\/lobby\/([\w-]+)$/);
+    if (m) window._pendingLobbyThread = m[1];
+  })();
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <meta name="format-detection" content="telephone=no"/>
   <!-- Google Analytics GA4 -->
@@ -8667,16 +8674,20 @@
     }
 
     // Check for pending lobby thread (from /lobby/{postId} URL)
-    // Call openLobbyThread directly — it fetches the single post itself, no need to
-    // wait for the full _fetchLobbyPosts chain to complete first.
+    // Detection runs in <head> so _pendingLobbyThread is always set by now.
     if (window._pendingLobbyThread) {
       var _ptid = window._pendingLobbyThread;
       window._pendingLobbyThread = null; // clear so initLobby doesn't double-open
+      // Load the lobby feed first (switchTab), then open the thread.
+      // Two-step: switchTab triggers initLobby which fetches posts; after that
+      // we open the thread directly by ID.
+      if (typeof switchTab === 'function') switchTab('lobby');
       setTimeout(function() {
-        if (typeof openLobbyThread === 'function') openLobbyThread(_ptid);
-        // Load the full lobby feed in the background so back-from-thread works
-        if (typeof switchTab === 'function') switchTab('lobby');
-      }, 300);
+        // openLobbyThread fetches the single post from Firebase if not in local cache
+        if (typeof openLobbyThread === 'function') {
+          openLobbyThread(_ptid);
+        }
+      }, 1200); // 1.2s — lets auth + lobby feed fetch settle before opening thread
     }
 
     const hash = location.hash.replace('#', '');
@@ -23836,14 +23847,7 @@ async function deleteEditorReview(key, e) {
       + icon + ' ' + label + '</button>';
   }
 
-  // Deep-link: open thread directly from /lobby/{postId} URL
-  (function() {
-    var lobbyMatch = location.pathname.match(/^\/lobby\/([\w-]+)$/);
-    if (lobbyMatch) {
-      var deepPostId = lobbyMatch[1];
-      window._pendingLobbyThread = deepPostId;
-    }
-  })();
+  // Deep-link detection moved to <head> so it runs before all other scripts
 
   async function _loadLobbyComments(postId) {
     var list = document.getElementById('lobbyCommentList');
