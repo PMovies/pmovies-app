@@ -2878,9 +2878,9 @@
   .pn-mark-read { background:none; border:1px solid rgba(255,255,255,.15); color:#888; font-size:.58rem; font-weight:700; letter-spacing:.04em; padding:5px 10px; border-radius:12px; cursor:pointer; text-transform:uppercase; }
   .pn-mark-read:hover { border-color:#f5a623; color:#f5a623; }
   .pn-list { flex:1; padding:6px 0; }
-  .pn-row { display:flex; align-items:center; gap:10px; padding:12px 16px 12px 20px; cursor:pointer; transition:background .15s; position:relative; border-bottom:1px solid rgba(255,255,255,.05); background:rgba(255,255,255,.015); }
-  .pn-row:hover { background:rgba(255,255,255,.055); }
-  .pn-row.pn-unread { background:rgba(245,166,35,.07); }
+  .pn-row { display:flex; align-items:center; gap:10px; padding:12px 16px 12px 20px; cursor:pointer; transition:background .15s; position:relative; border-bottom:1px solid rgba(255,255,255,.05); background:#111; }
+  .pn-row:hover { background:#1a1a1a; }
+  .pn-row.pn-unread { background:rgba(245,166,35,.09); }
   .pn-row.pn-unread::before { content:''; position:absolute; left:7px; top:50%; transform:translateY(-50%); width:5px; height:5px; border-radius:50%; background:#f5a623; }
   .pn-avatar { position:relative; width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg,#2a1800,#4a3000); display:flex; align-items:center; justify-content:center; font-size:.9rem; color:#f5a623; font-weight:700; font-family:'Bebas Neue',sans-serif; overflow:visible; flex-shrink:0; }
   .pn-avatar img { width:40px; height:40px; object-fit:cover; border-radius:50%; display:block; }
@@ -6705,7 +6705,7 @@
       if (data.type === 'follow') {
         key = 'follow_' + u.uid;
       } else if ((data.type === 'like' || data.type === 'comment') && data.targetId) {
-        key = data.type + '_' + u.uid + '_' + String(data.targetId).slice(0, 20);
+        key = data.type + '_' + u.uid + '_' + String(data.targetId).replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 20);
       } else {
         key = Date.now() + '_' + Math.random().toString(36).slice(2, 7);
       }
@@ -20471,22 +20471,23 @@ async function deleteEditorReview(key, e) {
   window.pmMarkAllNotifsRead = async function() {
     var me = window.pmGetUser && window.pmGetUser();
     if (!me) return;
-    // Button feedback
     var btn = document.querySelector('.pn-mark-read');
     if (btn) { btn.textContent = 'Marking…'; btn.disabled = true; }
+    var _nb = 'https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app';
     try {
       var token = await me.getIdToken();
-      // Only patch the unread ones (avoid touching the whole tree)
-      var unreadRows = document.querySelectorAll('#pmNotifList .pn-row.pn-unread');
-      var keys = Array.from(unreadRows).map(function(el){ return el.dataset.key; }).filter(Boolean);
+      // Snapshot the unread rows (static NodeList — safe to iterate after class change)
+      var unreadRows = Array.from(document.querySelectorAll('#pmNotifList .pn-row.pn-unread'));
+      var keys = unreadRows.map(function(el){ return el.dataset.key; }).filter(Boolean);
+      // Patch each key's /read field — keys are alphanumeric+_- so no encoding needed
       await Promise.all(keys.map(function(k) {
-        return fetch(RTDB + '/notifications/' + me.uid + '/' + encodeURIComponent(k) + '/read.json?auth=' + token,
+        return fetch(_nb + '/notifications/' + me.uid + '/' + k + '/read.json?auth=' + token,
           { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(true) });
       }));
-      // Remove unread dot from each row — rows stay fully visible
+      // Remove unread class — rows stay visible (#111 base background, not transparent)
       unreadRows.forEach(function(el) { el.classList.remove('pn-unread'); });
       _setBadge(0);
-      if (btn) { btn.textContent = '✓ Done'; }
+      if (btn) { btn.textContent = '✓ Done'; setTimeout(function(){ if(btn){ btn.textContent='Mark all read'; btn.disabled=false; } }, 2500); }
     } catch(_e) {
       if (btn) { btn.textContent = 'Mark all read'; btn.disabled = false; }
     }
