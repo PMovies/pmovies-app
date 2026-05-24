@@ -38,7 +38,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="PMovies">
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="/manifest.json">
   <!-- Favicon -->
   <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-192.png">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
@@ -23249,16 +23249,19 @@ async function deleteEditorReview(key, e) {
     if (btn) btn.style.display = me ? '' : 'none';
     if (!_lobbyLoaded) {
       _lobbyLoaded = true;
-      _fetchLobbyPosts().then(function() {
-        _ensureWeeklyThread();
-        // Handle deep-link from /lobby/{postId}
+      var _openPending = function() {
         if (window._pendingLobbyThread) {
           var pid = window._pendingLobbyThread;
           window._pendingLobbyThread = null;
-          // Small delay so the lobby feed renders before the overlay opens
           setTimeout(function() { openLobbyThread(pid); }, 100);
         }
-      });
+      };
+      _fetchLobbyPosts()
+        .then(function() { _ensureWeeklyThread(); _openPending(); })
+        .catch(function(err) {
+          console.warn('[PMovies Lobby] fetchLobbyPosts error, still trying thread open:', err);
+          _openPending(); // open thread directly even if feed fetch failed
+        });
     } else if (window._pendingLobbyThread) {
       var pid2 = window._pendingLobbyThread;
       window._pendingLobbyThread = null;

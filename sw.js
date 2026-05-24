@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pmovies-v302';
+const CACHE_NAME = 'pmovies-v303';
 
 const APP_SHELL = [
   '/',
@@ -67,6 +67,11 @@ function isApiRequest(url) {
 
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
+
+  // Cache API only supports GET — skip all non-GET requests immediately
+  if (event.request.method !== 'GET') {
+    return; // let browser handle it natively, no SW intervention
+  }
 
   /* ── 1. API / dynamic data: network-first ── */
   if (isApiRequest(url)) {
