@@ -3753,6 +3753,9 @@
 .lobby-upvote-btn:hover,.lobby-upvote-btn.voted { border-color:rgba(245,166,35,.4); color:#f5a623; }
 .lobby-comment-count { display:flex; align-items:center; gap:4px; font-size:.6rem; color:#555; font-family:'Montserrat',sans-serif; }
 .lobby-pin-badge { font-size:.56rem; color:#f5a623; margin-left:auto; letter-spacing:.04em; font-family:'Montserrat',sans-serif; font-weight:700; }
+.lobby-admin-delete-btn { background:none; border:1px solid rgba(220,50,50,.35); color:#c0392b; font-size:.7rem; font-family:'Montserrat',sans-serif; font-weight:700; padding:3px 9px; border-radius:8px; cursor:pointer; margin-left:auto; transition:all .15s; }
+.lobby-admin-delete-btn:hover { background:rgba(220,50,50,.12); border-color:#c0392b; }
+.lobby-thread-admin-bar { display:flex; justify-content:flex-end; margin-bottom:12px; }
 .lobby-empty { text-align:center; padding:52px 24px; color:#444; font-size:.82rem; }
 .lobby-load-more { text-align:center; padding:20px; }
 .lobby-load-more-btn { background:none; border:1px solid rgba(255,255,255,.1); color:#666; font-size:.6rem; font-family:'Montserrat',sans-serif; font-weight:700; letter-spacing:.05em; padding:8px 20px; border-radius:12px; cursor:pointer; text-transform:uppercase; transition:all .15s; }
@@ -16692,6 +16695,13 @@ async function deleteEditorReview(key, e) {
       var bellBtn = document.getElementById('pmBellBtn');
       if (bellBtn) bellBtn.style.display = 'flex';
       if (typeof window._pmLoadNotifBadge === 'function') window._pmLoadNotifBadge(user);
+      // Pre-fetch following list so Lobby "Following" tab works instantly
+      user.getIdToken().then(function(tok) {
+        fetch(RTDB + '/follows/' + user.uid + '.json?shallow=true&auth=' + tok)
+          .then(function(r){ return r.ok ? r.json() : null; })
+          .then(function(data){ window._pmFollowing = data || {}; })
+          .catch(function(){ window._pmFollowing = {}; });
+      });
       // Sync watchlist from cloud → localStorage, then re-render watchlist section
       if (typeof window._wlLoadFromFirebase === 'function') {
         window._wlLoadFromFirebase().then(function(merged) {
@@ -23405,8 +23415,13 @@ async function deleteEditorReview(key, e) {
     return '<div class="lobby-av">'+(av?'<img src="'+_esc(av)+'" alt="">':_esc((uid||'?').slice(0,1).toUpperCase()))+'</div>';
   }
 
+  function _lobbyIsAdmin() {
+    return !!(window._pmEditorAuthVerified || localStorage.getItem('pmovies_admin') === '1');
+  }
+
   function _renderLobbyCard(post) {
     var voted = _lobbyUpvoted[post._id] || false;
+    var isAdmin = _lobbyIsAdmin();
     var filmTag = '';
     if (post.filmId && post.filmTitle) {
       var posterSrc = post.filmPoster ? 'https://image.tmdb.org/t/p/w92'+post.filmPoster : '';
@@ -23414,6 +23429,9 @@ async function deleteEditorReview(key, e) {
         +(posterSrc?'<img src="'+posterSrc+'" alt="">':'🎬')
         +' '+_esc(post.filmTitle)+'</div>';
     }
+    var adminBtn = isAdmin
+      ? '<button class="lobby-admin-delete-btn" onclick="event.stopPropagation();deleteLobbyPost(\''+_esc(post._id)+'\')" title="Admin: delete post">🗑</button>'
+      : '';
     return '<div class="lobby-card'+(post.pinned?' pinned':'')+'" data-pid="'+_esc(post._id)+'" onclick="openLobbyThread(\''+_esc(post._id)+'\')">'
       +'<div class="lobby-card-head">'
         +_lobbyAvatarHtml(post.uid, post.avatar||null)
@@ -23422,6 +23440,7 @@ async function deleteEditorReview(key, e) {
           +'<div class="lobby-card-time">'+_relTime(post.createdAt||0)+'</div>'
         +'</div>'
         +_lobbyTypeBadge(post.type, post.pinned)
+        +adminBtn
       +'</div>'
       +'<div class="lobby-card-body">'+_esc((post.body||'').slice(0,300))+(post.body&&post.body.length>300?'…':'')+'</div>'
       +filmTag
@@ -23438,6 +23457,25 @@ async function deleteEditorReview(key, e) {
     document.querySelectorAll('.lobby-sort-btn').forEach(function(b){b.classList.remove('active');});
     if (btn) btn.classList.add('active');
     _lobbyPage = 0;
+    if (mode === 'following' && (!window._pmFollowing || !Object.keys(window._pmFollowing).length)) {
+      // Lazy-fetch follows if not yet loaded (e.g. quick sign-in + tab click)
+      var me = window.pmGetUser && window.pmGetUser();
+      if (me) {
+        var feed = document.getElementById('lobbyFeed');
+        if (feed) feed.innerHTML = '<div class="lobby-empty" style="color:#555">Loading…</div>';
+        me.getIdToken().then(function(tok) {
+          return fetch(RTDB + '/follows/' + me.uid + '.json?shallow=true&auth=' + tok)
+            .then(function(r){ return r.ok ? r.json() : null; });
+        }).then(function(data) {
+          window._pmFollowing = data || {};
+          _renderLobbyFeed();
+        }).catch(function() {
+          window._pmFollowing = {};
+          _renderLobbyFeed();
+        });
+        return; // _renderLobbyFeed will be called after fetch
+      }
+    }
     _renderLobbyFeed();
   };
 
@@ -23650,6 +23688,11 @@ async function deleteEditorReview(key, e) {
         +(ps?'<img src="'+ps+'" alt="">':'🎬')+' '+_esc(post.filmTitle)+'</div>';
     }
 
+    var threadAdminBar = _lobbyIsAdmin()
+      ? '<div class="lobby-thread-admin-bar">'
+          +'<button class="lobby-admin-delete-btn" onclick="deleteLobbyPost(\''+_esc(postId)+'\',true)" style="font-size:.75rem;padding:6px 14px">🗑 Delete post</button>'
+        +'</div>'
+      : '';
     threadBody.innerHTML = '<div class="lobby-card" style="margin-bottom:16px;cursor:default">'
       +'<div class="lobby-card-head">'+_lobbyAvatarHtml(post.uid,post.avatar||null)
         +'<div class="lobby-card-meta"><div class="lobby-card-name">'+_esc(post.fromName||'User')+'</div>'
@@ -23659,6 +23702,7 @@ async function deleteEditorReview(key, e) {
       +filmTag
       +'<div class="lobby-card-foot"><button class="lobby-upvote-btn" onclick="toggleLobbyUpvote(\''+_esc(postId)+'\',this)" data-pid="'+_esc(postId)+'">▲ '+(post.upvotes||0)+'</button></div>'
       +'</div>'
+      +threadAdminBar
       +commentBox
       +'<div class="lobby-comment-list" id="lobbyCommentList"><div style="color:#555;font-size:.75rem;padding:8px 0">Loading replies…</div></div>';
 
@@ -23674,6 +23718,37 @@ async function deleteEditorReview(key, e) {
       if (location.pathname.match(/^\/lobby\//)) history.pushState({}, '', '/');
     } catch(_e) {}
     _lobbyCurrentThread = null;
+  };
+
+  window.deleteLobbyPost = async function(postId, fromThread) {
+    if (!_lobbyIsAdmin()) return;
+    if (!confirm('Admin: permanently delete this post and all its replies?')) return;
+    var me = window.pmGetUser && window.pmGetUser();
+    if (!me) { alert('Not signed in.'); return; }
+    try {
+      var tok = await me.getIdToken();
+      // Delete post + all its comments in parallel
+      await Promise.all([
+        fetch(_RTDB + '/community/posts/' + postId + '.json?auth=' + tok, { method: 'DELETE' }),
+        fetch(_RTDB + '/community/comments/' + postId + '.json?auth=' + tok, { method: 'DELETE' }),
+        fetch(_RTDB + '/community/upvotes/' + postId + '.json?auth=' + tok, { method: 'DELETE' })
+      ]);
+      // Remove from local array
+      _lobbyPosts = _lobbyPosts.filter(function(p){ return p._id !== postId; });
+      // Close thread overlay if we deleted from inside it
+      if (fromThread) {
+        var ov = document.getElementById('lobbyThreadOverlay');
+        if (ov) ov.classList.remove('open');
+        try { if (location.pathname.match(/^\/lobby\//)) history.pushState({}, '', '/'); } catch(_e) {}
+        _lobbyCurrentThread = null;
+      }
+      // Re-render feed, remove card from DOM immediately
+      var card = document.querySelector('.lobby-card[data-pid="' + postId + '"]');
+      if (card) card.remove();
+      _renderLobbyFeed();
+    } catch(err) {
+      alert('Delete failed: ' + (err.message || err));
+    }
   };
 
   window.shareLobbyThread = function() {
