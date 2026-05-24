@@ -22858,9 +22858,13 @@ async function deleteEditorReview(key, e) {
       if (pill) pill.textContent = matches.length || '0';
       if (!matches.length || !sec || !grid) return;
       sec.style.display = '';
+      // Seed _postersData so lightbox works even if Fan Art tab hasn't been visited
+      if (typeof _postersData !== 'undefined') {
+        matches.forEach(function(e){ if (!_postersData.has(e[0])) _postersData.set(e[0], e[1]); });
+      }
       grid.innerHTML = matches.slice(0,9).map(function(e){
         var p = e[1], key = e[0];
-        var imgSrc = p.imageUrl || p.url || '';
+        var imgSrc = p.cloudinaryUrl || p.imageUrl || p.url || '';
         return '<img class="fp-art-thumb" src="'+_esc(imgSrc)+'" alt="'+_esc(p.movie||'')+'" loading="lazy" onclick="if(typeof postersOpenLightbox===\'function\')postersOpenLightbox(\''+_esc(key)+'\');else if(typeof switchTab===\'function\')switchTab(\'posters\')">';
       }).join('');
     } catch(_e) { if (pill) pill.textContent = '0'; }
@@ -22869,26 +22873,43 @@ async function deleteEditorReview(key, e) {
   // ── Write Review sheet ────────────────────────────────────────────────────────
   var _fpRevRating = 0;
 
-  // Initialise star pickers once
+  // Initialise the popup star picker using the shared half-star helper
   (function() {
     function _initRevStars() {
       var row = document.getElementById('fpRevStarRow');
       if (!row || row._fpInited) return;
       row._fpInited = true;
-      var stars = row.querySelectorAll('.fp-rev-star');
       var label = document.getElementById('fpRevStarLabel');
-      var labels = ['','★ Poor','★★ Fair','★★★ Good','★★★★ Great','★★★★★ Outstanding'];
-      stars.forEach(function(s) {
-        s.addEventListener('click', function() {
-          _fpRevRating = +this.dataset.v;
-          document.getElementById('fpRevRating').value = _fpRevRating;
-          stars.forEach(function(x){ x.classList.toggle('active', +x.dataset.v <= _fpRevRating); });
-          if (label) label.textContent = labels[_fpRevRating] || '';
+      // Reuse the site-wide half-star picker — mouse position determines half vs full
+      if (typeof _initStarPicker === 'function') {
+        _initStarPicker(
+          row,
+          '.fp-rev-star',
+          'fpRevRating',
+          label,
+          function() { return _fpRevRating; },
+          function(v) {
+            _fpRevRating = v;
+            // Also update label with descriptive text
+            var labels = {0.5:'½ ★',1:'1 ★',1.5:'1½ ★',2:'2 ★',2.5:'2½ ★',3:'3 ★',3.5:'3½ ★',4:'4 ★',4.5:'4½ ★',5:'5 ★'};
+            if (label) label.textContent = (labels[v] || v + ' ★') + ' rated';
+          }
+        );
+      } else {
+        // Fallback: whole-star click only (in case _initStarPicker not yet defined)
+        var stars = row.querySelectorAll('.fp-rev-star');
+        stars.forEach(function(s) {
+          s.addEventListener('click', function() {
+            _fpRevRating = +this.dataset.v;
+            document.getElementById('fpRevRating').value = _fpRevRating;
+            stars.forEach(function(x){ x.style.color = +x.dataset.v <= _fpRevRating ? '#f5a623' : '#333'; });
+            if (label) label.textContent = _fpRevRating + ' ★ rated';
+          });
         });
-      });
+      }
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _initRevStars);
-    else _initRevStars();
+    else setTimeout(_initRevStars, 0); // defer so _initStarPicker is definitely defined
   })();
 
   window.fpOpenWriteSheet = function(tmdbId, title) {
@@ -22909,7 +22930,10 @@ async function deleteEditorReview(key, e) {
     // Reset form
     _fpRevRating = 0;
     document.getElementById('fpRevRating').value = 0;
-    document.querySelectorAll('#fpRevStarRow .fp-rev-star').forEach(function(s){s.classList.remove('active');});
+    // Reset star visuals (half-star picker uses style.cssText not classes)
+    document.querySelectorAll('#fpRevStarRow .fp-rev-star').forEach(function(s){
+      s.style.cssText = 'color:#333;background:none;-webkit-text-fill-color:initial';
+    });
     var lbl = document.getElementById('fpRevStarLabel');
     if (lbl) lbl.textContent = 'Tap to rate';
     var hl = document.getElementById('fpRevHeadline'); if (hl) hl.value = '';
