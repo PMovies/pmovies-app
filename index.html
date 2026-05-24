@@ -3904,6 +3904,28 @@
 @keyframes fp-pulse { 0%,100%{opacity:.35} 50%{opacity:.75} }
 .fp-skel-backdrop { width:100%; aspect-ratio:16/7; background:#1a1a1a; border-radius:0 0 16px 16px; }
 .fp-skel-block { background:#1a1a1a; border-radius:8px; }
+/* Write Review popup (shown over film page) */
+#fpReviewOverlay { display:none; position:fixed; inset:0; z-index:10001; background:rgba(0,0,0,.82); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); align-items:flex-end; justify-content:center; }
+#fpReviewOverlay.open { display:flex; }
+.fp-review-sheet { background:#181818; border:1px solid rgba(255,255,255,.08); border-radius:20px 20px 0 0; padding:24px 20px 32px; width:100%; max-width:780px; animation:fpSlideUp .22s ease; }
+@keyframes fpSlideUp { from{transform:translateY(40px);opacity:0} to{transform:translateY(0);opacity:1} }
+.fp-review-sheet-title { font-family:'Bebas Neue',sans-serif; font-size:1.2rem; letter-spacing:.06em; color:#fff; margin-bottom:18px; display:flex; align-items:center; gap:10px; }
+.fp-review-sheet-close { margin-left:auto; background:none; border:none; color:#555; font-size:1.3rem; cursor:pointer; padding:0 4px; }
+.fp-review-sheet-close:hover { color:#f5a623; }
+.fp-review-field { width:100%; background:#111; border:1px solid rgba(255,255,255,.1); border-radius:10px; padding:11px 14px; color:#fff; font-size:.82rem; font-family:inherit; box-sizing:border-box; margin-bottom:10px; }
+.fp-review-field:focus { outline:none; border-color:rgba(245,166,35,.5); }
+.fp-review-field[readonly] { color:#666; cursor:default; border-color:rgba(255,255,255,.05); }
+.fp-review-star-row { display:flex; gap:6px; align-items:center; margin-bottom:12px; }
+.fp-rev-star { font-size:1.5rem; color:#333; cursor:pointer; transition:color .1s; }
+.fp-rev-star.active { color:#f5a623; }
+.fp-rev-star-label { font-size:.65rem; color:#555; font-family:'Montserrat',sans-serif; margin-left:4px; }
+.fp-review-submit-btn { width:100%; background:#f5a623; border:none; color:#000; font-family:'Bebas Neue',sans-serif; font-size:1rem; letter-spacing:.08em; padding:13px; border-radius:12px; cursor:pointer; margin-top:6px; transition:background .15s; }
+.fp-review-submit-btn:hover { background:#e8951a; }
+.fp-review-submit-btn:disabled { opacity:.5; cursor:default; }
+/* Fan Art mini grid in film page */
+.fp-art-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(88px,1fr)); gap:8px; }
+.fp-art-thumb { width:100%; aspect-ratio:2/3; object-fit:cover; border-radius:8px; cursor:pointer; transition:transform .15s,opacity .15s; background:#1a1a1a; }
+.fp-art-thumb:hover { transform:scale(1.04); opacity:.9; }
 </style>
 </head>
 <body class="grain">
@@ -4906,6 +4928,31 @@
       <div class="fp-header-title" id="fpHeaderTitle">Loading…</div>
     </div>
     <div id="fpContent"></div>
+  </div>
+</div>
+
+<!-- Write Review sheet (sits above film page, below nav) -->
+<div id="fpReviewOverlay" onclick="fpCloseWriteSheet(event)">
+  <div class="fp-review-sheet" onclick="event.stopPropagation()">
+    <div class="fp-review-sheet-title">
+      ✍️ Write a Review
+      <button class="fp-review-sheet-close" onclick="fpCloseWriteSheet()">✕</button>
+    </div>
+    <input class="fp-review-field" id="fpRevName" type="text" placeholder="Your name" readonly/>
+    <input class="fp-review-field" id="fpRevMovie" type="text" placeholder="Film" readonly/>
+    <input type="hidden" id="fpRevTmdbId"/>
+    <div class="fp-review-star-row" id="fpRevStarRow">
+      <span class="fp-rev-star" data-v="1">★</span>
+      <span class="fp-rev-star" data-v="2">★</span>
+      <span class="fp-rev-star" data-v="3">★</span>
+      <span class="fp-rev-star" data-v="4">★</span>
+      <span class="fp-rev-star" data-v="5">★</span>
+      <span class="fp-rev-star-label" id="fpRevStarLabel">Tap to rate</span>
+    </div>
+    <input type="hidden" id="fpRevRating" value="0"/>
+    <input class="fp-review-field" id="fpRevHeadline" type="text" placeholder="One-line summary (optional)" maxlength="120"/>
+    <textarea class="fp-review-field" id="fpRevText" placeholder="Your full review…" rows="5" style="resize:vertical"></textarea>
+    <button class="fp-review-submit-btn" id="fpRevSubmitBtn" onclick="fpSubmitReview()">POST REVIEW</button>
   </div>
 </div>
 
@@ -7830,7 +7877,11 @@
   async function submitFanReview() {
     if (!window.pmRequireAuth || !window.pmRequireAuth()) return;
     const user = window.pmGetUser();
-    const name   = (document.getElementById('fanName') ||{}).value?.trim();
+    // Always use the authoritative nickname — field is readonly but fallback in case it wasn't set
+    const name = (window.pmGetNickname && window.pmGetNickname())
+      || (window._pmMyProfile && window._pmMyProfile.nickname)
+      || (document.getElementById('fanName') ||{}).value?.trim()
+      || user?.displayName || '';
     const fanMovieEl = document.getElementById('fanMovie');
     const movie  = (fanMovieEl.dataset.cleanTitle || fanMovieEl.value || '').trim();
     const tmdbId = parseInt(fanMovieEl.dataset.tmdbId) || null;
@@ -7841,8 +7892,9 @@
       const btn = document.querySelector('.fan-submit-btn');
       btn.textContent = 'Posting…'; btn.disabled = true;
       const headline = (document.getElementById('fanHeadline')||{}).value?.trim() || '';
+      const photoURL = (window._pmMyProfile && window._pmMyProfile.photoURL) || user.photoURL || null;
       const reviewData = { name, movie, tmdbId, rating, headline, text, timestamp: Date.now(),
-        uid: user.uid, photoURL: user.photoURL || null };
+        uid: user.uid, photoURL: photoURL };
       // Write to RTDB — auth token required by security rules
       const idToken = user.getIdToken ? await user.getIdToken() : null;
       const rtdbRes = await fetch(`${RTDB}/fanReviews.json${idToken ? '?auth=' + idToken : ''}`, {
@@ -7893,7 +7945,7 @@
         });
       } catch(_) {}
       // RTDB is the single source of truth — Firestore write removed to prevent duplicates
-      document.getElementById('fanName').value  = '';
+      // fanName is locked to nickname — no need to clear
       const _fm = document.getElementById('fanMovie');
       _fm.value = ''; _fm.dataset.cleanTitle = ''; _fm.dataset.tmdbId = '';
       const _fh = document.getElementById('fanHeadline');
@@ -17370,7 +17422,12 @@ async function deleteEditorReview(key, e) {
   function _prefillReviewNames(nickname) {
     ['fanName', 'srFanName'].forEach(function(id) {
       var el = document.getElementById(id);
-      if (el && !el.value) el.value = nickname;
+      if (!el) return;
+      el.value = nickname; // always overwrite with authoritative nickname
+      el.readOnly = true;
+      el.title = 'Displayed as your PMovies nickname';
+      el.style.color = '#888';
+      el.style.cursor = 'default';
     });
   }
 
@@ -22491,6 +22548,8 @@ async function deleteEditorReview(key, e) {
         +'<span class="fp-activity-pill-num" id="fpTheaterPill">…</span><span class="fp-activity-pill-label">🎟 Cinema</span></div>'
       +'<div class="fp-activity-pill" onclick="document.getElementById(\'fpLobbySection\').scrollIntoView({behavior:\'smooth\'})">'
         +'<span class="fp-activity-pill-num">'+lobbyCount+'</span><span class="fp-activity-pill-label">💬 Talks</span></div>'
+      +'<div class="fp-activity-pill" onclick="document.getElementById(\'fpFanArtSection\').scrollIntoView({behavior:\'smooth\'})">'
+        +'<span class="fp-activity-pill-num" id="fpFanArtPill">…</span><span class="fp-activity-pill-label">🎨 Fan Art</span></div>'
       +'</div>';
 
     // Friends section
@@ -22541,7 +22600,7 @@ async function deleteEditorReview(key, e) {
         : '<div style="color:#555;font-size:.78rem;padding:12px 0">No reviews yet. Be the first!</div>'
       )
       +'</div>'
-      +'<button class="fp-cta-btn" onclick="fpOpenWriteReview(\''+_esc(tmdbId)+'\',\''+_esc(title)+'\')" style="margin-top:12px">✍️ Write a review</button>'
+      +'<button class="fp-cta-btn" onclick="fpOpenWriteSheet(\''+_esc(String(tmdbId))+'\',\''+_esc(title)+'\')" style="margin-top:12px">✍️ Write a review</button>'
       +'</div>';
 
     // Lobby section
@@ -22567,6 +22626,14 @@ async function deleteEditorReview(key, e) {
     var theaterSectionHtml = '<div class="fp-section" id="fpTheaterSection">'
       +'<div class="fp-section-title"><span>🎟</span> Theater Sightings</div>'
       +'<div id="fpTheaterList"><div style="color:#555;font-size:.75rem">Loading…</div></div>'
+      +'</div>';
+
+    // Fan Art section (content loaded async)
+    var fanArtSectionHtml = '<div class="fp-section" id="fpFanArtSection" style="display:none">'
+      +'<div class="fp-section-title"><span>🎨</span> Fan Art'
+      +'<a href="javascript:void(0)" onclick="switchTab(\'posters\')" style="margin-left:auto;font-size:.56rem;color:#f5a623;font-family:\'Montserrat\',sans-serif;font-weight:700;text-decoration:none;text-transform:uppercase;letter-spacing:.04em">See all →</a>'
+      +'</div>'
+      +'<div id="fpFanArtGrid" class="fp-art-grid"></div>'
       +'</div>';
 
     // Film info section
@@ -22608,11 +22675,29 @@ async function deleteEditorReview(key, e) {
       +reviewsHtml
       +lobbyHtml
       +theaterSectionHtml
+      +fanArtSectionHtml
       +infoHtml;
+
+    // Track recently viewed (needs full film object — only available after TMDB data loads)
+    if (film && typeof addToRecentlyViewed === 'function') {
+      try {
+        addToRecentlyViewed({
+          id: film.id || tmdbId,
+          title: film.title || title,
+          poster_path: film.poster_path || posterPath || null,
+          backdrop_path: film.backdrop_path || backdropPath || null,
+          release_date: film.release_date || (year ? year+'-01-01' : ''),
+          vote_average: film.vote_average || 0,
+          overview: film.overview || '',
+          genre_ids: (film.genres||[]).map(function(g){return g.id;})
+        });
+      } catch(_e) {}
+    }
 
     // Kick off async fetches
     _fetchFilmTheater(tmdbId);
     _fetchEditorReview(tmdbId);
+    _fetchFilmFanArt(tmdbId, title);
   }
 
   // Fetch editor review for this film
@@ -22635,7 +22720,7 @@ async function deleteEditorReview(key, e) {
       for (var i=1;i<=5;i++) stars += i <= Math.round(editorRev.rating||0) ? '★' : '☆';
       var slug = editorRev.slug || '';
       body.innerHTML = '<div class="fp-review-card" style="cursor:'+(slug?'pointer':'default')+'"'
-        +(slug?' onclick="_loadAndShowReview(\''+_esc(slug)+'\')"':'')+'>'+
+        +(slug?' onclick="fpOpenEditorReview(\''+_esc(slug)+'\')"':'')+'>'+
         '<div class="fp-review-card-head">'+
         '<div class="fp-review-av" style="background:#1a0a00;display:flex;align-items:center;justify-content:center;font-size:1rem">✍️</div>'+
         '<div class="fp-review-card-meta">'+
@@ -22743,6 +22828,189 @@ async function deleteEditorReview(key, e) {
       }
     }
   }
+
+  // ── Open editor review from film page (sets return flag) ─────────────────────
+  window.fpOpenEditorReview = function(slug) {
+    window._fpReviewReturnFilm = _fpCurrentId || null;
+    if (typeof _loadAndShowReview === 'function') _loadAndShowReview(slug);
+  };
+
+  // ── Fan Art for this film ─────────────────────────────────────────────────────
+  async function _fetchFilmFanArt(tmdbId, filmTitle) {
+    var pill = document.getElementById('fpFanArtPill');
+    var grid = document.getElementById('fpFanArtGrid');
+    var sec  = document.getElementById('fpFanArtSection');
+    try {
+      var r = await fetch(_RTDB+'/posterUploads/approved.json');
+      if (!r.ok || _fpCurrentId !== String(tmdbId)) return;
+      var raw = await r.json();
+      if (!raw) { if (pill) pill.textContent = '0'; return; }
+      var tid = String(tmdbId);
+      var filmTitleLow = (filmTitle||'').toLowerCase();
+      // Filter: prefer tmdbId match, fall back to title match
+      var matches = Object.entries(raw).filter(function(e){
+        var p = e[1];
+        if (!p) return false;
+        if (p.tmdbId && String(p.tmdbId) === tid) return true;
+        if (p.movie && p.movie.toLowerCase() === filmTitleLow) return true;
+        return false;
+      });
+      if (pill) pill.textContent = matches.length || '0';
+      if (!matches.length || !sec || !grid) return;
+      sec.style.display = '';
+      grid.innerHTML = matches.slice(0,9).map(function(e){
+        var p = e[1], key = e[0];
+        var imgSrc = p.imageUrl || p.url || '';
+        return '<img class="fp-art-thumb" src="'+_esc(imgSrc)+'" alt="'+_esc(p.movie||'')+'" loading="lazy" onclick="if(typeof postersOpenLightbox===\'function\')postersOpenLightbox(\''+_esc(key)+'\');else if(typeof switchTab===\'function\')switchTab(\'posters\')">';
+      }).join('');
+    } catch(_e) { if (pill) pill.textContent = '0'; }
+  }
+
+  // ── Write Review sheet ────────────────────────────────────────────────────────
+  var _fpRevRating = 0;
+
+  // Initialise star pickers once
+  (function() {
+    function _initRevStars() {
+      var row = document.getElementById('fpRevStarRow');
+      if (!row || row._fpInited) return;
+      row._fpInited = true;
+      var stars = row.querySelectorAll('.fp-rev-star');
+      var label = document.getElementById('fpRevStarLabel');
+      var labels = ['','★ Poor','★★ Fair','★★★ Good','★★★★ Great','★★★★★ Outstanding'];
+      stars.forEach(function(s) {
+        s.addEventListener('click', function() {
+          _fpRevRating = +this.dataset.v;
+          document.getElementById('fpRevRating').value = _fpRevRating;
+          stars.forEach(function(x){ x.classList.toggle('active', +x.dataset.v <= _fpRevRating); });
+          if (label) label.textContent = labels[_fpRevRating] || '';
+        });
+      });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _initRevStars);
+    else _initRevStars();
+  })();
+
+  window.fpOpenWriteSheet = function(tmdbId, title) {
+    if (!window.pmRequireAuth || !window.pmRequireAuth()) return;
+    var overlay = document.getElementById('fpReviewOverlay');
+    if (!overlay) return;
+    // Pre-fill locked fields
+    var nameField = document.getElementById('fpRevName');
+    var movieField = document.getElementById('fpRevMovie');
+    var tmdbField = document.getElementById('fpRevTmdbId');
+    var nickname = (window.pmGetNickname && window.pmGetNickname())
+      || (window._pmMyProfile && window._pmMyProfile.nickname)
+      || (window.pmGetUser && window.pmGetUser() && (window.pmGetUser().displayName||''))
+      || '';
+    if (nameField) nameField.value = nickname;
+    if (movieField) { movieField.value = title||''; movieField.readOnly = true; }
+    if (tmdbField) tmdbField.value = tmdbId||'';
+    // Reset form
+    _fpRevRating = 0;
+    document.getElementById('fpRevRating').value = 0;
+    document.querySelectorAll('#fpRevStarRow .fp-rev-star').forEach(function(s){s.classList.remove('active');});
+    var lbl = document.getElementById('fpRevStarLabel');
+    if (lbl) lbl.textContent = 'Tap to rate';
+    var hl = document.getElementById('fpRevHeadline'); if (hl) hl.value = '';
+    var tx = document.getElementById('fpRevText'); if (tx) tx.value = '';
+    var btn = document.getElementById('fpRevSubmitBtn'); if (btn) { btn.textContent = 'POST REVIEW'; btn.disabled = false; }
+    overlay.classList.add('open');
+  };
+
+  window.fpCloseWriteSheet = function(e) {
+    if (e && e.target !== document.getElementById('fpReviewOverlay')) return;
+    document.getElementById('fpReviewOverlay').classList.remove('open');
+  };
+
+  window.fpSubmitReview = async function() {
+    if (!window.pmRequireAuth || !window.pmRequireAuth()) return;
+    var user = window.pmGetUser && window.pmGetUser();
+    if (!user) return;
+    var name = (document.getElementById('fpRevName')||{}).value.trim();
+    var movie = (document.getElementById('fpRevMovie')||{}).value.trim();
+    var tmdbId = (document.getElementById('fpRevTmdbId')||{}).value.trim();
+    var rating = +((document.getElementById('fpRevRating')||{}).value||0);
+    var headline = ((document.getElementById('fpRevHeadline')||{}).value||'').trim();
+    var text = ((document.getElementById('fpRevText')||{}).value||'').trim();
+    if (!name || !movie || !text) { alert('Please fill in your name, film and review.'); return; }
+    var btn = document.getElementById('fpRevSubmitBtn');
+    if (btn) { btn.textContent = 'Posting…'; btn.disabled = true; }
+    try {
+      var photoURL = (window._pmMyProfile && window._pmMyProfile.photoURL) || user.photoURL || null;
+      var reviewData = { name: name, movie: movie, tmdbId: tmdbId ? parseInt(tmdbId)||null : null,
+        rating: rating, headline: headline, text: text, timestamp: Date.now(),
+        uid: user.uid, photoURL: photoURL };
+      var idToken = user.getIdToken ? await user.getIdToken() : null;
+      var rtdbRes = await fetch(_RTDB+'/fanReviews.json'+(idToken?'?auth='+idToken:''), {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(reviewData)
+      });
+      if (!rtdbRes.ok) throw new Error('Post failed');
+      // Write film index + OG meta
+      try {
+        var rtdbJson = await rtdbRes.json();
+        var rtdbKey = rtdbJson.name;
+        var fp = typeof fanReviewFp === 'function' ? fanReviewFp(reviewData) : '';
+        if (fp) {
+          var myMap = JSON.parse(localStorage.getItem('myReviewKeys')||'{}');
+          myMap[fp] = {key:rtdbKey, path:'fanReviews'};
+          localStorage.setItem('myReviewKeys', JSON.stringify(myMap));
+        }
+        if (tmdbId) {
+          fetch(_RTDB+'/filmReviews/'+tmdbId+'/'+user.uid+'.json'+(idToken?'?auth='+idToken:''), {
+            method:'PUT', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({rating:rating, snippet:text.slice(0,120), timestamp:Date.now(), reviewId:rtdbKey})
+          }).catch(function(){});
+        }
+        // OG meta
+        if (fp && typeof _writeReviewMeta === 'function') {
+          if (typeof fetchBackdrop === 'function' && tmdbId) {
+            fetchBackdrop(movie,'movie',parseInt(tmdbId)||null).then(function(bd){
+              _writeReviewMeta(fp, reviewData, bd ? bd.replace('https://image.tmdb.org/t/p/w1280','') : null);
+            }).catch(function(){ _writeReviewMeta(fp, reviewData, null); });
+          } else { _writeReviewMeta(fp, reviewData, null); }
+        }
+      } catch(_e) {}
+      document.getElementById('fpReviewOverlay').classList.remove('open');
+      // Refresh the reviews section
+      var refreshId = _fpCurrentId;
+      if (refreshId) {
+        var newIdx = await _getReviewsForFilm(refreshId);
+        if (_fpCurrentId === refreshId) {
+          var list = document.getElementById('fpReviewList');
+          if (list && newIdx) {
+            var sorted = Object.entries(newIdx).sort(function(a,b){return (b[1].timestamp||0)-(a[1].timestamp||0);});
+            list.innerHTML = sorted.slice(0,10).map(function(e){
+              var key=e[0], rev=e[1], uid2=rev.uid||key;
+              var dn = rev.name||uid2.slice(0,12);
+              var avH = rev.photoURL
+                ? '<img class="fp-review-av" src="'+_esc(rev.photoURL)+'" alt="" loading="lazy">'
+                : '<div class="fp-review-av" style="background:#2a1800;display:flex;align-items:center;justify-content:center;color:#f5a623;font-size:.8rem;font-weight:700;font-family:\'Bebas Neue\',sans-serif">'+_esc(dn.slice(0,1).toUpperCase())+'</div>';
+              return '<div class="fp-review-card" onclick="fpOpenReview(\''+_esc(uid2)+'\',\'\',\''+_esc(rev.fp||'')+'\')">'
+                +'<div class="fp-review-card-head">'+avH+'<div class="fp-review-card-meta">'
+                +'<div class="fp-review-card-name">'+_esc(dn)+'</div>'
+                +'<div class="fp-review-stars">'+_stars(rev.rating||0)+'</div>'
+                +'</div><div class="fp-review-date">'+_relTime(rev.timestamp||0)+'</div></div>'
+                +'<div class="fp-review-snippet">'+_esc(rev.snippet||'')+'</div></div>';
+            }).join('');
+            var pill = document.getElementById('fpReviewsSection');
+            if (pill) {
+              var cnt = document.querySelector('#fpReviewsSection .fp-activity-pill-num');
+              // update activity bar count
+              var actPill = document.querySelector('.fp-activity-pill-num');
+              if (actPill) actPill.textContent = sorted.length;
+            }
+          }
+        }
+      }
+      window._pmUpdateScore && window._pmUpdateScore(user.uid, 5, {reviewCount:1});
+      if (typeof loadFanReviews === 'function') loadFanReviews().catch(function(){});
+    } catch(e) {
+      alert('Could not post: ' + e.message);
+      if (btn) { btn.textContent = 'POST REVIEW'; btn.disabled = false; }
+    }
+  };
 
   window.fpToggleInfo = function() {
     var body = document.getElementById('fpInfoBody');
