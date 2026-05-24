@@ -2878,15 +2878,18 @@
   .pn-mark-read { background:none; border:1px solid rgba(255,255,255,.15); color:#888; font-size:.58rem; font-weight:700; letter-spacing:.04em; padding:5px 10px; border-radius:12px; cursor:pointer; text-transform:uppercase; }
   .pn-mark-read:hover { border-color:#f5a623; color:#f5a623; }
   .pn-list { flex:1; padding:6px 0; }
-  .pn-row { display:flex; align-items:center; gap:10px; padding:11px 18px; cursor:pointer; transition:background .15s; position:relative; }
+  .pn-row { display:flex; align-items:center; gap:10px; padding:12px 16px 12px 20px; cursor:pointer; transition:background .15s; position:relative; border-bottom:1px solid rgba(255,255,255,.03); }
   .pn-row:hover { background:rgba(255,255,255,.04); }
   .pn-row.pn-unread { background:rgba(245,166,35,.05); }
   .pn-row.pn-unread::before { content:''; position:absolute; left:7px; top:50%; transform:translateY(-50%); width:5px; height:5px; border-radius:50%; background:#f5a623; }
-  .pn-avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,#2a1800,#4a3000); display:flex; align-items:center; justify-content:center; font-size:.9rem; color:#f5a623; font-weight:700; font-family:'Bebas Neue',sans-serif; overflow:hidden; flex-shrink:0; }
-  .pn-avatar img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+  .pn-avatar { position:relative; width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg,#2a1800,#4a3000); display:flex; align-items:center; justify-content:center; font-size:.9rem; color:#f5a623; font-weight:700; font-family:'Bebas Neue',sans-serif; overflow:visible; flex-shrink:0; }
+  .pn-avatar img { width:40px; height:40px; object-fit:cover; border-radius:50%; display:block; }
+  .pn-type-icon { position:absolute; bottom:-3px; right:-5px; font-size:.62rem; background:#111; border-radius:50%; padding:2px; line-height:1; pointer-events:none; }
   .pn-body { flex:1; min-width:0; }
-  .pn-text { font-size:.72rem; color:#ccc; line-height:1.4; }
-  .pn-time { font-size:.58rem; color:#555; margin-top:2px; }
+  .pn-text { font-size:.73rem; color:#ccc; line-height:1.45; }
+  .pn-time { font-size:.58rem; color:#555; margin-top:3px; }
+  .pn-chevron { color:#2a2a2a; font-size:1.2rem; font-weight:300; flex-shrink:0; }
+  .pn-older-chip { text-align:center; font-size:.6rem; color:#3a3a3a; padding:16px; letter-spacing:.04em; border-top:1px solid rgba(255,255,255,.04); }
   .pn-action { flex-shrink:0; }
   .pn-act-btn { background:rgba(245,166,35,.12); border:1px solid rgba(245,166,35,.3); color:#f5a623; font-size:.56rem; font-weight:700; padding:5px 10px; border-radius:10px; cursor:pointer; white-space:nowrap; text-transform:uppercase; letter-spacing:.04em; font-family:'Montserrat',sans-serif; }
   .pn-act-btn:hover { background:rgba(245,166,35,.25); }
@@ -6665,6 +6668,25 @@
   }
   /* ── Central notification writer ── */
   const _NOTIF_RTDB = 'https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app';
+
+  // Prune oldest notifications — keep latest 100 (fire & forget)
+  async function _pmPruneNotifs(toUid, tok) {
+    try {
+      var r = await fetch(_NOTIF_RTDB + '/notifications/' + toUid + '.json?auth=' + tok + '&shallow=true');
+      if (!r.ok) return;
+      var obj = await r.json();
+      if (!obj) return;
+      var allKeys = Object.keys(obj);
+      if (allKeys.length <= 100) return;
+      // Sort timestamp-prefixed keys ascending; delete the oldest surplus
+      var tsKeys = allKeys.filter(function(k){ return /^\d/.test(k); }).sort();
+      var toDelete = tsKeys.slice(0, allKeys.length - 100);
+      await Promise.all(toDelete.map(function(k){
+        return fetch(_NOTIF_RTDB + '/notifications/' + toUid + '/' + k + '.json?auth=' + tok, { method: 'DELETE' });
+      }));
+    } catch(_e) {}
+  }
+
   window._pmNotify = async function(toUid, data) {
     var u = window.pmGetUser && window.pmGetUser();
     if (!u || !toUid || u.uid === toUid) return;
@@ -6674,13 +6696,34 @@
                  || (window._pmMyProfile && window._pmMyProfile.nickname)
                  || u.displayName || 'Someone';
       var av   = (window._pmMyProfile && window._pmMyProfile.photoURL) || u.photoURL || '';
-      var key  = Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+
+      // ── Deterministic keys prevent duplicate notifications ──────────────────
+      // follow  → one per follower (re-follow just refreshes timestamp & read=false)
+      // like    → one per user per review (re-liking re-alerts)
+      // comment → one per user per review (each comment from same user collapses into one)
+      var key;
+      if (data.type === 'follow') {
+        key = 'follow_' + u.uid;
+      } else if ((data.type === 'like' || data.type === 'comment') && data.targetId) {
+        key = data.type + '_' + u.uid + '_' + String(data.targetId).slice(0, 20);
+      } else {
+        key = Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+      }
+
+      // ── clickUrl for PWA push notification deep-link ────────────────────────
+      var clickUrl = '/';
+      if (data.type === 'follow' && u.uid) clickUrl = '/?uid=' + u.uid;
+      if ((data.type === 'like' || data.type === 'comment') && data.targetId) clickUrl = '/?review=' + data.targetId;
+
       await fetch(_NOTIF_RTDB + '/notifications/' + toUid + '/' + key + '.json?auth=' + tok, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(Object.assign(
-          { read: false, timestamp: Date.now(), fromUid: u.uid, fromName: name, fromAvatar: av }, data
+          { read: false, timestamp: Date.now(), fromUid: u.uid, fromName: name, fromAvatar: av, clickUrl: clickUrl }, data
         ))
       });
+
+      // Prune to 100 — fire and forget
+      _pmPruneNotifs(toUid, tok);
     } catch(_e) {}
   };
 
@@ -20307,6 +20350,20 @@ async function deleteEditorReview(key, e) {
     }
   }
 
+  // Type icon + row click action helpers
+  var _pnTypeIcon = { follow: '👤', like: '❤️', comment: '💬', reviewClaim: '🔑' };
+
+  function _pnRowClick(n) {
+    pmCloseNotifPanel();
+    if (n.type === 'follow' && n.fromUid) {
+      setTimeout(function(){ pmOpenProfile(n.fromUid); }, 80);
+    } else if ((n.type === 'like' || n.type === 'comment') && n.targetId) {
+      setTimeout(function(){ if (typeof _pmOpenReviewFromProfile === 'function') _pmOpenReviewFromProfile(n.targetId); }, 80);
+    }
+  }
+  // Serialised notification objects for click handlers
+  var _pnNotifCache = {};
+
   window.pmOpenNotifPanel = async function() {
     var overlay = document.getElementById('pmNotifOverlay');
     var panel   = document.getElementById('pmNotifPanel');
@@ -20330,13 +20387,12 @@ async function deleteEditorReview(key, e) {
         .filter(function(e) { return e[0] !== 'reviewClaim' && e[1] && e[1].timestamp; })
         .sort(function(a,b) { return b[1].timestamp - a[1].timestamp });
 
-      // Handle legacy reviewClaim toast separately
+      // Handle legacy reviewClaim node
       var rc = raw.reviewClaim;
       if (rc && !rc.read && rc.count) {
         notifs.unshift(['reviewClaim', {
           type:'reviewClaim', fromName:'PMovies', fromAvatar:'',
-          read: rc.read || false, timestamp: rc.timestamp || 0,
-          _count: rc.count
+          read: rc.read || false, timestamp: rc.timestamp || 0, _count: rc.count
         }]);
       }
 
@@ -20346,25 +20402,32 @@ async function deleteEditorReview(key, e) {
         return;
       }
 
-      list.innerHTML = notifs.map(function(entry) {
+      var unreadCount = notifs.filter(function(e){ return !e[1].read; }).length;
+      var displayed   = notifs.slice(0, 50);  // cap at 50 in panel
+      var remaining   = notifs.length - displayed.length;
+
+      // Cache notification objects for row click handlers
+      _pnNotifCache = {};
+      displayed.forEach(function(e){ _pnNotifCache[e[0]] = e[1]; });
+
+      list.innerHTML = displayed.map(function(entry) {
         var key = entry[0], n = entry[1];
         var unreadCls = n.read ? '' : ' pn-unread';
-        var avHtml    = '<div class="pn-avatar">' + _avHtml(n.fromAvatar, n.fromName) + '</div>';
-        var text = '', actionBtn = '';
+        var icon      = _pnTypeIcon[n.type] || '🔔';
+        var avHtml    = '<div class="pn-avatar">'
+          + _avHtml(n.fromAvatar, n.fromName)
+          + '<span class="pn-type-icon">' + icon + '</span>'
+          + '</div>';
+        var text = '';
 
         if (n.type === 'follow') {
           text = '<strong>' + _esc(n.fromName) + '</strong> started following you';
-          if (n.fromUid) {
-            actionBtn = '<button class="pn-act-btn" onclick="pmOpenProfile(\'' + _esc(n.fromUid) + '\');pmCloseNotifPanel()">View</button>';
-          }
         } else if (n.type === 'like') {
           text = '<strong>' + _esc(n.fromName) + '</strong> liked your review'
                + (n.targetTitle ? ' of <em>' + _esc(n.targetTitle) + '</em>' : '');
-          if (n.targetId) actionBtn = '<button class="pn-act-btn" onclick="_pmOpenReviewFromProfile(\'' + _esc(n.targetId) + '\');pmCloseNotifPanel()">View</button>';
         } else if (n.type === 'comment') {
           text = '<strong>' + _esc(n.fromName) + '</strong> commented on your'
                + (n.targetTitle ? ' <em>' + _esc(n.targetTitle) + '</em>' : '') + ' review';
-          if (n.targetId) actionBtn = '<button class="pn-act-btn" onclick="_pmOpenReviewFromProfile(\'' + _esc(n.targetId) + '\');pmCloseNotifPanel()">View</button>';
         } else if (n.type === 'reviewClaim') {
           text = '🔑 ' + (n._count||'Some') + ' of your old review' + (n._count!==1?'s have':' has') + ' been claimed to your profile';
         } else {
@@ -20372,16 +20435,22 @@ async function deleteEditorReview(key, e) {
         }
 
         var timeStr = n.timestamp ? _relTime(n.timestamp) : '';
-        return '<div class="pn-row' + unreadCls + '" data-key="' + _esc(key) + '">'
+        // Entire row is clickable — no separate "View" button needed
+        return '<div class="pn-row' + unreadCls + '" data-key="' + _esc(key) + '" onclick="(function(){var n=_pnNotifCache[\'' + _esc(key) + '\'];if(n)_pnRowClick(n);})()">'
           + avHtml
           + '<div class="pn-body"><div class="pn-text">' + text + '</div><div class="pn-time">' + timeStr + '</div></div>'
-          + (actionBtn ? '<div class="pn-action">' + actionBtn + '</div>' : '')
+          + (n.type !== 'reviewClaim' ? '<div class="pn-chevron">›</div>' : '')
           + '</div>';
       }).join('');
 
-      // Auto mark all read after 2 s
+      // Show "X older" chip if capped
+      if (remaining > 0) {
+        list.innerHTML += '<div class="pn-older-chip">' + remaining + ' older notification' + (remaining > 1 ? 's' : '') + ' not shown</div>';
+      }
+
+      // Auto mark all read after 3 s
       clearTimeout(_notifMarkTimer);
-      _notifMarkTimer = setTimeout(function() { pmMarkAllNotifsRead(); }, 2000);
+      _notifMarkTimer = setTimeout(function() { pmMarkAllNotifsRead(); }, 3000);
       _setBadge(0);
 
     } catch(e) {
