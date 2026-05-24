@@ -3715,6 +3715,176 @@
     padding: 1px 2px;
     line-height: 1;
   }
+
+/* ════════════════════════════════════════════════
+   THE LOBBY — tab + feed
+   ════════════════════════════════════════════════ */
+.lobby-wrap { max-width:680px; margin:0 auto; padding:0 0 80px; }
+.lobby-top { display:flex; align-items:center; justify-content:space-between; padding:18px 16px 12px; }
+.lobby-title { font-family:'Bebas Neue',sans-serif; font-size:1.6rem; letter-spacing:.08em; color:#f5a623; }
+.lobby-new-btn { background:#f5a623; color:#000; font-family:'Montserrat',sans-serif; font-size:.62rem; font-weight:800; letter-spacing:.06em; padding:8px 14px; border-radius:20px; border:none; cursor:pointer; text-transform:uppercase; transition:opacity .15s; }
+.lobby-new-btn:hover { opacity:.85; }
+.lobby-sort-bar { display:flex; gap:6px; padding:0 16px 14px; overflow-x:auto; scrollbar-width:none; }
+.lobby-sort-bar::-webkit-scrollbar { display:none; }
+.lobby-sort-btn { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); color:#888; font-family:'Montserrat',sans-serif; font-size:.58rem; font-weight:700; letter-spacing:.05em; padding:6px 14px; border-radius:14px; cursor:pointer; white-space:nowrap; transition:all .15s; text-transform:uppercase; }
+.lobby-sort-btn.active { background:rgba(245,166,35,.15); border-color:rgba(245,166,35,.4); color:#f5a623; }
+.lobby-feed { padding:0 12px; display:flex; flex-direction:column; gap:12px; }
+.lobby-card { background:#111; border:1px solid rgba(255,255,255,.07); border-radius:14px; padding:14px 16px; cursor:pointer; transition:border-color .15s; }
+.lobby-card:hover { border-color:rgba(245,166,35,.3); }
+.lobby-card.pinned { border-color:rgba(245,166,35,.25); background:rgba(245,166,35,.04); }
+.lobby-card-head { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.lobby-av { width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,#2a1800,#4a3000); display:flex; align-items:center; justify-content:center; font-size:.8rem; font-weight:700; color:#f5a623; font-family:'Bebas Neue',sans-serif; overflow:hidden; flex-shrink:0; }
+.lobby-av img { width:32px; height:32px; object-fit:cover; border-radius:50%; display:block; }
+.lobby-card-meta { flex:1; min-width:0; }
+.lobby-card-name { font-size:.68rem; font-weight:700; color:#ccc; font-family:'Montserrat',sans-serif; }
+.lobby-card-time { font-size:.56rem; color:#555; margin-top:1px; }
+.lobby-type-badge { font-size:.54rem; font-weight:800; letter-spacing:.05em; padding:2px 8px; border-radius:10px; white-space:nowrap; font-family:'Montserrat',sans-serif; text-transform:uppercase; }
+.lobby-type-discussion { background:rgba(255,255,255,.07); color:#aaa; }
+.lobby-type-hottake { background:rgba(245,166,35,.15); color:#f5a623; }
+.lobby-type-question { background:rgba(64,156,255,.15); color:#409cff; }
+.lobby-type-poll { background:rgba(160,100,255,.15); color:#a064ff; }
+.lobby-type-pinned { background:rgba(245,166,35,.2); color:#f5a623; }
+.lobby-card-body { font-size:.82rem; color:#ddd; line-height:1.5; margin-bottom:10px; white-space:pre-wrap; word-break:break-word; }
+.lobby-film-tag { display:inline-flex; align-items:center; gap:5px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:4px 10px; font-size:.6rem; color:#aaa; font-family:'Montserrat',sans-serif; margin-bottom:10px; cursor:pointer; transition:border-color .15s; }
+.lobby-film-tag:hover { border-color:rgba(245,166,35,.3); color:#f5a623; }
+.lobby-film-tag img { width:16px; height:24px; object-fit:cover; border-radius:3px; }
+.lobby-card-foot { display:flex; align-items:center; gap:16px; }
+.lobby-upvote-btn { display:flex; align-items:center; gap:5px; background:none; border:1px solid rgba(255,255,255,.1); color:#888; font-size:.6rem; font-weight:700; font-family:'Montserrat',sans-serif; padding:5px 10px; border-radius:10px; cursor:pointer; transition:all .15s; }
+.lobby-upvote-btn:hover,.lobby-upvote-btn.voted { border-color:rgba(245,166,35,.4); color:#f5a623; }
+.lobby-comment-count { display:flex; align-items:center; gap:4px; font-size:.6rem; color:#555; font-family:'Montserrat',sans-serif; }
+.lobby-pin-badge { font-size:.56rem; color:#f5a623; margin-left:auto; letter-spacing:.04em; font-family:'Montserrat',sans-serif; font-weight:700; }
+.lobby-empty { text-align:center; padding:52px 24px; color:#444; font-size:.82rem; }
+.lobby-load-more { text-align:center; padding:20px; }
+.lobby-load-more-btn { background:none; border:1px solid rgba(255,255,255,.1); color:#666; font-size:.6rem; font-family:'Montserrat',sans-serif; font-weight:700; letter-spacing:.05em; padding:8px 20px; border-radius:12px; cursor:pointer; text-transform:uppercase; transition:all .15s; }
+.lobby-load-more-btn:hover { border-color:rgba(245,166,35,.3); color:#f5a623; }
+
+/* New Post Modal */
+.lobby-modal-overlay { display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,.7); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); align-items:center; justify-content:center; }
+.lobby-modal-overlay.open { display:flex; }
+.lobby-modal { background:#111; border:1px solid rgba(255,255,255,.1); border-radius:18px; width:100%; max-width:500px; max-height:90vh; overflow-y:auto; padding:24px; margin:16px; }
+.lobby-modal-title { font-family:'Bebas Neue',sans-serif; font-size:1.4rem; letter-spacing:.06em; color:#f5a623; margin-bottom:16px; }
+.lobby-type-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px; }
+.lobby-type-opt { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:12px; padding:12px; cursor:pointer; text-align:center; transition:all .15s; }
+.lobby-type-opt:hover { border-color:rgba(255,255,255,.2); }
+.lobby-type-opt.selected { border-color:#f5a623; background:rgba(245,166,35,.1); }
+.lobby-type-opt-icon { font-size:1.2rem; margin-bottom:4px; }
+.lobby-type-opt-label { font-size:.62rem; font-weight:700; font-family:'Montserrat',sans-serif; letter-spacing:.04em; text-transform:uppercase; color:#aaa; }
+.lobby-modal-textarea { width:100%; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:12px; padding:12px 14px; color:#eee; font-size:.85rem; font-family:inherit; resize:vertical; min-height:120px; box-sizing:border-box; margin-bottom:12px; }
+.lobby-modal-textarea:focus { outline:none; border-color:rgba(245,166,35,.4); }
+.lobby-char-count { font-size:.56rem; color:#555; text-align:right; margin-top:-8px; margin-bottom:12px; font-family:'Montserrat',sans-serif; }
+.lobby-attach-film-btn { display:flex; align-items:center; gap:6px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:10px; padding:9px 14px; font-size:.65rem; font-family:'Montserrat',sans-serif; font-weight:700; color:#888; cursor:pointer; width:100%; margin-bottom:12px; transition:all .15s; }
+.lobby-attach-film-btn:hover { border-color:rgba(245,166,35,.3); color:#f5a623; }
+.lobby-attached-film { display:flex; align-items:center; gap:8px; background:rgba(245,166,35,.08); border:1px solid rgba(245,166,35,.2); border-radius:10px; padding:8px 12px; margin-bottom:12px; }
+.lobby-attached-film img { width:20px; height:30px; object-fit:cover; border-radius:3px; }
+.lobby-attached-film-info { flex:1; font-size:.62rem; color:#ccc; font-family:'Montserrat',sans-serif; }
+.lobby-attached-film-remove { background:none; border:none; color:#555; cursor:pointer; font-size:.9rem; padding:0 4px; }
+.lobby-modal-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:4px; }
+.lobby-modal-cancel { background:none; border:1px solid rgba(255,255,255,.1); color:#888; font-size:.6rem; font-weight:700; font-family:'Montserrat',sans-serif; padding:9px 16px; border-radius:12px; cursor:pointer; text-transform:uppercase; }
+.lobby-modal-submit { background:#f5a623; color:#000; font-size:.6rem; font-weight:800; font-family:'Montserrat',sans-serif; letter-spacing:.05em; padding:9px 20px; border-radius:12px; border:none; cursor:pointer; text-transform:uppercase; transition:opacity .15s; }
+.lobby-modal-submit:hover { opacity:.85; }
+.lobby-modal-submit:disabled { opacity:.4; cursor:not-allowed; }
+.lobby-film-search-wrap { position:relative; margin-bottom:12px; }
+.lobby-film-search { width:100%; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:10px; padding:9px 14px; color:#eee; font-size:.82rem; font-family:inherit; box-sizing:border-box; }
+.lobby-film-search:focus { outline:none; border-color:rgba(245,166,35,.4); }
+.lobby-film-results { position:absolute; top:100%; left:0; right:0; background:#1a1a1a; border:1px solid rgba(255,255,255,.12); border-radius:10px; max-height:200px; overflow-y:auto; z-index:10; margin-top:4px; }
+.lobby-film-result-item { display:flex; align-items:center; gap:8px; padding:8px 12px; cursor:pointer; transition:background .1s; }
+.lobby-film-result-item:hover { background:rgba(255,255,255,.06); }
+.lobby-film-result-item img { width:24px; height:36px; object-fit:cover; border-radius:4px; }
+.lobby-film-result-item span { font-size:.72rem; color:#ccc; }
+
+/* Thread Detail Overlay */
+.lobby-thread-overlay { display:none; position:fixed; inset:0; z-index:9998; background:#0a0a0a; overflow-y:auto; }
+.lobby-thread-overlay.open { display:block; }
+.lobby-thread-header { position:sticky; top:0; z-index:2; background:#0a0a0a; border-bottom:1px solid rgba(255,255,255,.07); padding:14px 16px; display:flex; align-items:center; gap:12px; }
+.lobby-thread-back { background:none; border:none; color:#f5a623; font-size:1.1rem; cursor:pointer; padding:4px 8px 4px 0; }
+.lobby-thread-title { font-family:'Bebas Neue',sans-serif; font-size:1.1rem; color:#eee; letter-spacing:.05em; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.lobby-thread-body { max-width:680px; margin:0 auto; padding:16px; }
+.lobby-comment-box { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:12px 14px; margin-bottom:16px; }
+.lobby-comment-input { width:100%; background:none; border:none; color:#eee; font-size:.82rem; font-family:inherit; resize:none; min-height:60px; outline:none; }
+.lobby-comment-actions { display:flex; justify-content:flex-end; margin-top:6px; }
+.lobby-comment-submit { background:#f5a623; color:#000; font-size:.58rem; font-weight:800; font-family:'Montserrat',sans-serif; padding:7px 16px; border-radius:10px; border:none; cursor:pointer; text-transform:uppercase; }
+.lobby-comment-list { display:flex; flex-direction:column; gap:10px; }
+.lobby-comment-item { background:#111; border:1px solid rgba(255,255,255,.06); border-radius:12px; padding:12px 14px; }
+.lobby-comment-head { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+.lobby-comment-name { font-size:.65rem; font-weight:700; color:#ccc; font-family:'Montserrat',sans-serif; }
+.lobby-comment-time { font-size:.55rem; color:#444; margin-left:auto; }
+.lobby-comment-body { font-size:.78rem; color:#bbb; line-height:1.45; }
+
+/* ════════════════════════════════════════════════
+   FILM FULL PAGE OVERLAY
+   ════════════════════════════════════════════════ */
+#filmPage { display:none; position:fixed; inset:0; z-index:9997; background:#0a0a0a; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+#filmPage.open { display:block; }
+.fp-header { position:sticky; top:0; z-index:10; background:rgba(10,10,10,.92); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border-bottom:1px solid rgba(255,255,255,.07); padding:12px 16px; display:flex; align-items:center; gap:12px; }
+.fp-back-btn { background:none; border:none; color:#f5a623; font-size:1.1rem; cursor:pointer; padding:4px 8px 4px 2px; flex-shrink:0; }
+.fp-header-title { flex:1; font-family:'Bebas Neue',sans-serif; font-size:1.1rem; color:#eee; letter-spacing:.06em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.fp-backdrop-wrap { position:relative; width:100%; aspect-ratio:16/7; background:#111; overflow:hidden; }
+.fp-backdrop-img { width:100%; height:100%; object-fit:cover; display:block; }
+.fp-backdrop-grad { position:absolute; inset:0; background:linear-gradient(to bottom, rgba(10,10,10,0) 30%, rgba(10,10,10,.95) 100%); }
+.fp-hero { display:flex; align-items:flex-end; gap:14px; padding:0 16px; margin-top:-64px; position:relative; z-index:2; margin-bottom:12px; }
+.fp-poster { width:80px; height:120px; object-fit:cover; border-radius:10px; border:2px solid rgba(255,255,255,.1); flex-shrink:0; box-shadow:0 8px 24px rgba(0,0,0,.6); }
+.fp-poster-ph { width:80px; height:120px; background:#1a1a1a; border-radius:10px; flex-shrink:0; }
+.fp-hero-info { flex:1; min-width:0; padding-bottom:4px; }
+.fp-title { font-family:'Bebas Neue',sans-serif; font-size:1.6rem; letter-spacing:.05em; color:#fff; line-height:1.05; margin-bottom:4px; }
+.fp-meta { font-size:.65rem; color:#888; font-family:'Montserrat',sans-serif; margin-bottom:6px; }
+.fp-ratings { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.fp-rating-pill { display:flex; align-items:center; gap:4px; background:rgba(255,255,255,.07); border-radius:8px; padding:4px 9px; font-size:.62rem; font-weight:700; font-family:'Montserrat',sans-serif; color:#eee; }
+.fp-rating-pill .fp-star { color:#f5a623; }
+.fp-rating-tmdb { color:#01d277; }
+.fp-activity-bar { display:flex; gap:0; border-top:1px solid rgba(255,255,255,.07); border-bottom:1px solid rgba(255,255,255,.07); margin:0 0 20px; position:sticky; top:49px; z-index:9; background:rgba(10,10,10,.95); backdrop-filter:blur(6px); overflow-x:auto; scrollbar-width:none; }
+.fp-activity-bar::-webkit-scrollbar { display:none; }
+.fp-activity-pill { flex:1; min-width:72px; display:flex; flex-direction:column; align-items:center; gap:2px; padding:10px 6px; cursor:pointer; border-right:1px solid rgba(255,255,255,.06); transition:background .15s; font-family:'Montserrat',sans-serif; white-space:nowrap; }
+.fp-activity-pill:last-child { border-right:none; }
+.fp-activity-pill:hover { background:rgba(255,255,255,.04); }
+.fp-activity-pill-num { font-size:.9rem; font-weight:800; color:#f5a623; }
+.fp-activity-pill-label { font-size:.5rem; color:#666; letter-spacing:.04em; text-transform:uppercase; font-weight:700; }
+.fp-section { padding:0 16px; margin-bottom:28px; }
+.fp-section-title { font-family:'Bebas Neue',sans-serif; font-size:1rem; letter-spacing:.08em; color:#888; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,.06); display:flex; align-items:center; gap:8px; }
+.fp-section-title span { color:#f5a623; }
+.fp-friends-row { display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; }
+.fp-friends-row::-webkit-scrollbar { display:none; }
+.fp-friend-chip { display:flex; align-items:center; gap:6px; background:#111; border:1px solid rgba(255,255,255,.08); border-radius:20px; padding:5px 10px 5px 5px; white-space:nowrap; cursor:pointer; transition:border-color .15s; }
+.fp-friend-chip:hover { border-color:rgba(245,166,35,.3); }
+.fp-friend-av { width:24px; height:24px; border-radius:50%; object-fit:cover; background:#2a1800; }
+.fp-friend-name { font-size:.6rem; font-weight:700; color:#ccc; font-family:'Montserrat',sans-serif; }
+.fp-friend-action { font-size:.56rem; color:#f5a623; font-family:'Montserrat',sans-serif; }
+/* Review cards in film page */
+.fp-review-sort { display:flex; gap:6px; margin-bottom:12px; }
+.fp-sort-btn { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); color:#777; font-size:.56rem; font-weight:700; font-family:'Montserrat',sans-serif; padding:5px 12px; border-radius:10px; cursor:pointer; text-transform:uppercase; transition:all .15s; }
+.fp-sort-btn.active { border-color:rgba(245,166,35,.4); color:#f5a623; background:rgba(245,166,35,.08); }
+.fp-review-card { background:#111; border:1px solid rgba(255,255,255,.07); border-radius:12px; padding:12px 14px; margin-bottom:10px; cursor:pointer; transition:border-color .15s; }
+.fp-review-card:hover { border-color:rgba(245,166,35,.2); }
+.fp-review-card-head { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.fp-review-av { width:32px; height:32px; border-radius:50%; object-fit:cover; background:#2a1800; flex-shrink:0; }
+.fp-review-card-meta { flex:1; min-width:0; }
+.fp-review-card-name { font-size:.68rem; font-weight:700; color:#ccc; font-family:'Montserrat',sans-serif; }
+.fp-review-stars { color:#f5a623; font-size:.7rem; letter-spacing:1px; }
+.fp-review-date { font-size:.56rem; color:#555; }
+.fp-review-snippet { font-size:.78rem; color:#bbb; line-height:1.5; }
+.fp-review-more { color:#f5a623; font-size:.68rem; font-family:'Montserrat',sans-serif; font-weight:700; cursor:pointer; margin-top:4px; display:inline-block; }
+.fp-theater-item { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,.05); }
+.fp-theater-item:last-child { border-bottom:none; }
+.fp-theater-icon { font-size:1.1rem; }
+.fp-theater-info { flex:1; font-size:.72rem; color:#ccc; font-family:'Montserrat',sans-serif; }
+.fp-theater-date { font-size:.58rem; color:#555; font-family:'Montserrat',sans-serif; }
+.fp-info-toggle { background:none; border:1px solid rgba(255,255,255,.1); color:#777; font-size:.6rem; font-family:'Montserrat',sans-serif; font-weight:700; padding:6px 14px; border-radius:10px; cursor:pointer; text-transform:uppercase; margin-left:auto; }
+.fp-info-body { font-size:.78rem; color:#aaa; line-height:1.6; margin-top:10px; }
+.fp-cast-row { display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; margin-top:10px; }
+.fp-cast-row::-webkit-scrollbar { display:none; }
+.fp-cast-item { text-align:center; flex-shrink:0; width:60px; }
+.fp-cast-photo { width:52px; height:52px; border-radius:50%; object-fit:cover; background:#1a1a1a; margin:0 auto 4px; display:block; }
+.fp-cast-name { font-size:.5rem; color:#888; font-family:'Montserrat',sans-serif; line-height:1.3; }
+.fp-lobby-mini-card { background:#0f0f0f; border:1px solid rgba(255,255,255,.06); border-radius:10px; padding:10px 12px; margin-bottom:8px; cursor:pointer; transition:border-color .15s; }
+.fp-lobby-mini-card:hover { border-color:rgba(245,166,35,.25); }
+.fp-lobby-mini-type { font-size:.54rem; font-weight:800; font-family:'Montserrat',sans-serif; text-transform:uppercase; color:#f5a623; margin-bottom:4px; }
+.fp-lobby-mini-body { font-size:.75rem; color:#bbb; line-height:1.4; }
+.fp-lobby-mini-foot { font-size:.56rem; color:#555; margin-top:5px; font-family:'Montserrat',sans-serif; }
+.fp-cta-btn { display:block; text-align:center; background:rgba(245,166,35,.1); border:1px solid rgba(245,166,35,.25); color:#f5a623; font-size:.65rem; font-weight:700; font-family:'Montserrat',sans-serif; padding:10px; border-radius:10px; cursor:pointer; text-transform:uppercase; letter-spacing:.04em; margin-top:8px; transition:all .15s; }
+.fp-cta-btn:hover { background:rgba(245,166,35,.2); }
+.fp-skeleton { animation:fp-pulse 1.4s ease-in-out infinite; }
+@keyframes fp-pulse { 0%,100%{opacity:.4} 50%{opacity:.8} }
+.fp-skel-backdrop { width:100%; aspect-ratio:16/7; background:#1a1a1a; }
+.fp-skel-block { background:#1a1a1a; border-radius:8px; }
 </style>
 </head>
 <body class="grain">
@@ -3939,6 +4109,9 @@
   </button>
   <button class="pmovies-tab" id="tab-btn-posters" onclick="switchTab('posters')" role="tab">
     <span class="tab-icon">🎨</span>Fan Art
+  </button>
+  <button class="pmovies-tab" id="tab-btn-lobby" onclick="switchTab('lobby')" role="tab">
+    <span class="tab-icon">💬</span>The Lobby
   </button>
   <button class="pmovies-tab" id="tab-btn-editor" onclick="switchTab('editor')" role="tab">
     <span class="tab-icon">✍️</span>Editor
@@ -4632,6 +4805,88 @@
   </div>
 
 </div><!-- /tab-panel-editor -->
+
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!-- ║  THE LOBBY TAB PANEL                                     ║ -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<div class="tab-panel" id="tab-panel-lobby">
+  <div class="lobby-wrap">
+    <div class="lobby-top">
+      <div class="lobby-title">💬 The Lobby</div>
+      <button class="lobby-new-btn" id="lobbyNewPostBtn" onclick="openLobbyNewPost()" style="display:none">+ New Post</button>
+    </div>
+    <div class="lobby-sort-bar">
+      <button class="lobby-sort-btn active" id="lobbySortTrending" onclick="setLobbySort('trending',this)">🔥 Trending</button>
+      <button class="lobby-sort-btn" id="lobbySortNew" onclick="setLobbySort('new',this)">✨ New</button>
+      <button class="lobby-sort-btn" id="lobbySortFollowing" onclick="setLobbySort('following',this)">👥 Following</button>
+    </div>
+    <div class="lobby-feed" id="lobbyFeed">
+      <div class="lobby-empty">Loading discussions…</div>
+    </div>
+    <div class="lobby-load-more" id="lobbyLoadMore" style="display:none">
+      <button class="lobby-load-more-btn" onclick="loadMoreLobbyPosts()">Load more</button>
+    </div>
+  </div>
+</div><!-- /tab-panel-lobby -->
+
+<!-- New Lobby Post Modal -->
+<div class="lobby-modal-overlay" id="lobbyModalOverlay" onclick="if(event.target===this)closeLobbyNewPost()">
+  <div class="lobby-modal" id="lobbyModal">
+    <div class="lobby-modal-title">Start a Discussion</div>
+    <div class="lobby-type-grid" id="lobbyTypeGrid">
+      <div class="lobby-type-opt selected" data-type="discussion" onclick="selectLobbyType('discussion',this)">
+        <div class="lobby-type-opt-icon">💬</div>
+        <div class="lobby-type-opt-label">Discussion</div>
+      </div>
+      <div class="lobby-type-opt" data-type="hottake" onclick="selectLobbyType('hottake',this)">
+        <div class="lobby-type-opt-icon">🔥</div>
+        <div class="lobby-type-opt-label">Hot Take</div>
+      </div>
+      <div class="lobby-type-opt" data-type="question" onclick="selectLobbyType('question',this)">
+        <div class="lobby-type-opt-icon">❓</div>
+        <div class="lobby-type-opt-label">Question</div>
+      </div>
+      <div class="lobby-type-opt" data-type="poll" onclick="selectLobbyType('poll',this)">
+        <div class="lobby-type-opt-icon">📊</div>
+        <div class="lobby-type-opt-label">Poll</div>
+      </div>
+    </div>
+    <textarea class="lobby-modal-textarea" id="lobbyPostBody" placeholder="What's on your mind?" oninput="updateLobbyCharCount()" maxlength="1000"></textarea>
+    <div class="lobby-char-count" id="lobbyCharCount">0 / 1000</div>
+    <div id="lobbyAttachedFilmWrap" style="display:none" class="lobby-attached-film">
+      <img id="lobbyAttachedPoster" src="" alt="">
+      <div class="lobby-attached-film-info" id="lobbyAttachedFilmInfo"></div>
+      <button class="lobby-attached-film-remove" onclick="removeLobbyFilm()">✕</button>
+    </div>
+    <div id="lobbyFilmSearchWrap" style="display:none" class="lobby-film-search-wrap">
+      <input class="lobby-film-search" id="lobbyFilmSearch" placeholder="Search for a film…" oninput="searchLobbyFilm(this.value)" autocomplete="off">
+      <div class="lobby-film-results" id="lobbyFilmResults" style="display:none"></div>
+    </div>
+    <button class="lobby-attach-film-btn" id="lobbyAttachFilmBtn" onclick="toggleLobbyFilmSearch()">🎬 Attach a film (optional)</button>
+    <div class="lobby-modal-actions">
+      <button class="lobby-modal-cancel" onclick="closeLobbyNewPost()">Cancel</button>
+      <button class="lobby-modal-submit" id="lobbySubmitBtn" onclick="submitLobbyPost()">Post</button>
+    </div>
+  </div>
+</div>
+
+<!-- Thread Detail Overlay -->
+<div class="lobby-thread-overlay" id="lobbyThreadOverlay">
+  <div class="lobby-thread-header">
+    <button class="lobby-thread-back" onclick="closeLobbyThread()">←</button>
+    <div class="lobby-thread-title" id="lobbyThreadTitle">Discussion</div>
+  </div>
+  <div class="lobby-thread-body" id="lobbyThreadBody"></div>
+</div>
+
+<!-- Film Full Page Overlay -->
+<div id="filmPage">
+  <div class="fp-header">
+    <button class="fp-back-btn" onclick="closeFilmPage()">←</button>
+    <div class="fp-header-title" id="fpHeaderTitle">Loading…</div>
+  </div>
+  <div id="fpContent"></div>
+</div>
 
 <!-- UPLOAD MODAL -->
 <div class="posters-modal-overlay" id="postersModalOverlay" onclick="postersCloseUpload(event)">
@@ -7593,9 +7848,27 @@
             ? backdropUrl.replace('https://image.tmdb.org/t/p/w1280', '')
             : null;
           _writeReviewMeta(fp, reviewData, backdropPath);
+          // ── Film review index (for Film Full Page) ──
+          if (tmdbId) {
+            const _tok = idToken;
+            fetch(`${RTDB}/filmReviews/${tmdbId}/${reviewData.uid}.json?auth=${_tok}`, {
+              method:'PUT', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ rating: rating, snippet: text.slice(0,120), timestamp: Date.now(), reviewId: rtdbKey })
+            }).catch(()=>{});
+            fetch(`${RTDB}/filmMeta/${tmdbId}.json`, {
+              method:'PUT', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ title: movie, year: reviewData.year || '', poster: reviewData.poster || null, backdrop: backdropPath || null })
+            }).catch(()=>{});
+          }
         }).catch(() => {
           // Backdrop fetch failed — write meta with no backdrop so slug key still exists
           _writeReviewMeta(fp, reviewData, null);
+          if (tmdbId) {
+            fetch(`${RTDB}/filmReviews/${tmdbId}/${reviewData.uid}.json?auth=${idToken}`, {
+              method:'PUT', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ rating: rating, snippet: text.slice(0,120), timestamp: Date.now(), reviewId: rtdbKey })
+            }).catch(()=>{});
+          }
         });
       } catch(_) {}
       // RTDB is the single source of truth — Firestore write removed to prevent duplicates
@@ -7943,8 +8216,9 @@
   /* ══ TAB NAVIGATION ══ */
   function switchTab(name) {
     let foryouWasActive = false;
-    ['discover','foryou','movies','lists','series','backed','posters','editor'].forEach(t => {
+    ['discover','foryou','movies','lists','series','backed','posters','lobby','editor'].forEach(t => {
       const panel = document.getElementById('tab-panel-' + t);
+      if (!panel) return;
       const wasActive = panel.classList.contains('active');
       if (t === 'foryou') foryouWasActive = wasActive;
       panel.classList.toggle('active', t === name);
@@ -7954,7 +8228,8 @@
         void panel.offsetWidth; // force reflow to restart animation
         panel.classList.add('tab-entering');
       }
-      document.getElementById('tab-btn-' + t).classList.toggle('active', t === name);
+      const btn = document.getElementById('tab-btn-' + t);
+      if (btn) btn.classList.toggle('active', t === name);
     });
     // Only init journey when navigating TO For You — not when already there.
     // Re-clicking the active tab restarts the animation but keeps the current journey state.
@@ -7962,6 +8237,7 @@
     if (name === 'foryou' && !foryouWasActive) { _journeyInit(); }
     if (name === 'backed') { renderBackedTab(); }
     if (name === 'posters') { postersInit(); }
+    if (name === 'lobby') { if (typeof initLobby === 'function') initLobby(); }
     if (name === 'editor') {
       if (_isEditorAdmin()) { const wb = document.getElementById('editorWriteBtn'); if (wb) wb.style.display = ''; }
       if (!editorLoaded) loadEditorReviews();
@@ -8282,10 +8558,25 @@
     });
   }
 
+  // ── Film page URL routing (/film/{tmdbId} or /film/{tmdbId}/{slug}) ──
+  (function() {
+    var _filmPathMatch = location.pathname.match(/^\/film\/(\d+)(?:\/[\w-]+)?$/);
+    if (_filmPathMatch) {
+      window.__pendingFilmPage = _filmPathMatch[1];
+    }
+  })();
+
   // Restore tab from URL hash on load.
   // Uses setTimeout(0) so this runs AFTER all <script> blocks are evaluated —
   // _journeyInit lives in a later script block and would be undefined if called synchronously here.
   setTimeout(function() {
+    // Check for pending film page (from /film/ URL)
+    if (window.__pendingFilmPage) {
+      var _pfId = window.__pendingFilmPage;
+      delete window.__pendingFilmPage;
+      if (typeof openFilmPage === 'function') openFilmPage(_pfId);
+    }
+
     const hash = location.hash.replace('#', '');
 
     // Direct review link: #review/movie-slug  (or legacy #review/FIREBASE_KEY)
@@ -8304,7 +8595,7 @@
     }
 
     const tabName = hash.split('?')[0]; // strip any ?admin=... from the hash before matching
-    if (['discover','foryou','movies','lists','series','backed','posters','editor'].includes(tabName)) switchTab(tabName);
+    if (['discover','foryou','movies','lists','series','backed','posters','lobby','editor'].includes(tabName)) switchTab(tabName);
     // Show Write Review button immediately if admin (button hidden by default via inline style)
     if (_isEditorAdmin()) {
       const wb = document.getElementById('editorWriteBtn');
@@ -21949,6 +22240,790 @@ async function deleteEditorReview(key, e) {
 
   // Expose open log for external callers
   window.pmTrOpenLog = window.pmTrOpenLog; // already set above
+
+})();
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════
+     FILM FULL PAGE + THE LOBBY
+     ══════════════════════════════════════════════════════════════ -->
+<script>
+(function() {
+  'use strict';
+  var _RTDB = 'https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app';
+  var _TMDB = 'https://api.themoviedb.org/3';
+  function _getTmdbKey() { return localStorage.getItem('pmovies_tmdb_key') || 'd04038fc4e0708bd069b323b220d5dc0'; }
+  function _esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function _relTime(ms) {
+    var d = Date.now()-ms, m=60000, h=3600000, dy=86400000;
+    if(d<m) return 'just now';
+    if(d<h) return Math.floor(d/m)+'m ago';
+    if(d<dy) return Math.floor(d/h)+'h ago';
+    if(d<dy*30) return Math.floor(d/dy)+'d ago';
+    return new Date(ms).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+  }
+  function _stars(r) { var s=''; for(var i=1;i<=5;i++) s+= i<=Math.round(r)?'★':'☆'; return s; }
+
+  /* ═══════════════════════════════════════════════════
+     PART 4 — FILM FULL PAGE
+     ═══════════════════════════════════════════════════ */
+  var _fpCurrentId = null;
+
+  window.openFilmPage = function(tmdbId) {
+    _fpCurrentId = String(tmdbId);
+    var page = document.getElementById('filmPage');
+    var fpContent = document.getElementById('fpContent');
+    var fpTitle = document.getElementById('fpHeaderTitle');
+    if (!page) return;
+    // Show skeleton immediately
+    page.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    fpTitle.textContent = 'Loading…';
+    fpContent.innerHTML = '<div class="fp-skel-backdrop fp-skeleton"></div>'
+      + '<div style="padding:16px"><div class="fp-skel-block fp-skeleton" style="height:20px;width:60%;margin-bottom:10px"></div>'
+      + '<div class="fp-skel-block fp-skeleton" style="height:14px;width:40%;margin-bottom:20px"></div>'
+      + '<div class="fp-skel-block fp-skeleton" style="height:14px;width:80%;margin-bottom:8px"></div>'
+      + '<div class="fp-skel-block fp-skeleton" style="height:14px;width:70%"></div></div>';
+    _loadFilmPage(tmdbId);
+  };
+
+  window.closeFilmPage = function() {
+    var page = document.getElementById('filmPage');
+    if (page) page.classList.remove('open');
+    document.body.style.overflow = '';
+    _fpCurrentId = null;
+    try {
+      if (location.pathname.match(/^\/film\//)) history.pushState({}, '', '/');
+    } catch(_e) {}
+  };
+
+  // navigateToFilm — used by movie card clicks
+  window.navigateToFilm = function(tmdbId, title) {
+    var slug = String(title||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+    try { history.pushState({ filmId: tmdbId }, '', '/film/' + tmdbId + '/' + slug); } catch(_e) {}
+    openFilmPage(tmdbId);
+  };
+
+  // Popstate: browser back/forward
+  window.addEventListener('popstate', function(e) {
+    if (e.state && e.state.filmId) {
+      openFilmPage(e.state.filmId);
+    } else if (document.getElementById('filmPage') && document.getElementById('filmPage').classList.contains('open')) {
+      closeFilmPage();
+    }
+  });
+
+  async function _loadFilmPage(tmdbId) {
+    var key = _getTmdbKey();
+    var results;
+    try {
+      results = await Promise.all([
+        fetch(_TMDB+'/movie/'+tmdbId+'?api_key='+key+'&append_to_response=credits,similar').then(function(r){return r.ok?r.json():null;}),
+        fetch(_RTDB+'/filmReviews/'+tmdbId+'.json').then(function(r){return r.ok?r.json():null;}),
+        fetch(_RTDB+'/filmMeta/'+tmdbId+'.json').then(function(r){return r.ok?r.json():null;}),
+        fetch(_RTDB+'/community/posts.json?orderBy="filmId"&equalTo="'+tmdbId+'"&limitToFirst=5').then(function(r){return r.ok?r.json():null;}),
+        fetch(_RTDB+'/theaterLogs.json?shallow=true').then(function(r){return r.ok?r.json():null;})
+      ]);
+    } catch(_e) { results = [null,null,null,null,null]; }
+    _renderFilmPage(tmdbId, results[0], results[1], results[2], results[3], results[4]);
+  }
+
+  function _renderFilmPage(tmdbId, film, reviewIndex, filmMeta, lobbyPosts, theaterShallow) {
+    if (_fpCurrentId !== String(tmdbId)) return; // stale response
+    var page = document.getElementById('filmPage');
+    var fpContent = document.getElementById('fpContent');
+    var fpTitle = document.getElementById('fpHeaderTitle');
+    if (!page || !fpContent) return;
+
+    var title = (film && film.title) || (filmMeta && filmMeta.title) || 'Film';
+    var year  = (film && film.release_date ? film.release_date.slice(0,4) : (filmMeta && filmMeta.year)) || '';
+    var overview = (film && film.overview) || '';
+    var posterPath = (film && film.poster_path) || (filmMeta && filmMeta.poster) || '';
+    var backdropPath = (film && film.backdrop_path) || (filmMeta && filmMeta.backdrop) || posterPath;
+    var tmdbRating = film ? (film.vote_average||0).toFixed(1) : '';
+    var genres = film && film.genres ? film.genres.slice(0,3).map(function(g){return g.name;}).join(' · ') : '';
+
+    fpTitle.textContent = title;
+
+    // Compute community rating
+    var reviewEntries = reviewIndex ? Object.entries(reviewIndex) : [];
+    var reviewCount = reviewEntries.length;
+    var communityRating = reviewCount ? (reviewEntries.reduce(function(s,e){return s+(e[1].rating||0);},0)/reviewCount).toFixed(1) : null;
+
+    // Theater sightings
+    var theaterSightings = [];
+    if (theaterShallow) {
+      // We have shallow keys — need to fetch individually only for this film
+      // For performance: fetch full theaterLogs filtered
+      fetch(_RTDB+'/theaterLogs.json').then(function(r){return r.ok?r.json():null;}).then(function(allLogs){
+        if (!allLogs) return;
+        var sightings = [];
+        Object.entries(allLogs).forEach(function(e){
+          var uid = e[0], userLogs = e[1];
+          if (!userLogs) return;
+          Object.values(userLogs).forEach(function(log){
+            if (String(log.movieId) === String(tmdbId)) sightings.push(Object.assign({}, log, {uid: uid}));
+          });
+        });
+        sightings.sort(function(a,b){return (b.timestamp||0)-(a.timestamp||0);});
+        var el = document.getElementById('fpTheaterList');
+        if (el) el.innerHTML = sightings.length ? sightings.slice(0,8).map(function(s){
+          return '<div class="fp-theater-item"><span class="fp-theater-icon">🎟</span>'
+            +'<div class="fp-theater-info"><b>'+_esc(s.userName||'User')+'</b>'
+            +(s.cinemaName?' · '+_esc(s.cinemaName):'')+'</div>'
+            +'<div class="fp-theater-date">'+_relTime(s.timestamp||0)+'</div></div>';
+        }).join('') : '<div style="color:#555;font-size:.75rem">No sightings yet</div>';
+        var pill = document.getElementById('fpTheaterPill');
+        if (pill) pill.textContent = sightings.length;
+      }).catch(function(){});
+    }
+
+    // Lobby threads for this film
+    var lobbyEntries = lobbyPosts ? Object.entries(lobbyPosts).filter(function(e){return e[1]&&e[1].filmId===tmdbId;}) : [];
+    var lobbyCount = lobbyEntries.length;
+
+    // Friends activity (follows)
+    var me = window.pmGetUser && window.pmGetUser();
+    var followingUids = window._pmFollowing ? Object.keys(window._pmFollowing) : [];
+    var friendReviews = reviewEntries.filter(function(e){ return followingUids.indexOf(e[0]) !== -1; });
+
+    // Build HTML
+    var backdropHtml = backdropPath
+      ? '<div class="fp-backdrop-wrap"><img class="fp-backdrop-img" src="https://image.tmdb.org/t/p/w1280'+backdropPath+'" alt="" loading="eager"><div class="fp-backdrop-grad"></div></div>'
+      : '<div class="fp-skel-backdrop" style="background:#111"></div>';
+
+    var posterHtml = posterPath
+      ? '<img class="fp-poster" src="https://image.tmdb.org/t/p/w342'+posterPath+'" alt="'+_esc(title)+'" loading="eager">'
+      : '<div class="fp-poster-ph"></div>';
+
+    var ratingHtml = '<div class="fp-ratings">';
+    if (communityRating) ratingHtml += '<div class="fp-rating-pill"><span class="fp-star">★</span>'+communityRating+' PMovies</div>';
+    if (tmdbRating && tmdbRating !== '0.0') ratingHtml += '<div class="fp-rating-pill"><span class="fp-rating-tmdb">●</span>'+tmdbRating+' TMDB</div>';
+    ratingHtml += '</div>';
+
+    var activityHtml = '<div class="fp-activity-bar">'
+      +'<div class="fp-activity-pill" onclick="document.getElementById(\'fpReviewsSection\').scrollIntoView({behavior:\'smooth\'})">'
+        +'<span class="fp-activity-pill-num">'+reviewCount+'</span><span class="fp-activity-pill-label">📝 Reviews</span></div>'
+      +'<div class="fp-activity-pill" onclick="document.getElementById(\'fpTheaterSection\').scrollIntoView({behavior:\'smooth\'})">'
+        +'<span class="fp-activity-pill-num" id="fpTheaterPill">…</span><span class="fp-activity-pill-label">🎟 Cinema</span></div>'
+      +'<div class="fp-activity-pill" onclick="document.getElementById(\'fpLobbySection\').scrollIntoView({behavior:\'smooth\'})">'
+        +'<span class="fp-activity-pill-num">'+lobbyCount+'</span><span class="fp-activity-pill-label">💬 Talks</span></div>'
+      +'</div>';
+
+    // Friends section
+    var friendsHtml = '';
+    if (friendReviews.length) {
+      friendsHtml = '<div class="fp-section"><div class="fp-section-title">👥 Friends Activity</div>'
+        +'<div class="fp-friends-row">'
+        +friendReviews.slice(0,5).map(function(e){
+          var uid = e[0], rev = e[1];
+          return '<div class="fp-friend-chip" onclick="if(typeof pmOpenProfile===\'function\')pmOpenProfile(\''+_esc(uid)+'\')">'
+            +'<img class="fp-friend-av" src="https://ui-avatars.com/api/?name=U&background=2a1800&color=f5a623&size=32" alt="">'
+            +'<div><div class="fp-friend-name">'+_esc(uid.slice(0,8))+'</div>'
+            +'<div class="fp-friend-action">'+_stars(rev.rating||0)+'</div></div></div>';
+        }).join('')
+        +'</div></div>';
+    }
+
+    // Reviews section
+    var sortedReviews = reviewEntries.slice().sort(function(a,b){return (b[1].timestamp||0)-(a[1].timestamp||0);});
+    var reviewsHtml = '<div class="fp-section" id="fpReviewsSection">'
+      +'<div class="fp-section-title"><span>📝</span> Community Reviews'
+      +'<div style="margin-left:auto;display:flex;gap:6px">'
+      +'<button class="fp-sort-btn active" id="fpSortNew" onclick="fpSetSort(\'new\',this)">Newest</button>'
+      +'<button class="fp-sort-btn" id="fpSortTop" onclick="fpSetSort(\'top\',this)">Highest</button>'
+      +'</div></div>'
+      +'<div id="fpReviewList">'
+      +( sortedReviews.length
+        ? sortedReviews.slice(0,10).map(function(e){
+            var uid=e[0], rev=e[1];
+            return '<div class="fp-review-card" onclick="fpOpenReview(\''+_esc(uid)+'\',\''+_esc(rev.reviewId||'')+'\',\''+_esc(tmdbId)+'\')">'+
+              '<div class="fp-review-card-head">'+
+              '<div class="fp-review-av" style="background:#2a1800;display:flex;align-items:center;justify-content:center;color:#f5a623;font-size:.8rem;font-weight:700;font-family:\'Bebas Neue\',sans-serif">'+_esc(uid.slice(0,1).toUpperCase())+'</div>'+
+              '<div class="fp-review-card-meta">'+
+              '<div class="fp-review-card-name">'+_esc(uid.slice(0,12))+'</div>'+
+              '<div class="fp-review-stars">'+_stars(rev.rating||0)+'</div>'+
+              '</div>'+
+              '<div class="fp-review-date">'+_relTime(rev.timestamp||0)+'</div>'+
+              '</div>'+
+              '<div class="fp-review-snippet">'+_esc(rev.snippet||'')+(rev.snippet&&rev.snippet.length>=120?'…':'')+'</div>'+
+              '</div>';
+          }).join('')
+        : '<div style="color:#555;font-size:.78rem;padding:12px 0">No reviews yet. Be the first!</div>'
+      )
+      +'</div>'
+      +'<button class="fp-cta-btn" onclick="fpOpenWriteReview(\''+_esc(tmdbId)+'\',\''+_esc(title)+'\')" style="margin-top:12px">✍️ Write a review</button>'
+      +'</div>';
+
+    // Lobby section
+    var lobbyHtml = '<div class="fp-section" id="fpLobbySection">'
+      +'<div class="fp-section-title"><span>💬</span> The Lobby — Discussions</div>';
+    if (lobbyEntries.length) {
+      lobbyHtml += lobbyEntries.slice(0,3).map(function(e){
+        var post = e[1];
+        return '<div class="fp-lobby-mini-card" onclick="openLobbyThread(\''+_esc(e[0])+'\')">'
+          +'<div class="fp-lobby-mini-type">'+_esc((post.type||'discussion').toUpperCase())+'</div>'
+          +'<div class="fp-lobby-mini-body">'+_esc((post.body||'').slice(0,120))+'</div>'
+          +'<div class="fp-lobby-mini-foot">▲ '+(post.upvotes||0)+' · 💬 '+(post.commentCount||0)+' · '+_relTime(post.createdAt||0)+'</div>'
+          +'</div>';
+      }).join('');
+      if (lobbyEntries.length > 3) lobbyHtml += '<button class="fp-cta-btn" onclick="switchTab(\'lobby\')">View all discussions →</button>';
+    } else {
+      lobbyHtml += '<div style="color:#555;font-size:.78rem;padding:8px 0">No discussions yet.</div>';
+    }
+    lobbyHtml += '<button class="fp-cta-btn" style="margin-top:10px" onclick="fpStartDiscussion(\''+_esc(tmdbId)+'\',\''+_esc(title)+'\',\''+_esc(posterPath||'')+'\')">+ Start a discussion about this film</button>'
+      +'</div>';
+
+    // Theater section
+    var theaterSectionHtml = '<div class="fp-section" id="fpTheaterSection">'
+      +'<div class="fp-section-title"><span>🎟</span> Theater Sightings</div>'
+      +'<div id="fpTheaterList"><div style="color:#555;font-size:.75rem">Loading…</div></div>'
+      +'</div>';
+
+    // Film info section
+    var castHtml = '';
+    if (film && film.credits && film.credits.cast) {
+      castHtml = '<div class="fp-cast-row">'
+        +film.credits.cast.slice(0,10).map(function(c){
+          return '<div class="fp-cast-item">'
+            +(c.profile_path?'<img class="fp-cast-photo" src="https://image.tmdb.org/t/p/w92'+c.profile_path+'" alt="" loading="lazy">'
+              :'<div class="fp-cast-photo" style="display:flex;align-items:center;justify-content:center;font-size:1.2rem">👤</div>')
+            +'<div class="fp-cast-name">'+_esc(c.name)+'</div></div>';
+        }).join('')
+        +'</div>';
+    }
+    var infoHtml = '<div class="fp-section">'
+      +'<div class="fp-section-title"><span>ℹ️</span> Film Info'
+      +'<button class="fp-info-toggle" id="fpInfoToggle" onclick="fpToggleInfo()">Expand ▾</button>'
+      +'</div>'
+      +'<div id="fpInfoBody" style="display:none">'
+      +(overview?'<div class="fp-info-body">'+_esc(overview)+'</div>':'')
+      +castHtml
+      +'</div></div>';
+
+    fpContent.innerHTML = backdropHtml
+      +'<div class="fp-hero">'+posterHtml+'<div class="fp-hero-info">'
+        +'<div class="fp-title">'+_esc(title)+'</div>'
+        +'<div class="fp-meta">'+_esc([year,genres].filter(Boolean).join(' · '))+'</div>'
+        +ratingHtml
+      +'</div></div>'
+      +activityHtml
+      +friendsHtml
+      +reviewsHtml
+      +lobbyHtml
+      +theaterSectionHtml
+      +infoHtml;
+
+    // Kick off theater fetch (async)
+    _fetchFilmTheater(tmdbId);
+  }
+
+  function _fetchFilmTheater(tmdbId) {
+    fetch(_RTDB+'/theaterLogs.json').then(function(r){return r.ok?r.json():null;}).then(function(allLogs){
+      if (!allLogs || _fpCurrentId !== String(tmdbId)) return;
+      var sightings = [];
+      Object.entries(allLogs).forEach(function(e){
+        var uid=e[0], userLogs=e[1];
+        if (!userLogs) return;
+        Object.values(userLogs).forEach(function(log){
+          if (String(log.movieId)===String(tmdbId)) sightings.push(Object.assign({},log,{uid:uid}));
+        });
+      });
+      sightings.sort(function(a,b){return (b.timestamp||0)-(a.timestamp||0);});
+      var el = document.getElementById('fpTheaterList');
+      if (el) el.innerHTML = sightings.length
+        ? sightings.slice(0,8).map(function(s){
+            return '<div class="fp-theater-item"><span class="fp-theater-icon">🎟</span>'
+              +'<div class="fp-theater-info"><b>'+_esc(s.userName||'User')+'</b>'+(s.cinemaName?' · '+_esc(s.cinemaName):'')+'</div>'
+              +'<div class="fp-theater-date">'+_relTime(s.timestamp||0)+'</div></div>';
+          }).join('')
+        : '<div style="color:#555;font-size:.75rem">No theater sightings yet</div>';
+      var pill = document.getElementById('fpTheaterPill');
+      if (pill) pill.textContent = sightings.length;
+    }).catch(function(){});
+  }
+
+  window.fpToggleInfo = function() {
+    var body = document.getElementById('fpInfoBody');
+    var btn  = document.getElementById('fpInfoToggle');
+    if (!body) return;
+    var open = body.style.display !== 'none';
+    body.style.display = open ? 'none' : 'block';
+    if (btn) btn.textContent = open ? 'Expand ▾' : 'Collapse ▴';
+  };
+
+  window.fpSetSort = function(mode, btn) {
+    document.querySelectorAll('.fp-sort-btn').forEach(function(b){b.classList.remove('active');});
+    if (btn) btn.classList.add('active');
+    var list = document.getElementById('fpReviewList');
+    if (!list) return;
+    var cards = Array.from(list.querySelectorAll('.fp-review-card'));
+    // Sort DOM order (data in data attributes not stored, so this is visual-only re-sort placeholder)
+    // Full re-sort would require re-fetching — acceptable for now
+  };
+
+  window.fpOpenReview = function(uid, reviewId, tmdbId) {
+    // Open via existing review system if available
+    if (reviewId && typeof _pmOpenReviewFromProfile === 'function') {
+      _pmOpenReviewFromProfile(reviewId);
+    }
+  };
+
+  window.fpOpenWriteReview = function(tmdbId, title) {
+    closeFilmPage();
+    setTimeout(function() {
+      try { switchTab('movies'); } catch(_e) {}
+      setTimeout(function() {
+        var fanSection = document.getElementById('fanSection');
+        if (fanSection) fanSection.scrollIntoView({behavior:'smooth'});
+        setTimeout(function() {
+          if (typeof toggleFanForm === 'function') toggleFanForm();
+          // Pre-fill movie field
+          var fm = document.getElementById('fanMovie');
+          if (fm) { fm.value = title; fm.dataset.cleanTitle = title; fm.dataset.tmdbId = tmdbId; }
+        }, 300);
+      }, 350);
+    }, 80);
+  };
+
+  window.fpStartDiscussion = function(tmdbId, title, posterPath) {
+    // Set pre-attached film, then open lobby new post
+    _lobbyPreAttach = { tmdbId: tmdbId, title: title, poster: posterPath };
+    openLobbyNewPost();
+  };
+
+  /* ═══════════════════════════════════════════════════
+     PART 5 — THE LOBBY
+     ═══════════════════════════════════════════════════ */
+  var _lobbyLoaded   = false;
+  var _lobbySort     = 'trending';
+  var _lobbyPosts    = [];  // all fetched posts
+  var _lobbyPage     = 0;
+  var PAGE_SIZE      = 20;
+  var _lobbyType     = 'discussion';
+  var _lobbyFilmAttach = null; // { tmdbId, title, poster }
+  var _lobbyPreAttach  = null; // set by fpStartDiscussion
+  var _lobbyFilmTimer  = null;
+  var _lobbyUpvoted    = {};   // postId → bool (local cache)
+  var _lobbyCurrentThread = null;
+
+  window.initLobby = function() {
+    var me = window.pmGetUser && window.pmGetUser();
+    var btn = document.getElementById('lobbyNewPostBtn');
+    if (btn) btn.style.display = me ? '' : 'none';
+    if (!_lobbyLoaded) { _lobbyLoaded = true; _fetchLobbyPosts(); _ensureWeeklyThread(); }
+  };
+
+  function _getISOWeek() {
+    var d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()+4-(d.getDay()||7));
+    var y = d.getFullYear();
+    var w = Math.ceil(((d - new Date(y,0,1))/86400000+1)/7);
+    return y+'-W'+String(w).padStart(2,'0');
+  }
+
+  async function _ensureWeeklyThread() {
+    var weekKey = _getISOWeek();
+    try {
+      var r = await fetch(_RTDB+'/community/weeklyThreads/'+weekKey+'.json');
+      var existing = r.ok ? await r.json() : null;
+      if (existing) return;
+      // Create weekly thread (no auth needed — system post)
+      var titles = [
+        '🎬 What did you watch this week?',
+        '🎟 Did you go to the cinema this week?',
+        '⭐ Best film you\'ve seen recently?',
+        '🔥 Drop your hottest film take this week'
+      ];
+      var body = titles[Math.floor(Math.random()*titles.length)];
+      var postId = '-auto'+Date.now();
+      var postData = {uid:'system',type:'discussion',body:body,pinned:true,upvotes:0,commentCount:0,createdAt:Date.now()};
+      var me = window.pmGetUser && window.pmGetUser();
+      var tok = me ? await me.getIdToken() : '';
+      var authStr = tok ? '?auth='+tok : '';
+      await fetch(_RTDB+'/community/posts/'+postId+'.json'+authStr,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(postData)});
+      await fetch(_RTDB+'/community/weeklyThreads/'+weekKey+'.json'+authStr,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(postId)});
+    } catch(_e) {}
+  }
+
+  async function _fetchLobbyPosts() {
+    var feed = document.getElementById('lobbyFeed');
+    if (!feed) return;
+    feed.innerHTML = '<div class="lobby-empty">Loading…</div>';
+    try {
+      var r = await fetch(_RTDB+'/community/posts.json?orderBy="createdAt"&limitToLast=100');
+      var raw = r.ok ? await r.json() : null;
+      if (!raw) { feed.innerHTML = '<div class="lobby-empty">No discussions yet. Start the conversation!</div>'; return; }
+      _lobbyPosts = Object.entries(raw).map(function(e){ return Object.assign({},e[1],{_id:e[0]}); })
+        .sort(function(a,b){ return (b.createdAt||0)-(a.createdAt||0); });
+      // Load user upvotes
+      var me = window.pmGetUser && window.pmGetUser();
+      if (me) {
+        try {
+          var uRes = await fetch(_RTDB+'/community/upvotes.json?shallow=true');
+          // Check per-post locally for now (lightweight)
+        } catch(_e) {}
+      }
+      _lobbyPage = 0;
+      _renderLobbyFeed();
+    } catch(_e) { feed.innerHTML = '<div class="lobby-empty">Could not load posts — try again.</div>'; }
+  }
+
+  function _trendingScore(post) {
+    var ageH = (Date.now()-(post.createdAt||0))/3600000;
+    return ((post.upvotes||0)*3+(post.commentCount||0)*2) / Math.pow(ageH+2,1.5);
+  }
+
+  function _sortedPosts() {
+    var posts = _lobbyPosts.slice();
+    var pinned = posts.filter(function(p){return p.pinned;});
+    var rest   = posts.filter(function(p){return !p.pinned;});
+    if (_lobbySort === 'trending') rest.sort(function(a,b){return _trendingScore(b)-_trendingScore(a);});
+    else if (_lobbySort === 'new') rest.sort(function(a,b){return (b.createdAt||0)-(a.createdAt||0);});
+    else if (_lobbySort === 'following') {
+      var follows = window._pmFollowing ? Object.keys(window._pmFollowing) : [];
+      rest = rest.filter(function(p){return follows.indexOf(p.uid)!==-1;});
+      rest.sort(function(a,b){return (b.createdAt||0)-(a.createdAt||0);});
+    }
+    return pinned.concat(rest);
+  }
+
+  function _renderLobbyFeed() {
+    var feed = document.getElementById('lobbyFeed');
+    var loadMore = document.getElementById('lobbyLoadMore');
+    if (!feed) return;
+    var sorted = _sortedPosts();
+    var page = sorted.slice(0, (_lobbyPage+1)*PAGE_SIZE);
+    if (!page.length) { feed.innerHTML = '<div class="lobby-empty">No posts yet. Start the conversation!</div>'; return; }
+    feed.innerHTML = page.map(_renderLobbyCard).join('');
+    if (loadMore) loadMore.style.display = sorted.length > page.length ? '' : 'none';
+  }
+
+  function _lobbyTypeBadge(type, pinned) {
+    if (pinned) return '<span class="lobby-type-badge lobby-type-pinned">📌 Weekly</span>';
+    var map = {discussion:'💬 Discussion',hottake:'🔥 Hot Take',question:'❓ Question',poll:'📊 Poll'};
+    var cls = {discussion:'lobby-type-discussion',hottake:'lobby-type-hottake',question:'lobby-type-question',poll:'lobby-type-poll'};
+    return '<span class="lobby-type-badge '+(cls[type]||'lobby-type-discussion')+'">'+(map[type]||'💬 Discussion')+'</span>';
+  }
+
+  function _lobbyAvatarHtml(uid, av) {
+    return '<div class="lobby-av">'+(av?'<img src="'+_esc(av)+'" alt="">':_esc((uid||'?').slice(0,1).toUpperCase()))+'</div>';
+  }
+
+  function _renderLobbyCard(post) {
+    var voted = _lobbyUpvoted[post._id] || false;
+    var filmTag = '';
+    if (post.filmId && post.filmTitle) {
+      var posterSrc = post.filmPoster ? 'https://image.tmdb.org/t/p/w92'+post.filmPoster : '';
+      filmTag = '<div class="lobby-film-tag" onclick="event.stopPropagation();openFilmPage(\''+_esc(post.filmId)+'\')">'
+        +(posterSrc?'<img src="'+posterSrc+'" alt="">':'🎬')
+        +' '+_esc(post.filmTitle)+'</div>';
+    }
+    return '<div class="lobby-card'+(post.pinned?' pinned':'')+'" data-pid="'+_esc(post._id)+'" onclick="openLobbyThread(\''+_esc(post._id)+'\')">'
+      +'<div class="lobby-card-head">'
+        +_lobbyAvatarHtml(post.uid, post.avatar||null)
+        +'<div class="lobby-card-meta">'
+          +'<div class="lobby-card-name">'+_esc(post.fromName||post.uid||'User')+'</div>'
+          +'<div class="lobby-card-time">'+_relTime(post.createdAt||0)+'</div>'
+        +'</div>'
+        +_lobbyTypeBadge(post.type, post.pinned)
+      +'</div>'
+      +'<div class="lobby-card-body">'+_esc((post.body||'').slice(0,300))+(post.body&&post.body.length>300?'…':'')+'</div>'
+      +filmTag
+      +'<div class="lobby-card-foot">'
+        +'<button class="lobby-upvote-btn'+(voted?' voted':'')+'" onclick="event.stopPropagation();toggleLobbyUpvote(\''+_esc(post._id)+'\',this)" data-pid="'+_esc(post._id)+'">▲ '+(post.upvotes||0)+'</button>'
+        +'<div class="lobby-comment-count">💬 '+(post.commentCount||0)+' repl'+(post.commentCount===1?'y':'ies')+'</div>'
+        +(post.pinned?'<div class="lobby-pin-badge">📌 Weekly</div>':'')
+      +'</div>'
+      +'</div>';
+  }
+
+  window.setLobbySort = function(mode, btn) {
+    _lobbySort = mode;
+    document.querySelectorAll('.lobby-sort-btn').forEach(function(b){b.classList.remove('active');});
+    if (btn) btn.classList.add('active');
+    _lobbyPage = 0;
+    _renderLobbyFeed();
+  };
+
+  window.loadMoreLobbyPosts = function() {
+    _lobbyPage++;
+    _renderLobbyFeed();
+  };
+
+  window.toggleLobbyUpvote = async function(postId, btn) {
+    var me = window.pmGetUser && window.pmGetUser();
+    if (!me) { alert('Sign in to upvote.'); return; }
+    var voted = _lobbyUpvoted[postId] || false;
+    var post  = _lobbyPosts.find(function(p){return p._id===postId;});
+    if (!post) return;
+    _lobbyUpvoted[postId] = !voted;
+    post.upvotes = (post.upvotes||0) + (voted ? -1 : 1);
+    if (btn) { btn.textContent = '▲ '+post.upvotes; btn.classList.toggle('voted', !voted); }
+    try {
+      var tok = await me.getIdToken();
+      var ref = _RTDB+'/community/upvotes/'+postId+'/'+me.uid+'.json?auth='+tok;
+      if (voted) {
+        await fetch(ref, {method:'DELETE'});
+        await fetch(_RTDB+'/community/posts/'+postId+'/upvotes.json?auth='+tok, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({'.sv':{'increment':-1}})});
+      } else {
+        await fetch(ref, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(true)});
+        await fetch(_RTDB+'/community/posts/'+postId+'/upvotes.json?auth='+tok, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({'.sv':{'increment':1}})});
+      }
+    } catch(_e) { /* revert */ _lobbyUpvoted[postId]=voted; post.upvotes+=(voted?1:-1); if(btn){btn.textContent='▲ '+post.upvotes;btn.classList.toggle('voted',voted);} }
+  };
+
+  /* ── New Post Modal ── */
+  window.openLobbyNewPost = function(preFilmId, preFilmTitle, preFilmPoster) {
+    var me = window.pmGetUser && window.pmGetUser();
+    if (!me) { alert('Sign in to post.'); return; }
+    var ov = document.getElementById('lobbyModalOverlay');
+    if (!ov) return;
+    // Reset form
+    _lobbyType = 'discussion';
+    document.querySelectorAll('.lobby-type-opt').forEach(function(el){el.classList.toggle('selected',el.dataset.type==='discussion');});
+    var body = document.getElementById('lobbyPostBody'); if(body) body.value='';
+    updateLobbyCharCount();
+    _lobbyFilmAttach = null;
+    var aw = document.getElementById('lobbyAttachedFilmWrap'); if(aw) aw.style.display='none';
+    var fw = document.getElementById('lobbyFilmSearchWrap'); if(fw) fw.style.display='none';
+    var ab = document.getElementById('lobbyAttachFilmBtn'); if(ab) ab.style.display='';
+    // Pre-attach film
+    var preAttach = _lobbyPreAttach || (preFilmId ? {tmdbId:preFilmId,title:preFilmTitle,poster:preFilmPoster} : null);
+    _lobbyPreAttach = null;
+    if (preAttach) _attachLobbyFilm(preAttach.tmdbId, preAttach.title, preAttach.poster||'');
+    ov.classList.add('open');
+  };
+
+  window.closeLobbyNewPost = function() {
+    var ov = document.getElementById('lobbyModalOverlay');
+    if (ov) ov.classList.remove('open');
+    var fr = document.getElementById('lobbyFilmResults');
+    if (fr) fr.style.display = 'none';
+  };
+
+  window.selectLobbyType = function(type, el) {
+    _lobbyType = type;
+    document.querySelectorAll('.lobby-type-opt').forEach(function(o){o.classList.remove('selected');});
+    if (el) el.classList.add('selected');
+    var body = document.getElementById('lobbyPostBody');
+    if (body) body.maxLength = (type==='hottake') ? 500 : 1000;
+    var cc = document.getElementById('lobbyCharCount');
+    if (cc) cc.textContent = (body?body.value.length:0)+' / '+(type==='hottake'?500:1000);
+  };
+
+  window.updateLobbyCharCount = function() {
+    var body = document.getElementById('lobbyPostBody');
+    var cc   = document.getElementById('lobbyCharCount');
+    if (!body || !cc) return;
+    var max = _lobbyType==='hottake' ? 500 : 1000;
+    cc.textContent = body.value.length+' / '+max;
+  };
+
+  window.toggleLobbyFilmSearch = function() {
+    var fw = document.getElementById('lobbyFilmSearchWrap');
+    var ab = document.getElementById('lobbyAttachFilmBtn');
+    if (!fw) return;
+    var open = fw.style.display !== 'none';
+    fw.style.display = open ? 'none' : '';
+    if (!open) { var si = document.getElementById('lobbyFilmSearch'); if(si){si.value='';si.focus();} }
+    if (ab) ab.style.display = open ? '' : 'none';
+  };
+
+  window.searchLobbyFilm = function(q) {
+    clearTimeout(_lobbyFilmTimer);
+    var res = document.getElementById('lobbyFilmResults');
+    if (!q || q.trim().length < 2) { if(res) res.style.display='none'; return; }
+    _lobbyFilmTimer = setTimeout(async function() {
+      try {
+        var r = await fetch(_TMDB+'/search/movie?api_key='+_getTmdbKey()+'&query='+encodeURIComponent(q)+'&language=en-US&page=1');
+        var data = r.ok ? await r.json() : null;
+        var hits = (data && data.results || []).slice(0,6);
+        if (!res) return;
+        if (!hits.length) { res.style.display='none'; return; }
+        res.innerHTML = hits.map(function(m){
+          var y = m.release_date ? m.release_date.slice(0,4) : '';
+          var p = m.poster_path ? 'https://image.tmdb.org/t/p/w92'+m.poster_path : '';
+          return '<div class="lobby-film-result-item" onclick="selectLobbyFilm('+m.id+',\''+_esc(m.title)+'\',\''+_esc(m.poster_path||'')+'\')">'
+            +(p?'<img src="'+p+'" alt="">':'')
+            +'<span>'+_esc(m.title)+(y?' ('+y+')':'')+'</span></div>';
+        }).join('');
+        res.style.display = 'block';
+      } catch(_e) {}
+    }, 300);
+  };
+
+  window.selectLobbyFilm = function(tmdbId, title, poster) {
+    _attachLobbyFilm(String(tmdbId), title, poster);
+    var fw = document.getElementById('lobbyFilmSearchWrap'); if(fw) fw.style.display='none';
+    var ab = document.getElementById('lobbyAttachFilmBtn'); if(ab) ab.style.display='none';
+    var fr = document.getElementById('lobbyFilmResults'); if(fr) fr.style.display='none';
+  };
+
+  function _attachLobbyFilm(tmdbId, title, poster) {
+    _lobbyFilmAttach = {tmdbId:String(tmdbId), title:title, poster:poster||''};
+    var aw = document.getElementById('lobbyAttachedFilmWrap');
+    var pi = document.getElementById('lobbyAttachedPoster');
+    var fi = document.getElementById('lobbyAttachedFilmInfo');
+    var ab = document.getElementById('lobbyAttachFilmBtn');
+    if (aw) aw.style.display = '';
+    if (pi) { if(poster){pi.src='https://image.tmdb.org/t/p/w92'+poster;pi.style.display='';}else{pi.style.display='none';} }
+    if (fi) fi.textContent = title;
+    if (ab) ab.style.display = 'none';
+  }
+
+  window.removeLobbyFilm = function() {
+    _lobbyFilmAttach = null;
+    var aw = document.getElementById('lobbyAttachedFilmWrap'); if(aw) aw.style.display='none';
+    var ab = document.getElementById('lobbyAttachFilmBtn'); if(ab) ab.style.display='';
+    var fw = document.getElementById('lobbyFilmSearchWrap'); if(fw) fw.style.display='none';
+  };
+
+  window.submitLobbyPost = async function() {
+    var me = window.pmGetUser && window.pmGetUser();
+    if (!me) return;
+    var body = document.getElementById('lobbyPostBody');
+    var text = body ? body.value.trim() : '';
+    if (!text) { alert('Please write something first.'); return; }
+    var submitBtn = document.getElementById('lobbySubmitBtn');
+    if (submitBtn) { submitBtn.textContent = 'Posting…'; submitBtn.disabled = true; }
+    try {
+      var tok  = await me.getIdToken();
+      var name = (window.pmGetNickname&&window.pmGetNickname()) || (window._pmMyProfile&&window._pmMyProfile.nickname) || me.displayName || 'User';
+      var av   = (window._pmMyProfile&&window._pmMyProfile.photoURL) || me.photoURL || '';
+      var postData = {
+        uid: me.uid, type: _lobbyType, body: text,
+        upvotes: 0, commentCount: 0, createdAt: Date.now(),
+        pinned: false, fromName: name, avatar: av
+      };
+      if (_lobbyFilmAttach) {
+        postData.filmId    = _lobbyFilmAttach.tmdbId;
+        postData.filmTitle = _lobbyFilmAttach.title;
+        postData.filmPoster= _lobbyFilmAttach.poster || '';
+      }
+      var r = await fetch(_RTDB+'/community/posts.json?auth='+tok, {
+        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(postData)
+      });
+      if (!r.ok) throw new Error('Post failed');
+      var resp = await r.json();
+      var newPost = Object.assign({},postData,{_id:resp.name});
+      _lobbyPosts.unshift(newPost);
+      closeLobbyNewPost();
+      _lobbyPage = 0;
+      _renderLobbyFeed();
+    } catch(_e) { alert('Could not post — please try again.'); }
+    finally { if(submitBtn){submitBtn.textContent='Post';submitBtn.disabled=false;} }
+  };
+
+  /* ── Thread Detail ── */
+  window.openLobbyThread = async function(postId) {
+    var post = _lobbyPosts.find(function(p){return p._id===postId;});
+    if (!post) {
+      // Fetch it
+      try {
+        var r = await fetch(_RTDB+'/community/posts/'+postId+'.json');
+        post = r.ok ? Object.assign({},await r.json(),{_id:postId}) : null;
+      } catch(_e) { post = null; }
+    }
+    if (!post) return;
+    _lobbyCurrentThread = post;
+    var ov = document.getElementById('lobbyThreadOverlay');
+    var title = document.getElementById('lobbyThreadTitle');
+    var threadBody = document.getElementById('lobbyThreadBody');
+    if (!ov || !title || !threadBody) return;
+    title.textContent = post.body ? post.body.slice(0,50)+(post.body.length>50?'…':'') : 'Discussion';
+    ov.classList.add('open');
+    // Render post + comment box + load comments
+    var me = window.pmGetUser && window.pmGetUser();
+    var commentBox = me
+      ? '<div class="lobby-comment-box"><textarea class="lobby-comment-input" id="lobbyCommentInput" placeholder="Add a reply…"></textarea>'
+        +'<div class="lobby-comment-actions"><button class="lobby-comment-submit" onclick="submitLobbyComment(\''+_esc(postId)+'\')">Reply</button></div></div>'
+      : '<div style="color:#555;font-size:.75rem;padding:12px 0">Sign in to reply.</div>';
+
+    var filmTag = '';
+    if (post.filmId && post.filmTitle) {
+      var ps = post.filmPoster ? 'https://image.tmdb.org/t/p/w92'+post.filmPoster : '';
+      filmTag = '<div class="lobby-film-tag" style="margin-bottom:12px" onclick="closeLobbyThread();setTimeout(function(){openFilmPage(\''+_esc(post.filmId)+'\');},80)">'
+        +(ps?'<img src="'+ps+'" alt="">':'🎬')+' '+_esc(post.filmTitle)+'</div>';
+    }
+
+    threadBody.innerHTML = '<div class="lobby-card" style="margin-bottom:16px;cursor:default">'
+      +'<div class="lobby-card-head">'+_lobbyAvatarHtml(post.uid,post.avatar||null)
+        +'<div class="lobby-card-meta"><div class="lobby-card-name">'+_esc(post.fromName||'User')+'</div>'
+        +'<div class="lobby-card-time">'+_relTime(post.createdAt||0)+'</div></div>'
+        +_lobbyTypeBadge(post.type,post.pinned)+'</div>'
+      +'<div class="lobby-card-body">'+_esc(post.body||'')+'</div>'
+      +filmTag
+      +'<div class="lobby-card-foot"><button class="lobby-upvote-btn" onclick="toggleLobbyUpvote(\''+_esc(postId)+'\',this)" data-pid="'+_esc(postId)+'">▲ '+(post.upvotes||0)+'</button></div>'
+      +'</div>'
+      +commentBox
+      +'<div class="lobby-comment-list" id="lobbyCommentList"><div style="color:#555;font-size:.75rem;padding:8px 0">Loading replies…</div></div>';
+
+    // Fetch comments
+    _loadLobbyComments(postId);
+  };
+
+  window.closeLobbyThread = function() {
+    var ov = document.getElementById('lobbyThreadOverlay');
+    if (ov) ov.classList.remove('open');
+    _lobbyCurrentThread = null;
+  };
+
+  async function _loadLobbyComments(postId) {
+    var list = document.getElementById('lobbyCommentList');
+    if (!list) return;
+    try {
+      var r = await fetch(_RTDB+'/community/comments/'+postId+'.json');
+      var raw = r.ok ? await r.json() : null;
+      if (!raw) { list.innerHTML = '<div style="color:#555;font-size:.75rem;padding:8px 0">No replies yet.</div>'; return; }
+      var comments = Object.entries(raw).map(function(e){return Object.assign({},e[1],{_id:e[0]});})
+        .sort(function(a,b){return (a.createdAt||0)-(b.createdAt||0);});
+      list.innerHTML = comments.map(function(c){
+        return '<div class="lobby-comment-item">'
+          +'<div class="lobby-comment-head">'
+            +'<div class="lobby-av" style="width:26px;height:26px;font-size:.7rem">'+(c.avatar?'<img src="'+_esc(c.avatar)+'" alt="">':_esc((c.uid||'?').slice(0,1).toUpperCase()))+'</div>'
+            +'<div class="lobby-comment-name">'+_esc(c.fromName||'User')+'</div>'
+            +'<div class="lobby-comment-time">'+_relTime(c.createdAt||0)+'</div>'
+          +'</div>'
+          +'<div class="lobby-comment-body">'+_esc(c.body||'')+'</div>'
+          +'</div>';
+      }).join('');
+    } catch(_e) { list.innerHTML = '<div style="color:#555;font-size:.75rem;padding:8px 0">Could not load replies.</div>'; }
+  }
+
+  window.submitLobbyComment = async function(postId) {
+    var me = window.pmGetUser && window.pmGetUser();
+    if (!me) return;
+    var input = document.getElementById('lobbyCommentInput');
+    var text  = input ? input.value.trim() : '';
+    if (!text) return;
+    var btn = document.querySelector('.lobby-comment-submit');
+    if (btn) { btn.textContent = 'Posting…'; btn.disabled = true; }
+    try {
+      var tok  = await me.getIdToken();
+      var name = (window.pmGetNickname&&window.pmGetNickname()) || (window._pmMyProfile&&window._pmMyProfile.nickname) || me.displayName || 'User';
+      var av   = (window._pmMyProfile&&window._pmMyProfile.photoURL) || me.photoURL || '';
+      var commentData = {uid:me.uid, body:text, upvotes:0, createdAt:Date.now(), fromName:name, avatar:av};
+      var r = await fetch(_RTDB+'/community/comments/'+postId+'.json?auth='+tok,{
+        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(commentData)
+      });
+      if (!r.ok) throw new Error('Comment failed');
+      // Increment commentCount on post
+      await fetch(_RTDB+'/community/posts/'+postId+'/commentCount.json?auth='+tok,{
+        method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({'.sv':{'increment':1}})
+      });
+      if (input) input.value = '';
+      _loadLobbyComments(postId);
+      // Notify post author
+      var post = _lobbyPosts.find(function(p){return p._id===postId;});
+      if (post && post.uid && post.uid !== me.uid && post.uid !== 'system' && window._pmNotify) {
+        window._pmNotify(post.uid, {type:'comment', targetId:postId, targetTitle:post.body?post.body.slice(0,40):''});
+      }
+      // Update local cache
+      var lp = _lobbyPosts.find(function(p){return p._id===postId;});
+      if (lp) lp.commentCount = (lp.commentCount||0)+1;
+    } catch(_e) { alert('Could not post reply — try again.'); }
+    finally { if(btn){btn.textContent='Reply';btn.disabled=false;} }
+  };
 
 })();
 </script>
