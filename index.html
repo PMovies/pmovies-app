@@ -8666,6 +8666,12 @@
       if (typeof openFilmPage === 'function') openFilmPage(_pfId);
     }
 
+    // Check for pending lobby thread (from /lobby/{postId} URL)
+    // switchTab('lobby') calls initLobby() which will open the thread via _pendingLobbyThread
+    if (window._pendingLobbyThread) {
+      if (typeof switchTab === 'function') switchTab('lobby');
+    }
+
     const hash = location.hash.replace('#', '');
 
     // Direct review link: #review/movie-slug  (or legacy #review/FIREBASE_KEY)
