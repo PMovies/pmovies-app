@@ -8684,6 +8684,37 @@
 
     const hash = location.hash.replace('#', '');
 
+    // Fan review deep-link: #fan-review/{fp}
+    // Worker redirects /fan/{slug} browsers here after resolving slug→fp
+    if (hash.startsWith('fan-review/')) {
+      var _fanFp = hash.slice(11).split('?')[0].trim();
+      if (_fanFp) {
+        var _RTDB_FR = 'https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app';
+        // Fetch the review data directly — try movie reviews first, fall back to TV
+        (async function() {
+          var rev = null;
+          try {
+            var r1 = await fetch(_RTDB_FR + '/fanReviews/' + _fanFp + '.json');
+            var d1 = r1.ok ? await r1.json() : null;
+            if (d1 && typeof d1 === 'object') rev = d1;
+          } catch(_) {}
+          if (!rev) {
+            try {
+              var r2 = await fetch(_RTDB_FR + '/seriesFanReviews/' + _fanFp + '.json');
+              var d2 = r2.ok ? await r2.json() : null;
+              if (d2 && typeof d2 === 'object') { rev = d2; rev._mediaType = 'tv'; }
+            } catch(_) {}
+          }
+          if (!rev) { console.warn('[PMovies] fan review not found:', _fanFp); return; }
+          // Inject into _pmProfileRevMap so openFanReviewPage can find it
+          window._pmProfileRevMap = window._pmProfileRevMap || {};
+          window._pmProfileRevMap[_fanFp] = rev;
+          if (typeof openFanReviewPage === 'function') openFanReviewPage(_fanFp);
+        })();
+      }
+      return;
+    }
+
     // Direct review link: #review/movie-slug  (or legacy #review/FIREBASE_KEY)
     if (hash.startsWith('review/')) {
       const slug = hash.slice(7).split('?')[0];
