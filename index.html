@@ -8674,20 +8674,12 @@
     }
 
     // Check for pending lobby thread (from /lobby/{postId} URL)
-    // Detection runs in <head> so _pendingLobbyThread is always set by now.
+    // Detection script in <head> sets _pendingLobbyThread before any other code runs.
+    // DON'T clear it here — let initLobby's .then() callback open the thread after
+    // _fetchLobbyPosts completes, so the post is already in _lobbyPosts when it opens.
     if (window._pendingLobbyThread) {
-      var _ptid = window._pendingLobbyThread;
-      window._pendingLobbyThread = null; // clear so initLobby doesn't double-open
-      // Load the lobby feed first (switchTab), then open the thread.
-      // Two-step: switchTab triggers initLobby which fetches posts; after that
-      // we open the thread directly by ID.
       if (typeof switchTab === 'function') switchTab('lobby');
-      setTimeout(function() {
-        // openLobbyThread fetches the single post from Firebase if not in local cache
-        if (typeof openLobbyThread === 'function') {
-          openLobbyThread(_ptid);
-        }
-      }, 1200); // 1.2s — lets auth + lobby feed fetch settle before opening thread
+      // switchTab → initLobby → _fetchLobbyPosts → .then(openLobbyThread)
     }
 
     const hash = location.hash.replace('#', '');
@@ -23263,13 +23255,14 @@ async function deleteEditorReview(key, e) {
         if (window._pendingLobbyThread) {
           var pid = window._pendingLobbyThread;
           window._pendingLobbyThread = null;
-          openLobbyThread(pid);
+          // Small delay so the lobby feed renders before the overlay opens
+          setTimeout(function() { openLobbyThread(pid); }, 100);
         }
       });
     } else if (window._pendingLobbyThread) {
       var pid2 = window._pendingLobbyThread;
       window._pendingLobbyThread = null;
-      openLobbyThread(pid2);
+      setTimeout(function() { openLobbyThread(pid2); }, 100);
     }
   };
 
@@ -23681,10 +23674,14 @@ async function deleteEditorReview(key, e) {
       // Fetch it
       try {
         var r = await fetch(_RTDB+'/community/posts/'+postId+'.json');
-        post = r.ok ? Object.assign({},await r.json(),{_id:postId}) : null;
+        var postData = r.ok ? await r.json() : null;
+        // Firebase returns literal null for missing keys — treat as not found
+        post = (postData && typeof postData === 'object')
+          ? Object.assign({}, postData, {_id: postId})
+          : null;
       } catch(_e) { post = null; }
     }
-    if (!post) return;
+    if (!post) { console.warn('[PMovies Lobby] post not found:', postId); return; }
     _lobbyCurrentThread = post;
     var ov = document.getElementById('lobbyThreadOverlay');
     var title = document.getElementById('lobbyThreadTitle');
