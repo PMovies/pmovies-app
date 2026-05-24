@@ -4854,7 +4854,10 @@
   <div class="lobby-wrap">
     <div class="lobby-top">
       <div class="lobby-title">💬 The Lobby</div>
-      <button class="lobby-new-btn" id="lobbyNewPostBtn" onclick="openLobbyNewPost()" style="display:none">+ New Post</button>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button onclick="if(typeof refreshLobbyFeed==='function')refreshLobbyFeed()" style="background:none;border:none;color:#555;font-size:1rem;cursor:pointer;padding:4px 8px;border-radius:8px;transition:color .15s" title="Refresh feed">↺</button>
+        <button class="lobby-new-btn" id="lobbyNewPostBtn" onclick="openLobbyNewPost()" style="display:none">+ New Post</button>
+      </div>
     </div>
     <div class="lobby-sort-bar">
       <button class="lobby-sort-btn active" id="lobbySortTrending" onclick="setLobbySort('trending',this)">🔥 Trending</button>
@@ -23204,6 +23207,12 @@ async function deleteEditorReview(key, e) {
     if (!_lobbyLoaded) { _lobbyLoaded = true; _fetchLobbyPosts(); _ensureWeeklyThread(); }
   };
 
+  window.refreshLobbyFeed = function() {
+    _lobbyLoaded = true; // keep as loaded (prevents double-init)
+    _lobbyPosts = [];
+    _fetchLobbyPosts();
+  };
+
   function _getISOWeek() {
     var d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()+4-(d.getDay()||7));
     var y = d.getFullYear();
@@ -23214,10 +23223,17 @@ async function deleteEditorReview(key, e) {
   async function _ensureWeeklyThread() {
     var weekKey = _getISOWeek();
     try {
+      // Check if this week's thread already exists (no auth needed for this read)
       var r = await fetch(_RTDB+'/community/weeklyThreads/'+weekKey+'.json');
       var existing = r.ok ? await r.json() : null;
       if (existing) return;
-      // Create weekly thread (no auth needed — system post)
+
+      // Must be signed in to create the thread (Firebase rules require auth)
+      var me = window.pmGetUser && window.pmGetUser();
+      if (!me) return;
+      var tok = await me.getIdToken();
+      var authStr = '?auth='+tok;
+
       var titles = [
         '🎬 What did you watch this week?',
         '🎟 Did you go to the cinema this week?',
@@ -23226,12 +23242,14 @@ async function deleteEditorReview(key, e) {
       ];
       var body = titles[Math.floor(Math.random()*titles.length)];
       var postId = '-auto'+Date.now();
-      var postData = {uid:'system',type:'discussion',body:body,pinned:true,upvotes:0,commentCount:0,createdAt:Date.now()};
-      var me = window.pmGetUser && window.pmGetUser();
-      var tok = me ? await me.getIdToken() : '';
-      var authStr = tok ? '?auth='+tok : '';
-      await fetch(_RTDB+'/community/posts/'+postId+'.json'+authStr,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(postData)});
-      await fetch(_RTDB+'/community/weeklyThreads/'+weekKey+'.json'+authStr,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(postId)});
+      var name = (window.pmGetNickname&&window.pmGetNickname()) || me.displayName || 'PMovies';
+      var postData = {uid: me.uid, fromName: name, type:'discussion', body:body,
+        pinned:true, upvotes:0, commentCount:0, createdAt:Date.now()};
+
+      await fetch(_RTDB+'/community/posts/'+postId+'.json'+authStr,
+        {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(postData)});
+      await fetch(_RTDB+'/community/weeklyThreads/'+weekKey+'.json'+authStr,
+        {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(postId)});
     } catch(_e) {}
   }
 
@@ -23240,22 +23258,55 @@ async function deleteEditorReview(key, e) {
     if (!feed) return;
     feed.innerHTML = '<div class="lobby-empty">Loading…</div>';
     try {
-      var r = await fetch(_RTDB+'/community/posts.json?orderBy="createdAt"&limitToLast=100');
-      var raw = r.ok ? await r.json() : null;
-      if (!raw) { feed.innerHTML = '<div class="lobby-empty">No discussions yet. Start the conversation!</div>'; return; }
-      _lobbyPosts = Object.entries(raw).map(function(e){ return Object.assign({},e[1],{_id:e[0]}); })
-        .sort(function(a,b){ return (b.createdAt||0)-(a.createdAt||0); });
-      // Load user upvotes
       var me = window.pmGetUser && window.pmGetUser();
-      if (me) {
+      var tok = null;
+      try { if (me) tok = await me.getIdToken(); } catch(_e) {}
+      var authSuffix = tok ? '?auth=' + tok : '';
+      var raw = null;
+
+      // 1. Try ordered query (requires .indexOn: ["createdAt"] in Firebase rules)
+      try {
+        var sep = authSuffix ? '&' : '?';
+        var r1 = await fetch(_RTDB + '/community/posts.json' + authSuffix + sep + 'orderBy="createdAt"&limitToLast=100');
+        if (r1.ok) raw = await r1.json();
+      } catch(_e) {}
+
+      // 2. Fall back to plain fetch (always works, sort client-side)
+      if (!raw) {
         try {
-          var uRes = await fetch(_RTDB+'/community/upvotes.json?shallow=true');
-          // Check per-post locally for now (lightweight)
+          var r2 = await fetch(_RTDB + '/community/posts.json' + authSuffix);
+          if (r2.ok) raw = await r2.json();
         } catch(_e) {}
       }
+
+      if (!raw) {
+        feed.innerHTML = '<div class="lobby-empty">No discussions yet. Start the conversation!</div>';
+        return;
+      }
+
+      _lobbyPosts = Object.entries(raw)
+        .filter(function(e){ return e[1] && typeof e[1] === 'object'; })
+        .map(function(e){ return Object.assign({}, e[1], {_id: e[0]}); })
+        .sort(function(a,b){ return (b.createdAt||0) - (a.createdAt||0); });
+
+      // Load this user's upvotes for accurate voted state
+      if (me && tok) {
+        try {
+          var uvRes = await fetch(_RTDB + '/community/upvotes.json?auth=' + tok + '&shallow=true');
+          if (uvRes.ok) {
+            var uvRaw = await uvRes.json();
+            // uvRaw is { postId: true } shallow — check per-post whether uid exists
+            // We'll lazy-load individual upvote state on upvote click instead
+          }
+        } catch(_e) {}
+      }
+
       _lobbyPage = 0;
       _renderLobbyFeed();
-    } catch(_e) { feed.innerHTML = '<div class="lobby-empty">Could not load posts — try again.</div>'; }
+    } catch(_e) {
+      var feed2 = document.getElementById('lobbyFeed');
+      if (feed2) feed2.innerHTML = '<div class="lobby-empty">Could not load posts — try again.</div>';
+    }
   }
 
   function _trendingScore(post) {
@@ -23493,14 +23544,20 @@ async function deleteEditorReview(key, e) {
       var r = await fetch(_RTDB+'/community/posts.json?auth='+tok, {
         method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(postData)
       });
-      if (!r.ok) throw new Error('Post failed');
+      if (!r.ok) {
+        var errBody = ''; try { var ej = await r.json(); errBody = ej.error || ''; } catch(_e2) {}
+        throw new Error('Firebase rejected the post (' + r.status + ')' + (errBody ? ': ' + errBody : '. Check RTDB security rules allow writes to /community/posts for authenticated users.'));
+      }
       var resp = await r.json();
-      var newPost = Object.assign({},postData,{_id:resp.name});
+      var newPost = Object.assign({}, postData, {_id: resp.name});
+      // Immediately add to local array and render (instant feedback)
       _lobbyPosts.unshift(newPost);
       closeLobbyNewPost();
       _lobbyPage = 0;
       _renderLobbyFeed();
-    } catch(_e) { alert('Could not post — please try again.'); }
+      // Then do a background re-fetch to pick up any other new posts
+      setTimeout(_fetchLobbyPosts, 800);
+    } catch(_e) { alert('Could not post: ' + (_e.message || 'please try again.')); }
     finally { if(submitBtn){submitBtn.textContent='Post';submitBtn.disabled=false;} }
   };
 
