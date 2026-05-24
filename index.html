@@ -3813,77 +3813,96 @@
 /* ════════════════════════════════════════════════
    FILM FULL PAGE OVERLAY
    ════════════════════════════════════════════════ */
-#filmPage { display:none; position:fixed; inset:0; z-index:9997; background:#0a0a0a; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+/* ── Film Full Page ── */
+#filmPage { display:none; position:fixed; inset:0; z-index:9997; background:#0d0d0d; overflow-y:auto; -webkit-overflow-scrolling:touch; }
 #filmPage.open { display:block; }
-.fp-header { position:sticky; top:0; z-index:10; background:rgba(10,10,10,.92); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border-bottom:1px solid rgba(255,255,255,.07); padding:12px 16px; display:flex; align-items:center; gap:12px; }
+/* Centered content wrapper — gives the Letterboxd "breathing room" feel */
+.fp-inner { max-width:780px; margin:0 auto; position:relative; }
+.fp-header { position:sticky; top:0; z-index:10; background:rgba(13,13,13,.94); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border-bottom:1px solid rgba(255,255,255,.06); padding:11px 16px; display:flex; align-items:center; gap:12px; }
 .fp-back-btn { background:none; border:none; color:#f5a623; font-size:1.1rem; cursor:pointer; padding:4px 8px 4px 2px; flex-shrink:0; }
 .fp-header-title { flex:1; font-family:'Bebas Neue',sans-serif; font-size:1.1rem; color:#eee; letter-spacing:.06em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.fp-backdrop-wrap { position:relative; width:100%; aspect-ratio:16/7; background:#111; overflow:hidden; }
+/* Backdrop — full width of inner container, taller on desktop */
+.fp-backdrop-wrap { position:relative; width:100%; aspect-ratio:16/7; background:#111; overflow:hidden; border-radius:0 0 16px 16px; }
+@media(min-width:600px){ .fp-backdrop-wrap { aspect-ratio:21/8; border-radius:0 0 20px 20px; } }
 .fp-backdrop-img { width:100%; height:100%; object-fit:cover; display:block; }
-.fp-backdrop-grad { position:absolute; inset:0; background:linear-gradient(to bottom, rgba(10,10,10,0) 30%, rgba(10,10,10,.95) 100%); }
-.fp-hero { display:flex; align-items:flex-end; gap:14px; padding:0 16px; margin-top:-64px; position:relative; z-index:2; margin-bottom:12px; }
-.fp-poster { width:80px; height:120px; object-fit:cover; border-radius:10px; border:2px solid rgba(255,255,255,.1); flex-shrink:0; box-shadow:0 8px 24px rgba(0,0,0,.6); }
-.fp-poster-ph { width:80px; height:120px; background:#1a1a1a; border-radius:10px; flex-shrink:0; }
-.fp-hero-info { flex:1; min-width:0; padding-bottom:4px; }
-.fp-title { font-family:'Bebas Neue',sans-serif; font-size:1.6rem; letter-spacing:.05em; color:#fff; line-height:1.05; margin-bottom:4px; }
-.fp-meta { font-size:.65rem; color:#888; font-family:'Montserrat',sans-serif; margin-bottom:6px; }
-.fp-ratings { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-.fp-rating-pill { display:flex; align-items:center; gap:4px; background:rgba(255,255,255,.07); border-radius:8px; padding:4px 9px; font-size:.62rem; font-weight:700; font-family:'Montserrat',sans-serif; color:#eee; }
+.fp-backdrop-grad { position:absolute; inset:0; background:linear-gradient(to bottom, rgba(13,13,13,0) 20%, rgba(13,13,13,.97) 100%); }
+/* Hero: poster left, info right — poster overlaps backdrop */
+.fp-hero { display:flex; align-items:flex-end; gap:16px; padding:0 20px; margin-top:-70px; position:relative; z-index:2; margin-bottom:16px; }
+.fp-poster { width:88px; height:132px; object-fit:cover; border-radius:12px; border:2px solid rgba(255,255,255,.12); flex-shrink:0; box-shadow:0 10px 30px rgba(0,0,0,.7); }
+@media(min-width:600px){ .fp-poster { width:110px; height:165px; } }
+.fp-poster-ph { width:88px; height:132px; background:#1a1a1a; border-radius:12px; flex-shrink:0; }
+.fp-hero-info { flex:1; min-width:0; padding-bottom:6px; }
+.fp-title { font-family:'Bebas Neue',sans-serif; font-size:1.7rem; letter-spacing:.05em; color:#fff; line-height:1.05; margin-bottom:4px; }
+@media(min-width:600px){ .fp-title { font-size:2.1rem; } }
+.fp-meta { font-size:.63rem; color:#777; font-family:'Montserrat',sans-serif; margin-bottom:8px; letter-spacing:.02em; }
+.fp-ratings { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.fp-rating-pill { display:flex; align-items:center; gap:4px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); border-radius:20px; padding:4px 10px; font-size:.6rem; font-weight:700; font-family:'Montserrat',sans-serif; color:#ddd; }
 .fp-rating-pill .fp-star { color:#f5a623; }
 .fp-rating-tmdb { color:#01d277; }
-.fp-activity-bar { display:flex; gap:0; border-top:1px solid rgba(255,255,255,.07); border-bottom:1px solid rgba(255,255,255,.07); margin:0 0 20px; position:sticky; top:49px; z-index:9; background:rgba(10,10,10,.95); backdrop-filter:blur(6px); overflow-x:auto; scrollbar-width:none; }
+/* Sticky activity bar */
+.fp-activity-bar { display:flex; gap:0; border-top:1px solid rgba(255,255,255,.06); border-bottom:1px solid rgba(255,255,255,.06); margin:0 0 24px; position:sticky; top:45px; z-index:9; background:rgba(13,13,13,.96); backdrop-filter:blur(8px); overflow-x:auto; scrollbar-width:none; }
 .fp-activity-bar::-webkit-scrollbar { display:none; }
-.fp-activity-pill { flex:1; min-width:72px; display:flex; flex-direction:column; align-items:center; gap:2px; padding:10px 6px; cursor:pointer; border-right:1px solid rgba(255,255,255,.06); transition:background .15s; font-family:'Montserrat',sans-serif; white-space:nowrap; }
+.fp-activity-pill { flex:1; min-width:72px; display:flex; flex-direction:column; align-items:center; gap:2px; padding:10px 6px; cursor:pointer; border-right:1px solid rgba(255,255,255,.05); transition:background .15s; font-family:'Montserrat',sans-serif; white-space:nowrap; }
 .fp-activity-pill:last-child { border-right:none; }
 .fp-activity-pill:hover { background:rgba(255,255,255,.04); }
-.fp-activity-pill-num { font-size:.9rem; font-weight:800; color:#f5a623; }
-.fp-activity-pill-label { font-size:.5rem; color:#666; letter-spacing:.04em; text-transform:uppercase; font-weight:700; }
-.fp-section { padding:0 16px; margin-bottom:28px; }
-.fp-section-title { font-family:'Bebas Neue',sans-serif; font-size:1rem; letter-spacing:.08em; color:#888; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,.06); display:flex; align-items:center; gap:8px; }
+.fp-activity-pill-num { font-size:.88rem; font-weight:800; color:#f5a623; }
+.fp-activity-pill-label { font-size:.48rem; color:#555; letter-spacing:.04em; text-transform:uppercase; font-weight:700; }
+/* Sections */
+.fp-section { padding:0 20px; margin-bottom:32px; }
+.fp-section-title { font-family:'Bebas Neue',sans-serif; font-size:1rem; letter-spacing:.08em; color:#777; margin-bottom:14px; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,.05); display:flex; align-items:center; gap:8px; }
 .fp-section-title span { color:#f5a623; }
+/* Friends */
 .fp-friends-row { display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; }
 .fp-friends-row::-webkit-scrollbar { display:none; }
-.fp-friend-chip { display:flex; align-items:center; gap:6px; background:#111; border:1px solid rgba(255,255,255,.08); border-radius:20px; padding:5px 10px 5px 5px; white-space:nowrap; cursor:pointer; transition:border-color .15s; }
+.fp-friend-chip { display:flex; align-items:center; gap:6px; background:#151515; border:1px solid rgba(255,255,255,.07); border-radius:20px; padding:5px 10px 5px 5px; white-space:nowrap; cursor:pointer; transition:border-color .15s; }
 .fp-friend-chip:hover { border-color:rgba(245,166,35,.3); }
 .fp-friend-av { width:24px; height:24px; border-radius:50%; object-fit:cover; background:#2a1800; }
 .fp-friend-name { font-size:.6rem; font-weight:700; color:#ccc; font-family:'Montserrat',sans-serif; }
 .fp-friend-action { font-size:.56rem; color:#f5a623; font-family:'Montserrat',sans-serif; }
-/* Review cards in film page */
+/* Review cards */
 .fp-review-sort { display:flex; gap:6px; margin-bottom:12px; }
-.fp-sort-btn { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); color:#777; font-size:.56rem; font-weight:700; font-family:'Montserrat',sans-serif; padding:5px 12px; border-radius:10px; cursor:pointer; text-transform:uppercase; transition:all .15s; }
+.fp-sort-btn { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07); color:#666; font-size:.56rem; font-weight:700; font-family:'Montserrat',sans-serif; padding:5px 12px; border-radius:10px; cursor:pointer; text-transform:uppercase; transition:all .15s; }
 .fp-sort-btn.active { border-color:rgba(245,166,35,.4); color:#f5a623; background:rgba(245,166,35,.08); }
-.fp-review-card { background:#111; border:1px solid rgba(255,255,255,.07); border-radius:12px; padding:12px 14px; margin-bottom:10px; cursor:pointer; transition:border-color .15s; }
-.fp-review-card:hover { border-color:rgba(245,166,35,.2); }
-.fp-review-card-head { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
-.fp-review-av { width:32px; height:32px; border-radius:50%; object-fit:cover; background:#2a1800; flex-shrink:0; }
+.fp-review-card { background:#141414; border:1px solid rgba(255,255,255,.06); border-radius:14px; padding:13px 15px; margin-bottom:10px; cursor:pointer; transition:border-color .15s,transform .15s; }
+.fp-review-card:hover { border-color:rgba(245,166,35,.2); transform:translateY(-1px); }
+.fp-review-card-head { display:flex; align-items:center; gap:9px; margin-bottom:9px; }
+.fp-review-av { width:34px; height:34px; border-radius:50%; object-fit:cover; background:#2a1800; flex-shrink:0; }
 .fp-review-card-meta { flex:1; min-width:0; }
 .fp-review-card-name { font-size:.68rem; font-weight:700; color:#ccc; font-family:'Montserrat',sans-serif; }
 .fp-review-stars { color:#f5a623; font-size:.7rem; letter-spacing:1px; }
-.fp-review-date { font-size:.56rem; color:#555; }
-.fp-review-snippet { font-size:.78rem; color:#bbb; line-height:1.5; }
-.fp-review-more { color:#f5a623; font-size:.68rem; font-family:'Montserrat',sans-serif; font-weight:700; cursor:pointer; margin-top:4px; display:inline-block; }
-.fp-theater-item { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,.05); }
-.fp-theater-item:last-child { border-bottom:none; }
-.fp-theater-icon { font-size:1.1rem; }
-.fp-theater-info { flex:1; font-size:.72rem; color:#ccc; font-family:'Montserrat',sans-serif; }
-.fp-theater-date { font-size:.58rem; color:#555; font-family:'Montserrat',sans-serif; }
-.fp-info-toggle { background:none; border:1px solid rgba(255,255,255,.1); color:#777; font-size:.6rem; font-family:'Montserrat',sans-serif; font-weight:700; padding:6px 14px; border-radius:10px; cursor:pointer; text-transform:uppercase; margin-left:auto; }
-.fp-info-body { font-size:.78rem; color:#aaa; line-height:1.6; margin-top:10px; }
-.fp-cast-row { display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; margin-top:10px; }
+.fp-review-date { font-size:.55rem; color:#444; }
+.fp-review-snippet { font-size:.78rem; color:#aaa; line-height:1.55; }
+.fp-review-more { color:#f5a623; font-size:.67rem; font-family:'Montserrat',sans-serif; font-weight:700; cursor:pointer; margin-top:4px; display:inline-block; }
+/* Theater — avatar grid */
+.fp-theater-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(64px,1fr)); gap:14px 10px; margin-bottom:10px; }
+.fp-theater-av-item { display:flex; flex-direction:column; align-items:center; gap:5px; cursor:default; }
+.fp-theater-av-circle { width:52px; height:52px; border-radius:50%; object-fit:cover; background:#1e1e1e; display:flex; align-items:center; justify-content:center; font-size:1.1rem; font-weight:700; font-family:'Bebas Neue',sans-serif; color:#f5a623; border:2px solid rgba(245,166,35,.2); flex-shrink:0; overflow:hidden; }
+.fp-theater-av-circle img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+.fp-theater-av-name { font-size:.5rem; color:#999; font-family:'Montserrat',sans-serif; text-align:center; line-height:1.3; max-width:64px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.fp-theater-av-date { font-size:.46rem; color:#555; font-family:'Montserrat',sans-serif; text-align:center; }
+.fp-theater-expand { background:none; border:1px solid rgba(255,255,255,.08); color:#777; font-size:.58rem; font-weight:700; font-family:'Montserrat',sans-serif; padding:7px 16px; border-radius:10px; cursor:pointer; width:100%; margin-top:8px; text-transform:uppercase; letter-spacing:.04em; transition:border-color .15s,color .15s; }
+.fp-theater-expand:hover { border-color:rgba(245,166,35,.3); color:#f5a623; }
+/* Info */
+.fp-info-toggle { background:none; border:1px solid rgba(255,255,255,.08); color:#666; font-size:.58rem; font-family:'Montserrat',sans-serif; font-weight:700; padding:6px 14px; border-radius:10px; cursor:pointer; text-transform:uppercase; margin-left:auto; transition:border-color .15s,color .15s; }
+.fp-info-toggle:hover { border-color:rgba(245,166,35,.3); color:#f5a623; }
+.fp-info-body { font-size:.78rem; color:#999; line-height:1.65; margin-top:12px; }
+.fp-cast-row { display:flex; gap:10px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; margin-top:12px; }
 .fp-cast-row::-webkit-scrollbar { display:none; }
-.fp-cast-item { text-align:center; flex-shrink:0; width:60px; }
-.fp-cast-photo { width:52px; height:52px; border-radius:50%; object-fit:cover; background:#1a1a1a; margin:0 auto 4px; display:block; }
-.fp-cast-name { font-size:.5rem; color:#888; font-family:'Montserrat',sans-serif; line-height:1.3; }
-.fp-lobby-mini-card { background:#0f0f0f; border:1px solid rgba(255,255,255,.06); border-radius:10px; padding:10px 12px; margin-bottom:8px; cursor:pointer; transition:border-color .15s; }
+.fp-cast-item { text-align:center; flex-shrink:0; width:62px; }
+.fp-cast-photo { width:54px; height:54px; border-radius:50%; object-fit:cover; background:#1a1a1a; margin:0 auto 4px; display:block; }
+.fp-cast-name { font-size:.48rem; color:#777; font-family:'Montserrat',sans-serif; line-height:1.3; }
+/* Lobby mini cards */
+.fp-lobby-mini-card { background:#111; border:1px solid rgba(255,255,255,.06); border-radius:12px; padding:11px 13px; margin-bottom:8px; cursor:pointer; transition:border-color .15s; }
 .fp-lobby-mini-card:hover { border-color:rgba(245,166,35,.25); }
-.fp-lobby-mini-type { font-size:.54rem; font-weight:800; font-family:'Montserrat',sans-serif; text-transform:uppercase; color:#f5a623; margin-bottom:4px; }
+.fp-lobby-mini-type { font-size:.52rem; font-weight:800; font-family:'Montserrat',sans-serif; text-transform:uppercase; color:#f5a623; margin-bottom:4px; }
 .fp-lobby-mini-body { font-size:.75rem; color:#bbb; line-height:1.4; }
-.fp-lobby-mini-foot { font-size:.56rem; color:#555; margin-top:5px; font-family:'Montserrat',sans-serif; }
-.fp-cta-btn { display:block; text-align:center; background:rgba(245,166,35,.1); border:1px solid rgba(245,166,35,.25); color:#f5a623; font-size:.65rem; font-weight:700; font-family:'Montserrat',sans-serif; padding:10px; border-radius:10px; cursor:pointer; text-transform:uppercase; letter-spacing:.04em; margin-top:8px; transition:all .15s; }
-.fp-cta-btn:hover { background:rgba(245,166,35,.2); }
+.fp-lobby-mini-foot { font-size:.55rem; color:#444; margin-top:5px; font-family:'Montserrat',sans-serif; }
+.fp-cta-btn { display:block; text-align:center; background:rgba(245,166,35,.08); border:1px solid rgba(245,166,35,.22); color:#f5a623; font-size:.63rem; font-weight:700; font-family:'Montserrat',sans-serif; padding:11px; border-radius:12px; cursor:pointer; text-transform:uppercase; letter-spacing:.04em; margin-top:8px; transition:all .15s; }
+.fp-cta-btn:hover { background:rgba(245,166,35,.18); }
+/* Skeleton */
 .fp-skeleton { animation:fp-pulse 1.4s ease-in-out infinite; }
-@keyframes fp-pulse { 0%,100%{opacity:.4} 50%{opacity:.8} }
-.fp-skel-backdrop { width:100%; aspect-ratio:16/7; background:#1a1a1a; }
+@keyframes fp-pulse { 0%,100%{opacity:.35} 50%{opacity:.75} }
+.fp-skel-backdrop { width:100%; aspect-ratio:16/7; background:#1a1a1a; border-radius:0 0 16px 16px; }
 .fp-skel-block { background:#1a1a1a; border-radius:8px; }
 </style>
 </head>
@@ -4881,11 +4900,13 @@
 
 <!-- Film Full Page Overlay -->
 <div id="filmPage">
-  <div class="fp-header">
-    <button class="fp-back-btn" onclick="closeFilmPage()">←</button>
-    <div class="fp-header-title" id="fpHeaderTitle">Loading…</div>
+  <div class="fp-inner">
+    <div class="fp-header">
+      <button class="fp-back-btn" onclick="closeFilmPage()">←</button>
+      <div class="fp-header-title" id="fpHeaderTitle">Loading…</div>
+    </div>
+    <div id="fpContent"></div>
   </div>
-  <div id="fpContent"></div>
 </div>
 
 <!-- UPLOAD MODAL -->
@@ -22305,12 +22326,19 @@ async function deleteEditorReview(key, e) {
     var fpContent = document.getElementById('fpContent');
     var fpTitle = document.getElementById('fpHeaderTitle');
     if (!page) return;
+    // Update URL to /film/{id} if we're not already there (replaceState avoids duplicate history entries)
+    try {
+      var curPath = location.pathname;
+      if (!curPath.match(new RegExp('^/film/'+tmdbId+'(?:/|$)'))) {
+        history.replaceState({ filmId: tmdbId }, '', '/film/' + tmdbId);
+      }
+    } catch(_e) {}
     // Show skeleton immediately
     page.classList.add('open');
     document.body.style.overflow = 'hidden';
     fpTitle.textContent = 'Loading…';
     fpContent.innerHTML = '<div class="fp-skel-backdrop fp-skeleton"></div>'
-      + '<div style="padding:16px"><div class="fp-skel-block fp-skeleton" style="height:20px;width:60%;margin-bottom:10px"></div>'
+      + '<div style="padding:20px"><div class="fp-skel-block fp-skeleton" style="height:20px;width:60%;margin-bottom:10px"></div>'
       + '<div class="fp-skel-block fp-skeleton" style="height:14px;width:40%;margin-bottom:20px"></div>'
       + '<div class="fp-skel-block fp-skeleton" style="height:14px;width:80%;margin-bottom:8px"></div>'
       + '<div class="fp-skel-block fp-skeleton" style="height:14px;width:70%"></div></div>';
@@ -22331,14 +22359,15 @@ async function deleteEditorReview(key, e) {
     document.body.style.overflow = '';
     _fpCurrentId = null;
     try {
-      if (location.pathname.match(/^\/film\//)) history.pushState({}, '', '/');
+      if (location.pathname.match(/^\/film\//)) history.pushState({ fromFilm: true }, '', '/');
     } catch(_e) {}
   };
 
-  // navigateToFilm — used by movie card clicks
+  // navigateToFilm — used by movie card clicks (pushState for proper back-button history)
   window.navigateToFilm = function(tmdbId, title) {
     var slug = String(title||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-    try { history.pushState({ filmId: tmdbId }, '', '/film/' + tmdbId + '/' + slug); } catch(_e) {}
+    try { history.pushState({ filmId: String(tmdbId) }, '', '/film/' + tmdbId + (slug ? '/'+slug : '')); } catch(_e) {}
+    _fpCurrentId = String(tmdbId); // set before openFilmPage so URL logic sees correct path
     openFilmPage(tmdbId);
   };
 
@@ -22643,11 +22672,11 @@ async function deleteEditorReview(key, e) {
 
     if (_fpCurrentId !== String(tmdbId)) return;
 
-    // Build uid→displayName map from leaderboard
+    // Build uid→{name,avatar} map from leaderboard
     var nameMap = {};
     if (lbRes) {
       Object.entries(lbRes).forEach(function(e){
-        if (e[1] && e[1].displayName) nameMap[e[0]] = e[1].displayName;
+        if (e[1]) nameMap[e[0]] = { name: e[1].displayName||null, avatar: e[1].avatar||null };
       });
     }
 
@@ -22662,11 +22691,13 @@ async function deleteEditorReview(key, e) {
             // Year bucket: { logKey: { movieId, ... }, ... }
             Object.values(val).forEach(function(log){
               if (log && String(log.movieId)===String(tmdbId)) {
-                sightings.push(Object.assign({}, log, { uid: uid, _displayName: nameMap[uid]||null }));
+                var info = nameMap[uid]||{};
+                sightings.push(Object.assign({}, log, { uid: uid, _displayName: info.name||null, _avatar: info.avatar||null }));
               }
             });
           } else if (val && String(val.movieId)===String(tmdbId)) {
-            sightings.push(Object.assign({}, val, { uid: uid, _displayName: nameMap[uid]||null }));
+            var info2 = nameMap[uid]||{};
+            sightings.push(Object.assign({}, val, { uid: uid, _displayName: info2.name||null, _avatar: info2.avatar||null }));
           }
         });
       });
@@ -22676,16 +22707,41 @@ async function deleteEditorReview(key, e) {
 
     var el   = document.getElementById('fpTheaterList');
     var pill = document.getElementById('fpTheaterPill');
-    if (el) el.innerHTML = sightings.length
-      ? sightings.slice(0,8).map(function(s){
-          var name = s._displayName || s.userName || ('User ' + s.uid.slice(0,4));
-          var fmt  = s.format ? ' · '+_esc(s.format) : '';
-          return '<div class="fp-theater-item"><span class="fp-theater-icon">🎟</span>'
-            +'<div class="fp-theater-info"><b>'+_esc(name)+'</b>'+fmt+'</div>'
-            +'<div class="fp-theater-date">'+_relTime(s.timestamp||0)+'</div></div>';
-        }).join('')
-      : '<div style="color:#555;font-size:.75rem">No theater sightings yet</div>';
     if (pill) pill.textContent = sightings.length || '0';
+
+    function _renderTheaterGrid(items) {
+      if (!items.length) return '<div style="color:#555;font-size:.75rem;padding:8px 0">No theater sightings yet</div>';
+      return '<div class="fp-theater-grid">'
+        + items.map(function(s){
+            var name = s._displayName || s.userName || ('User ' + (s.uid||'').slice(0,4));
+            var initial = name.charAt(0).toUpperCase();
+            var avHtml = s._avatar
+              ? '<img src="'+_esc(s._avatar)+'" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+              : initial;
+            return '<div class="fp-theater-av-item">'
+              +'<div class="fp-theater-av-circle">'+avHtml+'</div>'
+              +'<div class="fp-theater-av-name">'+_esc(name)+'</div>'
+              +'<div class="fp-theater-av-date">'+_relTime(s.timestamp||0)+'</div>'
+              +'</div>';
+          }).join('')
+        +'</div>';
+    }
+
+    if (el) {
+      var INIT_SHOW = 12;
+      el.innerHTML = _renderTheaterGrid(sightings.slice(0, INIT_SHOW));
+      if (sightings.length > INIT_SHOW) {
+        var remaining = sightings.length - INIT_SHOW;
+        var expandBtn = document.createElement('button');
+        expandBtn.className = 'fp-theater-expand';
+        expandBtn.textContent = 'Show ' + remaining + ' more sighting' + (remaining===1?'':'s');
+        expandBtn.onclick = function() {
+          el.innerHTML = _renderTheaterGrid(sightings);
+          expandBtn.remove();
+        };
+        el.appendChild(expandBtn);
+      }
+    }
   }
 
   window.fpToggleInfo = function() {
@@ -22720,6 +22776,8 @@ async function deleteEditorReview(key, e) {
             var pg = document.getElementById('frPage');
             if (pg) pg.style.display = 'none';
             document.body.style.overflow = '';
+            // Restore the /film/ URL so history is clean
+            try { history.replaceState({ filmId: filmId }, '', '/film/' + filmId); } catch(_e) {}
             setTimeout(function(){ openFilmPage(filmId); }, 80);
             return;
           }
@@ -22737,6 +22795,8 @@ async function deleteEditorReview(key, e) {
             var pg = document.getElementById('erPage');
             if (pg) pg.style.display = 'none';
             document.body.style.overflow = '';
+            // Restore the /film/ URL so history is clean
+            try { history.replaceState({ filmId: filmId }, '', '/film/' + filmId); } catch(_e) {}
             setTimeout(function(){ openFilmPage(filmId); }, 80);
             return;
           }
@@ -22756,33 +22816,51 @@ async function deleteEditorReview(key, e) {
     // Mark that we should return to the current film page on close
     window._fpReviewReturnFilm = _fpCurrentId || null;
 
-    // Fan reviews: must use openFanReviewPage(fp) — NOT _loadAndShowReview (that's editor-only)
-    // Find the review in the cache and register it in _reviewCardRegistry before opening
-    if (fp && typeof openFanReviewPage === 'function') {
-      // Try to find the full review object from our film-page cache
-      var fullRev = _fpReviewCache[fp] || null;
-      if (!fullRev) {
-        // Search community reviews cache
-        var all = window._pmGetCommunityReviews ? window._pmGetCommunityReviews() : [];
-        fullRev = all.find(function(r){ return typeof fanReviewFp==='function' && fanReviewFp(r)===fp; }) || null;
-      }
-      if (fullRev && typeof _reviewCardRegistry !== 'undefined') {
-        _reviewCardRegistry.set(fp, fullRev);
-      }
-      if (fullRev) {
-        openFanReviewPage(fp);
-        return;
-      }
+    // Helper: register + open
+    function _openWithRev(rev) {
+      if (!rev) return false;
+      var revFp = fp || (typeof fanReviewFp === 'function' ? fanReviewFp(rev) : '');
+      if (!revFp) return false;
+      if (typeof _reviewCardRegistry !== 'undefined') _reviewCardRegistry.set(revFp, rev);
+      if (typeof openFanReviewPage === 'function') { openFanReviewPage(revFp); return true; }
+      return false;
     }
-    // Fallback: fetch the review by reviewId key from Firebase, then open
-    if (uid && typeof openFanReviewPage === 'function') {
-      var all2 = window._pmGetCommunityReviews ? window._pmGetCommunityReviews() : [];
-      var found = all2.find(function(r){ return r.uid === uid; });
-      if (found && typeof fanReviewFp === 'function') {
-        var foundFp = fanReviewFp(found);
-        if (typeof _reviewCardRegistry !== 'undefined') _reviewCardRegistry.set(foundFp, found);
-        openFanReviewPage(foundFp);
-      }
+
+    // 1. Film-page cache (populated by _getReviewsForFilm)
+    if (fp && _fpReviewCache[fp]) { if (_openWithRev(_fpReviewCache[fp])) return; }
+
+    // 2. Community reviews in-memory cache
+    if (fp) {
+      var all = window._pmGetCommunityReviews ? window._pmGetCommunityReviews() : [];
+      var found = all.find(function(r){ return typeof fanReviewFp==='function' && fanReviewFp(r)===fp; });
+      if (found) { if (_openWithRev(found)) return; }
+    }
+
+    // 3. Firebase fallback — fetch from fanReviews flat collection and filter by uid
+    if (uid) {
+      (async function() {
+        try {
+          var r = await fetch(_RTDB+'/fanReviews.json?orderBy="uid"&equalTo="'+encodeURIComponent(uid)+'"');
+          if (r.ok) {
+            var raw = await r.json();
+            if (raw) {
+              var entries = Object.entries(raw);
+              // Find the one matching our film (tmdbId) if multiple
+              var filmId = _fpCurrentId;
+              var match = null;
+              entries.forEach(function(e){
+                var rev = e[1];
+                if (!rev) return;
+                if (!match) match = Object.assign({}, rev, {_key: e[0]});
+                if (filmId && String(rev.tmdbId) === String(filmId)) match = Object.assign({}, rev, {_key: e[0]});
+              });
+              if (match) { _openWithRev(match); return; }
+            }
+          }
+        } catch(_e) {}
+        // Last resort: open by slug for editor reviews
+        if (slug && typeof _loadAndShowReview === 'function') _loadAndShowReview(slug);
+      })();
     }
   };
 
