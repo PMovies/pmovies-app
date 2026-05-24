@@ -23204,7 +23204,11 @@ async function deleteEditorReview(key, e) {
     var me = window.pmGetUser && window.pmGetUser();
     var btn = document.getElementById('lobbyNewPostBtn');
     if (btn) btn.style.display = me ? '' : 'none';
-    if (!_lobbyLoaded) { _lobbyLoaded = true; _fetchLobbyPosts(); _ensureWeeklyThread(); }
+    if (!_lobbyLoaded) {
+      _lobbyLoaded = true;
+      // Fetch first, then ensure weekly thread (so we can check _lobbyPosts for existing pinned)
+      _fetchLobbyPosts().then(function() { _ensureWeeklyThread(); });
+    }
   };
 
   window.refreshLobbyFeed = function() {
@@ -23221,18 +23225,22 @@ async function deleteEditorReview(key, e) {
   }
 
   async function _ensureWeeklyThread() {
+    // Guard 1: if we already have a pinned post in the local array, skip entirely
+    if (_lobbyPosts.some(function(p){ return p.pinned; })) return;
+
+    // Guard 2: must be signed in
+    var me = window.pmGetUser && window.pmGetUser();
+    if (!me) return;
+
     var weekKey = _getISOWeek();
     try {
-      // Check if this week's thread already exists (no auth needed for this read)
-      var r = await fetch(_RTDB+'/community/weeklyThreads/'+weekKey+'.json');
-      var existing = r.ok ? await r.json() : null;
-      if (existing) return;
-
-      // Must be signed in to create the thread (Firebase rules require auth)
-      var me = window.pmGetUser && window.pmGetUser();
-      if (!me) return;
       var tok = await me.getIdToken();
       var authStr = '?auth='+tok;
+
+      // Guard 3: check Firebase weeklyThreads record
+      var r = await fetch(_RTDB+'/community/weeklyThreads/'+weekKey+'.json'+authStr);
+      var existing = r.ok ? await r.json() : null;
+      if (existing) return;
 
       var titles = [
         '🎬 What did you watch this week?',
@@ -23241,15 +23249,20 @@ async function deleteEditorReview(key, e) {
         '🔥 Drop your hottest film take this week'
       ];
       var body = titles[Math.floor(Math.random()*titles.length)];
-      var postId = '-auto'+Date.now();
+      var postId = '-weekly-'+weekKey; // deterministic ID prevents duplicates even if run twice
       var name = (window.pmGetNickname&&window.pmGetNickname()) || me.displayName || 'PMovies';
       var postData = {uid: me.uid, fromName: name, type:'discussion', body:body,
         pinned:true, upvotes:0, commentCount:0, createdAt:Date.now()};
 
+      // Use PUT with deterministic ID (idempotent — safe to run twice)
       await fetch(_RTDB+'/community/posts/'+postId+'.json'+authStr,
         {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(postData)});
       await fetch(_RTDB+'/community/weeklyThreads/'+weekKey+'.json'+authStr,
         {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(postId)});
+
+      // Add to local array and re-render
+      _lobbyPosts.unshift(Object.assign({}, postData, {_id: postId}));
+      _renderLobbyFeed();
     } catch(_e) {}
   }
 
@@ -23284,21 +23297,29 @@ async function deleteEditorReview(key, e) {
         return;
       }
 
-      _lobbyPosts = Object.entries(raw)
+      var allPosts = Object.entries(raw)
         .filter(function(e){ return e[1] && typeof e[1] === 'object'; })
         .map(function(e){ return Object.assign({}, e[1], {_id: e[0]}); })
         .sort(function(a,b){ return (b.createdAt||0) - (a.createdAt||0); });
 
-      // Load this user's upvotes for accurate voted state
-      if (me && tok) {
-        try {
-          var uvRes = await fetch(_RTDB + '/community/upvotes.json?auth=' + tok + '&shallow=true');
-          if (uvRes.ok) {
-            var uvRaw = await uvRes.json();
-            // uvRaw is { postId: true } shallow — check per-post whether uid exists
-            // We'll lazy-load individual upvote state on upvote click instead
-          }
-        } catch(_e) {}
+      // Deduplicate pinned/weekly threads — keep only the most recent one per week
+      // (duplicates were created by the old unauthenticated _ensureWeeklyThread bug)
+      var weekKey = _getISOWeek();
+      var seenPinned = false;
+      var pinnedDupes = []; // IDs to delete from Firebase
+      allPosts = allPosts.filter(function(p) {
+        if (!p.pinned) return true;
+        if (!seenPinned) { seenPinned = true; return true; } // keep first (newest)
+        pinnedDupes.push(p._id); // mark rest for deletion
+        return false;
+      });
+      _lobbyPosts = allPosts;
+
+      // Silently delete duplicate pinned posts from Firebase (admin or creator cleans up)
+      if (pinnedDupes.length && tok) {
+        pinnedDupes.forEach(function(pid) {
+          fetch(_RTDB+'/community/posts/'+pid+'.json?auth='+tok, {method:'DELETE'}).catch(function(){});
+        });
       }
 
       _lobbyPage = 0;
