@@ -8667,9 +8667,16 @@
     }
 
     // Check for pending lobby thread (from /lobby/{postId} URL)
-    // switchTab('lobby') calls initLobby() which will open the thread via _pendingLobbyThread
+    // Call openLobbyThread directly — it fetches the single post itself, no need to
+    // wait for the full _fetchLobbyPosts chain to complete first.
     if (window._pendingLobbyThread) {
-      if (typeof switchTab === 'function') switchTab('lobby');
+      var _ptid = window._pendingLobbyThread;
+      window._pendingLobbyThread = null; // clear so initLobby doesn't double-open
+      setTimeout(function() {
+        if (typeof openLobbyThread === 'function') openLobbyThread(_ptid);
+        // Load the full lobby feed in the background so back-from-thread works
+        if (typeof switchTab === 'function') switchTab('lobby');
+      }, 300);
     }
 
     const hash = location.hash.replace('#', '');
@@ -23255,17 +23262,7 @@ async function deleteEditorReview(key, e) {
     }
   };
 
-  // Also handle the deep-link at page load (before Lobby tab is opened)
-  (function() {
-    if (window._pendingLobbyThread) {
-      // Switch to Lobby tab and open thread once app is ready
-      document.addEventListener('DOMContentLoaded', function() {
-        setTimeout(function() {
-          if (typeof switchTab === 'function') switchTab('lobby');
-        }, 600);
-      });
-    }
-  })();
+  // Deep-link startup is handled in the main startup setTimeout (see switchTab section)
 
   window.refreshLobbyFeed = function() {
     _lobbyLoaded = true; // keep as loaded (prevents double-init)
