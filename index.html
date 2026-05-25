@@ -18,12 +18,12 @@
   </script>
   <!-- Deep-link detection — runs first, before ANY other script.
        Reads location.pathname so it works even when the Service Worker intercepts
-       the navigation and returns index.html without changing the URL bar. -->
+       the navigation and returns index.html without changing the URL bar.
+       Fan reviews (/fan/*) are handled by the DOMContentLoaded handler further below. -->
   <script>
   (function(){
     var p = location.pathname, m;
     if ((m = p.match(/^\/lobby\/([\w-]+)$/)))  window._pendingLobbyThread  = m[1];
-    if ((m = p.match(/^\/fan\/([\w-]+)$/)))    window._pendingFanSlug      = m[1];
     if ((m = p.match(/^\/review\/([\w-]+)$/))) window._pendingEditorReview = m[1];
   })();
   </script>
@@ -8686,54 +8686,24 @@
       window._deepLobbyOpened = false;              // flag so fallback won't double-open
       if (typeof switchTab === 'function') switchTab('lobby');
       // Primary path: switchTab → initLobby → _fetchLobbyPosts → .then(openLobbyThread)
-      // Fallback: if the chain hasn't opened the thread after 2.5s, do it directly
+      // Fallback: if the overlay isn't open after 2.5s, force-open the thread directly.
+      // We check overlay visibility rather than _deepLobbyOpened because openLobbyThread
+      // sets that flag at its very start — even if the post fetch fails — so the flag
+      // alone can't tell us whether the overlay actually appeared.
       setTimeout(function() {
-        if (_deepLobbyId && !window._deepLobbyOpened && typeof openLobbyThread === 'function') {
-          window._pendingLobbyThread = null;
-          openLobbyThread(_deepLobbyId);
+        if (_deepLobbyId) {
+          var ov = document.getElementById('lobbyThreadOverlay');
+          if (!ov || !ov.classList.contains('open')) {
+            window._pendingLobbyThread = null;
+            if (typeof openLobbyThread === 'function') openLobbyThread(_deepLobbyId);
+          }
         }
       }, 2500);
     }
 
-    // Fan review deep-link via /fan/{slug} path
-    // Worker serves index.html directly; <head> detection sets _pendingFanSlug from pathname.
-    if (window._pendingFanSlug) {
-      var _fanSlug = window._pendingFanSlug;
-      window._pendingFanSlug = null;
-      var _RTDB_FMETA = 'https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app';
-      (async function() {
-        // Resolve slug → fp via fanReviewMeta
-        var fp = null;
-        try {
-          var _mr = await fetch(_RTDB_FMETA + '/fanReviewMeta/' + encodeURIComponent(_fanSlug) + '.json');
-          var _md = _mr.ok ? await _mr.json() : null;
-          fp = (_md && _md.fp) ? _md.fp : null;
-        } catch(_) {}
-        if (!fp) { console.warn('[PMovies] no meta for fan slug:', _fanSlug); return; }
-        // Fetch the actual review data
-        var rev = null;
-        try {
-          var _r1 = await fetch(_RTDB_FMETA + '/fanReviews/' + fp + '.json');
-          var _d1 = _r1.ok ? await _r1.json() : null;
-          if (_d1 && typeof _d1 === 'object') rev = _d1;
-        } catch(_) {}
-        if (!rev) {
-          try {
-            var _r2 = await fetch(_RTDB_FMETA + '/seriesFanReviews/' + fp + '.json');
-            var _d2 = _r2.ok ? await _r2.json() : null;
-            if (_d2 && typeof _d2 === 'object') { rev = _d2; rev._mediaType = 'tv'; }
-          } catch(_) {}
-        }
-        if (!rev) { console.warn('[PMovies] fan review not found for fp:', fp); return; }
-        // Inject review so openFanReviewPage can render it without needing the grid loaded
-        window._pmProfileRevMap = window._pmProfileRevMap || {};
-        window._pmProfileRevMap[fp] = rev;
-        if (typeof openFanReviewPage === 'function') openFanReviewPage(fp);
-      })();
-    }
-
     // Editor review deep-link via /review/{slug} path
     // Worker serves index.html directly; <head> detection sets _pendingEditorReview from pathname.
+    // Fan reviews (/fan/*) are handled by the existing DOMContentLoaded handler below.
     if (window._pendingEditorReview) {
       var _edSlug = window._pendingEditorReview;
       window._pendingEditorReview = null;
@@ -8939,27 +8909,48 @@
     if (_slugRegistry.has(slug)) {
       _deepLinkFanReview(_slugRegistry.get(slug)); return;
     }
-    // Firebase lookup: fanReviewMeta/{slug} contains the fp
+
+    // Firebase lookup: fanReviewMeta/{slug} may contain the fp
+    // NOTE: fp is content-based, so it can become stale if the review was edited.
+    // We store it but don't return yet — we always load reviews and try a slug scan first.
+    let metaFp = null;
     try {
       const res = await fetch(`${RTDB}/fanReviewMeta/${encodeURIComponent(slug)}.json`);
       if (res.ok) {
         const meta = await res.json();
-        if (meta && meta.fp) {
-          _slugRegistry.set(slug, meta.fp);
-          _deepLinkFanReview(meta.fp); return;
-        }
+        if (meta && meta.fp) { metaFp = meta.fp; _slugRegistry.set(slug, meta.fp); }
       }
     } catch(_) {}
-    // If meta not found yet, fall back to loading all reviews and matching by slug
+
+    // Always load reviews so the registry is populated
+    try { await loadFanReviews(); } catch(_) {}
+
+    // 1) Try the meta fp if it's in the registry (fresh, unedited review)
+    if (metaFp && (_reviewCardRegistry.has(metaFp) || _srReviewCardRegistry.has(metaFp))) {
+      _deepLinkFanReview(metaFp); return;
+    }
+
+    // 2) Slug scan: handles stale fp (review edited after meta was written)
+    for (const [fp] of _reviewCardRegistry) {
+      const r = _reviewCardRegistry.get(fp);
+      if (r && _reviewSlug(fp, r.movie) === slug) {
+        _deepLinkFanReview(fp); return;
+      }
+    }
+
+    // 3) Try series reviews too
     try {
-      await loadFanReviews();
-      for (const [fp] of _reviewCardRegistry) {
-        const r = _reviewCardRegistry.get(fp);
+      await loadSeriesReviews();
+      for (const [fp] of _srReviewCardRegistry) {
+        const r = _srReviewCardRegistry.get(fp);
         if (r && _reviewSlug(fp, r.movie) === slug) {
           _deepLinkFanReview(fp); return;
         }
       }
     } catch(_) {}
+
+    // 4) Last resort: meta fp even if not in registry (may trigger its own load inside _deepLinkFanReview)
+    if (metaFp) _deepLinkFanReview(metaFp);
   }
 
   /* ══ FRIENDS LETTERBOXD REVIEWS ══ */
