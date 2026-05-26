@@ -2555,7 +2555,7 @@
   }
   #pmUserChip:hover { border-color: rgba(245,166,35,.55); background: rgba(20,12,0,.92); }
   #pmUserChipMenu {
-    display: none; position: fixed; top: 54px; right: 14px; z-index: 201;
+    display: none; position: fixed; top: 54px; right: 14px; z-index: 210;
     background: rgba(14,14,14,.97); border: 1px solid rgba(245,166,35,.22);
     border-radius: 14px; overflow: hidden; min-width: 170px;
     -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
@@ -2901,7 +2901,11 @@
     #pmGlobalSearchBtn { top: calc(env(safe-area-inset-top, 64px) + 16px); right: 58px; }
     #pmBellBtn         { top: calc(env(safe-area-inset-top, 64px) + 16px); right: 12px; }
     #pmUserChip        { top: calc(env(safe-area-inset-top, 64px) + 16px); right: 104px; }
+    /* Fix 1: home button below notch/Dynamic Island */
+    #pmHomeToggleBtn   { top: calc(env(safe-area-inset-top, 64px) + 16px); left: 14px; }
     #pmSearchOverlay   { padding-top: calc(env(safe-area-inset-top, 0px) + 70px); }
+    /* Fix 3: dropdown must overlay search + bell buttons */
+    #pmUserChipMenu    { top: calc(env(safe-area-inset-top, 64px) + 64px); right: 14px; z-index: 210; }
   }
 
   #pmNotifOverlay {
@@ -2917,6 +2921,8 @@
     overflow-y: auto; transform: translateX(100%);
     transition: transform .28s cubic-bezier(.4,0,.2,1);
     display: flex; flex-direction: column;
+    /* Fix 2: push content below notch/Dynamic Island on iOS */
+    padding-top: env(safe-area-inset-top, 0px);
   }
   #pmNotifPanel.pn-open { transform: none; }
   .pn-header {
