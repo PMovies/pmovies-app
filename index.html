@@ -20561,13 +20561,46 @@ async function deleteEditorReview(key, e) {
       var data = await r.json();
       var avatarUrl = data.secure_url;
       var token = await _pmUser.getIdToken();
+
+      // ── 1. Persist to RTDB user profile ──────────────────────────────────────
       await fetch(RTDB + '/users/' + _pmUser.uid + '.json?auth=' + token, {
-        method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ photoURL: avatarUrl })
+        method: 'PATCH', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ photoURL: avatarUrl })
       });
-      if (_profileData) _profileData.photoURL = avatarUrl;
-      // Update chip avatar
+
+      // ── 2. Sync every in-memory store so the new photo is used everywhere ─────
+      if (_profileData)              _profileData.photoURL = avatarUrl;
+      if (window._pmMyProfile)       window._pmMyProfile.photoURL = avatarUrl;
+
+      // ── 3. Update nav chip avatar ─────────────────────────────────────────────
       var chipAvatar = document.getElementById('pmChipAvatar');
       if (chipAvatar) chipAvatar.innerHTML = '<img src="' + _esc(avatarUrl) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>';
+
+      // ── 4. Update Theater Race leaderboard entry (background) ─────────────────
+      // The leaderboard stores avatar at log-time; PATCH the existing entry so the
+      // new photo shows immediately without waiting for the next theater visit.
+      try {
+        var TR_YEAR_NOW = new Date().getFullYear().toString();
+        var trLbUrl = RTDB + '/theaterLeaderboard/' + TR_YEAR_NOW + '/' + _pmUser.uid + '.json?auth=' + token;
+        var trCur = await fetch(trLbUrl);
+        if (trCur.ok) {
+          var trData = await trCur.json();
+          if (trData && typeof trData === 'object') {
+            // Entry exists — patch only the avatar field
+            fetch(trLbUrl, {
+              method: 'PATCH', headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({ avatar: avatarUrl })
+            }).catch(function(){});
+          }
+        }
+      } catch(_) {}
+
+      // ── 5. Update Firebase Auth display photo (best-effort) ───────────────────
+      try {
+        if (_pmUser.updateProfile) await _pmUser.updateProfile({ photoURL: avatarUrl });
+      } catch(_) {}
+
+      // ── 6. Refresh profile page UI ────────────────────────────────────────────
       pmOpenProfile(_pmUser.uid);
     } catch(e) { alert('Upload failed — please try again'); }
     input.value = '';
