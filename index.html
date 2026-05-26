@@ -7571,15 +7571,18 @@ window._removeDlLoader = function() {
         body: JSON.stringify({
           fp,                          // stored so Worker can redirect browsers to /#fan-review/{fp}
           slug,
-          movie:     r.movie     || '',
-          name:      r.name      || 'Anonymous',
-          rating:    r.rating    || 0,
+          movie:     r.movie       || '',
+          name:      r.name        || 'Anonymous',
+          rating:    r.rating      || 0,
           stars,
-          headline:  r.headline  || '',
-          text:      (r.text     || '').slice(0, 600), // enables instant deep-link open
-          tmdbId:    r.tmdbId    || null,
-          backdrop:  backdropPath || null,
-          mediaType: r._mediaType || 'movie'
+          headline:  r.headline    || '',
+          text:      (r.text       || '').slice(0, 600), // enables instant deep-link open
+          uid:       r.uid         || null,   // needed for badge & profile link
+          photoURL:  r.photoURL    || null,   // needed for avatar
+          timestamp: r.timestamp   || null,   // needed for date display
+          tmdbId:    r.tmdbId      || null,
+          backdrop:  backdropPath  || null,
+          mediaType: r._mediaType  || 'movie'
         })
       });
     } catch(_) {}
@@ -8981,15 +8984,23 @@ window._removeDlLoader = function() {
               rating:     meta.rating    || 0,
               text:       meta.text,
               headline:   meta.headline  || '',
-              tmdbId:     meta.tmdbId    || null,
-              _mediaType: meta.mediaType || 'movie',
               uid:        meta.uid       || null,
               photoURL:   meta.photoURL  || null,
+              timestamp:  meta.timestamp || null,
+              tmdbId:     meta.tmdbId    || null,
+              _mediaType: meta.mediaType || 'movie',
             };
             var _fastPath = location.pathname + location.search;
             try { switchTab('movies'); } catch(e) {}
             try { history.replaceState(null, '', _fastPath); } catch(e) {}
             openFanReviewPage(meta.fp);
+            // Load like counts in background and update the button once ready
+            var _dlFp = meta.fp, _dlLikeType = meta.mediaType === 'tv' ? 'tv' : 'movie';
+            if (typeof loadFanLikeCounts === 'function') {
+              loadFanLikeCounts().then(function() {
+                if (typeof _updateFrLikeBtn === 'function') _updateFrLikeBtn(_dlFp, _dlLikeType);
+              }).catch(function(){});
+            }
             return;
           }
         }
