@@ -16803,6 +16803,11 @@ async function deleteEditorReview(key, e) {
     <button class="pm-edit-save" onclick="pmSaveProfile()">Save Changes</button>
     <button class="pm-edit-cancel" onclick="pmCloseEditProfile()">Cancel</button>
     <div class="pm-edit-msg" id="pmEditMsg"></div>
+    <div style="margin-top:18px;padding-top:14px;border-top:1px solid rgba(255,255,255,.06)">
+      <div style="font-size:.7rem;color:#555;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;font-family:'Montserrat',sans-serif">Photo sync</div>
+      <button id="pmSyncPhotoBtn" onclick="pmSyncPhotoEverywhere()" style="width:100%;background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.25);color:#f5a623;font-family:'Montserrat',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:11px;border-radius:10px;cursor:pointer">🔄 Sync profile photo across all posts</button>
+      <div id="pmSyncPhotoMsg" style="font-size:.7rem;color:#666;text-align:center;margin-top:8px;min-height:16px"></div>
+    </div>
   </div>
 </div>
 
@@ -20604,6 +20609,98 @@ async function deleteEditorReview(key, e) {
       pmOpenProfile(_pmUser.uid);
     } catch(e) { alert('Upload failed — please try again'); }
     input.value = '';
+  };
+
+  // ── Sync profile photo across ALL stored records ──────────────────────────────
+  // Backfills the current photoURL into every fan review, lobby post, and theater
+  // leaderboard entry written by this user. Safe to run multiple times.
+  window.pmSyncPhotoEverywhere = async function() {
+    if (!_pmUser) return;
+    var btn = document.getElementById('pmSyncPhotoBtn');
+    var msg = document.getElementById('pmSyncPhotoMsg');
+    var _setMsg = function(t, col) { if (msg) { msg.textContent = t; msg.style.color = col || '#888'; } };
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Syncing…'; }
+    _setMsg('Reading your profile…');
+
+    try {
+      var token = await _pmUser.getIdToken();
+      var uid   = _pmUser.uid;
+      var authQ = '?auth=' + token;
+
+      // 1. Get the authoritative photoURL from RTDB
+      var profRes = await fetch(RTDB + '/users/' + uid + '.json');
+      var prof    = profRes.ok ? await profRes.json() : null;
+      var newPhoto = (prof && prof.photoURL) || (window._pmMyProfile && window._pmMyProfile.photoURL) || '';
+      if (!newPhoto) { _setMsg('No profile photo found.', '#f5a623'); return; }
+
+      var updated = 0;
+
+      // 2. Fan reviews ─ find all reviews belonging to this user and patch photoURL
+      _setMsg('Syncing fan reviews…');
+      try {
+        var frRes  = await fetch(RTDB + '/fanReviews.json');
+        var frData = frRes.ok ? await frRes.json() : null;
+        if (frData && typeof frData === 'object') {
+          var frKeys = Object.keys(frData).filter(function(k) {
+            return frData[k] && frData[k].uid === uid && frData[k].photoURL !== newPhoto;
+          });
+          await Promise.all(frKeys.map(function(k) {
+            return fetch(RTDB + '/fanReviews/' + k + '.json' + authQ, {
+              method: 'PATCH', headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({ photoURL: newPhoto })
+            }).catch(function(){});
+          }));
+          updated += frKeys.length;
+        }
+      } catch(_) {}
+
+      // 3. Lobby posts ─ find all posts by this user and patch avatar
+      _setMsg('Syncing lobby posts…');
+      try {
+        var lpRes  = await fetch(RTDB + '/community/posts.json');
+        var lpData = lpRes.ok ? await lpRes.json() : null;
+        if (lpData && typeof lpData === 'object') {
+          var lpKeys = Object.keys(lpData).filter(function(k) {
+            return lpData[k] && lpData[k].uid === uid && lpData[k].avatar !== newPhoto;
+          });
+          await Promise.all(lpKeys.map(function(k) {
+            return fetch(RTDB + '/community/posts/' + k + '.json' + authQ, {
+              method: 'PATCH', headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({ avatar: newPhoto })
+            }).catch(function(){});
+          }));
+          updated += lpKeys.length;
+        }
+      } catch(_) {}
+
+      // 4. Theater leaderboard (current year)
+      _setMsg('Syncing leaderboard…');
+      try {
+        var trYear = new Date().getFullYear().toString();
+        var trUrl  = RTDB + '/theaterLeaderboard/' + trYear + '/' + uid + '.json';
+        var trRes  = await fetch(trUrl);
+        if (trRes.ok) {
+          var trEntry = await trRes.json();
+          if (trEntry && typeof trEntry === 'object' && trEntry.avatar !== newPhoto) {
+            await fetch(trUrl + authQ, {
+              method: 'PATCH', headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({ avatar: newPhoto })
+            }).catch(function(){});
+            updated++;
+          }
+        }
+      } catch(_) {}
+
+      // 5. Update in-memory caches
+      if (window._pmMyProfile)  window._pmMyProfile.photoURL  = newPhoto;
+      if (_profileData)         _profileData.photoURL          = newPhoto;
+
+      _setMsg('✅ Done! Updated ' + updated + ' record' + (updated !== 1 ? 's' : '') + '.', '#4caf50');
+    } catch(e) {
+      _setMsg('❌ Error: ' + (e.message || 'please try again.'), '#e74c3c');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '🔄 Sync profile photo across all posts'; }
+    }
   };
 
   // ── Home Screen Toggle ─────────────────────────────────────────────
