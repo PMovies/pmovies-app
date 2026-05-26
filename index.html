@@ -36,8 +36,9 @@
         '#dlLoader{display:flex!important}';
       // Auto-remove after 6s as a safety net in case overlay open fails
       window._dlLoaderTimeout = setTimeout(function() {
-        var el = document.getElementById('dlLoader');
-        if (el) el.style.display = 'none';
+        // Safety fallback: clear the !important CSS rule so the loader disappears
+        var styleEl = document.getElementById('dlLoaderStyle');
+        if (styleEl) styleEl.textContent = '#dlLoader{display:none!important}';
         window._dlLoaderTimeout = null;
       }, 6000);
     }
@@ -4031,11 +4032,16 @@ window._removeDlLoader = function() {
   window._deepLinkPath = false;
   if (window._dlLoaderTimeout) { clearTimeout(window._dlLoaderTimeout); window._dlLoaderTimeout = null; }
   var el = document.getElementById('dlLoader');
-  if (!el || el.style.display === 'none') return;
-  // Fade out over 250ms then hide
+  if (!el) return;
+  // We showed the loader via CSS !important (injected into #dlLoaderStyle), so we CANNOT
+  // hide it with el.style.display — inline styles lose to !important stylesheet rules.
+  // Instead, replace the CSS rule with display:none!important to win the cascade.
+  var styleEl = document.getElementById('dlLoaderStyle');
   el.style.transition = 'opacity .25s';
   el.style.opacity = '0';
-  setTimeout(function() { if (el.parentNode) el.style.display = 'none'; }, 260);
+  setTimeout(function() {
+    if (styleEl) styleEl.textContent = '#dlLoader{display:none!important}';
+  }, 260);
 };
 </script>
 
