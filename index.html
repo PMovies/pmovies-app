@@ -17119,7 +17119,7 @@ async function deleteEditorReview(key, e) {
       } else {
         _pmNickname = nickname;
         _prefillReviewNames(nickname);
-        _updateUserChip(user, nickname);
+        _updateUserChip(user, nickname, profile && profile.photoURL);
         // Chain to username check (hard gate before welcome strip)
         await _checkUsername(user, profile);
       }
@@ -17329,7 +17329,7 @@ async function deleteEditorReview(key, e) {
       _pmNickname = nickname;
       _prefillReviewNames(nickname);
       document.getElementById('pmNicknameOverlay').style.display = 'none';
-      _updateUserChip(user, nickname);
+      _updateUserChip(user, nickname, profile && profile.photoURL);
       // Chain to username selection (hard gate)
       await _checkUsername(user, profile);
     } catch(e) {
@@ -17381,15 +17381,17 @@ async function deleteEditorReview(key, e) {
   }
 
   // ── User Chip ─────────────────────────────────────────────────────
-  function _updateUserChip(user, nickname) {
+  function _updateUserChip(user, nickname, profilePhotoURL) {
     var chip = document.getElementById('pmUserChip');
     if (!chip) return;
     var avatarEl = document.getElementById('pmChipAvatar');
     var nameEl   = document.getElementById('pmChipName');
     if (nameEl) nameEl.textContent = nickname || 'Profile';
     if (avatarEl) {
-      if (user && user.photoURL) {
-        avatarEl.innerHTML = '<img src="' + _esc(user.photoURL) + '" alt=""/>';
+      // Prefer custom profile photo from RTDB over Google auth photo
+      var photo = profilePhotoURL || (user && user.photoURL) || null;
+      if (photo) {
+        avatarEl.innerHTML = '<img src="' + _esc(photo) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%" alt=""/>';
       } else {
         avatarEl.textContent = (nickname || 'P').charAt(0).toUpperCase();
       }
