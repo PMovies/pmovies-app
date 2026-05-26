@@ -20,11 +20,27 @@
        Reads location.pathname so it works even when the Service Worker intercepts
        the navigation and returns index.html without changing the URL bar.
        Fan reviews (/fan/*) are handled by the DOMContentLoaded handler further below. -->
+  <!-- Placeholder style — filled by detection script for deep-link paths to show loader immediately -->
+  <style id="dlLoaderStyle"></style>
   <script>
   (function(){
     var p = location.pathname, m;
     if ((m = p.match(/^\/lobby\/([\w-]+)$/)))  window._pendingLobbyThread  = m[1];
     if ((m = p.match(/^\/review\/([\w-]+)$/))) window._pendingEditorReview = m[1];
+    // For any deep-link path (/fan/, /lobby/, /review/), show the loader overlay immediately
+    // so the landing page never flashes. The loader sits at z-index 9990, below all review
+    // overlays (9998-9999) but above all landing page content.
+    if (/^\/(fan|lobby|review)\//.test(p)) {
+      window._deepLinkPath = true;
+      document.getElementById('dlLoaderStyle').textContent =
+        '#dlLoader{display:flex!important}';
+      // Auto-remove after 6s as a safety net in case overlay open fails
+      window._dlLoaderTimeout = setTimeout(function() {
+        var el = document.getElementById('dlLoader');
+        if (el) el.style.display = 'none';
+        window._dlLoaderTimeout = null;
+      }, 6000);
+    }
   })();
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
@@ -3950,6 +3966,15 @@
 </head>
 <body class="grain">
 
+<!-- Deep-link loading overlay — covers landing page while review/lobby overlay opens.
+     Hidden by default (display:none); shown immediately via CSS injected in <head> when
+     a /fan/, /lobby/, or /review/ path is detected. z-index 9990 sits above all landing
+     page content but below review overlays (9998-9999) so they appear on top naturally. -->
+<div id="dlLoader" style="display:none;position:fixed;inset:0;background:#0a0a0a;z-index:9990;align-items:center;justify-content:center;flex-direction:column;gap:14px;pointer-events:none">
+  <div style="font-size:2.8rem;line-height:1">🎬</div>
+  <div style="color:#444;font-size:.65rem;letter-spacing:3px;text-transform:uppercase;font-family:'Montserrat',sans-serif;font-weight:600">Loading…</div>
+</div>
+
 <!-- ╔══════════════════════════════════════════════════════════╗ -->
 <!-- ║  LANDING SCREEN — shown every visit until signed in     ║ -->
 <!-- ╚══════════════════════════════════════════════════════════╝ -->
@@ -3997,6 +4022,21 @@
     if (el) el.style.display = 'none';
   }
 })();
+
+/* ── Deep-link loader dismiss helper ──────────────────────────────────────────────────
+   Called by openFanReviewPage, openLobbyThread, and _loadAndShowReview once the
+   review/thread overlay is visible, so the #dlLoader splash fades out cleanly. */
+window._removeDlLoader = function() {
+  if (!window._deepLinkPath) return;
+  window._deepLinkPath = false;
+  if (window._dlLoaderTimeout) { clearTimeout(window._dlLoaderTimeout); window._dlLoaderTimeout = null; }
+  var el = document.getElementById('dlLoader');
+  if (!el || el.style.display === 'none') return;
+  // Fade out over 250ms then hide
+  el.style.transition = 'opacity .25s';
+  el.style.opacity = '0';
+  setTimeout(function() { if (el.parentNode) el.style.display = 'none'; }, 260);
+};
 </script>
 
 <!-- ╔══════════════════════════════════════════════════════════╗ -->
@@ -7397,6 +7437,8 @@
       || _reviewCardRegistry.get(fp)
       || _srReviewCardRegistry.get(fp);
     if (!r) return;
+    // Dismiss the deep-link loading overlay — review is about to appear
+    if (typeof window._removeDlLoader === 'function') window._removeDlLoader();
     _closeAllShareMenus();
     const isTV     = r._mediaType === 'tv' || r.mediaType === 'tv';
     const likeType = isTV ? 'tv' : 'movie';
@@ -8785,6 +8827,8 @@
       '<button onclick="closeEditorRead()" class="er-back">←</button>' +
       '<div id="_rplSpinner" style="display:flex;align-items:center;justify-content:center;height:100vh;color:#555;font-size:.85rem;letter-spacing:2px;font-family:Montserrat,sans-serif">LOADING…</div>';
     document.body.style.overflow = 'hidden';
+    // Dismiss the deep-link loader — editor review overlay is now on top
+    if (typeof window._removeDlLoader === 'function') window._removeDlLoader();
 
     // ── 2. Fetch data and fill in the page ──────────────────────────────────
     var _sl = function(t) {
@@ -8878,27 +8922,26 @@
   // Registries are now populated at render time (not just on click), so
   // after loadFanReviews() / loadSeriesReviews() the fp is always findable.
   async function _deepLinkFanReview(fp) {
-    // Switch tab so the grid renders underneath the overlay
+    // Load reviews first (before switching tab) so the overlay opens in the same
+    // frame as the tab switch — no intermediate flash of the movies grid.
+    if (!_reviewCardRegistry.has(fp) && !_srReviewCardRegistry.has(fp)) {
+      await loadFanReviews();
+    }
+    if (!_reviewCardRegistry.has(fp) && !_srReviewCardRegistry.has(fp)) {
+      try { await loadSeriesReviews(); } catch(e) {}
+    }
+
+    // Capture URL before switchTab overwrites it with '#movies'
+    var _cleanPath = location.pathname + location.search;
+
+    // Switch tab so the movies grid renders as the background when overlay later closes
     try { switchTab('movies'); } catch(e) {}
 
-    // Already in registry from a previous render → open immediately
-    if (_reviewCardRegistry.has(fp) || _srReviewCardRegistry.has(fp)) {
-      openFanReviewPage(fp); return;
-    }
+    // Restore the clean URL (e.g. /fan/slug?t=xxx) — switchTab replaceState'd it to #movies
+    try { history.replaceState(null, '', _cleanPath); } catch(e) {}
 
-    // Load film reviews first (most common case)
-    await loadFanReviews();
-    if (_reviewCardRegistry.has(fp) || _srReviewCardRegistry.has(fp)) {
-      openFanReviewPage(fp); return;
-    }
-
-    // Not a film review — try series reviews
-    try {
-      await loadSeriesReviews();
-      if (_reviewCardRegistry.has(fp) || _srReviewCardRegistry.has(fp)) {
-        openFanReviewPage(fp);
-      }
-    } catch(e) {}
+    // Open the overlay — review should already be in the registry
+    openFanReviewPage(fp);
   }
 
   // Open a fan review from a clean slug URL (/fan/the-drama-c2hlcmJp).
@@ -9586,11 +9629,12 @@
       var pn = location.pathname;
       if (h.startsWith('fan-review/')) {
         var fp = h.slice(11).split('?')[0];
-        if (fp) setTimeout(function() { _deepLinkFanReview(fp); }, 1200);
+        // 200ms is enough for Firebase SDK to initialise; reviews are loaded async inside the fn
+        if (fp) setTimeout(function() { _deepLinkFanReview(fp); }, 200);
       } else if (pn.startsWith('/fan/')) {
-        // Clean slug URL — CF Worker redirects crawlers, real browsers land here
+        // Clean slug URL — CF Worker serves index.html directly; pathname still set correctly
         var slug = pn.slice(5).split('?')[0];
-        if (slug) setTimeout(function() { _deepLinkFanSlug(slug); }, 1200);
+        if (slug) setTimeout(function() { _deepLinkFanSlug(slug); }, 200);
       }
     })();
   });
@@ -23793,6 +23837,8 @@ async function deleteEditorReview(key, e) {
     if (!ov || !title || !threadBody) return;
     title.textContent = post.body ? post.body.slice(0,50)+(post.body.length>50?'…':'') : 'Discussion';
     ov.classList.add('open');
+    // Dismiss the deep-link loading overlay — thread is now visible
+    if (typeof window._removeDlLoader === 'function') window._removeDlLoader();
     // Update URL so browser back works and URL is shareable
     try { history.pushState({ lobbyPostId: post._id }, '', '/lobby/' + post._id); } catch(_e) {}
     // Render post + comment box + load comments
