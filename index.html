@@ -7576,6 +7576,7 @@ window._removeDlLoader = function() {
           rating:    r.rating    || 0,
           stars,
           headline:  r.headline  || '',
+          text:      (r.text     || '').slice(0, 600), // enables instant deep-link open
           tmdbId:    r.tmdbId    || null,
           backdrop:  backdropPath || null,
           mediaType: r._mediaType || 'movie'
@@ -8954,32 +8955,58 @@ window._removeDlLoader = function() {
   // Checks local _slugRegistry first (set when review was opened this session),
   // then falls back to Firebase lookup to get the fp.
   async function _deepLinkFanSlug(slug) {
-    // Fast path: already seen this slug in this session
+    // ── Session cache: slug already resolved this session ─────────────────────
     if (_slugRegistry.has(slug)) {
       _deepLinkFanReview(_slugRegistry.get(slug)); return;
     }
 
-    // Firebase lookup: fanReviewMeta/{slug} may contain the fp
-    // NOTE: fp is content-based, so it can become stale if the review was edited.
-    // We store it but don't return yet — we always load reviews and try a slug scan first.
+    // ── FAST PATH: single Firebase fetch (~200ms) ──────────────────────────────
+    // fanReviewMeta/{slug} stores the full review snapshot (fp, name, movie,
+    // rating, headline, text, tmdbId, backdrop, mediaType).
+    // If `text` is present we open immediately — no need to load all reviews.
     let metaFp = null;
     try {
       const res = await fetch(`${RTDB}/fanReviewMeta/${encodeURIComponent(slug)}.json`);
       if (res.ok) {
         const meta = await res.json();
-        if (meta && meta.fp) { metaFp = meta.fp; _slugRegistry.set(slug, meta.fp); }
+        if (meta && meta.fp) {
+          metaFp = meta.fp;
+          _slugRegistry.set(slug, meta.fp);
+          if (meta.text) {
+            // Store full review in the profile map so openFanReviewPage finds it instantly
+            window._pmProfileRevMap = window._pmProfileRevMap || {};
+            window._pmProfileRevMap[meta.fp] = {
+              name:       meta.name      || 'Anonymous',
+              movie:      meta.movie     || '',
+              rating:     meta.rating    || 0,
+              text:       meta.text,
+              headline:   meta.headline  || '',
+              tmdbId:     meta.tmdbId    || null,
+              _mediaType: meta.mediaType || 'movie',
+              uid:        meta.uid       || null,
+              photoURL:   meta.photoURL  || null,
+            };
+            var _fastPath = location.pathname + location.search;
+            try { switchTab('movies'); } catch(e) {}
+            try { history.replaceState(null, '', _fastPath); } catch(e) {}
+            openFanReviewPage(meta.fp);
+            return;
+          }
+        }
       }
     } catch(_) {}
 
-    // Always load reviews so the registry is populated
+    // ── SLOW PATH: load all reviews and scan ───────────────────────────────────
+    // Used when fanReviewMeta doesn't have `text` yet (older reviews get backfilled
+    // the next time someone loads the movies tab).
     try { await loadFanReviews(); } catch(_) {}
 
-    // 1) Try the meta fp if it's in the registry (fresh, unedited review)
+    // Try meta fp first (works when review hasn't been edited since meta was written)
     if (metaFp && (_reviewCardRegistry.has(metaFp) || _srReviewCardRegistry.has(metaFp))) {
       _deepLinkFanReview(metaFp); return;
     }
 
-    // 2) Slug scan: handles stale fp (review edited after meta was written)
+    // Slug scan — handles stale fp (review edited after meta was written)
     for (const [fp] of _reviewCardRegistry) {
       const r = _reviewCardRegistry.get(fp);
       if (r && _reviewSlug(fp, r.movie) === slug) {
@@ -8987,7 +9014,7 @@ window._removeDlLoader = function() {
       }
     }
 
-    // 3) Try series reviews too
+    // Try series reviews
     try {
       await loadSeriesReviews();
       for (const [fp] of _srReviewCardRegistry) {
@@ -8998,7 +9025,7 @@ window._removeDlLoader = function() {
       }
     } catch(_) {}
 
-    // 4) Last resort: meta fp even if not in registry (may trigger its own load inside _deepLinkFanReview)
+    // Last resort: use meta fp (triggers its own load inside _deepLinkFanReview)
     if (metaFp) _deepLinkFanReview(metaFp);
   }
 
