@@ -17256,8 +17256,10 @@ async function deleteEditorReview(key, e) {
     var hr = new Date().getHours();
     var word = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
 
-    // Show greeting screen (once per session) — passes profile for poster/taste data
-    if (profile && !sessionStorage.getItem('pm_greeting_done')) {
+    // Show greeting screen (once per session) — skip on deep-link paths
+    if (profile && !sessionStorage.getItem('pm_greeting_done')
+        && !window._deepLinkPath
+        && !/^\/(fan|lobby|review)\//.test(location.pathname)) {
       _showGreetingScreen(nickname, uid, profile);
     }
 
@@ -17433,6 +17435,9 @@ async function deleteEditorReview(key, e) {
   }
 
   function _showGreetingScreen(nickname, uid, profile) {
+    // Never show the greeting screen when opening a deep-link (fan/lobby/review).
+    // The user came for a specific review — don't interrupt with the welcome splash.
+    if (window._deepLinkPath || /^\/(fan|lobby|review)\//.test(location.pathname)) return;
     var el = document.getElementById('pmGreetingScreen');
     if (!el) return;
 
