@@ -24435,7 +24435,11 @@ async function deleteEditorReview(key, e) {
     var list = document.getElementById('lobbyCommentList');
     if (!list) return;
     try {
-      var r = await fetch(_RTDB+'/community/comments/'+postId+'.json');
+      var _cMe = window.pmGetUser && window.pmGetUser();
+      var _cTok = '';
+      if (_cMe) { try { _cTok = await _cMe.getIdToken(); } catch(_e2) {} }
+      var _cUrl = _RTDB+'/community/comments/'+postId+'.json'+(_cTok?'?auth='+_cTok:'');
+      var r = await fetch(_cUrl);
       var raw = r.ok ? await r.json() : null;
 
       // Bug 2 fix: also check for legacy inline comments stored inside the post object
