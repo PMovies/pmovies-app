@@ -16179,7 +16179,8 @@ function _renderReviewPage(r) {
           headline:  r.headline || '',
           backdrop:  r.backdrop || null,
           rating:    r.rating   || 0,
-          updatedAt: Date.now()  // Part 9: signals platforms to re-scrape
+          tmdbId:    r.tmdbId   || null,
+          updatedAt: Date.now()
         })
       });
     }
