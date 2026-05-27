@@ -24508,7 +24508,15 @@ async function deleteEditorReview(key, e) {
       // Update local cache
       post.commentCount = actualCount;
       var lp = _lobbyPosts.find(function(p){ return p._id === postId; });
-      if (lp) lp.commentCount = actualCount;
+      if (lp) {
+        lp.commentCount = actualCount;
+        // Refresh the feed card count in the DOM without a full re-render
+        var cardEl = document.querySelector('.lobby-card[data-pid="'+postId+'"]');
+        if (cardEl) {
+          var countEl = cardEl.querySelector('.lobby-comment-count');
+          if (countEl) countEl.textContent = '💬 '+actualCount+' repl'+(actualCount===1?'y':'ies');
+        }
+      }
       // Patch Firebase (fire-and-forget, needs auth)
       var me = window.pmGetUser && window.pmGetUser();
       if (!me) return;
@@ -24537,9 +24545,13 @@ async function deleteEditorReview(key, e) {
         method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(commentData)
       });
       if (!r.ok) throw new Error('Comment failed');
-      // Increment commentCount on post
+      // Increment commentCount on post — read current value first (server increment
+      // via {".sv":{"increment":1}} only works with the SDK, not the REST API)
+      var _ccRes = await fetch(_RTDB+'/community/posts/'+postId+'/commentCount.json?auth='+tok);
+      var _ccVal = _ccRes.ok ? (await _ccRes.json()) : 0;
+      var _ccNew = (typeof _ccVal === 'number' && !isNaN(_ccVal)) ? _ccVal + 1 : 1;
       await fetch(_RTDB+'/community/posts/'+postId+'/commentCount.json?auth='+tok,{
-        method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({'.sv':{'increment':1}})
+        method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(_ccNew)
       });
       if (input) input.value = '';
       _loadLobbyComments(postId);
@@ -24554,9 +24566,16 @@ async function deleteEditorReview(key, e) {
           clickUrl: '/lobby/' + postId   // overrides the default '/?review=' path in _pmNotify
         });
       }
-      // Update local cache
+      // Update local cache and refresh feed card count
       var lp = _lobbyPosts.find(function(p){return p._id===postId;});
-      if (lp) lp.commentCount = (lp.commentCount||0)+1;
+      if (lp) {
+        lp.commentCount = _ccNew;
+        var cardEl = document.querySelector('.lobby-card[data-pid="'+postId+'"]');
+        if (cardEl) {
+          var countEl = cardEl.querySelector('.lobby-comment-count');
+          if (countEl) countEl.textContent = '💬 '+_ccNew+' repl'+(_ccNew===1?'y':'ies');
+        }
+      }
     } catch(_e) { alert('Could not post reply — try again.'); }
     finally { if(btn){btn.textContent='Reply';btn.disabled=false;} }
   };
