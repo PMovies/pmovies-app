@@ -8814,24 +8814,25 @@ window._removeDlLoader = function() {
     }
 
     // Check for pending lobby thread (from /lobby/{postId} URL)
-    // Detection script in <head> sets _pendingLobbyThread before any other code runs.
-    // openLobbyThread fetches the post directly from Firebase if not in _lobbyPosts,
-    // so we don't need to wait for _fetchLobbyPosts — just open after a short delay.
+    // The RTDB read for community/posts requires auth — Firebase Auth initialises
+    // asynchronously (can take 500ms–2s).  We store the ID in _pendingLobbyOpenId
+    // and let onAuthStateChanged open the thread as soon as auth is ready.
     if (window._pendingLobbyThread) {
       var _deepLobbyId = window._pendingLobbyThread;
-      window._pendingLobbyThread = null; // clear so initLobby doesn't try to open it again
+      window._pendingLobbyThread  = null;   // prevent initLobby double-open
+      window._pendingLobbyOpenId  = _deepLobbyId; // picked up by onAuthStateChanged
       if (typeof switchTab === 'function') switchTab('lobby');
-      // Primary path: open thread directly — no dependency on _fetchLobbyPosts
+      // Last-resort fallback: if auth never fires (guest / timeout) try after 8s
       setTimeout(function() {
-        if (typeof openLobbyThread === 'function') openLobbyThread(_deepLobbyId);
-      }, 350);
-      // Safety fallback: if overlay still not open after 3s, try again
-      setTimeout(function() {
-        var ov = document.getElementById('lobbyThreadOverlay');
-        if (!ov || !ov.classList.contains('open')) {
-          if (typeof openLobbyThread === 'function') openLobbyThread(_deepLobbyId);
+        if (window._pendingLobbyOpenId) {
+          var pid = window._pendingLobbyOpenId;
+          window._pendingLobbyOpenId = null;
+          var ov = document.getElementById('lobbyThreadOverlay');
+          if (!ov || !ov.classList.contains('open')) {
+            if (typeof openLobbyThread === 'function') openLobbyThread(pid);
+          }
         }
-      }, 3000);
+      }, 8000);
     }
 
     // Editor review deep-link via /review/{slug} path
@@ -17016,9 +17017,13 @@ async function deleteEditorReview(key, e) {
           if (merged !== null && typeof renderWatchlist === 'function') renderWatchlist();
         });
       }
+      // Open lobby deep-link now that auth (and RTDB token) is ready
+      _openPendingLobbyThread();
     } else if (sessionStorage.getItem('pmovies_guest') === '1') {
       _hideLanding();
       _maybeOpenStartupProfile();
+      // Guests can still read public lobby posts
+      _openPendingLobbyThread();
     } else {
       localStorage.removeItem('pmovies_was_signed_in');
       // Still allow viewing a shared profile link even when signed out
@@ -17026,6 +17031,18 @@ async function deleteEditorReview(key, e) {
       else _showLanding();
     }
   });
+
+  // Open a lobby thread deep-link once auth has resolved (called from onAuthStateChanged)
+  function _openPendingLobbyThread() {
+    if (!window._pendingLobbyOpenId) return;
+    var pid = window._pendingLobbyOpenId;
+    window._pendingLobbyOpenId = null;
+    var ov = document.getElementById('lobbyThreadOverlay');
+    if (ov && ov.classList.contains('open')) return; // already open
+    setTimeout(function() {
+      if (typeof openLobbyThread === 'function') openLobbyThread(pid);
+    }, 150);
+  }
 
   // ── Landing Screen ───────────────────────────────────────────────
   function _showLanding() {
@@ -24213,9 +24230,13 @@ async function deleteEditorReview(key, e) {
     window._deepLobbyOpened = true; // prevent startup fallback timer from double-opening
     var post = _lobbyPosts.find(function(p){return p._id===postId;});
     if (!post) {
-      // Fetch it
+      // Fetch it — include auth token so Firebase RTDB rules don't block the read
       try {
-        var r = await fetch(_RTDB+'/community/posts/'+postId+'.json');
+        var _me = window.pmGetUser && window.pmGetUser();
+        var _tok = '';
+        if (_me) { try { _tok = await _me.getIdToken(); } catch(_e2) {} }
+        var _url = _RTDB+'/community/posts/'+postId+'.json'+(_tok?'?auth='+_tok:'');
+        var r = await fetch(_url);
         var postData = r.ok ? await r.json() : null;
         // Firebase returns literal null for missing keys — treat as not found
         post = (postData && typeof postData === 'object')
