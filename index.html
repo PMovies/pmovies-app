@@ -23857,6 +23857,13 @@ async function deleteEditorReview(key, e) {
     } catch(_e) {}
   }
 
+  // Abort-controller-aware fetch with a timeout
+  function _fetchWithTimeout(url, timeoutMs) {
+    var ctrl = new AbortController();
+    var timer = setTimeout(function(){ ctrl.abort(); }, timeoutMs);
+    return fetch(url, { signal: ctrl.signal }).finally(function(){ clearTimeout(timer); });
+  }
+
   async function _fetchLobbyPosts() {
     var feed = document.getElementById('lobbyFeed');
     if (!feed) return;
@@ -23868,17 +23875,17 @@ async function deleteEditorReview(key, e) {
       var authSuffix = tok ? '?auth=' + tok : '';
       var raw = null;
 
-      // 1. Try ordered query (requires .indexOn: ["createdAt"] in Firebase rules)
+      // 1. Try ordered query with 5s timeout
       try {
         var sep = authSuffix ? '&' : '?';
-        var r1 = await fetch(_RTDB + '/community/posts.json' + authSuffix + sep + 'orderBy="createdAt"&limitToLast=100');
+        var r1 = await _fetchWithTimeout(_RTDB + '/community/posts.json' + authSuffix + sep + 'orderBy="createdAt"&limitToLast=100', 5000);
         if (r1.ok) raw = await r1.json();
       } catch(_e) {}
 
-      // 2. Fall back to plain fetch (always works, sort client-side)
+      // 2. Fall back to plain fetch with 5s timeout
       if (!raw) {
         try {
-          var r2 = await fetch(_RTDB + '/community/posts.json' + authSuffix);
+          var r2 = await _fetchWithTimeout(_RTDB + '/community/posts.json' + authSuffix, 5000);
           if (r2.ok) raw = await r2.json();
         } catch(_e) {}
       }
