@@ -8815,26 +8815,23 @@ window._removeDlLoader = function() {
 
     // Check for pending lobby thread (from /lobby/{postId} URL)
     // Detection script in <head> sets _pendingLobbyThread before any other code runs.
-    // DON'T clear it here — let initLobby's .then() callback open the thread after
-    // _fetchLobbyPosts completes, so the post is already in _lobbyPosts when it opens.
+    // openLobbyThread fetches the post directly from Firebase if not in _lobbyPosts,
+    // so we don't need to wait for _fetchLobbyPosts — just open after a short delay.
     if (window._pendingLobbyThread) {
-      var _deepLobbyId = window._pendingLobbyThread; // capture before any clearing
-      window._deepLobbyOpened = false;              // flag so fallback won't double-open
+      var _deepLobbyId = window._pendingLobbyThread;
+      window._pendingLobbyThread = null; // clear so initLobby doesn't try to open it again
       if (typeof switchTab === 'function') switchTab('lobby');
-      // Primary path: switchTab → initLobby → _fetchLobbyPosts → .then(openLobbyThread)
-      // Fallback: if the overlay isn't open after 2.5s, force-open the thread directly.
-      // We check overlay visibility rather than _deepLobbyOpened because openLobbyThread
-      // sets that flag at its very start — even if the post fetch fails — so the flag
-      // alone can't tell us whether the overlay actually appeared.
+      // Primary path: open thread directly — no dependency on _fetchLobbyPosts
       setTimeout(function() {
-        if (_deepLobbyId) {
-          var ov = document.getElementById('lobbyThreadOverlay');
-          if (!ov || !ov.classList.contains('open')) {
-            window._pendingLobbyThread = null;
-            if (typeof openLobbyThread === 'function') openLobbyThread(_deepLobbyId);
-          }
+        if (typeof openLobbyThread === 'function') openLobbyThread(_deepLobbyId);
+      }, 350);
+      // Safety fallback: if overlay still not open after 3s, try again
+      setTimeout(function() {
+        var ov = document.getElementById('lobbyThreadOverlay');
+        if (!ov || !ov.classList.contains('open')) {
+          if (typeof openLobbyThread === 'function') openLobbyThread(_deepLobbyId);
         }
-      }, 2500);
+      }, 3000);
     }
 
     // Editor review deep-link via /review/{slug} path
@@ -22990,10 +22987,44 @@ async function deleteEditorReview(key, e) {
         fetch(_TMDB+'/movie/'+tmdbId+'?api_key='+key+'&append_to_response=credits,similar').then(function(r){return r.ok?r.json():null;}),
         _getReviewsForFilm(tmdbId),
         fetch(_RTDB+'/filmMeta/'+tmdbId+'.json').then(function(r){return r.ok?r.json():null;}),
-        fetch(_RTDB+'/community/posts.json?orderBy="filmId"&equalTo="'+tmdbId+'"&limitToFirst=5').then(function(r){return r.ok?r.json():null;})
+        _getFilmLobbyPosts(tmdbId)
       ]);
     } catch(_e) { results = [null,null,null,null]; }
     _renderFilmPage(tmdbId, results[0], results[1], results[2], results[3]);
+  }
+
+  // Fetch lobby posts for a film — uses in-memory _lobbyPosts if available,
+  // otherwise queries Firebase. filmId is always stored as string in Firebase.
+  async function _getFilmLobbyPosts(tmdbId) {
+    var tid = String(tmdbId);
+    // 1. Use in-memory _lobbyPosts if lobby feed was already loaded
+    if (typeof _lobbyPosts !== 'undefined' && _lobbyPosts && _lobbyPosts.length) {
+      var matched = _lobbyPosts.filter(function(p){ return String(p.filmId) === tid; });
+      if (matched.length) {
+        // Convert array → keyed object so _renderFilmPage can use Object.entries
+        var obj = {}; matched.forEach(function(p){ obj[p._id] = p; }); return obj;
+      }
+    }
+    // 2. Try indexed Firebase query (requires .indexOn: ["filmId"] in RTDB rules)
+    try {
+      var r1 = await fetch(_RTDB+'/community/posts.json?orderBy="filmId"&equalTo="'+tid+'"&limitToFirst=5');
+      if (r1.ok) { var d1 = await r1.json(); if (d1 && typeof d1 === 'object' && Object.keys(d1).length) return d1; }
+    } catch(_e) {}
+    // 3. Fall back to fetching all posts and filtering client-side
+    try {
+      var r2 = await fetch(_RTDB+'/community/posts.json?limitToLast=200');
+      if (r2.ok) {
+        var all = await r2.json();
+        if (all && typeof all === 'object') {
+          var out = {};
+          Object.entries(all).forEach(function(e){
+            if (e[1] && String(e[1].filmId) === tid) out[e[0]] = e[1];
+          });
+          if (Object.keys(out).length) return out;
+        }
+      }
+    } catch(_e) {}
+    return null;
   }
 
   // Get reviews for a film — uses cached community reviews if available, else fetches all
@@ -23064,7 +23095,8 @@ async function deleteEditorReview(key, e) {
     var communityRating = reviewCount ? (reviewEntries.reduce(function(s,e){return s+(e[1].rating||0);},0)/reviewCount).toFixed(1) : null;
 
     // Lobby threads for this film
-    var lobbyEntries = lobbyPosts ? Object.entries(lobbyPosts).filter(function(e){return e[1]&&e[1].filmId===tmdbId;}) : [];
+    var _tid = String(tmdbId);
+    var lobbyEntries = lobbyPosts ? Object.entries(lobbyPosts).filter(function(e){return e[1]&&String(e[1].filmId)===_tid;}) : [];
     var lobbyCount = lobbyEntries.length;
 
     // Friends activity (follows)
