@@ -3863,6 +3863,41 @@
 .lobby-film-results { position:absolute; top:100%; left:0; right:0; background:#1a1a1a; border:1px solid rgba(255,255,255,.12); border-radius:10px; max-height:200px; overflow-y:auto; z-index:10; margin-top:4px; }
 .lobby-film-result-item { display:flex; align-items:center; gap:8px; padding:8px 12px; cursor:pointer; transition:background .1s; }
 .lobby-film-result-item:hover { background:rgba(255,255,255,.06); }
+/* Poll builder inside new-post modal */
+.lobby-poll-section { display:none; margin-bottom:12px; }
+.lobby-poll-section.active { display:block; }
+.lobby-poll-question { width:100%; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:12px; padding:12px 14px; color:#eee; font-size:.85rem; font-family:inherit; box-sizing:border-box; margin-bottom:14px; }
+.lobby-poll-question:focus { outline:none; border-color:rgba(245,166,35,.4); }
+.lobby-poll-options-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.lobby-poll-opt-card { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); border-radius:12px; padding:12px; position:relative; }
+.lobby-poll-opt-label { font-size:.52rem; font-weight:800; text-transform:uppercase; letter-spacing:.08em; margin-bottom:8px; font-family:'Montserrat',sans-serif; }
+.lobby-poll-opt-label.a { color:#4ab3e8; }
+.lobby-poll-opt-label.b { color:#f5a623; }
+.lobby-poll-opt-poster { width:100%; height:90px; object-fit:cover; border-radius:8px; display:none; margin-bottom:8px; }
+.lobby-poll-opt-film-name { font-size:.7rem; color:#ccc; font-weight:600; margin-bottom:6px; display:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.lobby-poll-opt-search { width:100%; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:7px 10px; color:#eee; font-size:.75rem; font-family:inherit; box-sizing:border-box; }
+.lobby-poll-opt-search:focus { outline:none; border-color:rgba(245,166,35,.3); }
+.lobby-poll-opt-results { position:absolute; left:0; right:0; top:100%; background:#1a1a1a; border:1px solid rgba(255,255,255,.12); border-radius:10px; max-height:160px; overflow-y:auto; z-index:20; margin-top:2px; }
+.lobby-poll-opt-result { display:flex; align-items:center; gap:7px; padding:7px 10px; cursor:pointer; font-size:.72rem; color:#ccc; }
+.lobby-poll-opt-result:hover { background:rgba(255,255,255,.06); }
+.lobby-poll-opt-result img { width:20px; height:30px; object-fit:cover; border-radius:3px; }
+.lobby-poll-clear { position:absolute; top:10px; right:10px; background:none; border:none; color:#555; cursor:pointer; font-size:.8rem; display:none; }
+/* Poll display inside thread */
+.lobby-poll-display { margin:12px 0; }
+.lobby-poll-display-q { font-size:.85rem; color:#eee; font-weight:600; margin-bottom:14px; line-height:1.4; }
+.lobby-poll-opts-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.lobby-poll-vote-card { background:rgba(255,255,255,.04); border:1.5px solid rgba(255,255,255,.1); border-radius:12px; padding:12px 10px; text-align:center; cursor:pointer; transition:all .18s; position:relative; overflow:hidden; }
+.lobby-poll-vote-card:hover:not(.voted) { border-color:rgba(245,166,35,.35); }
+.lobby-poll-vote-card.voted { border-color:#f5a623; }
+.lobby-poll-vote-card.voted-a { border-color:#4ab3e8; }
+.lobby-poll-vote-fill { position:absolute; left:0; top:0; bottom:0; background:rgba(245,166,35,.08); width:0; transition:width .6s ease; pointer-events:none; }
+.lobby-poll-vote-fill.a { background:rgba(74,179,232,.1); }
+.lobby-poll-vote-img { width:54px; height:80px; object-fit:cover; border-radius:7px; display:block; margin:0 auto 8px; }
+.lobby-poll-vote-title { font-size:.72rem; font-weight:700; color:#ddd; margin-bottom:4px; }
+.lobby-poll-vote-pct { font-size:.82rem; font-weight:800; color:#f5a623; display:none; }
+.lobby-poll-vote-pct.a { color:#4ab3e8; }
+.lobby-poll-vote-card.done .lobby-poll-vote-pct { display:block; }
+.lobby-poll-foot { text-align:center; margin-top:10px; font-size:.62rem; color:#444; font-family:'Montserrat',sans-serif; }
 .lobby-film-result-item img { width:24px; height:36px; object-fit:cover; border-radius:4px; }
 .lobby-film-result-item span { font-size:.72rem; color:#ccc; }
 
@@ -5015,6 +5050,35 @@ window._removeDlLoader = function() {
     </div>
     <textarea class="lobby-modal-textarea" id="lobbyPostBody" placeholder="What's on your mind?" oninput="updateLobbyCharCount()" maxlength="1000"></textarea>
     <div class="lobby-char-count" id="lobbyCharCount">0 / 1000</div>
+
+    <!-- Poll builder — shown only when type=poll -->
+    <div class="lobby-poll-section" id="lobbyPollSection">
+      <div class="lobby-poll-options-grid">
+        <!-- Option A -->
+        <div class="lobby-poll-opt-card" id="pollOptCardA">
+          <div class="lobby-poll-opt-label a">Option A</div>
+          <img class="lobby-poll-opt-poster" id="pollOptPosterA" src="" alt="">
+          <div class="lobby-poll-opt-film-name" id="pollOptNameA"></div>
+          <div style="position:relative">
+            <input class="lobby-poll-opt-search" id="pollOptSearchA" placeholder="Search a film…" oninput="searchPollOpt('A',this.value)" autocomplete="off">
+            <div class="lobby-poll-opt-results" id="pollOptResultsA" style="display:none"></div>
+          </div>
+          <button class="lobby-poll-clear" id="pollOptClearA" onclick="clearPollOpt('A')">✕</button>
+        </div>
+        <!-- Option B -->
+        <div class="lobby-poll-opt-card" id="pollOptCardB">
+          <div class="lobby-poll-opt-label b">Option B</div>
+          <img class="lobby-poll-opt-poster" id="pollOptPosterB" src="" alt="">
+          <div class="lobby-poll-opt-film-name" id="pollOptNameB"></div>
+          <div style="position:relative">
+            <input class="lobby-poll-opt-search" id="pollOptSearchB" placeholder="Search a film…" oninput="searchPollOpt('B',this.value)" autocomplete="off">
+            <div class="lobby-poll-opt-results" id="pollOptResultsB" style="display:none"></div>
+          </div>
+          <button class="lobby-poll-clear" id="pollOptClearB" onclick="clearPollOpt('B')">✕</button>
+        </div>
+      </div>
+    </div>
+
     <div id="lobbyAttachedFilmWrap" style="display:none" class="lobby-attached-film">
       <img id="lobbyAttachedPoster" src="" alt="">
       <div class="lobby-attached-film-info" id="lobbyAttachedFilmInfo"></div>
@@ -24138,6 +24202,10 @@ async function deleteEditorReview(key, e) {
     if (ov) ov.classList.remove('open');
     var fr = document.getElementById('lobbyFilmResults');
     if (fr) fr.style.display = 'none';
+    // Reset poll options
+    clearPollOpt('A'); clearPollOpt('B');
+    var pollSec = document.getElementById('lobbyPollSection');
+    if (pollSec) pollSec.classList.remove('active');
   };
 
   window.selectLobbyType = function(type, el) {
@@ -24145,7 +24213,23 @@ async function deleteEditorReview(key, e) {
     document.querySelectorAll('.lobby-type-opt').forEach(function(o){o.classList.remove('selected');});
     if (el) el.classList.add('selected');
     var body = document.getElementById('lobbyPostBody');
-    if (body) body.maxLength = (type==='hottake') ? 500 : 1000;
+    var pollSec = document.getElementById('lobbyPollSection');
+    var attachBtn = document.getElementById('lobbyAttachFilmBtn');
+    var isPoll = (type === 'poll');
+    // Poll type: show poll builder, hide normal attach-film button
+    if (pollSec) pollSec.classList.toggle('active', isPoll);
+    if (attachBtn) attachBtn.style.display = isPoll ? 'none' : '';
+    // Update textarea placeholder per type
+    var placeholders = {
+      discussion: "What's on your mind?",
+      hottake: 'Drop your hot take… 🔥',
+      question: 'Ask the community a question…',
+      poll: 'Ask your poll question (e.g. "Which film was better?")'
+    };
+    if (body) {
+      body.placeholder = placeholders[type] || "What's on your mind?";
+      body.maxLength = (type==='hottake') ? 500 : 1000;
+    }
     var cc = document.getElementById('lobbyCharCount');
     if (cc) cc.textContent = (body?body.value.length:0)+' / '+(type==='hottake'?500:1000);
   };
@@ -24217,6 +24301,60 @@ async function deleteEditorReview(key, e) {
     var fw = document.getElementById('lobbyFilmSearchWrap'); if(fw) fw.style.display='none';
   };
 
+  // ── Poll option search / select / clear ──────────────────────────────────
+  var _pollOpts = { A: null, B: null }; // { tmdbId, title, poster }
+  var _pollOptTimers = {};
+
+  window.searchPollOpt = function(slot, q) {
+    clearTimeout(_pollOptTimers[slot]);
+    var res = document.getElementById('pollOptResults'+slot);
+    if (!q || q.trim().length < 2) { if(res) res.style.display='none'; return; }
+    _pollOptTimers[slot] = setTimeout(async function() {
+      try {
+        var r = await fetch(_TMDB+'/search/movie?api_key='+_getTmdbKey()+'&query='+encodeURIComponent(q)+'&language=en-US&page=1');
+        var data = r.ok ? await r.json() : null;
+        var hits = (data && data.results || []).slice(0,5);
+        if (!res) return;
+        if (!hits.length) { res.style.display='none'; return; }
+        res.style.display='';
+        res.innerHTML = hits.map(function(m){
+          var poster = m.poster_path ? 'https://image.tmdb.org/t/p/w92'+m.poster_path : '';
+          var year   = m.release_date ? m.release_date.slice(0,4) : '';
+          return '<div class="lobby-poll-opt-result" onclick="selectPollOpt(\''+slot+'\',\''+m.id+'\',\''+_esc(m.title||m.original_title||'')+'\',\''+_esc(m.poster_path||'')+'\')">'
+            +(poster?'<img src="'+poster+'" alt="">':'')
+            +'<span>'+_esc(m.title||m.original_title||'')+(year?' ('+year+')':'')+'</span>'
+            +'</div>';
+        }).join('');
+      } catch(_e) {}
+    }, 320);
+  };
+
+  window.selectPollOpt = function(slot, tmdbId, title, poster) {
+    _pollOpts[slot] = { tmdbId: String(tmdbId), title: title, poster: poster };
+    var posterEl = document.getElementById('pollOptPoster'+slot);
+    var nameEl   = document.getElementById('pollOptName'+slot);
+    var searchEl = document.getElementById('pollOptSearch'+slot);
+    var resEl    = document.getElementById('pollOptResults'+slot);
+    var clearEl  = document.getElementById('pollOptClear'+slot);
+    if (posterEl) { posterEl.src = poster ? 'https://image.tmdb.org/t/p/w185'+poster : ''; posterEl.style.display = poster ? 'block' : 'none'; }
+    if (nameEl)   { nameEl.textContent = title; nameEl.style.display = 'block'; }
+    if (searchEl) { searchEl.value = ''; searchEl.placeholder = 'Change film…'; }
+    if (resEl)    { resEl.style.display = 'none'; }
+    if (clearEl)  { clearEl.style.display = 'block'; }
+  };
+
+  window.clearPollOpt = function(slot) {
+    _pollOpts[slot] = null;
+    var posterEl = document.getElementById('pollOptPoster'+slot);
+    var nameEl   = document.getElementById('pollOptName'+slot);
+    var searchEl = document.getElementById('pollOptSearch'+slot);
+    var clearEl  = document.getElementById('pollOptClear'+slot);
+    if (posterEl) { posterEl.style.display='none'; posterEl.src=''; }
+    if (nameEl)   { nameEl.style.display='none'; nameEl.textContent=''; }
+    if (searchEl) { searchEl.value=''; searchEl.placeholder='Search a film…'; }
+    if (clearEl)  { clearEl.style.display='none'; }
+  };
+
   window.submitLobbyPost = async function() {
     var me = window.pmGetUser && window.pmGetUser();
     if (!me) return;
@@ -24229,11 +24367,22 @@ async function deleteEditorReview(key, e) {
       var tok  = await me.getIdToken();
       var name = (window.pmGetNickname&&window.pmGetNickname()) || (window._pmMyProfile&&window._pmMyProfile.nickname) || me.displayName || 'User';
       var av   = (window._pmMyProfile&&window._pmMyProfile.photoURL) || me.photoURL || '';
+      // Validate poll: both options required
+      if (_lobbyType === 'poll') {
+        if (!_pollOpts.A || !_pollOpts.B) { alert('Please search and select both Option A and Option B films.'); return; }
+      }
       var postData = {
         uid: me.uid, type: _lobbyType, body: text,
         upvotes: 0, commentCount: 0, createdAt: Date.now(),
         pinned: false, fromName: name, avatar: av
       };
+      if (_lobbyType === 'poll') {
+        postData.pollOptions = [
+          { title: _pollOpts.A.title, tmdbId: _pollOpts.A.tmdbId, poster: _pollOpts.A.poster || '' },
+          { title: _pollOpts.B.title, tmdbId: _pollOpts.B.tmdbId, poster: _pollOpts.B.poster || '' }
+        ];
+        postData.pollVoteCounts = [0, 0]; // [optA votes, optB votes]
+      }
       if (_lobbyFilmAttach) {
         postData.filmId    = _lobbyFilmAttach.tmdbId;
         postData.filmTitle = _lobbyFilmAttach.title;
@@ -24345,12 +24494,19 @@ async function deleteEditorReview(key, e) {
           +'<button class="lobby-admin-delete-btn" onclick="deleteLobbyPost(\''+_esc(postId)+'\',true)" style="font-size:.75rem;padding:6px 14px">🗑 Delete post</button>'
         +'</div>'
       : '';
+    // Build poll widget HTML if this is a poll post
+    var pollHtml = '';
+    if (post.type === 'poll' && post.pollOptions && post.pollOptions.length >= 2) {
+      pollHtml = _buildPollHtml(post, postId);
+    }
+
     threadBody.innerHTML = threadHeroHtml+'<div class="lobby-card" style="margin-bottom:16px;cursor:default">'
       +'<div class="lobby-card-head">'+_lobbyAvatarHtml(post.uid,post.avatar||null)
         +'<div class="lobby-card-meta"><div class="lobby-card-name">'+_esc(post.fromName||'User')+'</div>'
         +'<div class="lobby-card-time">'+_relTime(post.createdAt||0)+'</div></div>'
         +_lobbyTypeBadge(post.type,post.pinned)+'</div>'
       +'<div class="lobby-card-body">'+_esc(post.body||'')+'</div>'
+      +pollHtml
       +filmTag
       +'<div class="lobby-card-foot"><button class="lobby-upvote-btn" onclick="toggleLobbyUpvote(\''+_esc(postId)+'\',this)" data-pid="'+_esc(postId)+'">▲ '+(post.upvotes||0)+'</button></div>'
       +'</div>'
@@ -24358,8 +24514,84 @@ async function deleteEditorReview(key, e) {
       +commentBox
       +'<div class="lobby-comment-list" id="lobbyCommentList"><div style="color:#555;font-size:.75rem;padding:8px 0">Loading replies…</div></div>';
 
-    // Fetch comments
+    // Load poll vote state then fetch comments
+    if (post.type === 'poll') _loadPollVotes(post, postId);
     _loadLobbyComments(postId);
+  };
+
+  // ── Poll rendering & voting ───────────────────────────────────────────────
+  function _buildPollHtml(post, postId) {
+    var opts = post.pollOptions; // [{title,tmdbId,poster},{title,tmdbId,poster}]
+    var counts = post.pollVoteCounts || [0,0];
+    var total  = (counts[0]||0) + (counts[1]||0);
+    var pctA   = total ? Math.round((counts[0]||0)*100/total) : 0;
+    var pctB   = total ? Math.round((counts[1]||0)*100/total) : 0;
+    function optCard(idx, label, colorClass) {
+      var opt = opts[idx] || {};
+      var img = opt.poster ? 'https://image.tmdb.org/t/p/w185'+opt.poster : '';
+      return '<div class="lobby-poll-vote-card" id="pollVoteCard'+postId+'_'+idx+'" onclick="castPollVote(\''+_esc(postId)+'\','+idx+')">'
+        +'<div class="lobby-poll-vote-fill '+colorClass+'" id="pollVoteFill'+postId+'_'+idx+'" style="width:0"></div>'
+        +(img?'<img class="lobby-poll-vote-img" src="'+img+'" alt="'+_esc(opt.title||'')+'">':'')
+        +'<div class="lobby-poll-vote-title">'+_esc(opt.title||'Option '+(idx===0?'A':'B'))+'</div>'
+        +'<div class="lobby-poll-vote-pct '+colorClass+'" id="pollVotePct'+postId+'_'+idx+'">'+pctA+'%</div>'
+      +'</div>';
+    }
+    return '<div class="lobby-poll-display" id="pollDisplay'+postId+'">'
+      +'<div class="lobby-poll-opts-row">'
+        +optCard(0,'A','a')
+        +optCard(1,'B','b')
+      +'</div>'
+      +'<div class="lobby-poll-foot" id="pollFoot'+postId+'">'+total+' vote'+(total===1?'':'s')+'</div>'
+    +'</div>';
+  }
+
+  async function _loadPollVotes(post, postId) {
+    var me = window.pmGetUser && window.pmGetUser();
+    if (!me) return;
+    try {
+      var tok = await me.getIdToken();
+      var r = await fetch(_RTDB+'/community/pollVotes/'+postId+'.json?auth='+tok);
+      var votes = r.ok ? (await r.json() || {}) : {};
+      var counts = [0,0];
+      Object.values(votes).forEach(function(v){ if (v===0||v===1) counts[v]++; });
+      var total = counts[0]+counts[1];
+      var myVote = (me.uid in votes) ? votes[me.uid] : -1;
+      // Update UI
+      [0,1].forEach(function(idx){
+        var card = document.getElementById('pollVoteCard'+postId+'_'+idx);
+        var fill = document.getElementById('pollVoteFill'+postId+'_'+idx);
+        var pct  = document.getElementById('pollVotePct'+postId+'_'+idx);
+        if (!card) return;
+        var pctVal = total ? Math.round(counts[idx]*100/total) : 0;
+        if (pct) pct.textContent = pctVal+'%';
+        if (fill) setTimeout(function(){ fill.style.width = pctVal+'%'; }, 50);
+        if (myVote >= 0) {
+          card.classList.add('done');
+          card.style.cursor = 'default';
+          if (myVote === idx) card.classList.add(idx===0?'voted-a':'voted');
+        }
+      });
+      var foot = document.getElementById('pollFoot'+postId);
+      if (foot) foot.textContent = total+' vote'+(total===1?'':'s');
+    } catch(_e) {}
+  }
+
+  window.castPollVote = async function(postId, optionIdx) {
+    var me = window.pmGetUser && window.pmGetUser();
+    if (!me) { alert('Sign in to vote.'); return; }
+    // Check if already voted (cards have done class)
+    var card = document.getElementById('pollVoteCard'+postId+'_0');
+    if (card && card.classList.contains('done')) return; // already voted
+    try {
+      var tok = await me.getIdToken();
+      // Record vote (uid → optionIndex)
+      await fetch(_RTDB+'/community/pollVotes/'+postId+'/'+me.uid+'.json?auth='+tok,{
+        method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(optionIdx)
+      });
+      // Re-load to get fresh counts and mark as voted
+      var post = _lobbyPosts.find(function(p){return p._id===postId;}) || _lobbyCurrentThread;
+      if (post) _loadPollVotes(post, postId);
+    } catch(_e) { alert('Could not cast vote — try again.'); }
   };
 
   window.closeLobbyThread = function() {
