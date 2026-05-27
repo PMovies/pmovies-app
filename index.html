@@ -16243,7 +16243,13 @@ function closeEditorRead() {
   const page = document.getElementById('erPage');
   if (page) page.style.display = 'none';
   document.body.style.overflow = '';
-  try { history.pushState(null, '', '#editor'); } catch(e) {}
+  // If the URL is still a /review/ deep-link path (served by CF Worker), reset to /
+  // so that any subsequent switchTab call appends #tab to / instead of /review/slug
+  try {
+    if (location.pathname.startsWith('/review/') || location.pathname.startsWith('/fan/')) {
+      history.replaceState(null, '', '/');
+    }
+  } catch(e) {}
 }
 
 function _erShare() {
