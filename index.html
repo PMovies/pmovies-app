@@ -21281,7 +21281,17 @@ async function deleteEditorReview(key, e) {
     if (n.type === 'follow' && n.fromUid) {
       setTimeout(function(){ pmOpenProfile(n.fromUid); }, 80);
     } else if ((n.type === 'like' || n.type === 'comment') && n.targetId) {
-      setTimeout(function(){ if (typeof _pmOpenReviewFromProfile === 'function') _pmOpenReviewFromProfile(n.targetId); }, 80);
+      // Lobby reply notification — clickUrl starts with /lobby/
+      if (n.clickUrl && n.clickUrl.indexOf('/lobby/') === 0) {
+        var _lobbyPid = n.clickUrl.replace('/lobby/', '').split('?')[0];
+        setTimeout(function(){
+          if (typeof switchTab === 'function') switchTab('lobby');
+          if (typeof openLobbyThread === 'function') openLobbyThread(_lobbyPid);
+        }, 80);
+      } else {
+        // Fan review like / comment
+        setTimeout(function(){ if (typeof _pmOpenReviewFromProfile === 'function') _pmOpenReviewFromProfile(n.targetId); }, 80);
+      }
     }
   };
   // Notification data keyed by Firebase key — on window so onclick can read it
@@ -24534,9 +24544,15 @@ async function deleteEditorReview(key, e) {
       if (input) input.value = '';
       _loadLobbyComments(postId);
       // Notify post author
-      var post = _lobbyPosts.find(function(p){return p._id===postId;});
+      // Fall back to _lobbyCurrentThread when post isn't in _lobbyPosts (deep-link case)
+      var post = _lobbyPosts.find(function(p){return p._id===postId;}) || _lobbyCurrentThread;
       if (post && post.uid && post.uid !== me.uid && post.uid !== 'system' && window._pmNotify) {
-        window._pmNotify(post.uid, {type:'comment', targetId:postId, targetTitle:post.body?post.body.slice(0,40):''});
+        window._pmNotify(post.uid, {
+          type: 'comment',
+          targetId: postId,
+          targetTitle: post.body ? post.body.slice(0,40) : '',
+          clickUrl: '/lobby/' + postId   // overrides the default '/?review=' path in _pmNotify
+        });
       }
       // Update local cache
       var lp = _lobbyPosts.find(function(p){return p._id===postId;});
