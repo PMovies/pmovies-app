@@ -23947,6 +23947,24 @@ async function deleteEditorReview(key, e) {
         });
       }
 
+      // Load user's existing votes so the upvote button shows correctly after refresh
+      if (me) {
+        try {
+          var _uvRes = await _fetchWithTimeout(_RTDB+'/community/upvotes.json'+(tok?'?auth='+tok:''), 5000);
+          if (_uvRes && _uvRes.ok) {
+            var _uvAll = await _uvRes.json();
+            if (_uvAll && typeof _uvAll === 'object') {
+              Object.entries(_uvAll).forEach(function(e) {
+                var pid = e[0], voters = e[1];
+                if (voters && typeof voters === 'object' && voters[me.uid]) {
+                  _lobbyUpvoted[pid] = true;
+                }
+              });
+            }
+          }
+        } catch(_e) {}
+      }
+
       _lobbyPage = 0;
       _renderLobbyFeed();
     } catch(_e) {
@@ -24077,14 +24095,20 @@ async function deleteEditorReview(key, e) {
     try {
       var tok = await me.getIdToken();
       var ref = _RTDB+'/community/upvotes/'+postId+'/'+me.uid+'.json?auth='+tok;
+      // Write or delete the user's vote record
       if (voted) {
         await fetch(ref, {method:'DELETE'});
-        await fetch(_RTDB+'/community/posts/'+postId+'/upvotes.json?auth='+tok, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({'.sv':{'increment':-1}})});
       } else {
-        await fetch(ref, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(true)});
-        await fetch(_RTDB+'/community/posts/'+postId+'/upvotes.json?auth='+tok, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({'.sv':{'increment':1}})});
+        await fetch(ref, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(true)});
       }
-    } catch(_e) { /* revert */ _lobbyUpvoted[postId]=voted; post.upvotes+=(voted?1:-1); if(btn){btn.textContent='▲ '+post.upvotes;btn.classList.toggle('voted',voted);} }
+      // Read-modify-write the upvote count (.sv increment only works in SDK, not REST API)
+      var _uvCountRes = await fetch(_RTDB+'/community/posts/'+postId+'/upvotes.json?auth='+tok);
+      var _uvCount = _uvCountRes.ok ? (await _uvCountRes.json()) : 0;
+      var _uvNew = Math.max(0, (typeof _uvCount === 'number' && !isNaN(_uvCount) ? _uvCount : 0) + (voted ? -1 : 1));
+      await fetch(_RTDB+'/community/posts/'+postId+'/upvotes.json?auth='+tok, {
+        method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(_uvNew)
+      });
+    } catch(_e) { /* revert optimistic update */ _lobbyUpvoted[postId]=voted; post.upvotes+=(voted?1:-1); if(btn){btn.textContent='▲ '+post.upvotes;btn.classList.toggle('voted',voted);} }
   };
 
   /* ── New Post Modal ── */
