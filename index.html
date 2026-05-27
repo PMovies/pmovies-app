@@ -39,7 +39,11 @@
 
     // ── Detect clean deep-link paths and store pending values ──
     if ((m = p.match(/^\/fan\/([\w-]+)$/)))    window._pendingFanSlug      = m[1];
-    if ((m = p.match(/^\/lobby\/([\w-]+)$/)))  window._pendingLobbyThread  = m[1];
+    if ((m = p.match(/^\/lobby\/([\w-]+)$/))) {
+      window._pendingLobbyThread = m[1];
+      // Strip any stale #lobby hash (e.g. /lobby/{id}#lobby copied from previous session)
+      if (h === '#lobby') history.replaceState(null, '', p + location.search);
+    }
     if ((m = p.match(/^\/review\/([\w-]+)$/))) window._pendingEditorReview = m[1];
 
     // ── Show full-screen loader for any deep-link so landing page never flashes ──
@@ -8495,10 +8499,15 @@ window._removeDlLoader = function() {
       ? 'Let\'s discover together &nbsp;·&nbsp; who are you today?'
       : 'Your Cinema &nbsp;·&nbsp; Your Mood &nbsp;·&nbsp; Your Film';
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    // Preserve ?admin= across ALL tab switches so admin key survives navigation
-    const existingHashQuery = location.hash.includes('?') ? '?' + location.hash.split('?')[1]
-      : (location.search.includes('admin=') ? location.search : '');
-    history.replaceState(null, '', '#' + name + (existingHashQuery || ''));
+    // Bug 3 fix: don't clobber a clean /lobby/{postId} URL when switching to lobby tab
+    // (openLobbyThread does pushState to /lobby/{postId}; replaceState here would append #lobby)
+    const onLobbyThread = (name === 'lobby' && location.pathname.match(/^\/lobby\/\S/));
+    if (!onLobbyThread) {
+      // Preserve ?admin= across ALL tab switches so admin key survives navigation
+      const existingHashQuery = location.hash.includes('?') ? '?' + location.hash.split('?')[1]
+        : (location.search.includes('admin=') ? location.search : '');
+      history.replaceState(null, '', '#' + name + (existingHashQuery || ''));
+    }
   }
   /* ══ BACKED — CREATOR SPOTLIGHT ══ */
   // Base Monday: 2026-05-04. Each entry = one week's 3 creators.
@@ -24197,9 +24206,29 @@ async function deleteEditorReview(key, e) {
     var filmTag = '';
     var threadHeroHtml = '';
     if (post.filmId && post.filmTitle) {
-      var ps = post.filmPoster ? 'https://image.tmdb.org/t/p/w92'+post.filmPoster : '';
-      filmTag = '<div class="lobby-film-tag" style="margin-bottom:12px" onclick="closeLobbyThread();setTimeout(function(){openFilmPage(\''+_esc(post.filmId)+'\');},80)">'
-        +(ps?'<img src="'+ps+'" alt="">':'🎬')+' '+_esc(post.filmTitle)+'</div>';
+      // Bug 1 fix: show faded movie backdrop as hero background
+      var backdropSrc = post.filmPoster ? 'https://image.tmdb.org/t/p/w1280'+post.filmPoster : '';
+      var posterSrc   = post.filmPoster ? 'https://image.tmdb.org/t/p/w92'+post.filmPoster  : '';
+      threadHeroHtml =
+        '<div class="lobby-thread-hero" style="background:#0a0a0a;border-bottom:1px solid rgba(255,255,255,.05);min-height:160px;padding:0;overflow:hidden;position:relative">'
+          // Blurred backdrop fills the entire hero
+          +(backdropSrc
+            ? '<div style="position:absolute;inset:0;background:url('+backdropSrc+') center/cover no-repeat;filter:blur(18px) brightness(.28) saturate(1.2);transform:scale(1.08)"></div>'
+            : '<div style="position:absolute;inset:0;background:linear-gradient(160deg,#111827,#0a0a0a)"></div>')
+          // Gradient fade at bottom to blend into content
+          +'<div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,#0a0a0a 100%)"></div>'
+          // Film pill + title centred over backdrop
+          +'<div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:28px 16px 24px;cursor:pointer" onclick="closeLobbyThread();setTimeout(function(){openFilmPage(\''+_esc(post.filmId)+'\');},80)">'
+            +(posterSrc
+              ? '<img src="'+posterSrc+'" alt="'+_esc(post.filmTitle)+'" style="height:72px;width:auto;border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,.7)">'
+              : '<div style="font-size:2.4rem;line-height:1">🎬</div>')
+            +'<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.1rem;color:#fff;letter-spacing:.06em;text-shadow:0 2px 8px rgba(0,0,0,.8)">'+_esc(post.filmTitle)+'</div>'
+            +'<div style="font-size:.58rem;color:rgba(255,255,255,.45);font-family:\'Montserrat\',sans-serif;font-weight:600;letter-spacing:.1em;text-transform:uppercase">Tap to open film</div>'
+          +'</div>'
+        +'</div>';
+      // Small inline film tag below the post body (keeps context visible)
+      filmTag = '<div class="lobby-film-tag" style="margin-bottom:12px;cursor:pointer" onclick="closeLobbyThread();setTimeout(function(){openFilmPage(\''+_esc(post.filmId)+'\');},80)">'
+        +(posterSrc?'<img src="'+posterSrc+'" alt="">':'🎬')+' '+_esc(post.filmTitle)+'</div>';
     } else {
       // No film — render a gradient hero banner themed by post type
       var _hm = {
@@ -24348,9 +24377,36 @@ async function deleteEditorReview(key, e) {
     try {
       var r = await fetch(_RTDB+'/community/comments/'+postId+'.json');
       var raw = r.ok ? await r.json() : null;
-      if (!raw) { list.innerHTML = '<div style="color:#555;font-size:.75rem;padding:8px 0">No replies yet.</div>'; return; }
-      var comments = Object.entries(raw).map(function(e){return Object.assign({},e[1],{_id:e[0]});})
-        .sort(function(a,b){return (a.createdAt||0)-(b.createdAt||0);});
+
+      // Bug 2 fix: also check for legacy inline comments stored inside the post object
+      var inlineRaw = null;
+      if (_lobbyCurrentThread && _lobbyCurrentThread.comments && typeof _lobbyCurrentThread.comments === 'object') {
+        inlineRaw = _lobbyCurrentThread.comments;
+      }
+
+      // Merge both sources
+      var merged = {};
+      if (raw && typeof raw === 'object') Object.assign(merged, raw);
+      if (inlineRaw) Object.assign(merged, inlineRaw);
+
+      if (!Object.keys(merged).length) {
+        list.innerHTML = '<div style="color:#555;font-size:.75rem;padding:8px 0">No replies yet.</div>';
+        // Bug 2 fix: silently correct stale commentCount on the post card
+        _fixStaleCommentCount(postId, 0);
+        return;
+      }
+
+      var comments = Object.entries(merged)
+        .map(function(e){ return Object.assign({}, e[1], {_id: e[0]}); })
+        .filter(function(c){ return c && c.body; }) // skip malformed entries
+        .sort(function(a,b){ return (a.createdAt||0) - (b.createdAt||0); });
+
+      if (!comments.length) {
+        list.innerHTML = '<div style="color:#555;font-size:.75rem;padding:8px 0">No replies yet.</div>';
+        _fixStaleCommentCount(postId, 0);
+        return;
+      }
+
       list.innerHTML = comments.map(function(c){
         return '<div class="lobby-comment-item">'
           +'<div class="lobby-comment-head">'
@@ -24359,9 +24415,35 @@ async function deleteEditorReview(key, e) {
             +'<div class="lobby-comment-time">'+_relTime(c.createdAt||0)+'</div>'
           +'</div>'
           +'<div class="lobby-comment-body">'+_esc(c.body||'')+'</div>'
-          +'</div>';
+        +'</div>';
       }).join('');
+
+      // Reconcile actual count with stored count (bug 2 fix)
+      _fixStaleCommentCount(postId, comments.length);
+
     } catch(_e) { list.innerHTML = '<div style="color:#555;font-size:.75rem;padding:8px 0">Could not load replies.</div>'; }
+  }
+
+  // Silently correct stale commentCount if it doesn't match actual replies
+  async function _fixStaleCommentCount(postId, actualCount) {
+    try {
+      var post = _lobbyCurrentThread;
+      if (!post) return;
+      var stored = typeof post.commentCount === 'number' ? post.commentCount : 0;
+      if (stored === actualCount) return; // already correct
+      // Update local cache
+      post.commentCount = actualCount;
+      var lp = _lobbyPosts.find(function(p){ return p._id === postId; });
+      if (lp) lp.commentCount = actualCount;
+      // Patch Firebase (fire-and-forget, needs auth)
+      var me = window.pmGetUser && window.pmGetUser();
+      if (!me) return;
+      var tok = await me.getIdToken();
+      fetch(_RTDB+'/community/posts/'+postId+'/commentCount.json?auth='+tok, {
+        method: 'PUT', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(actualCount)
+      });
+    } catch(_) {}
   }
 
   window.submitLobbyComment = async function(postId) {
