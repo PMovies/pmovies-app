@@ -24983,15 +24983,25 @@ async function deleteEditorReview(key, e) {
       comments.forEach(function(c) {
         if (_attached[c._id] || !c.replyTo || !c.replyTo.name) return;
         var targetName = (c.replyTo.name || '').toLowerCase();
-        var targetSnip = (c.replyTo.body || '').slice(0, 40).toLowerCase();
-        var best = null;
+        // Normalize snippet: collapse whitespace so Arabic RTL/newlines don't break matching
+        var targetSnip = (c.replyTo.body || '').replace(/\s+/g,' ').trim().slice(0, 40).toLowerCase();
+        var candidates = [];
         for (var i = comments.indexOf(c) - 1; i >= 0; i--) {
           var pc = comments[i];
-          if ((pc.fromName || '').toLowerCase() === targetName) {
-            if (!targetSnip || (pc.body || '').toLowerCase().startsWith(targetSnip)) {
-              best = pc; break;
-            }
+          if ((pc.fromName || '').toLowerCase() === targetName) candidates.push(pc);
+        }
+        var best = null;
+        if (candidates.length === 1) {
+          // Only one comment from this person before — attach without body check
+          best = candidates[0];
+        } else if (candidates.length > 1 && targetSnip) {
+          // Multiple candidates — pick the one whose body best matches the snippet
+          for (var j = 0; j < candidates.length; j++) {
+            var norm = (candidates[j].body || '').replace(/\s+/g,' ').trim().toLowerCase();
+            if (norm.startsWith(targetSnip) || norm.includes(targetSnip)) { best = candidates[j]; break; }
           }
+          // If body match failed, fall back to most recent
+          if (!best) best = candidates[0];
         }
         if (best) { best._replies.push(c); _attached[c._id] = true; }
       });
