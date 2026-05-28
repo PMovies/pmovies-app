@@ -7690,6 +7690,10 @@ window._removeDlLoader = function() {
       if (yrEl && yr) yrEl.textContent = yr;
     });
 
+    // Shared backdrop path — set once the backdrop fetch resolves so the async
+    // username lookup can include it in the second _writeReviewMeta call.
+    let _frBackdropPath = null;
+
     // Fetch backdrop and write meta — never write null first (would destroy stored backdrop
     // and make Twitter scrape a card with no image during the fetch window).
     fetchBackdrop(r.movie, isTV ? 'tv' : 'movie', r.tmdbId || null).then(backdropUrl => {
@@ -7702,10 +7706,10 @@ window._removeDlLoader = function() {
         bw.insertBefore(img, bw.firstChild);
       }
       // Always write meta after fetch — creates the slug key if missing, never destroys backdrop
-      const backdropPath = backdropUrl
+      _frBackdropPath = backdropUrl
         ? backdropUrl.replace('https://image.tmdb.org/t/p/w1280', '')
         : null;
-      _writeReviewMeta(fp, r, backdropPath);
+      _writeReviewMeta(fp, r, _frBackdropPath);
     }).catch(() => {});
 
     page.scrollTop = 0;
@@ -7735,6 +7739,13 @@ window._removeDlLoader = function() {
           // Update share button data-url so copying/sharing gives the clean link
           const _shareMenu = document.getElementById('frShareMenu-' + fp);
           if (_shareMenu) _shareMenu.dataset.url = 'https://p-movies.com/fan/' + _cleanSlug;
+          // Write the clean-path OG meta now that we have the username —
+          // this ensures fanReviewMeta/{username}/{movieSlug} exists for the Worker
+          // so Twitter/OG scrapers get real data on first hit, not a fallback.
+          // _frBackdropPath is set by the backdrop fetch above (may be null if it
+          // hasn't resolved yet, but the backdrop fetch will also call _writeReviewMeta
+          // shortly after with the real path, so the final state is always correct).
+          _writeReviewMeta(fp, r, _frBackdropPath);
         })
         .catch(function() {});
     }
