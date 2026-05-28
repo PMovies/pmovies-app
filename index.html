@@ -16169,20 +16169,31 @@ function _renderReviewPage(r) {
   try {
     var _erSlug = r.slug || _editorSlug(r.title || '') || r._key || '';
     if (_erSlug) {
-      fetch('https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app/editorReviewMeta/' + encodeURIComponent(_erSlug) + '.json', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          slug:      _erSlug,
-          title:     r.title    || '',
-          year:      r.year     || '',
-          headline:  r.headline || '',
-          backdrop:  r.backdrop || null,
-          rating:    r.rating   || 0,
-          tmdbId:    r.tmdbId   || null,
-          updatedAt: Date.now()
-        })
-      });
+      // Include auth token so Firebase security rules allow the write
+      var _erMetaUser = window.pmGetUser && window.pmGetUser();
+      var _erMetaWrite = function(tok) {
+        var _erMetaUrl = 'https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app/editorReviewMeta/'
+          + encodeURIComponent(_erSlug) + '.json' + (tok ? '?auth=' + tok : '');
+        fetch(_erMetaUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            slug:      _erSlug,
+            title:     r.title    || '',
+            year:      r.year     || '',
+            headline:  r.headline || '',
+            backdrop:  r.backdrop || null,
+            rating:    r.rating   || 0,
+            tmdbId:    r.tmdbId   || null,
+            updatedAt: Date.now()
+          })
+        });
+      };
+      if (_erMetaUser) {
+        _erMetaUser.getIdToken().then(_erMetaWrite).catch(function() { _erMetaWrite(''); });
+      } else {
+        _erMetaWrite('');
+      }
     }
   } catch(_) {}
 
