@@ -16285,7 +16285,7 @@ function _erShare() {
   // Append ?v=2 so Twitter treats old reviews as a new URL and re-scrapes fresh OG data.
   // The Cloudflare Worker ignores query params for routing — slug matching is unaffected.
   var url  = slug
-    ? 'https://p-movies.com/review/' + slug + '?v=2'
+    ? 'https://p-movies.com/review/' + slug + '?v=3'
     : 'https://p-movies.com/';
   var btn  = document.getElementById('erShareBtn');
 
