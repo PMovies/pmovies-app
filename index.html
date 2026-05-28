@@ -7711,11 +7711,33 @@ window._removeDlLoader = function() {
     page.scrollTop = 0;
     document.body.style.overflow = 'hidden';
     _applyCmtCounts();
-    // Clean slug URL: p-movies.com/fan/the-drama-c2hlcmJp
-    // CF Worker serves OG tags to crawlers, redirects real browsers to /#fan-review/{fp}
+
+    // Set URL immediately with whatever we know now (may be old format if username not in r yet)
     const _openSlug = _fanUrlPath(fp, r);
     _slugRegistry.set(_openSlug, fp);
     try { history.pushState({ frFp: fp, frSlug: _openSlug }, '', '/fan/' + _openSlug); } catch(e) {}
+
+    // If username wasn't stored on this review, look it up from the reviewer's profile
+    // and upgrade to the clean URL + share link once resolved.
+    if (!r.username && r.uid) {
+      fetch(`${RTDB}/users/${encodeURIComponent(r.uid)}/username.json`)
+        .then(function(res) { return res.ok ? res.json() : null; })
+        .then(function(uname) {
+          if (!uname || typeof uname !== 'string') return;
+          uname = uname.trim().toLowerCase();
+          if (!uname) return;
+          // Patch the in-memory review object so future calls also use clean URL
+          r.username = uname;
+          const _cleanSlug = uname + '/' + _movieSlugOnly(r.movie);
+          _slugRegistry.set(_cleanSlug, fp);
+          // Update address bar to clean URL
+          try { history.replaceState({ frFp: fp, frSlug: _cleanSlug }, '', '/fan/' + _cleanSlug); } catch(e) {}
+          // Update share button data-url so copying/sharing gives the clean link
+          const _shareMenu = document.getElementById('frShareMenu-' + fp);
+          if (_shareMenu) _shareMenu.dataset.url = 'https://p-movies.com/fan/' + _cleanSlug;
+        })
+        .catch(function() {});
+    }
   }
 
   // ── Part 10: Validate + sanitize fanReviewMeta before every write ────────────
@@ -9892,13 +9914,7 @@ window._removeDlLoader = function() {
       window.open('https://wa.me/?text=' + encodeURIComponent(full), '_blank');
 
     } else if (platform === 'x') {
-      // For fan review URLs: append ?t=timestamp so Twitter sees a fresh URL it has
-      // never cached. The CF Worker already strips query params when extracting the slug
-      // (path.slice(5).split('?')[0]) so this is transparent to Firebase lookup.
-      const xUrl = url.includes('/fan/')
-        ? url + '?t=' + Math.floor(Date.now() / 1000)
-        : url;
-      window.open('https://x.com/intent/tweet?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(xUrl) + '&via=PMovies155', '_blank');
+      window.open('https://x.com/intent/tweet?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(url) + '&via=PMovies155', '_blank');
 
     } else if (platform === 'instagram') {
       // Mobile: native share sheet (includes Instagram app)
