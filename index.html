@@ -24641,8 +24641,8 @@ async function deleteEditorReview(key, e) {
   // ── Threaded reply target ────────────────────────────────────────────────
   window._lobbyReplyTarget = null;
 
-  window.setLobbyReplyTarget = function(commentId, name, body) {
-    window._lobbyReplyTarget = { commentId: commentId, name: name, body: body };
+  window.setLobbyReplyTarget = function(commentId, name, body, uid) {
+    window._lobbyReplyTarget = { commentId: commentId, name: name, body: body, uid: uid || '' };
     var el = document.getElementById('lobbyReplyingTo');
     if (el) {
       el.style.display = '';
@@ -24808,12 +24808,13 @@ async function deleteEditorReview(key, e) {
         var cName = (c.fromName||'User').replace(/'/g,'\\\'');
         var cBody = (c.body||'').slice(0,80).replace(/'/g,'\\\'').replace(/\n/g,' ');
         var cId   = (c._id||'').replace(/'/g,'\\\'');
+        var cUid  = (c.uid||'').replace(/'/g,'\\\'');
         return '<div class="lobby-comment-item" data-cid="'+_esc(c._id)+'">'
           +'<div class="lobby-comment-head">'
             +'<div class="lobby-av" style="width:26px;height:26px;font-size:.7rem">'+(c.avatar?'<img src="'+_esc(c.avatar)+'" alt="">':_esc((c.uid||'?').slice(0,1).toUpperCase()))+'</div>'
             +'<div class="lobby-comment-name">'+_esc(c.fromName||'User')+'</div>'
             +'<div class="lobby-comment-time">'+_relTime(c.createdAt||0)+'</div>'
-            +'<button class="lobby-reply-btn" onclick="setLobbyReplyTarget(\''+cId+'\',\''+cName+'\',\''+cBody+'\')">↩ Reply</button>'
+            +'<button class="lobby-reply-btn" onclick="setLobbyReplyTarget(\''+cId+'\',\''+cName+'\',\''+cBody+'\',\''+cUid+'\')">↩ Reply</button>'
           +'</div>'
           +quoteHtml
           +'<div class="lobby-comment-body">'+_esc(c.body||'')+'</div>'
@@ -24889,9 +24890,11 @@ async function deleteEditorReview(key, e) {
         method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(_ccNew)
       });
       if (input) input.value = '';
+      // Capture reply target before clearing it (needed for notification below)
+      var _replyTarget = window._lobbyReplyTarget ? Object.assign({}, window._lobbyReplyTarget) : null;
       clearLobbyReplyTarget(); // clear the ↩ reply indicator after posting
       _loadLobbyComments(postId);
-      // Notify post author
+      // Notify post author (unless they are the one replying)
       // Fall back to _lobbyCurrentThread when post isn't in _lobbyPosts (deep-link case)
       var post = _lobbyPosts.find(function(p){return p._id===postId;}) || _lobbyCurrentThread;
       if (post && post.uid && post.uid !== me.uid && post.uid !== 'system' && window._pmNotify) {
@@ -24899,8 +24902,21 @@ async function deleteEditorReview(key, e) {
           type: 'comment',
           targetId: postId,
           targetTitle: post.body ? post.body.slice(0,40) : '',
-          clickUrl: '/lobby/' + postId   // overrides the default '/?review=' path in _pmNotify
+          clickUrl: '/lobby/' + postId
         });
+      }
+      // Also notify the comment author if this was a threaded ↩ reply to their comment
+      // (only if they're a different person from both the post author and the replier)
+      if (_replyTarget && _replyTarget.uid && _replyTarget.uid !== me.uid && window._pmNotify) {
+        var _alreadyNotified = post && post.uid === _replyTarget.uid; // don't double-notify post author
+        if (!_alreadyNotified) {
+          window._pmNotify(_replyTarget.uid, {
+            type: 'comment',
+            targetId: postId,
+            targetTitle: '@' + _replyTarget.name + ': ' + (_replyTarget.body||'').slice(0,30),
+            clickUrl: '/lobby/' + postId
+          });
+        }
       }
       // Update local cache and refresh feed card count
       var lp = _lobbyPosts.find(function(p){return p._id===postId;});
