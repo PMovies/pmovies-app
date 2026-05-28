@@ -16275,10 +16275,17 @@ function closeEditorRead() {
 }
 
 function _erShare() {
-  // Build clean /review/slug URL (goes through CF Worker → rich OG card)
-  var slug = (location.hash || '').replace('#review/', '').split('?')[0].trim();
+  // Get slug from pathname first (/review/slug), fall back to hash (#review/slug)
+  var slug = '';
+  if (location.pathname.startsWith('/review/')) {
+    slug = location.pathname.slice(8).split('?')[0].trim();
+  } else if ((location.hash || '').startsWith('#review/')) {
+    slug = location.hash.replace('#review/', '').split('?')[0].trim();
+  }
+  // Append ?v=2 so Twitter treats old reviews as a new URL and re-scrapes fresh OG data.
+  // The Cloudflare Worker ignores query params for routing — slug matching is unaffected.
   var url  = slug
-    ? 'https://p-movies.com/review/' + slug
+    ? 'https://p-movies.com/review/' + slug + '?v=2'
     : 'https://p-movies.com/';
   var btn  = document.getElementById('erShareBtn');
 
