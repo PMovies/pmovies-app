@@ -3938,6 +3938,9 @@
 .lobby-reply-cancel { margin-left:auto; background:none; border:none; color:#555; font-size:.75rem; cursor:pointer; padding:0 2px; line-height:1; }
 .lobby-reply-cancel:hover { color:#ccc; }
 .lobby-comment-body { font-size:.78rem; color:#bbb; line-height:1.45; }
+.lobby-comment-replies { margin-top:8px; margin-left:20px; padding-left:12px; border-left:2px solid #1e1e1e; display:flex; flex-direction:column; gap:8px; }
+.lobby-comment-item.is-reply { background:#0e0e0e; border-color:rgba(255,255,255,.04); }
+.lobby-comment-item.is-reply .lobby-comment-body { font-size:.76rem; }
 
 /* ════════════════════════════════════════════════
    FILM FULL PAGE OVERLAY
@@ -24961,32 +24964,66 @@ async function deleteEditorReview(key, e) {
         return;
       }
 
-      list.innerHTML = comments.map(function(c){
-        // Quote block — shown when this comment is a threaded reply to another comment
-        var quoteHtml = '';
-        if (c.replyTo && c.replyTo.name) {
-          var qBody = (c.replyTo.body || '').slice(0, 80) + (c.replyTo.body && c.replyTo.body.length > 80 ? '…' : '');
-          quoteHtml = '<div class="lobby-comment-quote">'
-            +'<span class="lobby-comment-quote-name">@'+_esc(c.replyTo.name)+'</span>'
-            +' '+_esc(qBody)
-            +'</div>';
+      // ── Build thread tree ──────────────────────────────────────────────────────
+      // Each comment gets a _replies[] array. We attach by:
+      //   1. replyTo.id  (new comments — exact parent key saved since this fix)
+      //   2. replyTo.name match  (old comments — best-effort nearest match)
+      var _byId = {};
+      comments.forEach(function(c) { c._replies = []; _byId[c._id] = c; });
+
+      var _attached = {};
+      // Pass 1: ID-based attachment (accurate)
+      comments.forEach(function(c) {
+        if (c.replyTo && c.replyTo.id && _byId[c.replyTo.id]) {
+          _byId[c.replyTo.id]._replies.push(c);
+          _attached[c._id] = true;
         }
-        // Escape values for inline onclick safely
+      });
+      // Pass 2: name-based attachment for old comments without replyTo.id
+      comments.forEach(function(c) {
+        if (_attached[c._id] || !c.replyTo || !c.replyTo.name) return;
+        var targetName = (c.replyTo.name || '').toLowerCase();
+        var targetSnip = (c.replyTo.body || '').slice(0, 40).toLowerCase();
+        var best = null;
+        for (var i = comments.indexOf(c) - 1; i >= 0; i--) {
+          var pc = comments[i];
+          if ((pc.fromName || '').toLowerCase() === targetName) {
+            if (!targetSnip || (pc.body || '').toLowerCase().startsWith(targetSnip)) {
+              best = pc; break;
+            }
+          }
+        }
+        if (best) { best._replies.push(c); _attached[c._id] = true; }
+      });
+
+      // Root comments = not attached to any parent
+      var _roots = comments.filter(function(c) { return !_attached[c._id]; });
+
+      // ── Render a single comment card ────────────────────────────────────────────
+      function _renderComment(c, isReply) {
         var cName = (c.fromName||'User').replace(/'/g,'\\\'');
         var cBody = (c.body||'').slice(0,80).replace(/'/g,'\\\'').replace(/\n/g,' ');
         var cId   = (c._id||'').replace(/'/g,'\\\'');
         var cUid  = (c.uid||'').replace(/'/g,'\\\'');
-        return '<div class="lobby-comment-item" data-cid="'+_esc(c._id)+'">'
+        var repliesHtml = '';
+        if (c._replies && c._replies.length) {
+          repliesHtml = '<div class="lobby-comment-replies">'
+            + c._replies.map(function(r){ return _renderComment(r, true); }).join('')
+            + '</div>';
+        }
+        return '<div class="lobby-comment-item'+(isReply?' is-reply':'')+'" data-cid="'+_esc(c._id)+'">'
           +'<div class="lobby-comment-head">'
             +'<div class="lobby-av" style="width:26px;height:26px;font-size:.7rem">'+(c.avatar?'<img src="'+_esc(c.avatar)+'" alt="">':_esc((c.uid||'?').slice(0,1).toUpperCase()))+'</div>'
             +'<div class="lobby-comment-name">'+_esc(c.fromName||'User')+'</div>'
             +'<div class="lobby-comment-time">'+_relTime(c.createdAt||0)+'</div>'
             +'<button class="lobby-reply-btn" onclick="setLobbyReplyTarget(\''+cId+'\',\''+cName+'\',\''+cBody+'\',\''+cUid+'\')">↩ Reply</button>'
           +'</div>'
-          +quoteHtml
           +'<div class="lobby-comment-body">'+_esc(c.body||'')+'</div>'
+          + repliesHtml
         +'</div>';
-      }).join('');
+      }
+
+      list.innerHTML = _roots.map(function(c){ return _renderComment(c, false); }).join('');
 
       // Reconcile actual count with stored count (bug 2 fix)
       _fixStaleCommentCount(postId, comments.length);
@@ -25040,6 +25077,7 @@ async function deleteEditorReview(key, e) {
       // Attach replyTo reference if the user clicked ↩ Reply on a specific comment
       if (window._lobbyReplyTarget) {
         commentData.replyTo = {
+          id:   window._lobbyReplyTarget.commentId || null,   // parent comment ID for threading
           name: window._lobbyReplyTarget.name,
           body: window._lobbyReplyTarget.body
         };
