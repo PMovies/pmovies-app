@@ -47,7 +47,12 @@
     if ((m = p.match(/^\/review\/([\w-]+)$/))) window._pendingEditorReview = m[1];
 
     // ── Show full-screen loader for any deep-link so landing page never flashes ──
-    if (/^\/(fan|lobby|review)\//.test(p)) {
+    // Checks both the pathname (direct visit) and the hash (Worker redirect via /#fan/…)
+    var _isDeepLink = /^\/(fan|lobby|review)\//.test(p)
+      || h.startsWith('#fan/')
+      || h.startsWith('#fan-review/')
+      || h.startsWith('#review/');
+    if (_isDeepLink) {
       window._deepLinkPath = true;
       document.getElementById('dlLoaderStyle').textContent =
         '#dlLoader{display:flex!important}';
@@ -8977,8 +8982,17 @@ window._removeDlLoader = function() {
 
     const hash = location.hash.replace('#', '');
 
-    // Fan review deep-link: #fan-review/{fp}
-    // Worker redirects /fan/{slug} browsers here after resolving slug→fp
+    // Fan review slug deep-link: #fan/{slug} or #fan/{username}/{movie-slug}
+    // Worker now redirects /fan/* browsers here — SPA resolves slug→fp itself.
+    if (hash.startsWith('fan/')) {
+      var _fanHashSlug = hash.slice(4).split('?')[0].trim();
+      if (_fanHashSlug) {
+        _deepLinkFanSlug(_fanHashSlug);
+      }
+      return;
+    }
+
+    // Fan review deep-link: #fan-review/{fp}  (legacy — links shared before the slug redirect)
     if (hash.startsWith('fan-review/')) {
       var _fanFp = hash.slice(11).split('?')[0].trim();
       if (_fanFp) {
