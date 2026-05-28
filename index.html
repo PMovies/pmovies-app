@@ -38,7 +38,7 @@
     }
 
     // ── Detect clean deep-link paths and store pending values ──
-    if ((m = p.match(/^\/fan\/([\w-]+)$/)))    window._pendingFanSlug      = m[1];
+    if (!p.startsWith('/fan/img/') && (m = p.match(/^\/fan\/(.+)$/)))  window._pendingFanSlug = m[1].split('?')[0];
     if ((m = p.match(/^\/lobby\/([\w-]+)$/))) {
       window._pendingLobbyThread = m[1];
       // Strip any stale #lobby hash (e.g. /lobby/{id}#lobby copied from previous session)
@@ -7133,6 +7133,30 @@ window._removeDlLoader = function() {
     return `${movieSlug}-${fpPart}`;
   }
 
+  // Slug-only version of movie title (no fp suffix) — used for clean URLs
+  function _movieSlugOnly(movie) {
+    return (movie || 'film')
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 50) || 'film';
+  }
+
+  // Build the fan URL path for a given review.
+  // Returns "{username}/{movie-slug}" if the reviewer's username is known,
+  // otherwise falls back to the legacy "{movie-slug}-{fpKey}" format.
+  function _fanUrlPath(fp, r) {
+    // Use username from review data, or from current user profile if it's our review
+    const _uid = window.pmGetUser && window.pmGetUser() && window.pmGetUser().uid;
+    const username = r.username
+      || (r.uid && _uid && r.uid === _uid && window._pmMyProfile && window._pmMyProfile.username)
+      || null;
+    if (username) return username + '/' + _movieSlugOnly(r.movie);
+    return _reviewSlug(fp, r.movie);
+  }
+
   // Slug → fp map: populated when a review is opened so popstate can re-open without Firebase
   const _slugRegistry = new Map();
 
@@ -7602,7 +7626,7 @@ window._removeDlLoader = function() {
           <div class="card-share-menu" id="frShareMenu-${fp}"
                data-title="${esc((r.name||'Anonymous') + ' on ' + (r.movie||''))}"
                data-text="${shareText}"
-               data-url="https://p-movies.com/fan/${_reviewSlug(fp, r.movie)}">
+               data-url="https://p-movies.com/fan/${_fanUrlPath(fp, r)}">
             <button class="card-share-opt" onclick="pmShareFromMenu(this,'whatsapp')"><svg viewBox="0 0 24 24" width="15" height="15" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.862L.054 23.625a.75.75 0 00.92.92l5.733-1.487A11.955 11.955 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/></svg>WhatsApp</button>
             <button class="card-share-opt" onclick="pmShareFromMenu(this,'x')"><svg viewBox="0 0 24 24" width="15" height="15" fill="#fff"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.259 5.631 5.905-5.631zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>X / Twitter</button>
             <button class="card-share-opt" onclick="pmShareFromMenu(this,'copy')"><svg viewBox="0 0 24 24" width="15" height="15" fill="#aaa"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>Copy link</button>
@@ -7681,7 +7705,7 @@ window._removeDlLoader = function() {
     _applyCmtCounts();
     // Clean slug URL: p-movies.com/fan/the-drama-c2hlcmJp
     // CF Worker serves OG tags to crawlers, redirects real browsers to /#fan-review/{fp}
-    const _openSlug = _reviewSlug(fp, r.movie);
+    const _openSlug = _fanUrlPath(fp, r);
     _slugRegistry.set(_openSlug, fp);
     try { history.pushState({ frFp: fp, frSlug: _openSlug }, '', '/fan/' + _openSlug); } catch(e) {}
   }
@@ -7701,6 +7725,7 @@ window._removeDlLoader = function() {
       slug:      String(raw.slug     || ''),
       movie:     String(raw.movie    || 'Unknown Film').trim(),
       name:      String(raw.name     || 'Anonymous').trim(),
+      username:  raw.username  ? String(raw.username).trim().toLowerCase() : null,
       rating:    rating,
       stars:     '★'.repeat(Math.round(rating)),
       headline:  String(raw.headline || '').slice(0, 200).trim(),
@@ -7717,13 +7742,22 @@ window._removeDlLoader = function() {
 
   // Write per-review OG metadata to Firebase so the CF Worker can build the share card.
   // Called lazily when a review is opened (backfills existing reviews) and on submit (new reviews).
+  // Uses auth token so Firebase security rules accept the write.
   async function _writeReviewMeta(fp, r, backdropPath) {
     try {
       const slug = _reviewSlug(fp, r.movie);
+
+      // Resolve username: from review data, or from current user profile if it's our own review
+      const _currentUid = window.pmGetUser && window.pmGetUser() && window.pmGetUser().uid;
+      const username = r.username
+        || (r.uid && _currentUid && r.uid === _currentUid && window._pmMyProfile && window._pmMyProfile.username)
+        || null;
+
       const safeMeta = _validateFanReviewMeta({
         fp, slug,
         movie:     r.movie,
         name:      r.name,
+        username:  username,
         rating:    r.rating,
         headline:  r.headline,
         text:      r.text,
@@ -7734,11 +7768,32 @@ window._removeDlLoader = function() {
         backdrop:  backdropPath,
         mediaType: r._mediaType,
       });
-      await fetch(`${RTDB}/fanReviewMeta/${encodeURIComponent(slug)}.json`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(safeMeta)
-      });
+
+      const _metaUser = window.pmGetUser && window.pmGetUser();
+      const _doWrite = async function(tok) {
+        const _auth = tok ? '?auth=' + tok : '';
+        // Always write to legacy flat path (backward compat with old shared links)
+        await fetch(`${RTDB}/fanReviewMeta/${encodeURIComponent(slug)}.json${_auth}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(safeMeta)
+        });
+        // Also write to clean path /fanReviewMeta/{username}/{movieSlug} for new-format URLs
+        if (username) {
+          const movieSlug = _movieSlugOnly(r.movie);
+          await fetch(`${RTDB}/fanReviewMeta/${encodeURIComponent(username)}/${encodeURIComponent(movieSlug)}.json${_auth}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({...safeMeta, username})
+          });
+        }
+      };
+
+      if (_metaUser) {
+        _metaUser.getIdToken().then(_doWrite).catch(function() { _doWrite(''); });
+      } else {
+        _doWrite('');
+      }
     } catch(_) {}
   }
 
@@ -8126,8 +8181,9 @@ window._removeDlLoader = function() {
       btn.textContent = 'Posting…'; btn.disabled = true;
       const headline = (document.getElementById('fanHeadline')||{}).value?.trim() || '';
       const photoURL = (window._pmMyProfile && window._pmMyProfile.photoURL) || user.photoURL || null;
+      const _submitUsername = (window._pmMyProfile && window._pmMyProfile.username) || '';
       const reviewData = { name, movie, tmdbId, rating, headline, text, timestamp: Date.now(),
-        uid: user.uid, photoURL: photoURL };
+        uid: user.uid, photoURL: photoURL, username: _submitUsername || null };
       // Write to RTDB — auth token required by security rules
       const idToken = user.getIdToken ? await user.getIdToken() : null;
       const rtdbRes = await fetch(`${RTDB}/fanReviews.json${idToken ? '?auth=' + idToken : ''}`, {
@@ -9115,6 +9171,14 @@ window._removeDlLoader = function() {
   // Checks local _slugRegistry first (set when review was opened this session),
   // then falls back to Firebase lookup to get the fp.
   async function _deepLinkFanSlug(slug) {
+    // ── New clean format: {username}/{movie-slug} ──────────────────────────────
+    const _slashIdx = slug.indexOf('/');
+    if (_slashIdx > 0) {
+      const _uname = slug.slice(0, _slashIdx);
+      const _mslug = slug.slice(_slashIdx + 1);
+      return _deepLinkFanClean(_uname, _mslug);
+    }
+
     // ── Session cache: slug already resolved this session ─────────────────────
     if (_slugRegistry.has(slug)) {
       _deepLinkFanReview(_slugRegistry.get(slug)); return;
@@ -9194,6 +9258,88 @@ window._removeDlLoader = function() {
     } catch(_) {}
 
     // Last resort: use meta fp (triggers its own load inside _deepLinkFanReview)
+    if (metaFp) _deepLinkFanReview(metaFp);
+  }
+
+  // Open a fan review from a clean two-part URL: /fan/{username}/{movie-slug}
+  async function _deepLinkFanClean(username, movieSlug) {
+    const slug = username + '/' + movieSlug;
+
+    // Session cache
+    if (_slugRegistry.has(slug)) {
+      _deepLinkFanReview(_slugRegistry.get(slug)); return;
+    }
+
+    // Fast path: fetch fanReviewMeta/{username}/{movieSlug}.json
+    let metaFp = null;
+    try {
+      const res = await fetch(`${RTDB}/fanReviewMeta/${encodeURIComponent(username)}/${encodeURIComponent(movieSlug)}.json`);
+      if (res.ok) {
+        const meta = await res.json();
+        if (meta && meta.fp) {
+          metaFp = meta.fp;
+          _slugRegistry.set(slug, meta.fp);
+          if (meta.text) {
+            window._pmProfileRevMap = window._pmProfileRevMap || {};
+            window._pmProfileRevMap[meta.fp] = {
+              name:       meta.name      || 'Anonymous',
+              movie:      meta.movie     || '',
+              username:   username,
+              rating:     meta.rating    || 0,
+              text:       meta.text,
+              headline:   meta.headline  || '',
+              uid:        meta.uid       || null,
+              photoURL:   meta.photoURL  || null,
+              timestamp:  meta.timestamp || null,
+              tmdbId:     meta.tmdbId    || null,
+              _mediaType: meta.mediaType || 'movie',
+            };
+            var _cleanFanPath = '/fan/' + slug;
+            try { switchTab('movies'); } catch(e) {}
+            try { history.replaceState(null, '', _cleanFanPath); } catch(e) {}
+            openFanReviewPage(meta.fp);
+            var _dlFp2 = meta.fp, _dlLT2 = meta.mediaType === 'tv' ? 'tv' : 'movie';
+            if (typeof loadFanLikeCounts === 'function') {
+              loadFanLikeCounts().then(function() {
+                if (typeof _updateFrLikeBtn === 'function') _updateFrLikeBtn(_dlFp2, _dlLT2);
+              }).catch(function(){});
+            }
+            return;
+          }
+          // Meta exists but no text — load reviews then open via fp
+          _deepLinkFanReview(metaFp); return;
+        }
+      }
+    } catch(_) {}
+
+    // Slow path: scan all reviews and match by username + movie slug
+    try { await loadFanReviews(); } catch(_) {}
+    for (const [fp] of _reviewCardRegistry) {
+      const r = _reviewCardRegistry.get(fp);
+      if (!r) continue;
+      if (_movieSlugOnly(r.movie) === movieSlug) {
+        const rUname = (r.username || '').toLowerCase();
+        if (!username || rUname === username.toLowerCase()) {
+          _deepLinkFanReview(fp); return;
+        }
+      }
+    }
+    // Try series reviews
+    try {
+      await loadSeriesReviews();
+      for (const [fp] of _srReviewCardRegistry) {
+        const r = _srReviewCardRegistry.get(fp);
+        if (!r) continue;
+        if (_movieSlugOnly(r.movie) === movieSlug) {
+          const rUname = (r.username || '').toLowerCase();
+          if (!username || rUname === username.toLowerCase()) {
+            _deepLinkFanReview(fp); return;
+          }
+        }
+      }
+    } catch(_) {}
+
+    // Last resort
     if (metaFp) _deepLinkFanReview(metaFp);
   }
 
