@@ -3921,6 +3921,17 @@
 .lobby-comment-head { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
 .lobby-comment-name { font-size:.65rem; font-weight:700; color:#ccc; font-family:'Montserrat',sans-serif; }
 .lobby-comment-time { font-size:.55rem; color:#444; margin-left:auto; }
+/* ── Threaded reply button on each comment ── */
+.lobby-reply-btn { margin-left:6px; background:none; border:none; color:#555; font-size:.58rem; font-family:'Montserrat',sans-serif; font-weight:600; cursor:pointer; padding:2px 6px; border-radius:6px; transition:color .15s,background .15s; }
+.lobby-reply-btn:hover { color:#f5a623; background:rgba(245,166,35,.08); }
+/* ── Quote block shown on replies that target a specific comment ── */
+.lobby-comment-quote { background:rgba(255,255,255,.04); border-left:2px solid #f5a623; border-radius:0 6px 6px 0; padding:5px 10px; margin-bottom:7px; font-size:.7rem; color:#777; line-height:1.35; cursor:default; }
+.lobby-comment-quote-name { color:#f5a623; font-weight:700; }
+/* ── "Replying to @Name" indicator inside the comment box ── */
+.lobby-replying-to { display:flex; align-items:center; gap:8px; background:rgba(245,166,35,.07); border:1px solid rgba(245,166,35,.2); border-radius:8px; padding:6px 10px; margin-bottom:8px; font-size:.68rem; color:#aaa; font-family:'Montserrat',sans-serif; }
+.lobby-replying-to strong { color:#f5a623; }
+.lobby-reply-cancel { margin-left:auto; background:none; border:none; color:#555; font-size:.75rem; cursor:pointer; padding:0 2px; line-height:1; }
+.lobby-reply-cancel:hover { color:#ccc; }
 .lobby-comment-body { font-size:.78rem; color:#bbb; line-height:1.45; }
 
 /* ════════════════════════════════════════════════
@@ -24460,8 +24471,11 @@ async function deleteEditorReview(key, e) {
     // Render post + comment box + load comments
     var me = window.pmGetUser && window.pmGetUser();
     var commentBox = me
-      ? '<div class="lobby-comment-box"><textarea class="lobby-comment-input" id="lobbyCommentInput" placeholder="Add a reply…"></textarea>'
-        +'<div class="lobby-comment-actions"><button class="lobby-comment-submit" onclick="submitLobbyComment(\''+_esc(postId)+'\')">Reply</button></div></div>'
+      ? '<div class="lobby-comment-box">'
+        +'<div id="lobbyReplyingTo" style="display:none"></div>'
+        +'<textarea class="lobby-comment-input" id="lobbyCommentInput" placeholder="Add a reply…"></textarea>'
+        +'<div class="lobby-comment-actions"><button class="lobby-comment-submit" onclick="submitLobbyComment(\''+_esc(postId)+'\')">Reply</button></div>'
+        +'</div>'
       : '<div style="color:#555;font-size:.75rem;padding:12px 0">Sign in to reply.</div>';
 
     var filmTag = '';
@@ -24620,6 +24634,31 @@ async function deleteEditorReview(key, e) {
       if (location.pathname.match(/^\/lobby\//)) history.pushState({}, '', '/');
     } catch(_e) {}
     _lobbyCurrentThread = null;
+    // Clear any pending reply target when closing the thread
+    if (typeof clearLobbyReplyTarget === 'function') clearLobbyReplyTarget();
+  };
+
+  // ── Threaded reply target ────────────────────────────────────────────────
+  window._lobbyReplyTarget = null;
+
+  window.setLobbyReplyTarget = function(commentId, name, body) {
+    window._lobbyReplyTarget = { commentId: commentId, name: name, body: body };
+    var el = document.getElementById('lobbyReplyingTo');
+    if (el) {
+      el.style.display = '';
+      el.innerHTML = '<div class="lobby-replying-to">'
+        +'↩ Replying to <strong>@'+_esc(name)+'</strong>'
+        +' <button class="lobby-reply-cancel" onclick="clearLobbyReplyTarget()">✕</button>'
+        +'</div>';
+    }
+    var inp = document.getElementById('lobbyCommentInput');
+    if (inp) { inp.focus(); inp.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+  };
+
+  window.clearLobbyReplyTarget = function() {
+    window._lobbyReplyTarget = null;
+    var el = document.getElementById('lobbyReplyingTo');
+    if (el) { el.style.display = 'none'; el.innerHTML = ''; }
   };
 
   window.deleteLobbyPost = async function(postId, fromThread) {
@@ -24756,12 +24795,27 @@ async function deleteEditorReview(key, e) {
       }
 
       list.innerHTML = comments.map(function(c){
-        return '<div class="lobby-comment-item">'
+        // Quote block — shown when this comment is a threaded reply to another comment
+        var quoteHtml = '';
+        if (c.replyTo && c.replyTo.name) {
+          var qBody = (c.replyTo.body || '').slice(0, 80) + (c.replyTo.body && c.replyTo.body.length > 80 ? '…' : '');
+          quoteHtml = '<div class="lobby-comment-quote">'
+            +'<span class="lobby-comment-quote-name">@'+_esc(c.replyTo.name)+'</span>'
+            +' '+_esc(qBody)
+            +'</div>';
+        }
+        // Escape values for inline onclick safely
+        var cName = (c.fromName||'User').replace(/'/g,'\\\'');
+        var cBody = (c.body||'').slice(0,80).replace(/'/g,'\\\'').replace(/\n/g,' ');
+        var cId   = (c._id||'').replace(/'/g,'\\\'');
+        return '<div class="lobby-comment-item" data-cid="'+_esc(c._id)+'">'
           +'<div class="lobby-comment-head">'
             +'<div class="lobby-av" style="width:26px;height:26px;font-size:.7rem">'+(c.avatar?'<img src="'+_esc(c.avatar)+'" alt="">':_esc((c.uid||'?').slice(0,1).toUpperCase()))+'</div>'
             +'<div class="lobby-comment-name">'+_esc(c.fromName||'User')+'</div>'
             +'<div class="lobby-comment-time">'+_relTime(c.createdAt||0)+'</div>'
+            +'<button class="lobby-reply-btn" onclick="setLobbyReplyTarget(\''+cId+'\',\''+cName+'\',\''+cBody+'\')">↩ Reply</button>'
           +'</div>'
+          +quoteHtml
           +'<div class="lobby-comment-body">'+_esc(c.body||'')+'</div>'
         +'</div>';
       }).join('');
@@ -24815,6 +24869,13 @@ async function deleteEditorReview(key, e) {
       var name = (window.pmGetNickname&&window.pmGetNickname()) || (window._pmMyProfile&&window._pmMyProfile.nickname) || me.displayName || 'User';
       var av   = (window._pmMyProfile&&window._pmMyProfile.photoURL) || me.photoURL || '';
       var commentData = {uid:me.uid, body:text, upvotes:0, createdAt:Date.now(), fromName:name, avatar:av};
+      // Attach replyTo reference if the user clicked ↩ Reply on a specific comment
+      if (window._lobbyReplyTarget) {
+        commentData.replyTo = {
+          name: window._lobbyReplyTarget.name,
+          body: window._lobbyReplyTarget.body
+        };
+      }
       var r = await fetch(_RTDB+'/community/comments/'+postId+'.json?auth='+tok,{
         method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(commentData)
       });
@@ -24828,6 +24889,7 @@ async function deleteEditorReview(key, e) {
         method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(_ccNew)
       });
       if (input) input.value = '';
+      clearLobbyReplyTarget(); // clear the ↩ reply indicator after posting
       _loadLobbyComments(postId);
       // Notify post author
       // Fall back to _lobbyCurrentThread when post isn't in _lobbyPosts (deep-link case)
