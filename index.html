@@ -11292,7 +11292,8 @@ async function submitVotesAsLoggedInUser(user) {
 
     await Promise.all(pending.map(async v => {
       const url  = `${RTDB}/${dbPath('communityVotes')}/${v.id}.json`;
-      const res  = await fetch(url);
+      // Read with auth so Firebase auth-protected read rules don't zero out the count
+      const res  = await fetch(`${url}?auth=${token}`);
       const curr = res.ok ? await res.json() : null;
       const genres = v.genresStr ? v.genresStr.split('|').filter(Boolean) : [];
       const updated = {
@@ -15985,7 +15986,8 @@ async function submitMini50AsLoggedInUser(user) {
 
     await Promise.all(pending.map(async v => {
       const url  = `${RTDB}/${dbPath('miniSeriesVotes')}/${v.id}.json`;
-      const res  = await fetch(url);
+      // Read with auth so Firebase auth-protected read rules don't zero out the count
+      const res  = await fetch(`${url}?auth=${token}`);
       const curr = res.ok ? await res.json() : null;
       const updated = {
         title: v.title, poster: v.poster, backdrop: v.backdrop, year: v.year,
@@ -17397,6 +17399,12 @@ async function deleteEditorReview(key, e) {
       localStorage.removeItem('pmovies_was_signed_in');
       sessionStorage.removeItem('pmovies_guest');
       sessionStorage.removeItem('pm_greeting_done');
+      // Clear vote-session flags so the user can vote again after signing back in
+      // (remove both prod and dev variants — removing a missing key is safe)
+      sessionStorage.removeItem('pmovies_session_voted');
+      sessionStorage.removeItem('pmovies_session_voted_dev');
+      sessionStorage.removeItem('pmovies_mini50_session_voted');
+      sessionStorage.removeItem('pmovies_mini50_session_voted_dev');
       window._pmEditorAuthVerified = false;
       var strip = document.getElementById('pmWelcomeStrip');
       if (strip) strip.style.display = 'none';
