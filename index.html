@@ -7931,16 +7931,11 @@ window._removeDlLoader = function() {
         <!-- ── Poster / Backdrop picker ─────────────────────────────── -->
         <div style="margin-bottom:28px;border:1px solid #222;border-radius:12px;padding:16px">
           <div style="font-size:.65rem;font-weight:700;letter-spacing:1px;color:#666;text-transform:uppercase;margin-bottom:12px">🎬 Change Poster &amp; Backdrop</div>
-          <div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:14px">
+          <div style="display:flex;gap:14px;align-items:center">
             <div id="fePosterPreview-${fp}" style="width:72px;height:108px;background:#1a1a1a;border-radius:8px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.6rem;border:1px solid #2a2a2a">🎬</div>
             <div style="flex:1;min-width:0">
-              <div style="font-size:.72rem;color:#777;margin-bottom:8px">Search for a different film/show to pull its poster and backdrop</div>
-              <div style="position:relative">
-                <input id="fePosterSearch-${fp}" class="fe-input" type="text" placeholder="Search TMDB…" autocomplete="off"
-                  oninput="_fePosterSearch('${fp}',this.value)"
-                  style="width:100%;box-sizing:border-box;margin-bottom:0"/>
-                <div id="fePosterResults-${fp}" style="position:absolute;top:100%;left:0;right:0;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;overflow:hidden;z-index:200;display:none;max-height:260px;overflow-y:auto;margin-top:4px"></div>
-              </div>
+              <div style="font-size:.72rem;color:#777;margin-bottom:10px">Pick a different poster or backdrop from TMDB's gallery for this film</div>
+              <button onclick="_openFanPosterPicker('${fp}')" style="background:#1a1a1a;border:1px solid #333;color:#ccc;font-family:'Montserrat',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.5px;padding:9px 16px;border-radius:10px;cursor:pointer;text-transform:uppercase">🖼️ Choose from TMDB</button>
               <div id="fePosterSelected-${fp}" style="font-size:.7rem;color:#4caf50;margin-top:8px;min-height:18px"></div>
             </div>
           </div>
@@ -7979,67 +7974,94 @@ window._removeDlLoader = function() {
     });
   }
 
-  // Debounced TMDB search for the poster picker
-  let _fePosterTimer = null;
-  function _fePosterSearch(fp, q) {
-    clearTimeout(_fePosterTimer);
-    const res = document.getElementById(`fePosterResults-${fp}`);
-    if (!q.trim()) { if (res) res.style.display = 'none'; return; }
-    _fePosterTimer = setTimeout(async () => {
-      try {
-        const isTV = document.getElementById(`feNewMediaType-${fp}`)?.value === 'tv';
-        // Search both movie and TV simultaneously
-        const [mRes, tvRes] = await Promise.all([
-          fetch(`${TMDB}/search/movie?api_key=${getKey()}&query=${encodeURIComponent(q)}&language=en-US&page=1`),
-          fetch(`${TMDB}/search/tv?api_key=${getKey()}&query=${encodeURIComponent(q)}&language=en-US&page=1`)
-        ]);
-        const mData  = mRes.ok  ? await mRes.json()  : null;
-        const tvData = tvRes.ok ? await tvRes.json() : null;
-        const movies = (mData?.results  || []).slice(0, 4).map(m => ({ ...m, _type: 'movie', _title: m.title }));
-        const shows  = (tvData?.results || []).slice(0, 3).map(m => ({ ...m, _type: 'tv',    _title: m.name  }));
-        const all    = [...movies, ...shows];
-        if (!res) return;
-        if (!all.length) {
-          res.style.display = 'block';
-          res.innerHTML = '<div style="padding:12px;color:#666;font-size:.8rem">No results found</div>';
-          return;
-        }
-        res.style.display = 'block';
-        res.innerHTML = all.map(m => `
-          <div onclick="_feSelectPoster('${fp}',${m.id},'${escJs(m._title||'')}','${escJs(m.poster_path||'')}','${escJs(m.backdrop_path||'')}','${m._type}')"
-               style="display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;border-bottom:1px solid #222;transition:background .15s"
-               onmouseover="this.style.background='#222'" onmouseout="this.style.background=''">
-            ${m.poster_path
-              ? `<img src="https://image.tmdb.org/t/p/w92${m.poster_path}" style="width:36px;height:54px;object-fit:cover;border-radius:4px;flex-shrink:0" alt=""/>`
-              : `<div style="width:36px;height:54px;background:#222;border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.9rem">${m._type==='tv'?'📺':'🎬'}</div>`}
-            <div>
-              <div style="font-size:.82rem;color:#eee;font-weight:600">${esc(m._title||'')}</div>
-              <div style="font-size:.68rem;color:#555;margin-top:2px">${m._type === 'tv' ? 'TV Series' : 'Film'} · ${(m.release_date||m.first_air_date||'').slice(0,4)||'—'}</div>
-            </div>
-          </div>`).join('');
-      } catch(_) {}
-    }, 350);
+  // Open the TMDB image gallery picker for a fan review
+  function _openFanPosterPicker(fp) {
+    const r = _reviewCardRegistry.get(fp) || _srReviewCardRegistry.get(fp);
+    if (!r) return;
+    const isTV = r._mediaType === 'tv' || r.mediaType === 'tv';
+    const tmdbId = r.tmdbId || 0;
+    if (!tmdbId) { alert('No TMDB ID for this review — cannot fetch posters.'); return; }
+    window._tmdbImagePicker(
+      tmdbId,
+      isTV ? 'tv' : 'movie',
+      function(posterPath) {
+        // Poster chosen
+        document.getElementById(`feNewPoster-${fp}`).value = posterPath;
+        const prev = document.getElementById(`fePosterPreview-${fp}`);
+        if (prev) prev.innerHTML = `<img src="https://image.tmdb.org/t/p/w185${posterPath}" style="width:100%;height:100%;object-fit:cover" alt=""/>`;
+        const sel = document.getElementById(`fePosterSelected-${fp}`);
+        if (sel) sel.textContent = '✓ Poster updated';
+      },
+      function(backdropPath) {
+        // Backdrop chosen
+        document.getElementById(`feNewBackdrop-${fp}`).value = backdropPath;
+        const sel = document.getElementById(`fePosterSelected-${fp}`);
+        if (sel) sel.textContent = '✓ Backdrop updated';
+      }
+    );
   }
 
-  function _feSelectPoster(fp, tmdbId, title, poster, backdrop, mediaType) {
-    // Store selected values in hidden inputs
-    document.getElementById(`feNewTmdbId-${fp}`).value    = tmdbId;
-    document.getElementById(`feNewPoster-${fp}`).value    = poster;
-    document.getElementById(`feNewBackdrop-${fp}`).value  = backdrop;
-    document.getElementById(`feNewMediaType-${fp}`).value = mediaType;
-    // Update search input and close dropdown
-    const inp = document.getElementById(`fePosterSearch-${fp}`);
-    if (inp) inp.value = title;
-    const res = document.getElementById(`fePosterResults-${fp}`);
-    if (res) res.style.display = 'none';
-    // Update preview immediately
-    const prev = document.getElementById(`fePosterPreview-${fp}`);
-    if (prev && poster) prev.innerHTML = `<img src="https://image.tmdb.org/t/p/w185${poster}" style="width:100%;height:100%;object-fit:cover" alt=""/>`;
-    else if (prev) prev.innerHTML = (mediaType === 'tv' ? '📺' : '🎬');
-    // Show confirmation label
-    const sel = document.getElementById(`fePosterSelected-${fp}`);
-    if (sel) sel.textContent = `✓ ${title} selected`;
-  }
+  /* ── Shared TMDB image picker (posters + backdrops for a specific tmdbId) ── */
+  window._tmdbImagePicker = async function(tmdbId, mediaType, onPoster, onBackdrop) {
+    const existing = document.getElementById('_tmdbImgPicker');
+    if (existing) existing.remove();
+
+    // Loading state
+    const wrap = document.createElement('div');
+    wrap.id = '_tmdbImgPicker';
+    wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:1000001;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box';
+    wrap.innerHTML = '<div style="color:#888;font-size:.82rem;font-family:Montserrat,sans-serif;letter-spacing:1px">Loading images…</div>';
+    document.body.appendChild(wrap);
+    wrap.addEventListener('click', e => { if (e.target === wrap) wrap.remove(); });
+
+    try {
+      const type = mediaType === 'tv' ? 'tv' : 'movie';
+      const res  = await fetch(`${TMDB}/${type}/${tmdbId}/images?api_key=${getKey()}&include_image_language=en,null`);
+      const data = res.ok ? await res.json() : null;
+      const posters   = (data?.posters   || []).slice(0, 16);
+      const backdrops = (data?.backdrops || []).slice(0,  8);
+
+      if (!posters.length && !backdrops.length) {
+        wrap.innerHTML = `<div style="background:#141414;border:1px solid #222;border-radius:16px;padding:28px;text-align:center;color:#666;font-family:Montserrat,sans-serif;font-size:.82rem">No images found on TMDB.<br><button onclick="document.getElementById('_tmdbImgPicker').remove()" style="margin-top:14px;background:none;border:1px solid #333;color:#666;border-radius:8px;padding:8px 18px;cursor:pointer;font-family:Montserrat,sans-serif;font-size:.72rem">Close</button></div>`;
+        return;
+      }
+
+      wrap.innerHTML = `
+        <div style="background:#141414;border:1px solid #222;border-radius:18px;padding:22px;max-width:580px;width:100%;max-height:88vh;overflow-y:auto">
+          ${posters.length ? `
+            <div style="font-family:Montserrat,sans-serif;font-weight:700;font-size:.7rem;color:#f5a623;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px">🖼️ Choose a Poster</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:22px">
+              ${posters.map(p => `
+                <div onclick="window._tmdbPickerSelectPoster('${escJs(p.file_path)}')" style="cursor:pointer;border-radius:8px;overflow:hidden;aspect-ratio:.667;border:2px solid transparent;transition:border-color .15s" onmouseover="this.style.borderColor='#f5a623'" onmouseout="this.style.borderColor='transparent'">
+                  <img src="https://image.tmdb.org/t/p/w185${p.file_path}" style="width:100%;height:100%;object-fit:cover;display:block" loading="lazy"/>
+                </div>`).join('')}
+            </div>` : ''}
+          ${backdrops.length ? `
+            <div style="font-family:Montserrat,sans-serif;font-weight:700;font-size:.7rem;color:#f5a623;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px">🌄 Choose a Backdrop</div>
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-bottom:22px">
+              ${backdrops.map(b => `
+                <div onclick="window._tmdbPickerSelectBackdrop('${escJs(b.file_path)}')" style="cursor:pointer;border-radius:8px;overflow:hidden;aspect-ratio:1.78;border:2px solid transparent;transition:border-color .15s" onmouseover="this.style.borderColor='#f5a623'" onmouseout="this.style.borderColor='transparent'">
+                  <img src="https://image.tmdb.org/t/p/w300${b.file_path}" style="width:100%;height:100%;object-fit:cover;display:block" loading="lazy"/>
+                </div>`).join('')}
+            </div>` : ''}
+          <button onclick="document.getElementById('_tmdbImgPicker').remove()" style="background:none;border:1px solid #333;color:#666;border-radius:10px;padding:9px 20px;cursor:pointer;font-family:Montserrat,sans-serif;font-size:.72rem;font-weight:700">Cancel</button>
+        </div>`;
+
+      window._tmdbPickerCbPoster   = onPoster;
+      window._tmdbPickerCbBackdrop = onBackdrop;
+    } catch(e) {
+      wrap.innerHTML = `<div style="background:#141414;border:1px solid #222;border-radius:16px;padding:28px;text-align:center;color:#666;font-family:Montserrat,sans-serif;font-size:.82rem">Could not load images.<br><button onclick="document.getElementById('_tmdbImgPicker').remove()" style="margin-top:14px;background:none;border:1px solid #333;color:#666;border-radius:8px;padding:8px 18px;cursor:pointer;font-family:Montserrat,sans-serif;font-size:.72rem">Close</button></div>`;
+    }
+  };
+
+  window._tmdbPickerSelectPoster = function(path) {
+    if (typeof window._tmdbPickerCbPoster === 'function') window._tmdbPickerCbPoster(path);
+    const p = document.getElementById('_tmdbImgPicker'); if (p) p.remove();
+  };
+  window._tmdbPickerSelectBackdrop = function(path) {
+    if (typeof window._tmdbPickerCbBackdrop === 'function') window._tmdbPickerCbBackdrop(path);
+    const p = document.getElementById('_tmdbImgPicker'); if (p) p.remove();
+  };
 
   async function _saveFanEdit(fp) {
     const r = _reviewCardRegistry.get(fp) || _srReviewCardRegistry.get(fp);
@@ -16800,15 +16822,12 @@ function openEditorAdmin(existingReview) {
           value="${isEdit ? _ea((existingReview.tags||[]).join(', ')) : ''}"/>
       </div>
       <div class="editor-form-row" style="border:1px solid #222;border-radius:12px;padding:16px;margin-top:4px">
-        <label class="editor-form-label" style="margin-bottom:12px">🎬 Change Poster &amp; Backdrop <span style="color:#555;font-size:.65rem;font-weight:400;text-transform:none">(optional — searches TMDB)</span></label>
-        <div style="display:flex;gap:14px;align-items:flex-start">
+        <label class="editor-form-label" style="margin-bottom:12px">🎬 Change Poster &amp; Backdrop <span style="color:#555;font-size:.65rem;font-weight:400;text-transform:none">(optional)</span></label>
+        <div style="display:flex;gap:14px;align-items:center">
           <div id="erPosterPreview" style="width:64px;height:96px;background:#1a1a1a;border-radius:8px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.4rem;border:1px solid #2a2a2a">${isEdit && existingReview.poster ? `<img src="https://image.tmdb.org/t/p/w185${_ea(existingReview.poster)}" style="width:100%;height:100%;object-fit:cover" alt=""/>` : '🎬'}</div>
           <div style="flex:1;min-width:0">
-            <div style="position:relative">
-              <input id="erPosterSearch" class="editor-form-input" type="text" placeholder="Search film / show…" autocomplete="off"
-                oninput="_erPosterSearch(this.value)" style="margin-bottom:0;width:100%;box-sizing:border-box"/>
-              <div id="erPosterResults" style="position:absolute;top:100%;left:0;right:0;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;overflow:hidden;z-index:200;display:none;max-height:260px;overflow-y:auto;margin-top:4px"></div>
-            </div>
+            <div style="font-size:.72rem;color:#777;margin-bottom:10px">Pick from this film's TMDB poster &amp; backdrop gallery</div>
+            <button onclick="_openErPosterPicker()" style="background:#1a1a1a;border:1px solid #333;color:#ccc;font-family:Montserrat,sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.5px;padding:9px 16px;border-radius:10px;cursor:pointer;text-transform:uppercase">🖼️ Choose from TMDB</button>
             <div id="erPosterSelected" style="font-size:.7rem;color:#4caf50;margin-top:8px;min-height:18px"></div>
           </div>
         </div>
@@ -16880,67 +16899,29 @@ function closeEditorAdmin() {
 }
 
 /* ── Poster / Backdrop picker for editor admin form ── */
-let _erPosterTimer = null;
-function _erPosterSearch(q) {
-  clearTimeout(_erPosterTimer);
-  const res = document.getElementById('erPosterResults');
-  if (!q.trim()) { if (res) res.style.display = 'none'; return; }
-  _erPosterTimer = setTimeout(async () => {
-    try {
-      const key = typeof getKey === 'function' ? getKey() : (typeof DEFAULT_TMDB_KEY !== 'undefined' ? DEFAULT_TMDB_KEY : '');
-      const base = typeof TMDB !== 'undefined' ? TMDB : 'https://api.themoviedb.org/3';
-      const [mRes, tvRes] = await Promise.all([
-        fetch(`${base}/search/movie?api_key=${key}&query=${encodeURIComponent(q)}&language=en-US&page=1`),
-        fetch(`${base}/search/tv?api_key=${key}&query=${encodeURIComponent(q)}&language=en-US&page=1`)
-      ]);
-      const mData  = mRes.ok  ? await mRes.json()  : null;
-      const tvData = tvRes.ok ? await tvRes.json() : null;
-      const movies = (mData?.results  || []).slice(0, 4).map(m => ({ ...m, _type:'movie', _title:m.title }));
-      const shows  = (tvData?.results || []).slice(0, 3).map(m => ({ ...m, _type:'tv',    _title:m.name  }));
-      const all    = [...movies, ...shows];
-      if (!res) return;
-      if (!all.length) {
-        res.style.display = 'block';
-        res.innerHTML = '<div style="padding:12px;color:#666;font-size:.8rem">No results found</div>';
-        return;
-      }
-      const _escHtml = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-      const _escAttr = s => String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-      res.style.display = 'block';
-      res.innerHTML = all.map(m => `
-        <div onclick="_erSelectPoster(${m.id},'${_escAttr(m._title||'')}','${_escAttr(m.poster_path||'')}','${_escAttr(m.backdrop_path||'')}','${m._type}')"
-             style="display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;border-bottom:1px solid #222;transition:background .15s"
-             onmouseover="this.style.background='#222'" onmouseout="this.style.background=''">
-          ${m.poster_path
-            ? `<img src="https://image.tmdb.org/t/p/w92${m.poster_path}" style="width:36px;height:54px;object-fit:cover;border-radius:4px;flex-shrink:0" alt=""/>`
-            : `<div style="width:36px;height:54px;background:#222;border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.9rem">${m._type==='tv'?'📺':'🎬'}</div>`}
-          <div>
-            <div style="font-size:.82rem;color:#eee;font-weight:600">${_escHtml(m._title||'')}</div>
-            <div style="font-size:.68rem;color:#555;margin-top:2px">${m._type==='tv'?'TV Series':'Film'} · ${(m.release_date||m.first_air_date||'').slice(0,4)||'—'}</div>
-          </div>
-        </div>`).join('');
-    } catch(_) {}
-  }, 350);
-}
-
-function _erSelectPoster(tmdbId, title, poster, backdrop, mediaType) {
-  // Overwrite the hidden poster/backdrop/tmdbId fields (used by submitEditorReview)
-  const pEl = document.getElementById('editorPoster');   if (pEl)  pEl.value  = poster;
-  const bEl = document.getElementById('editorBackdrop'); if (bEl)  bEl.value  = backdrop;
-  const tEl = document.getElementById('editorTmdbId');   if (tEl)  tEl.value  = tmdbId;
-  // Close dropdown, update search input
-  const res = document.getElementById('erPosterResults');
-  if (res) res.style.display = 'none';
-  const inp = document.getElementById('erPosterSearch');
-  if (inp) inp.value = title;
-  // Update preview
-  const prev = document.getElementById('erPosterPreview');
-  if (prev) prev.innerHTML = poster
-    ? `<img src="https://image.tmdb.org/t/p/w185${poster}" style="width:100%;height:100%;object-fit:cover" alt=""/>`
-    : (mediaType === 'tv' ? '📺' : '🎬');
-  // Confirm label
-  const sel = document.getElementById('erPosterSelected');
-  if (sel) sel.textContent = `✓ ${title} selected`;
+function _openErPosterPicker() {
+  const tmdbId   = +(document.getElementById('editorTmdbId')?.value || 0);
+  const mediaType = 'movie'; // editor reviews are always films (no TV in editor admin)
+  if (!tmdbId) { alert('Please select a film first so we know which TMDB images to load.'); return; }
+  if (typeof window._tmdbImagePicker !== 'function') { alert('Image picker not ready yet — try again in a moment.'); return; }
+  window._tmdbImagePicker(
+    tmdbId,
+    mediaType,
+    function(posterPath) {
+      const pEl = document.getElementById('editorPoster');
+      if (pEl) pEl.value = posterPath;
+      const prev = document.getElementById('erPosterPreview');
+      if (prev) prev.innerHTML = `<img src="https://image.tmdb.org/t/p/w185${posterPath}" style="width:100%;height:100%;object-fit:cover" alt=""/>`;
+      const sel = document.getElementById('erPosterSelected');
+      if (sel) sel.textContent = '✓ Poster updated';
+    },
+    function(backdropPath) {
+      const bEl = document.getElementById('editorBackdrop');
+      if (bEl) bEl.value = backdropPath;
+      const sel = document.getElementById('erPosterSelected');
+      if (sel) sel.textContent = '✓ Backdrop updated';
+    }
+  );
 }
 
 /* ── Slug helper ── */
