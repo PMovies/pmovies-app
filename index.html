@@ -8263,6 +8263,9 @@ window._removeDlLoader = function() {
   // Prefix Firebase paths and localStorage keys with _DEV in dev mode
   function dbPath(p) { return IS_DEV ? p + '_DEV' : p; }
   function lsKey(k)  { return IS_DEV ? k + '_dev' : k; }
+  // Expose globally so auth block and other script sections use the same dev/prod key logic
+  window._pmLsKey  = lsKey;
+  window._pmDbPath = dbPath;
 
   async function loadFanReviews() {
     fanReviewsShown = FAN_PAGE_SIZE;
@@ -14314,6 +14317,8 @@ async function _castPollVote(chosenId, otherId, weekKey, myPollKey) {
 let _fotdFilmData = null;
 let _fotdToday    = null;
 let _fotdSelected = 0;
+// Expose so _syncCrossDeviceLocks (auth block) can update it on cross-device sign-in
+Object.defineProperty(window, '_fotdSelected', { get: () => _fotdSelected, set: v => { _fotdSelected = v; }, configurable: true });
 
 async function initFilmOfDay() {
   _fotdToday = new Date().toISOString().slice(0, 10);
@@ -17702,6 +17707,8 @@ async function deleteEditorReview(key, e) {
       }
       // Open lobby deep-link now that auth (and RTDB token) is ready
       _openPendingLobbyThread();
+      // Sync all cross-device vote/like locks for this user
+      _syncCrossDeviceLocks(user);
     } else if (sessionStorage.getItem('pmovies_guest') === '1') {
       _hideLanding();
       _maybeOpenStartupProfile();
@@ -17714,6 +17721,69 @@ async function deleteEditorReview(key, e) {
       else _showLanding();
     }
   });
+
+  // ── Cross-device vote/like lock sync ──────────────────────────────────────
+  // Called every time a user signs in (onAuthStateChanged). Checks Firebase for
+  // votes/actions the user took on another device and sets the local session flags
+  // so no duplicate popups or double-votes are possible.
+  async function _syncCrossDeviceLocks(user) {
+    if (!user) return;
+    // Use the keying helpers from the fan-reviews script block (set as globals above)
+    var _lk = window._pmLsKey  || function(k) { return k; };
+    var _dp = window._pmDbPath || function(p) { return p; };
+    try {
+      var tok = await user.getIdToken();
+      var uid = user.uid;
+      var today = new Date().toISOString().slice(0, 10);
+
+      // ── 1. Film of the Day ──────────────────────────────────────────────────
+      // Check if user already voted today on another device
+      try {
+        var fotdRes = await fetch(RTDB + '/filmOfDay/' + today + '/votes/' + uid + '.json?auth=' + tok);
+        if (fotdRes.ok) {
+          var fotdVote = await fotdRes.json();
+          if (fotdVote && fotdVote > 0) {
+            // Mark seen locally so popup never appears on this device
+            localStorage.setItem(_lk('pmovies_fotd_seen'), today);
+            localStorage.setItem(_lk('pmovies_fotd_rating_' + today), String(fotdVote));
+            // Sync into the FOTD module's live state if it's already initialised
+            if (typeof window._fotdSelected !== 'undefined') window._fotdSelected = fotdVote;
+            // If the rating popup is already on screen, swap it for the results view
+            var fotdOv = document.getElementById('fotdOverlay');
+            if (fotdOv && fotdOv.style.display !== 'none') {
+              if (typeof openFOTDSummary === 'function') openFOTDSummary();
+              else fotdOv.style.display = 'none'; // hide as fallback
+            }
+          }
+        }
+      } catch(_) {}
+
+      // ── 2. Top 100 Movie votes ──────────────────────────────────────────────
+      // If user has voted before (any device), lock the session gate so the
+      // submit button is blocked and no redundant toast is shown
+      try {
+        var uvRes = await fetch(RTDB + '/' + _dp('userVotes') + '/' + uid + '.json?auth=' + tok);
+        if (uvRes.ok) {
+          var uvData = await uvRes.json();
+          if (uvData && typeof uvData === 'object' && Object.keys(uvData).length > 0) {
+            sessionStorage.setItem(_lk('pmovies_session_voted'), '1');
+          }
+        }
+      } catch(_) {}
+
+      // ── 3. Mini 50 Series votes ─────────────────────────────────────────────
+      try {
+        var umRes = await fetch(RTDB + '/' + _dp('userVotesMini') + '/' + uid + '.json?auth=' + tok);
+        if (umRes.ok) {
+          var umData = await umRes.json();
+          if (umData && typeof umData === 'object' && Object.keys(umData).length > 0) {
+            sessionStorage.setItem(_lk('pmovies_mini50_session_voted'), '1');
+          }
+        }
+      } catch(_) {}
+
+    } catch(_) {}
+  }
 
   // Open a lobby thread deep-link once auth has resolved (called from onAuthStateChanged)
   function _openPendingLobbyThread() {
