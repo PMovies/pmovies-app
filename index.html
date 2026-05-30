@@ -7629,7 +7629,7 @@ window._removeDlLoader = function() {
     page.innerHTML = `
       <button id="frBackBtn-${fp}" onclick="closeFanReviewPage()" style="position:fixed;top:calc(env(safe-area-inset-top,0px)+16px);left:16px;z-index:10001;background:rgba(0,0,0,.65);border:none;color:#fff;font-size:1.3rem;cursor:pointer;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)">←</button>
       <div id="frActionsBar-${fp}" style="position:fixed;top:calc(env(safe-area-inset-top,0px)+16px);right:16px;z-index:10001;display:flex;gap:8px">
-        ${_isMyReview(fp) ? `<button onclick="_openFanEditMode('${fp}')" style="background:rgba(0,0,0,.65);border:none;color:#ddd;font-size:.62rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;padding:11px 15px;border-radius:20px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);font-family:'Montserrat',sans-serif">✏️ Edit</button>` : ''}
+        ${(_isMyReview(fp) || window._pmEditorAuthVerified || localStorage.getItem('pmovies_admin') === '1') ? `<button onclick="_openFanEditMode('${fp}')" style="background:rgba(0,0,0,.65);border:none;color:#ddd;font-size:.62rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;padding:11px 15px;border-radius:20px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);font-family:'Montserrat',sans-serif">✏️ Edit</button>` : ''}
         <div style="position:relative">
           <button onclick="toggleShareMenu('frShareMenu-${fp}',event)" style="background:rgba(0,0,0,.65);border:none;color:#ddd;font-size:.62rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;padding:11px 15px;border-radius:20px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);font-family:'Montserrat',sans-serif">🔗 Share</button>
           <div class="card-share-menu" id="frShareMenu-${fp}"
@@ -7901,11 +7901,16 @@ window._removeDlLoader = function() {
 
     const page = document.getElementById('frPage');
     if (!page) return;
+    const _isAdminEdit = window._pmEditorAuthVerified || localStorage.getItem('pmovies_admin') === '1';
+    // Initial poster preview (will be replaced if user picks a new one)
+    const _initPoster = r.tmdbId
+      ? `https://image.tmdb.org/t/p/w185/${r.tmdbId}` // placeholder until real fetch
+      : '';
     page.innerHTML = `
       <button onclick="openFanReviewPage('${fp}')" style="position:fixed;top:calc(env(safe-area-inset-top,0px)+16px);left:16px;z-index:10001;background:rgba(0,0,0,.65);border:none;color:#fff;font-size:1.3rem;cursor:pointer;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)" title="Cancel">←</button>
       <div style="max-width:640px;margin:90px auto 60px;padding:0 22px">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:2px;color:#fff;margin-bottom:4px">${esc(r.movie||'')}</div>
-        <div style="font-size:.7rem;font-weight:700;letter-spacing:1px;color:#555;text-transform:uppercase;margin-bottom:28px">${isTV ? 'Series' : 'Film'} · Editing your review</div>
+        <div style="font-size:.7rem;font-weight:700;letter-spacing:1px;color:#555;text-transform:uppercase;margin-bottom:28px">${isTV ? 'Series' : 'Film'} · ${_isAdminEdit && !_isMyReview(fp) ? 'Admin edit' : 'Editing your review'}</div>
 
         <div style="margin-bottom:20px">
           <div style="font-size:.65rem;font-weight:700;letter-spacing:1px;color:#666;text-transform:uppercase;margin-bottom:8px">Rating</div>
@@ -7923,6 +7928,28 @@ window._removeDlLoader = function() {
           <textarea id="feText-${fp}" class="fe-input" rows="7" dir="auto" placeholder="Your review…" style="resize:vertical;min-height:120px;line-height:1.6">${esc(r.text||'')}</textarea>
         </div>
 
+        <!-- ── Poster / Backdrop picker ─────────────────────────────── -->
+        <div style="margin-bottom:28px;border:1px solid #222;border-radius:12px;padding:16px">
+          <div style="font-size:.65rem;font-weight:700;letter-spacing:1px;color:#666;text-transform:uppercase;margin-bottom:12px">🎬 Change Poster &amp; Backdrop</div>
+          <div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:14px">
+            <div id="fePosterPreview-${fp}" style="width:72px;height:108px;background:#1a1a1a;border-radius:8px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.6rem;border:1px solid #2a2a2a">🎬</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:.72rem;color:#777;margin-bottom:8px">Search for a different film/show to pull its poster and backdrop</div>
+              <div style="position:relative">
+                <input id="fePosterSearch-${fp}" class="fe-input" type="text" placeholder="Search TMDB…" autocomplete="off"
+                  oninput="_fePosterSearch('${fp}',this.value)"
+                  style="width:100%;box-sizing:border-box;margin-bottom:0"/>
+                <div id="fePosterResults-${fp}" style="position:absolute;top:100%;left:0;right:0;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;overflow:hidden;z-index:200;display:none;max-height:260px;overflow-y:auto;margin-top:4px"></div>
+              </div>
+              <div id="fePosterSelected-${fp}" style="font-size:.7rem;color:#4caf50;margin-top:8px;min-height:18px"></div>
+            </div>
+          </div>
+          <input type="hidden" id="feNewTmdbId-${fp}" value=""/>
+          <input type="hidden" id="feNewPoster-${fp}" value=""/>
+          <input type="hidden" id="feNewBackdrop-${fp}" value=""/>
+          <input type="hidden" id="feNewMediaType-${fp}" value="${isTV ? 'tv' : 'movie'}"/>
+        </div>
+
         <div style="display:flex;gap:10px">
           <button onclick="_saveFanEdit('${fp}')" id="feSaveBtn-${fp}" style="flex:1;background:#f5a623;border:none;color:#000;font-family:'Montserrat',sans-serif;font-size:.8rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding:13px;border-radius:10px;cursor:pointer">Save Changes</button>
           <button onclick="openFanReviewPage('${fp}')" style="background:#1a1a1a;border:1px solid #333;color:#aaa;font-family:'Montserrat',sans-serif;font-size:.8rem;font-weight:700;padding:13px 20px;border-radius:10px;cursor:pointer">Cancel</button>
@@ -7930,6 +7957,8 @@ window._removeDlLoader = function() {
         <div id="feError-${fp}" style="color:#e53935;font-size:.78rem;margin-top:12px;display:none"></div>
       </div>`;
     page.scrollTop = 0;
+    // Load current poster into the picker preview (async, after DOM is ready)
+    _feLoadCurrentPoster(fp, r);
   }
 
   // Called by inline onclick on each star in the edit form
@@ -7939,6 +7968,77 @@ window._removeDlLoader = function() {
       const s = document.getElementById(`festar-${fp}-${i}`);
       if (s) s.style.color = i <= v ? '#f5a623' : '#333';
     }
+  }
+
+  // Load current poster into the preview box once the edit form is rendered
+  function _feLoadCurrentPoster(fp, r) {
+    const isTV = r._mediaType === 'tv' || r.mediaType === 'tv';
+    fetchPoster(r.movie, isTV ? 'tv' : 'movie', r.tmdbId || null).then(url => {
+      const prev = document.getElementById(`fePosterPreview-${fp}`);
+      if (prev && url) prev.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover" alt=""/>`;
+    });
+  }
+
+  // Debounced TMDB search for the poster picker
+  let _fePosterTimer = null;
+  function _fePosterSearch(fp, q) {
+    clearTimeout(_fePosterTimer);
+    const res = document.getElementById(`fePosterResults-${fp}`);
+    if (!q.trim()) { if (res) res.style.display = 'none'; return; }
+    _fePosterTimer = setTimeout(async () => {
+      try {
+        const isTV = document.getElementById(`feNewMediaType-${fp}`)?.value === 'tv';
+        // Search both movie and TV simultaneously
+        const [mRes, tvRes] = await Promise.all([
+          fetch(`${TMDB}/search/movie?api_key=${getKey()}&query=${encodeURIComponent(q)}&language=en-US&page=1`),
+          fetch(`${TMDB}/search/tv?api_key=${getKey()}&query=${encodeURIComponent(q)}&language=en-US&page=1`)
+        ]);
+        const mData  = mRes.ok  ? await mRes.json()  : null;
+        const tvData = tvRes.ok ? await tvRes.json() : null;
+        const movies = (mData?.results  || []).slice(0, 4).map(m => ({ ...m, _type: 'movie', _title: m.title }));
+        const shows  = (tvData?.results || []).slice(0, 3).map(m => ({ ...m, _type: 'tv',    _title: m.name  }));
+        const all    = [...movies, ...shows];
+        if (!res) return;
+        if (!all.length) {
+          res.style.display = 'block';
+          res.innerHTML = '<div style="padding:12px;color:#666;font-size:.8rem">No results found</div>';
+          return;
+        }
+        res.style.display = 'block';
+        res.innerHTML = all.map(m => `
+          <div onclick="_feSelectPoster('${fp}',${m.id},'${escJs(m._title||'')}','${escJs(m.poster_path||'')}','${escJs(m.backdrop_path||'')}','${m._type}')"
+               style="display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;border-bottom:1px solid #222;transition:background .15s"
+               onmouseover="this.style.background='#222'" onmouseout="this.style.background=''">
+            ${m.poster_path
+              ? `<img src="https://image.tmdb.org/t/p/w92${m.poster_path}" style="width:36px;height:54px;object-fit:cover;border-radius:4px;flex-shrink:0" alt=""/>`
+              : `<div style="width:36px;height:54px;background:#222;border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.9rem">${m._type==='tv'?'📺':'🎬'}</div>`}
+            <div>
+              <div style="font-size:.82rem;color:#eee;font-weight:600">${esc(m._title||'')}</div>
+              <div style="font-size:.68rem;color:#555;margin-top:2px">${m._type === 'tv' ? 'TV Series' : 'Film'} · ${(m.release_date||m.first_air_date||'').slice(0,4)||'—'}</div>
+            </div>
+          </div>`).join('');
+      } catch(_) {}
+    }, 350);
+  }
+
+  function _feSelectPoster(fp, tmdbId, title, poster, backdrop, mediaType) {
+    // Store selected values in hidden inputs
+    document.getElementById(`feNewTmdbId-${fp}`).value    = tmdbId;
+    document.getElementById(`feNewPoster-${fp}`).value    = poster;
+    document.getElementById(`feNewBackdrop-${fp}`).value  = backdrop;
+    document.getElementById(`feNewMediaType-${fp}`).value = mediaType;
+    // Update search input and close dropdown
+    const inp = document.getElementById(`fePosterSearch-${fp}`);
+    if (inp) inp.value = title;
+    const res = document.getElementById(`fePosterResults-${fp}`);
+    if (res) res.style.display = 'none';
+    // Update preview immediately
+    const prev = document.getElementById(`fePosterPreview-${fp}`);
+    if (prev && poster) prev.innerHTML = `<img src="https://image.tmdb.org/t/p/w185${poster}" style="width:100%;height:100%;object-fit:cover" alt=""/>`;
+    else if (prev) prev.innerHTML = (mediaType === 'tv' ? '📺' : '🎬');
+    // Show confirmation label
+    const sel = document.getElementById(`fePosterSelected-${fp}`);
+    if (sel) sel.textContent = `✓ ${title} selected`;
   }
 
   async function _saveFanEdit(fp) {
@@ -7967,7 +8067,20 @@ window._removeDlLoader = function() {
       }
       if (!rtdbKey) throw new Error('Could not locate the original review record.');
 
+      // Check if a new poster/backdrop was selected
+      const _newTmdbId  = +(document.getElementById(`feNewTmdbId-${fp}`)?.value  || 0);
+      const _newPoster  =   document.getElementById(`feNewPoster-${fp}`)?.value   || '';
+      const _newBackdrop =  document.getElementById(`feNewBackdrop-${fp}`)?.value || '';
+      const _newMediaType = document.getElementById(`feNewMediaType-${fp}`)?.value || (r._mediaType === 'tv' ? 'tv' : 'movie');
+
       const patch = { headline, text, rating, _edited: Date.now() };
+      // Only include poster fields if admin actually picked something new
+      if (_newTmdbId) {
+        patch.tmdbId    = _newTmdbId;
+        if (_newPoster)  patch.poster   = _newPoster;
+        if (_newBackdrop) patch.backdrop = _newBackdrop;
+      }
+
       const _editUser = window.pmGetUser ? window.pmGetUser() : null;
       const _editToken = _editUser?.getIdToken ? await _editUser.getIdToken() : null;
       const res = await fetch(`${RTDB}/${rtdbPath}/${rtdbKey}.json${_editToken ? '?auth=' + _editToken : ''}`, {
@@ -7981,6 +8094,20 @@ window._removeDlLoader = function() {
       Object.assign(r, patch);
       if (_reviewCardRegistry.has(fp))   Object.assign(_reviewCardRegistry.get(fp),   patch);
       if (_srReviewCardRegistry.has(fp)) Object.assign(_srReviewCardRegistry.get(fp), patch);
+
+      // If poster changed: clear backdrop cache so the new image loads, then update OG meta
+      if (_newTmdbId) {
+        const _bdCacheKey = `id:${_newMediaType}:${_newTmdbId}`;
+        delete backdropCache[_bdCacheKey];
+        // Re-fetch backdrop with new tmdbId and update fanReviewMeta OG record
+        fetchBackdrop(r.movie, _newMediaType, _newTmdbId).then(bdUrl => {
+          const _bdPath = bdUrl ? bdUrl.replace('https://image.tmdb.org/t/p/w1280', '') : (_newBackdrop || null);
+          _writeReviewMeta(fp, r, _bdPath);
+        }).catch(() => {
+          if (_newBackdrop) _writeReviewMeta(fp, r, _newBackdrop);
+        });
+      }
+
       // Refresh the card in the grid (re-render community)
       _renderCommunityGrid();
       // Re-open the reading overlay with updated data
@@ -16401,6 +16528,9 @@ function _renderReviewPage(r) {
     }
   } catch(_) {}
 
+  // Stash review object so the Edit button can pass it to openEditorAdmin safely
+  window._erEditTarget = r;
+
   let page = document.getElementById('erPage');
   if (!page) {
     page = document.createElement('div');
@@ -16426,6 +16556,7 @@ function _renderReviewPage(r) {
   page.innerHTML = `
     <button onclick="closeEditorRead()" title="Back" class="er-back">←</button>
     <div style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 16px);right:16px;z-index:10001;display:flex;gap:8px;transition:top .2s" class="er-action-bar">
+      ${_isEditorAdmin() ? `<button onclick="openEditorAdmin(window._erEditTarget)" style="background:rgba(0,0,0,.65);border:none;color:#ddd;font-size:.62rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;padding:11px 15px;border-radius:20px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font-family:Montserrat,sans-serif">✏️ Edit</button>` : ''}
       <button id="erTranslateBtn" onclick="_erTranslate()" style="background:rgba(0,0,0,.65);border:none;color:#ddd;font-size:.62rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;padding:11px 15px;border-radius:20px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font-family:Montserrat,sans-serif">🌐 Translate</button>
       <button id="erShareBtn" onclick="_erShare()" style="background:rgba(0,0,0,.65);border:none;color:#ddd;font-size:.62rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;padding:11px 15px;border-radius:20px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font-family:Montserrat,sans-serif">🔗 Share</button>
     </div>
@@ -16581,33 +16712,50 @@ function filterEditorReviews(filter, btn) {
 }
 
 /* ── Admin — open/close (overlay built dynamically at body level) ── */
-function openEditorAdmin() {
+let _editingEditorKey = null; // set when editing an existing review
+
+function openEditorAdmin(existingReview) {
   // Remove any existing overlay first
   const existing = document.getElementById('editorAdminOverlay');
   if (existing) existing.remove();
+
+  const isEdit = existingReview && existingReview._key;
+  _editingEditorKey = isEdit ? existingReview._key : null;
+
+  // Local HTML escaping helpers (safe for both attribute values and text content)
+  const _ea = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const _ei = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
   // Build overlay fresh — always at body level, never inside any stacking context
   const ov = document.createElement('div');
   ov.id = 'editorAdminOverlay';
   ov.className = 'editor-admin-overlay';
   ov.addEventListener('click', e => { if (e.target === ov) closeEditorAdmin(); });
+
+  // Pre-fill poster preview if editing an existing review
+  const posterPreviewHtml = isEdit && existingReview.poster
+    ? `<img src="https://image.tmdb.org/t/p/w185${existingReview.poster}" style="height:72px;border-radius:6px;display:block;margin-top:8px" alt=""/>`
+    : '';
+
   ov.innerHTML = `
     <div class="editor-admin-modal">
       <div class="editor-admin-header">
-        <div class="editor-admin-title">✍️ Write a Review</div>
+        <div class="editor-admin-title">${isEdit ? '✏️ Edit Review' : '✍️ Write a Review'}</div>
         <button class="editor-admin-close" onclick="closeEditorAdmin()">✕</button>
       </div>
       <div class="editor-form-row">
         <label class="editor-form-label">Film</label>
         <div class="editor-search-wrap">
-          <input id="editorFilmInput" class="editor-form-input" placeholder="Search film title…" oninput="editorFilmSearch(this.value)" autocomplete="off"/>
+          <input id="editorFilmInput" class="editor-form-input" placeholder="Search film title…" oninput="editorFilmSearch(this.value)" autocomplete="off"
+            value="${isEdit ? _ea(existingReview.title||'') : ''}"/>
           <div class="editor-search-results" id="editorSearchResults"></div>
         </div>
-        <input type="hidden" id="editorTmdbId"/>
-        <input type="hidden" id="editorPoster"/>
-        <input type="hidden" id="editorBackdrop"/>
-        <input type="hidden" id="editorYear"/>
-        <div class="editor-selected-film" id="editorSelectedFilm"></div>
+        <input type="hidden" id="editorTmdbId"  value="${isEdit ? _ea(String(existingReview.tmdbId||'')) : ''}"/>
+        <input type="hidden" id="editorPoster"   value="${isEdit ? _ea(existingReview.poster||'') : ''}"/>
+        <input type="hidden" id="editorBackdrop" value="${isEdit ? _ea(existingReview.backdrop||'') : ''}"/>
+        <input type="hidden" id="editorYear"     value="${isEdit ? _ea(String(existingReview.year||'')) : ''}"/>
+        <div class="editor-selected-film" id="editorSelectedFilm">${isEdit ? `✓ ${_ei(existingReview.title||'')} (${_ei(String(existingReview.year||''))})` : ''}</div>
+        ${posterPreviewHtml}
       </div>
       <div class="editor-form-row">
         <label class="editor-form-label">Rating</label>
@@ -16622,28 +16770,57 @@ function openEditorAdmin() {
       </div>
       <div class="editor-form-row">
         <label class="editor-form-label">Festival badge <span style="color:#666">(optional)</span></label>
-        <input id="editorFestival" class="editor-form-input" placeholder="e.g. Cannes 2025, TIFF 2025"/>
+        <input id="editorFestival" class="editor-form-input" placeholder="e.g. Cannes 2025, TIFF 2025"
+          value="${isEdit ? _ea(existingReview.festival||'') : ''}"/>
       </div>
       <div class="editor-form-row">
         <label class="editor-form-label">Headline</label>
-        <input id="editorHeadline" class="editor-form-input" placeholder="One powerful sentence about this film"/>
+        <input id="editorHeadline" class="editor-form-input" placeholder="One powerful sentence about this film"
+          value="${isEdit ? _ea(existingReview.headline||'') : ''}"/>
       </div>
       <div class="editor-form-row">
         <label class="editor-form-label">Review</label>
-        <textarea id="editorReviewBody" class="editor-form-textarea" placeholder="Your full review…" rows="8"></textarea>
+        <textarea id="editorReviewBody" class="editor-form-textarea" placeholder="Your full review…" rows="8">${isEdit ? _ei(existingReview.review||'') : ''}</textarea>
       </div>
       <div class="editor-form-row">
         <label class="editor-form-label">Tags <span style="color:#666">(comma separated)</span></label>
-        <input id="editorTags" class="editor-form-input" placeholder="Drama, World Cinema, Coming-of-age"/>
+        <input id="editorTags" class="editor-form-input" placeholder="Drama, World Cinema, Coming-of-age"
+          value="${isEdit ? _ea((existingReview.tags||[]).join(', ')) : ''}"/>
       </div>
       <div class="editor-admin-actions">
-        <button class="editor-publish-btn" onclick="submitEditorReview()">Publish Review</button>
+        <button class="editor-publish-btn" onclick="submitEditorReview()">${isEdit ? 'Update Review' : 'Publish Review'}</button>
         <button class="editor-cancel-btn" onclick="closeEditorAdmin()">Cancel</button>
       </div>
       <div class="editor-admin-msg" id="editorAdminMsg"></div>
     </div>`;
   document.body.appendChild(ov);
-  _editorRating = 0;
+
+  // Set rating stars to the existing value if editing
+  _editorRating = isEdit ? (existingReview.rating || 0) : 0;
+  if (_editorRating) {
+    // Trigger the star rendering — uses the same hs/hs-h mechanism
+    setTimeout(() => {
+      const starRow = document.getElementById('editorStarRow');
+      if (!starRow) return;
+      const half = _editorRating % 1 >= 0.5;
+      const full = Math.floor(_editorRating);
+      starRow.querySelectorAll('.hs').forEach((span, i) => {
+        const v = i + 1;
+        const hh = span.querySelector('.hs-h');
+        if (v <= full) {
+          span.style.color = '#f5a623';
+          if (hh) hh.style.display = 'none';
+        } else if (half && v === full + 1) {
+          span.style.color = '#333';
+          if (hh) { hh.style.display = 'inline'; hh.style.color = '#f5a623'; }
+        } else {
+          span.style.color = '#333';
+          if (hh) hh.style.display = 'none';
+        }
+      });
+    }, 0);
+  }
+
   document.body.style.overflow = 'hidden';
 }
 function closeEditorAdmin() {
@@ -16751,28 +16928,70 @@ async function submitEditorReview() {
   if (!rating){ if(msg){msg.style.color='#f44';msg.textContent='Please set a rating.';} return; }
   if (!review) { if(msg){msg.style.color='#f44';msg.textContent='Please write a review.';} return; }
 
+  const isEditing = !!_editingEditorKey;
   const btn = document.querySelector('.editor-publish-btn');
-  if (btn) { btn.disabled=true; btn.textContent='Publishing…'; }
+  if (btn) { btn.disabled=true; btn.textContent= isEditing ? 'Updating…' : 'Publishing…'; }
   if (msg) msg.textContent = '';
 
-  const record = { title, tmdbId, poster, backdrop, year, rating, festival, headline, review, tags, slug: _editorSlug(title), publishedAt: Date.now() };
+  const slug = _editorSlug(title);
+  const record = { title, tmdbId, poster, backdrop, year, rating, festival, headline, review, tags, slug };
+
+  if (isEditing) {
+    // Preserve original publishedAt; add editedAt timestamp
+    const _origPublishedAt = window._erEditTarget?.publishedAt || Date.now();
+    record.publishedAt = _origPublishedAt;
+    record.editedAt    = Date.now();
+  } else {
+    record.publishedAt = Date.now();
+  }
+
   try {
     const _erUser = window.pmGetUser ? window.pmGetUser() : null;
     const _erTok  = _erUser?.getIdToken ? await _erUser.getIdToken() : null;
     const _erAuth = _erTok ? `?auth=${_erTok}` : '';
-    const res = await fetch(`${RTDB}/editorReviews.json${_erAuth}`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify(record)
-    });
+
+    let res;
+    if (isEditing) {
+      // PUT to the specific key to update in place
+      res = await fetch(`${RTDB}/editorReviews/${encodeURIComponent(_editingEditorKey)}.json${_erAuth}`, {
+        method: 'PUT',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(record)
+      });
+    } else {
+      res = await fetch(`${RTDB}/editorReviews.json${_erAuth}`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(record)
+      });
+    }
     if (!res.ok) throw new Error('Firebase error');
-    if (msg) { msg.style.color='#4caf50'; msg.textContent='✓ Published!'; }
+
+    // Update editorReviewMeta so the Cloudflare Worker serves fresh OG cards
+    if (slug) {
+      const _metaUrl = `${RTDB}/editorReviewMeta/${encodeURIComponent(slug)}.json${_erAuth}`;
+      fetch(_metaUrl, {
+        method: 'PUT',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          slug, title, year, headline,
+          backdrop: backdrop || null,
+          rating,
+          tmdbId:    tmdbId   || null,
+          updatedAt: Date.now()
+        })
+      }).catch(() => {});
+    }
+
+    if (msg) { msg.style.color='#4caf50'; msg.textContent= isEditing ? '✓ Updated!' : '✓ Published!'; }
+    _editingEditorKey = null;
+    window._erEditTarget = null;
     editorLoaded = false;
     setTimeout(() => { closeEditorAdmin(); loadEditorReviews(); }, 800);
   } catch(e) {
-    if (msg) { msg.style.color='#f44'; msg.textContent='Publish failed — try again.'; }
+    if (msg) { msg.style.color='#f44'; msg.textContent= isEditing ? 'Update failed — try again.' : 'Publish failed — try again.'; }
   } finally {
-    if (btn) { btn.disabled=false; btn.textContent='Publish Review'; }
+    if (btn) { btn.disabled=false; btn.textContent= isEditing ? 'Update Review' : 'Publish Review'; }
   }
 }
 
