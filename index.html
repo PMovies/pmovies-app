@@ -4634,6 +4634,18 @@ window._removeDlLoader = function() {
         <input type="hidden" id="fanRating" value="0"/>
         <input id="fanHeadline" type="text" placeholder="One-line summary (optional, max 120 chars)" maxlength="120" autocomplete="off" style="margin-bottom:10px"/>
         <textarea id="fanText" placeholder="Your full review…" rows="3"></textarea>
+        <!-- Poster picker — shown after a movie is selected -->
+        <div id="fanPosterPickerRow" style="display:none;margin:10px 0;padding:12px;border:1px solid #2a2a2a;border-radius:10px;background:#0d0d0d">
+          <div style="font-size:.65rem;font-weight:700;letter-spacing:1px;color:#555;text-transform:uppercase;margin-bottom:10px">🎬 Poster (optional)</div>
+          <div style="display:flex;gap:12px;align-items:center">
+            <div id="fanPosterPreview" style="width:52px;height:78px;background:#1a1a1a;border-radius:6px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.2rem;border:1px solid #222">🎬</div>
+            <div>
+              <button onclick="_openFanNewPosterPicker()" style="background:#1a1a1a;border:1px solid #333;color:#ccc;font-family:inherit;font-size:.72rem;font-weight:700;letter-spacing:.5px;padding:8px 14px;border-radius:8px;cursor:pointer;text-transform:uppercase">🖼️ Choose from TMDB</button>
+              <div id="fanPosterPickerLabel" style="font-size:.68rem;color:#4caf50;margin-top:6px"></div>
+            </div>
+          </div>
+          <input type="hidden" id="fanPoster" value=""/>
+        </div>
         <button class="fan-submit-btn" onclick="submitFanReview()">POST REVIEW</button>
       </div>
     </div>
@@ -7967,11 +7979,18 @@ window._removeDlLoader = function() {
 
   // Load current poster into the preview box once the edit form is rendered
   function _feLoadCurrentPoster(fp, r) {
+    const prev = document.getElementById(`fePosterPreview-${fp}`);
+    if (!prev) return;
+    // If the review has a specific poster path stored, use it directly
+    if (r.poster) {
+      prev.innerHTML = `<img src="https://image.tmdb.org/t/p/w185${r.poster}" style="width:100%;height:100%;object-fit:cover" alt=""/>`;
+      return;
+    }
+    // Otherwise fall back to TMDB default poster fetch
     const isTV = r._mediaType === 'tv' || r.mediaType === 'tv';
     fetchPoster(r.movie, isTV ? 'tv' : 'movie', r.tmdbId || null).then(url => {
-      const prev = document.getElementById(`fePosterPreview-${fp}`);
-      if (prev && url) prev.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover" alt=""/>`;
-    });
+      if (url) prev.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover" alt=""/>`;
+    }).catch(() => {});
   }
 
   // Open the TMDB image gallery picker for a fan review
@@ -8373,8 +8392,10 @@ window._removeDlLoader = function() {
       const headline = (document.getElementById('fanHeadline')||{}).value?.trim() || '';
       const photoURL = (window._pmMyProfile && window._pmMyProfile.photoURL) || user.photoURL || null;
       const _submitUsername = (window._pmMyProfile && window._pmMyProfile.username) || '';
+      const _chosenPoster = (document.getElementById('fanPoster')?.value || '').trim() || null;
       const reviewData = { name, movie, tmdbId, rating, headline, text, timestamp: Date.now(),
-        uid: user.uid, photoURL: photoURL, username: _submitUsername || null };
+        uid: user.uid, photoURL: photoURL, username: _submitUsername || null,
+        ..._chosenPoster ? { poster: _chosenPoster } : {} };
       // Write to RTDB — auth token required by security rules
       const idToken = user.getIdToken ? await user.getIdToken() : null;
       const rtdbRes = await fetch(`${RTDB}/fanReviews.json${idToken ? '?auth=' + idToken : ''}`, {
@@ -8435,6 +8456,11 @@ window._removeDlLoader = function() {
       document.getElementById('fanRating').value = 0;
       document.querySelectorAll('.fan-star').forEach(s => s.classList.remove('active'));
       document.querySelector('.fan-star-label').textContent = 'Click to rate';
+      // Reset poster picker
+      const _fpr = document.getElementById('fanPosterPickerRow'); if (_fpr) { _fpr.style.display='none'; }
+      const _fpv = document.getElementById('fanPosterPreview');   if (_fpv) _fpv.innerHTML = '🎬';
+      const _fps = document.getElementById('fanPoster');          if (_fps) _fps.value = '';
+      const _fpl = document.getElementById('fanPosterPickerLabel'); if (_fpl) _fpl.textContent = '';
       btn.textContent = 'POST REVIEW'; btn.disabled = false;
       window._pmUpdateScore && window._pmUpdateScore(user.uid, 5, { reviewCount: 1 });
       await loadFanReviews();
@@ -8737,7 +8763,38 @@ window._removeDlLoader = function() {
     input.dataset.cleanTitle = title;
     input.dataset.tmdbId = id || '';
     hideFanMovieDropdown();
+    // Show poster picker row and load default poster preview
+    const row = document.getElementById('fanPosterPickerRow');
+    if (row) row.style.display = 'block';
+    const fp = document.getElementById('fanPoster');
+    if (fp) fp.value = ''; // reset any prior selection
+    const label = document.getElementById('fanPosterPickerLabel');
+    if (label) label.textContent = '';
+    if (id) {
+      fetchPoster(title, 'movie', id).then(url => {
+        const prev = document.getElementById('fanPosterPreview');
+        if (prev && url) prev.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover" alt=""/>`;
+      }).catch(() => {});
+    }
   }
+  function _openFanNewPosterPicker() {
+    const input = document.getElementById('fanMovie');
+    const tmdbId = parseInt(input?.dataset.tmdbId) || 0;
+    if (!tmdbId) { alert('Please select a film first.'); return; }
+    if (typeof window._tmdbImagePicker !== 'function') { alert('Picker not ready — try again.'); return; }
+    window._tmdbImagePicker(
+      tmdbId, 'movie',
+      function(posterPath) {
+        document.getElementById('fanPoster').value = posterPath;
+        const prev = document.getElementById('fanPosterPreview');
+        if (prev) prev.innerHTML = `<img src="https://image.tmdb.org/t/p/w185${posterPath}" style="width:100%;height:100%;object-fit:cover" alt=""/>`;
+        const label = document.getElementById('fanPosterPickerLabel');
+        if (label) label.textContent = '✓ Poster selected';
+      },
+      null // no backdrop picker for new fan reviews (backdrop is auto-fetched on submit)
+    );
+  }
+
   function fanMovieSearch(q) {
     clearTimeout(fanMovieTimer);
     const dd = document.getElementById('fanMovieDropdown');
@@ -17174,11 +17231,17 @@ async function deleteEditorReview(key, e) {
     if (!btn) return;
     // Show button if admin
     if (_isAdmin()) btn.style.display = '';
-    // Replace onclick with direct listener (works even if openEditorAdmin() is broken)
+    // Always call openEditorAdmin() directly — it builds the full dynamic overlay
+    // with all features (poster picker, etc.) and is immune to static-HTML limitations.
+    // Only fall back to _showAdminOverlay() if openEditorAdmin is somehow missing.
     btn.onclick = null;
     btn.addEventListener('click', function(e) {
       e.stopPropagation();
-      _showAdminOverlay();
+      if (typeof openEditorAdmin === 'function') {
+        openEditorAdmin(); // no arg = new review
+      } else {
+        _showAdminOverlay(); // legacy fallback (old cached JS)
+      }
     });
   }
 
