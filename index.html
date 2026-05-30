@@ -7540,7 +7540,7 @@ window._removeDlLoader = function() {
       const card = document.createElement('div');
       card.className = 'fan-review-card pm-del-wrap';
       const _isAdminView = window._pmEditorAuthVerified || localStorage.getItem('pmovies_admin') === '1';
-      const _rKey = r._key || fp;
+      const _rKey = r._rtdbKey || r._key || fp; // _rtdbKey is set for RTDB reviews; _key for legacy
       const _rUid = r.uid || '';
       card.innerHTML = `
         <div class="fan-review-poster" id="${posterId}">
@@ -8536,7 +8536,7 @@ window._removeDlLoader = function() {
       const localR    = r; // pin to closure — prevents registry-collision bug
 
       const _srIsAdminView = window._pmEditorAuthVerified || localStorage.getItem('pmovies_admin') === '1';
-      const _srKey = r._key || fp;
+      const _srKey = r._rtdbKey || r._key || fp;
       const _srUid = r.uid || '';
       const card = document.createElement('div'); card.className = 'fan-review-card pm-del-wrap';
       card.innerHTML = `
