@@ -7572,9 +7572,9 @@ window._removeDlLoader = function() {
       });
       grid.appendChild(card);
 
-      // If review has a user-chosen poster, use it directly — no fetch needed
+      // If review has a user-chosen poster, use card.querySelector (card may not be in DOM yet)
       if (r.poster) {
-        const ph = document.getElementById(posterId);
+        const ph = card.querySelector('.fan-review-poster');
         if (ph) ph.innerHTML = `<img src="https://image.tmdb.org/t/p/w342${r.poster}" alt="${esc(r.movie)}" loading="lazy"/>`;
       } else {
         fetchPoster(r.movie, isTV ? 'tv' : 'movie', r.tmdbId || null).then(url => {
