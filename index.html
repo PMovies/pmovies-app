@@ -16556,7 +16556,7 @@ function _renderReviewPage(r) {
   page.innerHTML = `
     <button onclick="closeEditorRead()" title="Back" class="er-back">←</button>
     <div style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 16px);right:16px;z-index:10001;display:flex;gap:8px;transition:top .2s" class="er-action-bar">
-      ${_isEditorAdmin() ? `<button onclick="openEditorAdmin(window._erEditTarget)" style="background:rgba(0,0,0,.65);border:none;color:#ddd;font-size:.62rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;padding:11px 15px;border-radius:20px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font-family:Montserrat,sans-serif">✏️ Edit</button>` : ''}
+      ${_isEditorAdmin() ? `<button onclick="_erEditFromPage()" style="background:rgba(0,0,0,.65);border:none;color:#ddd;font-size:.62rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;padding:11px 15px;border-radius:20px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font-family:Montserrat,sans-serif">✏️ Edit</button>` : ''}
       <button id="erTranslateBtn" onclick="_erTranslate()" style="background:rgba(0,0,0,.65);border:none;color:#ddd;font-size:.62rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;padding:11px 15px;border-radius:20px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font-family:Montserrat,sans-serif">🌐 Translate</button>
       <button id="erShareBtn" onclick="_erShare()" style="background:rgba(0,0,0,.65);border:none;color:#ddd;font-size:.62rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;padding:11px 15px;border-radius:20px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font-family:Montserrat,sans-serif">🔗 Share</button>
     </div>
@@ -16596,6 +16596,16 @@ function closeEditorRead() {
       history.replaceState(null, '', '/');
     }
   } catch(e) {}
+}
+
+/* ── Open edit form from inside the review read overlay ── */
+function _erEditFromPage() {
+  // Stash the target before closing (closeEditorRead does NOT clear it)
+  const target = window._erEditTarget;
+  // Close the read overlay first so there's no stacking context conflict
+  closeEditorRead();
+  // Small delay so the page removal finishes before we open the modal
+  setTimeout(function() { openEditorAdmin(target); }, 60);
 }
 
 function _erShare() {
@@ -16730,6 +16740,8 @@ function openEditorAdmin(existingReview) {
   const ov = document.createElement('div');
   ov.id = 'editorAdminOverlay';
   ov.className = 'editor-admin-overlay';
+  // Inline styles so display/z-index work regardless of which CSS version is cached
+  ov.style.cssText = 'position:fixed!important;top:0!important;left:0!important;right:0!important;bottom:0!important;background:rgba(0,0,0,.88)!important;z-index:999999!important;display:flex!important;align-items:flex-start!important;justify-content:center!important;padding:30px 16px!important;overflow-y:auto!important';
   ov.addEventListener('click', e => { if (e.target === ov) closeEditorAdmin(); });
 
   // Pre-fill poster preview if editing an existing review
@@ -16794,6 +16806,30 @@ function openEditorAdmin(existingReview) {
       <div class="editor-admin-msg" id="editorAdminMsg"></div>
     </div>`;
   document.body.appendChild(ov);
+
+  // Wire star click listeners on the freshly-created overlay
+  // (the failsafe only runs once at page load; new overlays need their own listeners)
+  ov.querySelectorAll('.hs').forEach(function(s) {
+    s.style.cssText = 'position:relative;display:inline-block;cursor:pointer;color:#555;user-select:none;-webkit-user-select:none;line-height:1';
+    const hh = s.querySelector('.hs-h');
+    if (hh) hh.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;display:none;color:#f5a623;-webkit-clip-path:polygon(0 0,50% 0,50% 100%,0 100%);clip-path:polygon(0 0,50% 0,50% 100%,0 100%)';
+    s.addEventListener('click', function(e) {
+      const rect = s.getBoundingClientRect();
+      const isLeft = (e.clientX - rect.left) < (rect.width / 2);
+      const full = parseFloat(s.dataset.full);
+      const v = isLeft ? full - 0.5 : full;
+      ov.querySelectorAll('.hs').forEach(function(st) {
+        const f = parseFloat(st.dataset.full);
+        const hhh = st.querySelector('.hs-h');
+        if (v >= f) { st.style.color='#f5a623'; if(hhh) hhh.style.display='none'; }
+        else if (v >= f-0.5) { st.style.color='#555'; if(hhh) hhh.style.display='block'; }
+        else { st.style.color='#555'; if(hhh) hhh.style.display='none'; }
+      });
+      const ri = document.getElementById('editorRatingInput');
+      if (ri) ri.value = v;
+      if (typeof setEditorRating === 'function') setEditorRating(v);
+    });
+  });
 
   // Set rating stars to the existing value if editing
   _editorRating = isEdit ? (existingReview.rating || 0) : 0;
