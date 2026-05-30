@@ -7572,15 +7572,21 @@ window._removeDlLoader = function() {
       });
       grid.appendChild(card);
 
-      fetchPoster(r.movie, isTV ? 'tv' : 'movie', r.tmdbId || null).then(url => {
+      // If review has a user-chosen poster, use it directly — no fetch needed
+      if (r.poster) {
         const ph = document.getElementById(posterId);
-        if (ph && url) ph.innerHTML = `<img src="${url}" alt="${esc(r.movie)}" loading="lazy"/>`;
-        // Year is cached as a side-effect of the poster fetch — update card
-        const tmdbKey = r.tmdbId ? `id:${isTV?'tv':'movie'}:${r.tmdbId}` : `q:${isTV?'tv':'movie'}:${r.movie.toLowerCase().trim()}`;
-        const yr = _tmdbYearCache[tmdbKey];
-        const yearEl = document.getElementById(`${posterId}-year`);
-        if (yearEl && yr) yearEl.textContent = yr;
-      });
+        if (ph) ph.innerHTML = `<img src="https://image.tmdb.org/t/p/w342${r.poster}" alt="${esc(r.movie)}" loading="lazy"/>`;
+      } else {
+        fetchPoster(r.movie, isTV ? 'tv' : 'movie', r.tmdbId || null).then(url => {
+          const ph = document.getElementById(posterId);
+          if (ph && url) ph.innerHTML = `<img src="${url}" alt="${esc(r.movie)}" loading="lazy"/>`;
+          // Year is cached as a side-effect of the poster fetch — update card
+          const tmdbKey = r.tmdbId ? `id:${isTV?'tv':'movie'}:${r.tmdbId}` : `q:${isTV?'tv':'movie'}:${r.movie.toLowerCase().trim()}`;
+          const yr = _tmdbYearCache[tmdbKey];
+          const yearEl = document.getElementById(`${posterId}-year`);
+          if (yearEl && yr) yearEl.textContent = yr;
+        });
+      }
     });
 
     list.appendChild(grid);
@@ -7693,7 +7699,12 @@ window._removeDlLoader = function() {
         </div>
       </div>`;
 
-    fetchPoster(r.movie, isTV ? 'tv' : 'movie', r.tmdbId || null).then(posterUrl => {
+    // Use stored poster directly if available; otherwise fetch from TMDB
+    if (r.poster) {
+      const pw = document.getElementById(`frPosterWrap-${fp}`);
+      if (pw) pw.innerHTML = `<img src="https://image.tmdb.org/t/p/w342${r.poster}" style="width:100%;height:100%;object-fit:cover;border-radius:9px" alt="${esc(r.movie)}"/>`;
+    } else {
+      fetchPoster(r.movie, isTV ? 'tv' : 'movie', r.tmdbId || null).then(posterUrl => {
       const pw = document.getElementById(`frPosterWrap-${fp}`);
       if (pw && posterUrl) pw.innerHTML = `<img src="${posterUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:9px" alt="${esc(r.movie)}"/>`;
       // Populate year label from cached TMDB data
@@ -7701,7 +7712,8 @@ window._removeDlLoader = function() {
       const yr = _tmdbYearCache[tmdbKey];
       const yrEl = document.getElementById(`frYearLabel-${fp}`);
       if (yrEl && yr) yrEl.textContent = yr;
-    });
+      });
+    }
 
     // Shared backdrop path — set once the backdrop fetch resolves so the async
     // username lookup can include it in the second _writeReviewMeta call.
@@ -8115,12 +8127,10 @@ window._removeDlLoader = function() {
       const _newMediaType = document.getElementById(`feNewMediaType-${fp}`)?.value || (r._mediaType === 'tv' ? 'tv' : 'movie');
 
       const patch = { headline, text, rating, _edited: Date.now() };
-      // Only include poster fields if admin actually picked something new
-      if (_newTmdbId) {
-        patch.tmdbId    = _newTmdbId;
-        if (_newPoster)  patch.poster   = _newPoster;
-        if (_newBackdrop) patch.backdrop = _newBackdrop;
-      }
+      // Save poster/backdrop independently — no need to change tmdbId to pick a new image
+      if (_newPoster)   patch.poster   = _newPoster;
+      if (_newBackdrop) patch.backdrop = _newBackdrop;
+      if (_newTmdbId)   patch.tmdbId   = _newTmdbId;
 
       const _editUser = window.pmGetUser ? window.pmGetUser() : null;
       const _editToken = _editUser?.getIdToken ? await _editUser.getIdToken() : null;
@@ -8136,17 +8146,20 @@ window._removeDlLoader = function() {
       if (_reviewCardRegistry.has(fp))   Object.assign(_reviewCardRegistry.get(fp),   patch);
       if (_srReviewCardRegistry.has(fp)) Object.assign(_srReviewCardRegistry.get(fp), patch);
 
-      // If poster changed: clear backdrop cache so the new image loads, then update OG meta
-      if (_newTmdbId) {
-        const _bdCacheKey = `id:${_newMediaType}:${_newTmdbId}`;
-        delete backdropCache[_bdCacheKey];
-        // Re-fetch backdrop with new tmdbId and update fanReviewMeta OG record
-        fetchBackdrop(r.movie, _newMediaType, _newTmdbId).then(bdUrl => {
-          const _bdPath = bdUrl ? bdUrl.replace('https://image.tmdb.org/t/p/w1280', '') : (_newBackdrop || null);
-          _writeReviewMeta(fp, r, _bdPath);
-        }).catch(() => {
-          if (_newBackdrop) _writeReviewMeta(fp, r, _newBackdrop);
-        });
+      // If poster or backdrop changed: update OG meta so share cards refresh
+      if (_newPoster || _newBackdrop || _newTmdbId) {
+        const _effectiveTmdbId = _newTmdbId || r.tmdbId || null;
+        if (_newTmdbId) {
+          delete backdropCache[`id:${_newMediaType}:${_newTmdbId}`];
+        }
+        if (_newBackdrop) {
+          _writeReviewMeta(fp, r, _newBackdrop);
+        } else if (_effectiveTmdbId) {
+          fetchBackdrop(r.movie, _newMediaType, _effectiveTmdbId).then(bdUrl => {
+            const _bdPath = bdUrl ? bdUrl.replace('https://image.tmdb.org/t/p/w1280', '') : null;
+            _writeReviewMeta(fp, r, _bdPath);
+          }).catch(() => { _writeReviewMeta(fp, r, null); });
+        }
       }
 
       // Refresh the card in the grid (re-render community)
@@ -20640,6 +20653,12 @@ async function deleteEditorReview(key, e) {
           body: JSON.stringify({ reviewCount: { '.sv': { increment: -1 } } })
         });
       }
+      // Remove from all in-memory caches so re-renders don't bring it back
+      var _matchKey = function(r) { return r._rtdbKey === reviewKey || r._key === reviewKey; };
+      if (typeof allReviews !== 'undefined')          allReviews          = allReviews.filter(function(r) { return !_matchKey(r); });
+      if (typeof _pmReviewsCache !== 'undefined')     _pmReviewsCache     = _pmReviewsCache.filter(function(r) { return !_matchKey(r); });
+      if (typeof _allCommunityReviews !== 'undefined') _allCommunityReviews = _allCommunityReviews.filter(function(r) { return !_matchKey(r); });
+      // Animate out and remove DOM element
       if (el) {
         el.style.opacity = '0'; el.style.transform = 'scale(.92)';
         el.style.transition = 'all .25s';
@@ -20662,6 +20681,9 @@ async function deleteEditorReview(key, e) {
           body: JSON.stringify({ reviewCount: { '.sv': { increment: -1 } } })
         });
       }
+      // Remove from in-memory caches
+      var _matchKey = function(r) { return r._rtdbKey === reviewKey || r._key === reviewKey; };
+      if (typeof _allCommunityReviews !== 'undefined') _allCommunityReviews = _allCommunityReviews.filter(function(r) { return !_matchKey(r); });
       if (el) {
         el.style.opacity = '0'; el.style.transform = 'scale(.92)';
         el.style.transition = 'all .25s';
