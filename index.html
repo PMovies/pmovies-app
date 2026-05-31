@@ -4401,25 +4401,29 @@
   </ul>
 </div>
 <script>
-/* Hide landing immediately for returning signed-in users — runs before Firebase resolves.
-   Also decide whether to show the Lobby (cinematic gateway) or skip straight to app. */
+/* Decide whether to show the Lobby or go straight to the app/auth screen.
+   Runs synchronously before Firebase resolves — no flicker. */
 (function(){
+  var path       = location.pathname;
+  var isDeepLink = path !== '/' && path !== '/index.html';
+  var lobbyDone  = !!sessionStorage.getItem('pmovies_lobby_done');
   var isReturning = localStorage.getItem('pmovies_was_signed_in') === '1' ||
                     sessionStorage.getItem('pmovies_guest') === '1';
-  if (isReturning) {
-    var el = document.getElementById('pmLandingScreen');
-    if (el) el.style.display = 'none';
-    // Returning users skip lobby — go straight to app
+
+  if (isDeepLink || lobbyDone) {
+    // Deep link or already visited lobby this session → skip lobby entirely
+    // If signed in, landing is hidden by _hideLanding() once auth resolves
+    if (isReturning) {
+      var el = document.getElementById('pmLandingScreen');
+      if (el) el.style.display = 'none';
+    }
     return;
   }
-  // Deep links (fan-review, lobby thread, etc.) — skip lobby too
-  var path = location.pathname;
-  var isDeepLink = path !== '/' && path !== '/index.html';
-  if (isDeepLink || sessionStorage.getItem('pmovies_lobby_done')) return;
-  // First visit this session — show the Lobby
+
+  // Show the Lobby for EVERY user on their first visit of the session
   var lobby = document.getElementById('lobby-screen');
   if (lobby) lobby.style.display = 'flex';
-  // Hide the auth landing screen until user clicks Enter
+  // Keep auth landing hidden behind lobby until ENTER is pressed
   var landing = document.getElementById('pmLandingScreen');
   if (landing) landing.style.display = 'none';
 })();
@@ -18105,6 +18109,9 @@ async function deleteEditorReview(key, e) {
 
   // ── Landing Screen ───────────────────────────────────────────────
   function _showLanding() {
+    // Don't show the auth screen while the Lobby is still in front
+    var lobby = document.getElementById('lobby-screen');
+    if (lobby && lobby.style.display !== 'none') return;
     var el = document.getElementById('pmLandingScreen');
     if (el) { el.style.display = 'flex'; el.style.opacity = '1'; }
   }
@@ -25992,14 +25999,29 @@ async function deleteEditorReview(key, e) {
       || 'd04038fc4e0708bd069b323b220d5dc0';
   }
 
+  /* ── Inline fallback quotes (shown until Firebase is seeded) ─── */
+  var LOBBY_FALLBACK_QUOTES = [
+    { id:'fb1', text:"We're all on the brink of despair, all we can do is look each other in the face, keep each other company, quote a little Chekhov.", character:"Jep Gambardella", film:"The Great Beauty", tmdbId:"176283", year:2013, director:"Paolo Sorrentino", country:"Italy", approved:true },
+    { id:'fb2', text:"All those moments will be lost in time, like tears in rain.", character:"Roy Batty", film:"Blade Runner", tmdbId:"78", year:1982, director:"Ridley Scott", country:"USA", approved:true },
+    { id:'fb3', text:"Hope is a good thing, maybe the best of things, and no good thing ever dies.", character:"Andy Dufresne", film:"The Shawshank Redemption", tmdbId:"278", year:1994, director:"Frank Darabont", country:"USA", approved:true },
+    { id:'fb4', text:"You either die a hero or you live long enough to see yourself become the villain.", character:"Harvey Dent", film:"The Dark Knight", tmdbId:"155", year:2008, director:"Christopher Nolan", country:"USA", approved:true },
+    { id:'fb5', text:"The things you own end up owning you.", character:"Tyler Durden", film:"Fight Club", tmdbId:"550", year:1999, director:"David Fincher", country:"USA", approved:true },
+    { id:'fb6', text:"Carpe diem. Seize the day, boys. Make your lives extraordinary.", character:"John Keating", film:"Dead Poets Society", tmdbId:"207", year:1989, director:"Peter Weir", country:"USA", approved:true },
+    { id:'fb7', text:"I'm going to make him an offer he can't refuse.", character:"Vito Corleone", film:"The Godfather", tmdbId:"238", year:1972, director:"Francis Ford Coppola", country:"USA", approved:true },
+    { id:'fb8', text:"After all, tomorrow is another day.", character:"Scarlett O'Hara", film:"Gone with the Wind", tmdbId:"770", year:1939, director:"Victor Fleming", country:"USA", approved:true }
+  ];
+
   /* ── Quote loading ────────────────────────────────────────────── */
   async function _loadLobbyQuotes() {
     try {
       var res  = await fetch(LOBBY_RTDB + '/quotes.json?orderBy="approved"&equalTo=true');
       var data = res.ok ? await res.json() : null;
-      if (!data) return [];
-      return Object.entries(data).map(function(e) { return Object.assign({ id: e[0] }, e[1]); });
-    } catch(_) { return []; }
+      if (data && Object.keys(data).length > 0) {
+        return Object.entries(data).map(function(e) { return Object.assign({ id: e[0] }, e[1]); });
+      }
+    } catch(_) {}
+    // Firebase empty or unreachable — use inline fallback quotes
+    return LOBBY_FALLBACK_QUOTES;
   }
 
   function _getNextQuote(all) {
