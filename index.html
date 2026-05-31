@@ -94,6 +94,9 @@
   <!-- Google Fonts — non-blocking load -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;500;600;700;900&family=Open+Sans:wght@400;600&display=swap" media="print" onload="this.media='all'"/>
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;500;600;700;900&family=Open+Sans:wght@400;600&display=swap"/></noscript>
+  <!-- Lobby fonts — Playfair Display, Cormorant Garamond, Cinzel -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Cinzel:wght@400;600&display=swap" media="print" onload="this.media='all'"/>
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Cinzel:wght@400;600&display=swap"/></noscript>
   <title>PMovies – Top 100 Films, Movie Recommendations &amp; Mood Discovery</title>
 
   <!-- Open Graph (Facebook, WhatsApp, iMessage) -->
@@ -1817,6 +1820,230 @@
   }
 
   /* ── LANDING SCREEN ──────────────────────────────────── */
+  /* ═══════════════════════════════════════════════════════════
+     LOBBY SCREEN — Vintage Cinema Gateway
+  ════════════════════════════════════════════════════════════ */
+  :root {
+    --lobby-black:    #0A0905;
+    --lobby-dark:     #141009;
+    --lobby-cream:    #EDE4D0;
+    --lobby-cream-dim:#A89878;
+    --lobby-gold:     #C9A84C;
+    --lobby-amber:    #8A6520;
+    --lobby-rule:     #3A3020;
+  }
+
+  /* Grain animation */
+  @keyframes lobby-grain {
+    0%,100%{ transform:translate(0,0) }
+    10%    { transform:translate(-2%,-3%) }
+    20%    { transform:translate(3%,1%) }
+    30%    { transform:translate(-1%,4%) }
+    40%    { transform:translate(4%,-2%) }
+    50%    { transform:translate(-3%,3%) }
+    60%    { transform:translate(2%,-4%) }
+    70%    { transform:translate(-4%,1%) }
+    80%    { transform:translate(3%,4%) }
+    90%    { transform:translate(-2%,-1%) }
+  }
+
+  #lobby-screen {
+    position: fixed; inset: 0; z-index: 100001;
+    background-color: var(--lobby-black);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+    transition: opacity 0.7s ease;
+  }
+  #lobby-screen.lobby-hidden { opacity: 0; pointer-events: none; }
+
+  /* Film grain overlay */
+  #lobby-screen::after {
+    content: ''; position: fixed; inset: 0;
+    pointer-events: none; z-index: 100;
+    opacity: 0.04;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-size: 200px 200px;
+    animation: lobby-grain 0.5s steps(1) infinite;
+  }
+
+  /* Vignette */
+  .lobby-vignette {
+    position: fixed; inset: 0; pointer-events: none; z-index: 1;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(10,9,5,.55) 80%, rgba(10,9,5,.85) 100%);
+  }
+
+  /* Decorative rule */
+  .lobby-rule {
+    border: none; height: 1px;
+    background: linear-gradient(to right, transparent, var(--lobby-gold) 20%, var(--lobby-gold) 80%, transparent);
+    opacity: 0.4; margin: 0;
+  }
+
+  /* Header */
+  .lobby-header { flex-shrink: 0; padding: 28px 48px 0; position: relative; z-index: 2; }
+  .lobby-wordmark {
+    font-family: 'Cinzel', serif; font-weight: 600;
+    font-size: clamp(11px,1.4vw,16px); letter-spacing: 0.5em;
+    color: var(--lobby-gold); text-align: center; margin-bottom: 18px; opacity: 0.85;
+  }
+  .lobby-rule--header { margin-bottom: 0; }
+
+  /* Main grid */
+  .lobby-main {
+    flex: 1; display: grid; grid-template-columns: 280px 1fr;
+    gap: 0; padding: 40px 48px; min-height: 0;
+    position: relative; z-index: 2; align-items: center;
+  }
+
+  /* Poster column */
+  .lobby-poster-col {
+    display: flex; flex-direction: column; align-items: center; padding-right: 40px;
+  }
+  .lobby-card { opacity: 1; transition: opacity 0.5s ease, transform 0.5s ease; }
+  .lobby-card.transitioning { opacity: 0; transform: translateY(6px); }
+
+  .lobby-card-inner {
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0,0,0,.6), 0 8px 32px rgba(0,0,0,.5), inset 0 0 0 1px rgba(201,168,76,.15);
+    border: 1px solid rgba(201,168,76,.2); background: var(--lobby-dark);
+    transform: rotate(-0.8deg);
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
+  }
+  .lobby-card-inner:hover {
+    transform: rotate(0deg) scale(1.01);
+    box-shadow: 0 4px 16px rgba(0,0,0,.7), 0 12px 48px rgba(0,0,0,.6), inset 0 0 0 1px rgba(201,168,76,.3);
+  }
+  .lobby-poster-img {
+    display: block; width: 220px; height: auto; aspect-ratio: 2/3; object-fit: cover;
+    filter: sepia(12%) contrast(1.04) brightness(0.95);
+  }
+
+  .lobby-film-info { text-align: center; margin-top: 16px; opacity: 0.7; }
+  .lobby-film-title {
+    font-family: 'Cinzel', serif; font-size: clamp(9px,.9vw,11px);
+    letter-spacing: 0.2em; color: var(--lobby-gold); text-transform: uppercase; margin: 0 0 4px;
+  }
+  .lobby-film-meta {
+    font-family: 'Cormorant Garamond', serif; font-size: clamp(10px,1vw,12px);
+    color: var(--lobby-cream-dim); font-style: italic; margin: 0;
+  }
+
+  /* Quote column */
+  .lobby-quote-col {
+    padding-left: 48px; border-left: 1px solid var(--lobby-rule);
+    display: flex; align-items: center; min-height: 0;
+  }
+  .lobby-quote-wrap { position: relative; opacity: 1; transition: opacity 0.5s ease; }
+  .lobby-quote-wrap.transitioning { opacity: 0; }
+
+  .lobby-open-mark {
+    display: block; font-family: 'Playfair Display', serif;
+    font-size: clamp(48px,7vw,88px); line-height: 0.7;
+    color: var(--lobby-gold); opacity: 0.35; margin-bottom: 12px; user-select: none;
+  }
+  .lobby-quote-text {
+    font-family: 'Playfair Display', serif; font-style: italic;
+    font-size: clamp(17px,2.1vw,26px); line-height: 1.75;
+    color: var(--lobby-cream); margin: 0; max-width: 640px; letter-spacing: 0.01em;
+  }
+  .lobby-close-mark {
+    display: block; font-family: 'Playfair Display', serif;
+    font-size: clamp(48px,7vw,88px); line-height: 0.5;
+    color: var(--lobby-gold); opacity: 0.35; text-align: right; max-width: 640px;
+    margin-top: 8px; user-select: none;
+  }
+
+  .lobby-quote-footer { margin-top: 28px; display: flex; align-items: baseline; gap: 20px; flex-wrap: wrap; }
+  .lobby-attribution {
+    font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 300;
+    font-size: clamp(13px,1.4vw,16px); color: var(--lobby-cream-dim); margin: 0;
+  }
+  .lobby-film-ref {
+    font-family: 'Cinzel', serif; font-size: clamp(9px,.9vw,11px);
+    letter-spacing: 0.18em; color: var(--lobby-gold); opacity: 0.75; margin: 0; text-transform: uppercase;
+  }
+  .lobby-share-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 12px; background: transparent;
+    border: 1px solid rgba(201,168,76,.3); color: var(--lobby-cream-dim);
+    font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 0.2em;
+    cursor: pointer; opacity: 0; transition: opacity .3s ease, color .3s ease, border-color .3s ease;
+    margin-left: auto;
+  }
+  .lobby-quote-wrap:hover .lobby-share-btn,
+  .lobby-quote-wrap:focus-within .lobby-share-btn { opacity: 1; }
+  .lobby-share-btn:hover { color: var(--lobby-gold); border-color: var(--lobby-gold); }
+
+  /* Footer */
+  .lobby-footer { flex-shrink: 0; position: relative; z-index: 2; }
+  .lobby-rule--footer { margin-bottom: 0; }
+  .lobby-footer-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 48px 24px; gap: 24px;
+  }
+  .lobby-greeting {
+    font-family: 'Cormorant Garamond', serif; font-size: clamp(12px,1.3vw,15px);
+    color: var(--lobby-cream-dim); letter-spacing: 0.05em;
+  }
+  .lobby-greeting .lobby-badge {
+    font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 0.2em;
+    color: var(--lobby-gold); border: 1px solid rgba(201,168,76,.4);
+    padding: 2px 8px; margin-left: 10px; vertical-align: middle;
+  }
+  .lobby-dots { display: flex; gap: 8px; align-items: center; }
+  .lobby-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    border: 1px solid rgba(201,168,76,.5); background: transparent;
+    cursor: pointer; transition: background .3s ease, border-color .3s ease; padding: 0;
+  }
+  .lobby-dot.active { background: var(--lobby-gold); border-color: var(--lobby-gold); }
+
+  .lobby-enter-btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 10px 28px; background: transparent;
+    border: 1px solid var(--lobby-gold); color: var(--lobby-gold);
+    font-family: 'Cinzel', serif; font-size: clamp(10px,1vw,12px); font-weight: 600;
+    letter-spacing: 0.3em; cursor: pointer;
+    transition: background .3s ease, color .3s ease; position: relative; overflow: hidden;
+  }
+  .lobby-enter-btn::before {
+    content: ''; position: absolute; inset: 0;
+    background: var(--lobby-gold); transform: translateX(-100%);
+    transition: transform .35s ease; z-index: 0;
+  }
+  .lobby-enter-btn:hover::before { transform: translateX(0); }
+  .lobby-enter-btn span, .lobby-enter-btn svg { position: relative; z-index: 1; }
+  .lobby-enter-btn:hover { color: var(--lobby-black); }
+
+  /* Lobby poster placeholder while loading */
+  .lobby-poster-ph {
+    width: 220px; aspect-ratio: 2/3; background: var(--lobby-dark);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--lobby-rule); font-size: 2rem;
+  }
+
+  /* Mobile */
+  @media (max-width: 768px) {
+    .lobby-main {
+      grid-template-columns: 1fr; grid-template-rows: auto 1fr;
+      padding: 24px 24px 16px; gap: 24px;
+    }
+    .lobby-poster-col { flex-direction: row; align-items: flex-end; padding-right: 0; gap: 20px; }
+    .lobby-poster-img { width: 90px; }
+    .lobby-film-info { text-align: left; margin-top: 0; }
+    .lobby-quote-col { padding-left: 0; border-left: none; border-top: 1px solid var(--lobby-rule); padding-top: 24px; }
+    .lobby-quote-text { font-size: clamp(15px,4.5vw,20px); }
+    .lobby-open-mark, .lobby-close-mark { font-size: 44px; }
+    .lobby-header { padding: 20px 24px 0; }
+    .lobby-footer-inner { padding: 12px 24px 20px; }
+    .lobby-wordmark { letter-spacing: 0.35em; }
+    .lobby-share-btn { opacity: 1; }
+    .lobby-greeting { display: none; } /* Too cramped on mobile — show dots + enter only */
+  }
+  @media (max-width: 480px) {
+    .lobby-footer-inner { flex-wrap: wrap; justify-content: center; gap: 12px; }
+  }
+
   #pmLandingScreen {
     position: fixed; inset: 0; z-index: 99999;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -4075,6 +4302,69 @@
 <!-- ╔══════════════════════════════════════════════════════════╗ -->
 <!-- ║  LANDING SCREEN — shown every visit until signed in     ║ -->
 <!-- ╚══════════════════════════════════════════════════════════╝ -->
+<!-- ╔══════════════════════════════════════════════════════════════╗ -->
+<!-- ║  THE LOBBY — Cinematic Gateway Screen                       ║ -->
+<!-- ╚══════════════════════════════════════════════════════════════╝ -->
+<div id="lobby-screen" style="display:none">
+  <div class="lobby-vignette"></div>
+
+  <header class="lobby-header">
+    <div class="lobby-wordmark">P M O V I E S</div>
+    <hr class="lobby-rule lobby-rule--header">
+  </header>
+
+  <main class="lobby-main" id="lobby-main">
+    <div class="lobby-poster-col">
+      <div class="lobby-card" id="lobby-card">
+        <div class="lobby-card-inner">
+          <div class="lobby-poster-ph" id="lobby-poster-ph">🎬</div>
+          <img id="lobby-poster" class="lobby-poster-img" src="" alt="" loading="eager" style="display:none">
+        </div>
+        <div class="lobby-film-info" id="lobby-film-info">
+          <p class="lobby-film-title" id="lobby-film-title"></p>
+          <p class="lobby-film-meta"  id="lobby-film-meta"></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="lobby-quote-col">
+      <div class="lobby-quote-wrap" id="lobby-quote-wrap">
+        <span class="lobby-open-mark" aria-hidden="true">&#10077;</span>
+        <blockquote class="lobby-quote-text" id="lobby-quote-text"></blockquote>
+        <span class="lobby-close-mark" aria-hidden="true">&#10078;</span>
+        <footer class="lobby-quote-footer">
+          <p class="lobby-attribution" id="lobby-attribution"></p>
+          <p class="lobby-film-ref"    id="lobby-film-ref"></p>
+          <button class="lobby-share-btn" id="lobby-share-btn" aria-label="Share this quote">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/>
+              <polyline points="16 6 12 2 8 6"/>
+              <line x1="12" y1="2" x2="12" y2="15"/>
+            </svg>
+            Share
+          </button>
+        </footer>
+      </div>
+    </div>
+  </main>
+
+  <footer class="lobby-footer">
+    <hr class="lobby-rule lobby-rule--footer">
+    <div class="lobby-footer-inner">
+      <div class="lobby-greeting" id="lobby-greeting">A community for people who love cinema</div>
+      <div class="lobby-dots" id="lobby-dots" role="tablist" aria-label="Browse quotes"></div>
+      <div class="lobby-enter-wrap">
+        <button class="lobby-enter-btn" id="lobby-enter-btn" onclick="lobbyEnter()">
+          <span>ENTER</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </footer>
+</div>
+
 <div id="pmLandingScreen">
   <div class="pm-landing-logowrap">
     <img id="pmLandingLogo" src="" alt="PMovies" style="display:none"/>
@@ -4111,13 +4401,27 @@
   </ul>
 </div>
 <script>
-/* Hide landing immediately for returning signed-in users — runs before Firebase resolves */
+/* Hide landing immediately for returning signed-in users — runs before Firebase resolves.
+   Also decide whether to show the Lobby (cinematic gateway) or skip straight to app. */
 (function(){
-  if (localStorage.getItem('pmovies_was_signed_in') === '1' ||
-      sessionStorage.getItem('pmovies_guest') === '1') {
+  var isReturning = localStorage.getItem('pmovies_was_signed_in') === '1' ||
+                    sessionStorage.getItem('pmovies_guest') === '1';
+  if (isReturning) {
     var el = document.getElementById('pmLandingScreen');
     if (el) el.style.display = 'none';
+    // Returning users skip lobby — go straight to app
+    return;
   }
+  // Deep links (fan-review, lobby thread, etc.) — skip lobby too
+  var path = location.pathname;
+  var isDeepLink = path !== '/' && path !== '/index.html';
+  if (isDeepLink || sessionStorage.getItem('pmovies_lobby_done')) return;
+  // First visit this session — show the Lobby
+  var lobby = document.getElementById('lobby-screen');
+  if (lobby) lobby.style.display = 'flex';
+  // Hide the auth landing screen until user clicks Enter
+  var landing = document.getElementById('pmLandingScreen');
+  if (landing) landing.style.display = 'none';
 })();
 
 /* ── Deep-link loader dismiss helper ──────────────────────────────────────────────────
@@ -17709,6 +18013,8 @@ async function deleteEditorReview(key, e) {
       _openPendingLobbyThread();
       // Sync all cross-device vote/like locks for this user
       _syncCrossDeviceLocks(user);
+      // Update lobby greeting if it's still showing
+      if (typeof window._lobbyRefreshGreeting === 'function') window._lobbyRefreshGreeting();
     } else if (sessionStorage.getItem('pmovies_guest') === '1') {
       _hideLanding();
       _maybeOpenStartupProfile();
@@ -25651,6 +25957,450 @@ async function deleteEditorReview(key, e) {
     } catch(_e) { alert('Could not post reply — try again.'); }
     finally { if(btn){btn.textContent='Reply';btn.disabled=false;} }
   };
+
+})();
+</script>
+
+<!-- ╔══════════════════════════════════════════════════════════════╗ -->
+<!-- ║  LOBBY — JavaScript                                          ║ -->
+<!-- ╚══════════════════════════════════════════════════════════════╝ -->
+<script>
+(function() {
+  'use strict';
+
+  /* ── Constants ────────────────────────────────────────────────── */
+  var LOBBY_RTDB           = 'https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app';
+  var LOBBY_TMDB_BASE      = 'https://api.themoviedb.org/3';
+  var LOBBY_QUOTE_SEEN_KEY = 'pmovies_seen_quotes';
+  var LOBBY_SEEN_MAX       = 30;
+  var LOBBY_AUTO_MS        = 18000; // 18 s before auto-advance
+
+  /* ── State ────────────────────────────────────────────────────── */
+  var _lobbyQuotes     = [];
+  var _lobbyIdx        = 0;
+  var _lobbyAutoTimer  = null;
+  var _lobbyCurrentQ   = null;
+  var _lobbyBusy       = false; // prevents concurrent transitions
+
+  /* ── Helpers ──────────────────────────────────────────────────── */
+  function _sleep(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
+
+  function _tmdbKey() {
+    return (typeof window._pmLsKey === 'function'
+      ? localStorage.getItem(window._pmLsKey('pmovies_tmdb_key'))
+      : localStorage.getItem('pmovies_tmdb_key'))
+      || 'd04038fc4e0708bd069b323b220d5dc0';
+  }
+
+  /* ── Quote loading ────────────────────────────────────────────── */
+  async function _loadLobbyQuotes() {
+    try {
+      var res  = await fetch(LOBBY_RTDB + '/quotes.json?orderBy="approved"&equalTo=true');
+      var data = res.ok ? await res.json() : null;
+      if (!data) return [];
+      return Object.entries(data).map(function(e) { return Object.assign({ id: e[0] }, e[1]); });
+    } catch(_) { return []; }
+  }
+
+  function _getNextQuote(all) {
+    var seen   = JSON.parse(localStorage.getItem(LOBBY_QUOTE_SEEN_KEY) || '[]');
+    var unseen = all.filter(function(q) { return !seen.includes(q.id); });
+    if (!unseen.length) {
+      localStorage.removeItem(LOBBY_QUOTE_SEEN_KEY);
+      unseen = all;
+    }
+    var q = unseen[Math.floor(Math.random() * unseen.length)];
+    var newSeen = seen.concat([q.id]).slice(-LOBBY_SEEN_MAX);
+    localStorage.setItem(LOBBY_QUOTE_SEEN_KEY, JSON.stringify(newSeen));
+    return q;
+  }
+
+  /* ── Poster fetch ─────────────────────────────────────────────── */
+  async function _fetchPosterUrl(tmdbId) {
+    if (!tmdbId) return null;
+    try {
+      // Try filmMeta cache first (fast, no quota cost)
+      var metaRes = await fetch(LOBBY_RTDB + '/filmMeta/' + tmdbId + '.json');
+      var meta = metaRes.ok ? await metaRes.json() : null;
+      if (meta && meta.poster) return 'https://image.tmdb.org/t/p/w500' + meta.poster;
+      // Fallback to TMDB API
+      var tmdbRes = await fetch(LOBBY_TMDB_BASE + '/movie/' + tmdbId + '?api_key=' + _tmdbKey());
+      var tmdb = tmdbRes.ok ? await tmdbRes.json() : null;
+      return (tmdb && tmdb.poster_path) ? 'https://image.tmdb.org/t/p/w500' + tmdb.poster_path : null;
+    } catch(_) { return null; }
+  }
+
+  /* ── Render a single quote (with fade transition) ─────────────── */
+  async function _renderLobbyQuote(quote) {
+    if (_lobbyBusy) return;
+    _lobbyBusy = true;
+    _lobbyCurrentQ = quote;
+
+    var card      = document.getElementById('lobby-card');
+    var quoteWrap = document.getElementById('lobby-quote-wrap');
+    if (!card || !quoteWrap) { _lobbyBusy = false; return; }
+
+    // Fade out
+    card.classList.add('transitioning');
+    quoteWrap.classList.add('transitioning');
+    await _sleep(500);
+
+    // Fetch poster
+    var posterUrl = await _fetchPosterUrl(quote.tmdbId);
+
+    // Update poster
+    var ph  = document.getElementById('lobby-poster-ph');
+    var img = document.getElementById('lobby-poster');
+    if (posterUrl && img) {
+      img.onload = function() { img.style.display = 'block'; if(ph) ph.style.display = 'none'; };
+      img.onerror = function() { img.style.display = 'none'; if(ph) ph.style.display = 'flex'; };
+      img.src = posterUrl;
+      img.alt = quote.film || '';
+    } else {
+      if (img) img.style.display = 'none';
+      if (ph)  ph.style.display  = 'flex';
+    }
+
+    // Update film info
+    var titleEl = document.getElementById('lobby-film-title');
+    var metaEl  = document.getElementById('lobby-film-meta');
+    if (titleEl) titleEl.textContent = (quote.film || '').toUpperCase();
+    if (metaEl)  metaEl.textContent  = [quote.director, quote.country, quote.year].filter(Boolean).join('  ·  ');
+
+    // Update quote text
+    var qEl = document.getElementById('lobby-quote-text');
+    if (qEl) qEl.textContent = quote.text || '';
+
+    // Update attribution
+    var attrEl = document.getElementById('lobby-attribution');
+    var refEl  = document.getElementById('lobby-film-ref');
+    if (attrEl) attrEl.textContent = quote.character ? '— ' + quote.character : '';
+    if (refEl)  refEl.textContent  = [(quote.film || '').toUpperCase(), quote.year].filter(Boolean).join('  ·  ');
+
+    // Update active dot
+    document.querySelectorAll('.lobby-dot').forEach(function(d, i) {
+      d.classList.toggle('active', i === _lobbyIdx % Math.min(_lobbyQuotes.length, 8));
+    });
+
+    // Fade in
+    card.classList.remove('transitioning');
+    quoteWrap.classList.remove('transitioning');
+
+    // Increment useCount (fire & forget)
+    fetch(LOBBY_RTDB + '/quotes/' + quote.id + '/useCount.json', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ '.sv': { 'increment': 1 } })
+    }).catch(function(){});
+
+    _lobbyBusy = false;
+  }
+
+  /* ── Dots ─────────────────────────────────────────────────────── */
+  function _renderLobbyDots() {
+    var container = document.getElementById('lobby-dots');
+    if (!container) return;
+    container.innerHTML = '';
+    var count = Math.min(_lobbyQuotes.length, 8);
+    for (var i = 0; i < count; i++) {
+      var dot = document.createElement('button');
+      dot.className = 'lobby-dot' + (i === _lobbyIdx % count ? ' active' : '');
+      dot.setAttribute('role', 'tab');
+      dot.setAttribute('aria-label', 'Quote ' + (i + 1));
+      (function(idx) {
+        dot.addEventListener('click', function() { _navigateLobby(idx); });
+      })(i);
+      container.appendChild(dot);
+    }
+  }
+
+  /* ── Greeting ─────────────────────────────────────────────────── */
+  function _renderLobbyGreeting() {
+    var el = document.getElementById('lobby-greeting');
+    if (!el) return;
+    var user = window.pmGetUser ? window.pmGetUser() : null;
+    if (user) {
+      var hour = new Date().getHours();
+      var tod  = hour < 5 ? 'Good night' : hour < 12 ? 'Good morning' :
+                 hour < 17 ? 'Good afternoon' : hour < 21 ? 'Good evening' : 'Good night';
+      var name = (user.displayName || user.email || '').split(' ')[0] || 'Cinephile';
+      var role = (window._pmMyProfile && window._pmMyProfile.role) ? window._pmMyProfile.role : '';
+      el.innerHTML = tod + ', ' + name +
+        (role ? ' <span class="lobby-badge">' + role.toUpperCase() + '</span>' : '');
+    } else {
+      el.textContent = 'A community for people who love cinema';
+    }
+  }
+
+  /* ── Navigation ───────────────────────────────────────────────── */
+  function _navigateLobby(idx) {
+    _lobbyIdx = ((idx % _lobbyQuotes.length) + _lobbyQuotes.length) % _lobbyQuotes.length;
+    clearInterval(_lobbyAutoTimer);
+    _renderLobbyQuote(_lobbyQuotes[_lobbyIdx]);
+    _startLobbyAuto();
+  }
+
+  function _nextLobbyQuote() {
+    _lobbyIdx = (_lobbyIdx + 1) % _lobbyQuotes.length;
+    _renderLobbyQuote(_lobbyQuotes[_lobbyIdx]);
+  }
+
+  function _startLobbyAuto() {
+    clearInterval(_lobbyAutoTimer);
+    _lobbyAutoTimer = setInterval(_nextLobbyQuote, LOBBY_AUTO_MS);
+  }
+
+  /* ── Enter ─────────────────────────────────────────────────────── */
+  window.lobbyEnter = function() {
+    clearInterval(_lobbyAutoTimer);
+    sessionStorage.setItem('pmovies_lobby_done', '1');
+    var lobby = document.getElementById('lobby-screen');
+    if (lobby) {
+      lobby.classList.add('lobby-hidden');
+      setTimeout(function() { lobby.style.display = 'none'; }, 700);
+    }
+    // If user is already signed in, nothing else needed — app is behind the lobby
+    // If not signed in, reveal the auth landing screen
+    var user = window.pmGetUser ? window.pmGetUser() : null;
+    if (!user && sessionStorage.getItem('pmovies_guest') !== '1') {
+      var landing = document.getElementById('pmLandingScreen');
+      if (landing) { landing.style.display = 'flex'; landing.style.opacity = '1'; }
+    }
+  };
+
+  /* ── Init ─────────────────────────────────────────────────────── */
+  async function initLobby() {
+    var lobby = document.getElementById('lobby-screen');
+    if (!lobby || lobby.style.display === 'none') return; // not showing — skip
+
+    _lobbyQuotes = await _loadLobbyQuotes();
+
+    if (!_lobbyQuotes.length) {
+      // No quotes yet — go straight to app/auth
+      window.lobbyEnter();
+      return;
+    }
+
+    var first = _getNextQuote(_lobbyQuotes);
+    _lobbyIdx  = _lobbyQuotes.findIndex(function(q) { return q.id === first.id; });
+    if (_lobbyIdx < 0) _lobbyIdx = 0;
+
+    _renderLobbyDots();
+    _renderLobbyGreeting();
+    await _renderLobbyQuote(first);
+    _startLobbyAuto();
+
+    // Keyboard nav
+    lobby.addEventListener('keydown', function(e) {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') _navigateLobby(_lobbyIdx + 1);
+      if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   _navigateLobby(_lobbyIdx - 1);
+      if (e.key === 'Escape') window.lobbyEnter();
+    });
+
+    // Touch swipe
+    var _tx = 0;
+    lobby.addEventListener('touchstart', function(e) { _tx = e.touches[0].clientX; }, { passive: true });
+    lobby.addEventListener('touchend', function(e) {
+      var dx = e.changedTouches[0].clientX - _tx;
+      if (Math.abs(dx) > 50) _navigateLobby(dx < 0 ? _lobbyIdx + 1 : _lobbyIdx - 1);
+    }, { passive: true });
+  }
+
+  /* ── Share card (Canvas API) ──────────────────────────────────── */
+  async function _generateQuoteCard(quote, posterUrl) {
+    var W = 1200, H = 675;
+    var canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H;
+    var ctx = canvas.getContext('2d');
+
+    // Background
+    ctx.fillStyle = '#0A0905';
+    ctx.fillRect(0, 0, W, H);
+
+    // Film grain
+    var gd = ctx.getImageData(0, 0, W, H);
+    for (var i = 0; i < gd.data.length; i += 4) {
+      var v = (Math.random() * 20) - 10;
+      gd.data[i]   = Math.min(255, Math.max(0, gd.data[i]   + v));
+      gd.data[i+1] = Math.min(255, Math.max(0, gd.data[i+1] + v));
+      gd.data[i+2] = Math.min(255, Math.max(0, gd.data[i+2] + v));
+      gd.data[i+3] = 255;
+    }
+    ctx.putImageData(gd, 0, 0);
+
+    // Vignette
+    var vig = ctx.createRadialGradient(W/2, H/2, H*0.3, W/2, H/2, H*0.75);
+    vig.addColorStop(0, 'rgba(0,0,0,0)');
+    vig.addColorStop(1, 'rgba(0,0,0,0.75)');
+    ctx.fillStyle = vig;
+    ctx.fillRect(0, 0, W, H);
+
+    // Poster
+    var ruleX = 64 + 40; // default if no poster
+    if (posterUrl) {
+      try {
+        var imgEl = new Image();
+        imgEl.crossOrigin = 'anonymous';
+        await new Promise(function(res, rej) {
+          imgEl.onload  = res;
+          imgEl.onerror = rej;
+          imgEl.src = posterUrl;
+        });
+        var ph = H * 0.72, pw = ph * (2/3);
+        var px = 64, py = (H - ph) / 2;
+        ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 32;
+        ctx.shadowOffsetX = 4; ctx.shadowOffsetY = 6;
+        ctx.save();
+        ctx.translate(px + pw/2, py + ph/2); ctx.rotate(-0.015);
+        ctx.drawImage(imgEl, -pw/2, -ph/2, pw, ph);
+        ctx.restore();
+        ctx.shadowColor = 'transparent';
+        ctx.strokeStyle = 'rgba(201,168,76,0.35)'; ctx.lineWidth = 1;
+        ctx.save();
+        ctx.translate(px + pw/2, py + ph/2); ctx.rotate(-0.015);
+        ctx.strokeRect(-pw/2, -ph/2, pw, ph);
+        ctx.restore();
+        ruleX = px + pw + 40;
+      } catch(_) {}
+    }
+
+    // Vertical rule
+    var rGrad = ctx.createLinearGradient(0, 80, 0, H - 80);
+    rGrad.addColorStop(0,   'rgba(201,168,76,0)');
+    rGrad.addColorStop(0.2, 'rgba(201,168,76,0.35)');
+    rGrad.addColorStop(0.8, 'rgba(201,168,76,0.35)');
+    rGrad.addColorStop(1,   'rgba(201,168,76,0)');
+    ctx.fillStyle = rGrad; ctx.fillRect(ruleX, 0, 1, H);
+
+    // Opening quotation mark
+    var textX = ruleX + 56;
+    ctx.font = 'bold 96px serif'; ctx.fillStyle = 'rgba(201,168,76,0.3)';
+    ctx.textBaseline = 'top'; ctx.fillText('❝', textX - 8, 72);
+
+    // Quote text — word wrap
+    ctx.font = 'italic 28px serif'; ctx.fillStyle = '#EDE4D0'; ctx.textBaseline = 'top';
+    var maxW = W - textX - 64;
+    var words = (quote.text || '').split(' ');
+    var lines = []; var cur = '';
+    words.forEach(function(w) {
+      var test = cur ? cur + ' ' + w : w;
+      if (ctx.measureText(test).width > maxW) { lines.push(cur); cur = w; }
+      else cur = test;
+    });
+    if (cur) lines.push(cur);
+    var displayLines = lines.slice(0, 6);
+    var lineH = 44;
+    var textStartY = Math.max(120, (H - displayLines.length * lineH - 140) / 2);
+    displayLines.forEach(function(line, i) { ctx.fillText(line, textX, textStartY + i * lineH); });
+
+    // Attribution
+    var attrY = textStartY + displayLines.length * lineH + 32;
+    if (quote.character) {
+      ctx.font = 'italic 18px serif'; ctx.fillStyle = '#A89878';
+      ctx.fillText('— ' + quote.character, textX, attrY);
+    }
+    ctx.font = '12px serif'; ctx.fillStyle = 'rgba(201,168,76,0.75)';
+    ctx.fillText(
+      [(quote.film || '').toUpperCase(), quote.year].filter(Boolean).join('  ·  '),
+      textX, attrY + (quote.character ? 28 : 0)
+    );
+
+    // Branding
+    ctx.font = '13px serif'; ctx.fillStyle = 'rgba(201,168,76,0.5)';
+    ctx.textAlign = 'right'; ctx.fillText('P M O V I E S', W - 48, H - 36);
+
+    // Top/bottom rules
+    [40, H - 40].forEach(function(y) {
+      var hGrad = ctx.createLinearGradient(40, 0, W - 40, 0);
+      hGrad.addColorStop(0,   'rgba(201,168,76,0)');
+      hGrad.addColorStop(0.1, 'rgba(201,168,76,0.35)');
+      hGrad.addColorStop(0.9, 'rgba(201,168,76,0.35)');
+      hGrad.addColorStop(1,   'rgba(201,168,76,0)');
+      ctx.fillStyle = hGrad; ctx.fillRect(40, y, W - 80, 1);
+    });
+
+    return canvas;
+  }
+
+  async function _shareQuote() {
+    var quote = _lobbyCurrentQ;
+    if (!quote) return;
+    var btn = document.getElementById('lobby-share-btn');
+    if (btn) btn.textContent = '…';
+    try {
+      var posterUrl = (document.getElementById('lobby-poster') || {}).src || null;
+      var canvas = await _generateQuoteCard(quote, posterUrl);
+      var shareText = '"' + (quote.text || '').slice(0, 100) + '…" — ' + (quote.film || '');
+      if (navigator.canShare) {
+        canvas.toBlob(async function(blob) {
+          var file = new File([blob], 'pmovies-quote.png', { type: 'image/png' });
+          try {
+            await navigator.share({
+              title: '"' + (quote.film || '') + '" — PMovies',
+              text: shareText,
+              files: navigator.canShare({ files: [file] }) ? [file] : undefined,
+              url: quote.tmdbId ? 'https://p-movies.com/film/' + quote.tmdbId : 'https://p-movies.com'
+            });
+          } catch(_) {}
+        }, 'image/png');
+      } else {
+        var link = document.createElement('a');
+        link.download = 'pmovies-quote.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      }
+    } finally {
+      if (btn) btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Share';
+    }
+  }
+
+  /* ── Seed quotes helper (run from browser console as admin) ─────── */
+  window._lobbySeedQuotes = async function() {
+    var SEED = [
+      { text:"We're all on the brink of despair, all we can do is look each other in the face, keep each other company, quote a little Chekhov.", character:"Jep Gambardella", film:"The Great Beauty", tmdbId:"176283", year:2013, director:"Paolo Sorrentino", country:"Italy", language:"en" },
+      { text:"You either die a hero or you live long enough to see yourself become the villain.", character:"Harvey Dent", film:"The Dark Knight", tmdbId:"155", year:2008, director:"Christopher Nolan", country:"USA", language:"en" },
+      { text:"Hope is a good thing, maybe the best of things, and no good thing ever dies.", character:"Andy Dufresne", film:"The Shawshank Redemption", tmdbId:"278", year:1994, director:"Frank Darabont", country:"USA", language:"en" },
+      { text:"The stuff that dreams are made of.", character:"Sam Spade", film:"The Maltese Falcon", tmdbId:"963", year:1941, director:"John Huston", country:"USA", language:"en" },
+      { text:"I'm going to make him an offer he can't refuse.", character:"Vito Corleone", film:"The Godfather", tmdbId:"238", year:1972, director:"Francis Ford Coppola", country:"USA", language:"en" },
+      { text:"All those moments will be lost in time, like tears in rain.", character:"Roy Batty", film:"Blade Runner", tmdbId:"78", year:1982, director:"Ridley Scott", country:"USA", language:"en" },
+      { text:"The things you own end up owning you.", character:"Tyler Durden", film:"Fight Club", tmdbId:"550", year:1999, director:"David Fincher", country:"USA", language:"en" },
+      { text:"Carpe diem. Seize the day, boys. Make your lives extraordinary.", character:"John Keating", film:"Dead Poets Society", tmdbId:"207", year:1989, director:"Peter Weir", country:"USA", language:"en" },
+      { text:"Every passing minute is another chance to turn it all around.", character:"Sofia", film:"Vanilla Sky", tmdbId:"1904", year:2001, director:"Cameron Crowe", country:"USA", language:"en" },
+      { text:"Get busy living, or get busy dying.", character:"Andy Dufresne", film:"The Shawshank Redemption", tmdbId:"278", year:1994, director:"Frank Darabont", country:"USA", language:"en" },
+      { text:"It's not who I am underneath, but what I do that defines me.", character:"Bruce Wayne", film:"Batman Begins", tmdbId:"272", year:2005, director:"Christopher Nolan", country:"USA", language:"en" },
+      { text:"A dream you dream alone is only a dream. A dream you dream together is reality.", character:null, film:"Yellow Submarine", tmdbId:"10330", year:1968, director:"George Dunning", country:"UK", language:"en" },
+      { text:"After all, tomorrow is another day.", character:"Scarlett O'Hara", film:"Gone with the Wind", tmdbId:"770", year:1939, director:"Victor Fleming", country:"USA", language:"en" },
+      { text:"My mama always said life was like a box of chocolates. You never know what you're gonna get.", character:"Forrest Gump", film:"Forrest Gump", tmdbId:"13", year:1994, director:"Robert Zemeckis", country:"USA", language:"en" },
+      { text:"To infinity and beyond!", character:"Buzz Lightyear", film:"Toy Story", tmdbId:"862", year:1995, director:"John Lasseter", country:"USA", language:"en" },
+      { text:"Just keep swimming.", character:"Dory", film:"Finding Nemo", tmdbId:"12", year:2003, director:"Andrew Stanton", country:"USA", language:"en" },
+      { text:"If you look at the sky long enough, you will no longer be lost.", character:null, film:"Timbuktu", tmdbId:"256980", year:2014, director:"Abderrahmane Sissako", country:"Mauritania", language:"en" },
+      { text:"Cinema is a matter of what's in the frame and what's out.", character:null, film:"Martin Scorsese", tmdbId:null, year:null, director:"Martin Scorsese", country:null, language:"en" },
+      { text:"The only way to get what you want in this world is through hard work.", character:"Tiana", film:"The Princess and the Frog", tmdbId:"16907", year:2009, director:"Ron Clements", country:"USA", language:"en" },
+      { text:"I live my life a quarter mile at a time.", character:"Dom Toretto", film:"The Fast and the Furious", tmdbId:"9799", year:2001, director:"Rob Cohen", country:"USA", language:"en" }
+    ];
+    for (var i = 0; i < SEED.length; i++) {
+      await fetch(LOBBY_RTDB + '/quotes.json', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(Object.assign({}, SEED[i], { approved: true, useCount: 0, addedBy: 'admin', createdAt: Date.now() }))
+      });
+    }
+    console.log('[PMovies] Lobby seed complete — ' + SEED.length + ' quotes added.');
+  };
+
+  /* ── Boot ─────────────────────────────────────────────────────── */
+  var _shareBtn = document.getElementById('lobby-share-btn');
+  if (_shareBtn) _shareBtn.addEventListener('click', _shareQuote);
+
+  // Init after DOM + Firebase are ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initLobby);
+  } else {
+    initLobby();
+  }
+
+  // Re-render greeting once Firebase auth resolves
+  window._lobbyRefreshGreeting = _renderLobbyGreeting;
 
 })();
 </script>
