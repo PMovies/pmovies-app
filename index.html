@@ -94,9 +94,6 @@
   <!-- Google Fonts — non-blocking load -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;500;600;700;900&family=Open+Sans:wght@400;600&display=swap" media="print" onload="this.media='all'"/>
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;500;600;700;900&family=Open+Sans:wght@400;600&display=swap"/></noscript>
-  <!-- Lobby fonts — Playfair Display, Cormorant Garamond, Cinzel -->
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Cinzel:wght@400;600&display=swap" media="print" onload="this.media='all'"/>
-  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Cinzel:wght@400;600&display=swap"/></noscript>
   <title>PMovies – Top 100 Films, Movie Recommendations &amp; Mood Discovery</title>
 
   <!-- Open Graph (Facebook, WhatsApp, iMessage) -->
@@ -1817,178 +1814,6 @@
     .journey-card { flex:0 0 calc(50% - 28px); max-width:none; }
     .journey-or { padding:0; width:100%; order:3; margin-top:-8px; font-size:.65rem; }
     .journey-films-grid { grid-template-columns:repeat(2,1fr); }
-  }
-
-  /* ── LANDING SCREEN ──────────────────────────────────── */
-  /* ═══════════════════════════════════════════════════════════
-     LOBBY SCREEN — Scratch Ticket
-  ════════════════════════════════════════════════════════════ */
-  @keyframes lobbyFadeUp {
-    from { opacity:0; transform:translateY(7px); }
-    to   { opacity:1; transform:translateY(0); }
-  }
-
-  /* ── LOBBY SCREEN — Scratch Ticket ─────────────────────────── */
-  #lobby-screen {
-    position: fixed; inset: 0; z-index: 100001;
-    background: #0A0A0A;
-    display: flex; flex-direction: column; overflow: hidden;
-    transition: opacity 0.5s ease;
-  }
-  #lobby-screen.lobby-exit { opacity: 0; pointer-events: none; }
-
-  .lobby-backdrop {
-    position: absolute; inset: -40px;
-    background-size: cover; background-position: center;
-    filter: blur(36px) brightness(0.45) saturate(0.8);
-    transform: scale(1.05); z-index: 0;
-    transition: background-image 1.2s ease;
-  }
-  .lobby-overlay {
-    position: absolute; inset: 0; z-index: 1; pointer-events: none;
-    background: linear-gradient(to bottom, rgba(0,0,0,.55) 0%, rgba(0,0,0,.1) 35%, rgba(0,0,0,.1) 65%, rgba(0,0,0,.75) 100%);
-  }
-  #lobby-screen .lobby-header {
-    position: relative; z-index: 2; text-align: center;
-    padding: 28px 0 0; pointer-events: none;
-  }
-  #lobby-screen .lobby-wordmark {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(13px,1.6vw,18px); font-weight: 700;
-    letter-spacing: 0.45em; color: var(--orange);
-    text-transform: uppercase; opacity: 0.9;
-  }
-  .lobby-stage {
-    flex: 1; position: relative; z-index: 2;
-    display: flex; align-items: center; justify-content: center; padding: 20px;
-  }
-  .lobby-ticket-wrap {
-    display: flex; flex-direction: column; align-items: center; gap: 16px;
-  }
-  /* ── Ticket ── */
-  .lobby-ticket {
-    display: flex; flex-direction: row;
-    width: min(680px, 94vw); height: clamp(170px, 25vw, 230px);
-    background: #1A1610; border: 1px solid rgba(245,165,35,.3);
-    position: relative; border-radius: 6px; overflow: visible;
-    /* Perforated mask */
-    --hole: 8px;
-    -webkit-mask-image:
-      radial-gradient(circle at 50% 0,    transparent var(--hole), black calc(var(--hole) + 1px)),
-      radial-gradient(circle at 50% 100%, transparent var(--hole), black calc(var(--hole) + 1px)),
-      radial-gradient(circle at 21% 50%,  transparent 13px, black 14px),
-      radial-gradient(circle at 79% 50%,  transparent 13px, black 14px);
-    -webkit-mask-size: 18px 100%, 18px 100%, 100% 100%, 100% 100%;
-    -webkit-mask-repeat: repeat-x, repeat-x, no-repeat, no-repeat;
-    -webkit-mask-position: 0 0, 0 100%, 0 0, 0 0;
-    -webkit-mask-composite: destination-in, destination-in, destination-in, destination-in;
-    mask-image:
-      radial-gradient(circle at 50% 0,    transparent var(--hole), black calc(var(--hole) + 1px)),
-      radial-gradient(circle at 50% 100%, transparent var(--hole), black calc(var(--hole) + 1px)),
-      radial-gradient(circle at 21% 50%,  transparent 13px, black 14px),
-      radial-gradient(circle at 79% 50%,  transparent 13px, black 14px);
-    mask-size: 18px 100%, 18px 100%, 100% 100%, 100% 100%;
-    mask-repeat: repeat-x, repeat-x, no-repeat, no-repeat;
-    mask-position: 0 0, 0 100%, 0 0, 0 0;
-    mask-composite: intersect;
-  }
-  .lobby-stub {
-    width: 21%; flex-shrink: 0;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 5px; padding: 14px 6px;
-    border-right: 1px dashed rgba(245,165,35,.25);
-  }
-  .lobby-stub-star { font-size: clamp(10px,1.6vw,15px); color: var(--orange); opacity: 0.55; line-height: 1; }
-  .lobby-stub-text {
-    font-size: clamp(6px,.85vw,8px); font-weight: 700;
-    letter-spacing: 0.12em; color: var(--orange); opacity: 0.35;
-    text-align: center; margin-top: 5px;
-    font-family: 'Montserrat', sans-serif;
-  }
-  .lobby-tear {
-    width: 1px; flex-shrink: 0;
-    background: repeating-linear-gradient(to bottom, rgba(245,165,35,.3) 0, rgba(245,165,35,.3) 4px, transparent 4px, transparent 8px);
-  }
-  .lobby-ticket-body {
-    flex: 1; position: relative; overflow: hidden;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .lobby-quote-inner {
-    padding: 18px 24px; text-align: center;
-    pointer-events: none; user-select: none;
-  }
-  .lobby-quote-text {
-    font-family: 'Montserrat', sans-serif;
-    font-size: clamp(13px,2vw,19px); font-weight: 600;
-    line-height: 1.55; color: #F0E8D5; margin: 0 0 10px; font-style: italic;
-  }
-  .lobby-quote-attr {
-    font-family: 'Montserrat', sans-serif;
-    font-size: clamp(9px,1.1vw,12px); font-weight: 700;
-    letter-spacing: 0.14em; color: var(--orange);
-    text-transform: uppercase; margin: 0; opacity: 0.85;
-  }
-  .lobby-scratch-canvas {
-    position: absolute; inset: 0; width: 100%; height: 100%;
-    cursor: crosshair; touch-action: none;
-    transition: opacity 0.45s ease;
-  }
-  .lobby-scratch-canvas.revealed { opacity: 0; pointer-events: none; }
-  /* Post-reveal buttons */
-  .lobby-post-reveal { display: flex; gap: 12px; align-items: center; }
-  .lobby-share-btn, .lobby-another-btn {
-    background: transparent; border: 1px solid rgba(245,165,35,.4);
-    color: var(--orange); font-family: 'Montserrat', sans-serif;
-    font-size: clamp(9px,1vw,11px); font-weight: 700;
-    letter-spacing: 0.16em; text-transform: uppercase;
-    padding: 8px 18px; cursor: pointer;
-    display: inline-flex; align-items: center; gap: 7px;
-    transition: background .22s ease, color .22s ease;
-    animation: lobbyFadeUp 0.4s ease forwards;
-  }
-  .lobby-share-btn:hover { background: var(--orange); color: #000; }
-  .lobby-another-btn {
-    border-color: rgba(255,255,255,.14); color: rgba(255,255,255,.4);
-  }
-  .lobby-another-btn:hover { color: rgba(255,255,255,.75); border-color: rgba(255,255,255,.28); }
-  /* Footer */
-  #lobby-screen .lobby-footer {
-    position: relative; z-index: 2;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 18px 36px 28px;
-  }
-  #lobby-screen .lobby-greeting {
-    font-family: 'Open Sans', sans-serif;
-    font-size: clamp(12px,1.2vw,14px); font-weight: 400;
-    color: rgba(255,255,255,.4); letter-spacing: 0.03em;
-  }
-  #lobby-screen .lobby-greeting strong { color: rgba(255,255,255,.72); font-weight: 700; }
-  #lobby-screen .lobby-enter-btn {
-    background: transparent; border: 1px solid var(--orange); color: var(--orange);
-    font-family: 'Montserrat', sans-serif;
-    font-size: clamp(10px,1.1vw,12px); font-weight: 700;
-    letter-spacing: 0.25em; padding: 10px 28px; cursor: pointer;
-    text-transform: uppercase; transition: background .25s ease, color .25s ease;
-    position: relative; overflow: hidden;
-  }
-  #lobby-screen .lobby-enter-btn::before {
-    content: ''; position: absolute; inset: 0;
-    background: var(--orange); transform: translateX(-100%);
-    transition: transform .3s ease; z-index: 0;
-  }
-  #lobby-screen .lobby-enter-btn:hover::before { transform: translateX(0); }
-  #lobby-screen .lobby-enter-btn:hover { color: #000; }
-  #lobby-screen .lobby-enter-btn span { position: relative; z-index: 1; }
-  /* Mobile */
-  @media (max-width: 600px) {
-    #lobby-screen .lobby-wordmark { font-size: 11px; letter-spacing: 0.4em; }
-    #lobby-screen .lobby-footer { padding: 14px 20px 22px; }
-    .lobby-ticket { height: clamp(150px, 46vw, 190px); --hole: 7px; }
-    .lobby-stub { width: 19%; }
-    .lobby-stub-text { display: none; }
-    .lobby-quote-inner { padding: 12px 14px; }
-    .lobby-quote-text { font-size: clamp(12px,3.8vw,16px); }
   }
 
   #pmLandingScreen {
@@ -4233,6 +4058,227 @@
 .fp-art-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(88px,1fr)); gap:8px; }
 .fp-art-thumb { width:100%; aspect-ratio:2/3; object-fit:cover; border-radius:8px; cursor:pointer; transition:transform .15s,opacity .15s; background:#1a1a1a; }
 .fp-art-thumb:hover { transform:scale(1.04); opacity:.9; }
+
+  /* ══════════════════════════════════════════════════════════════
+     LOBBY — Scratch Ticket Home Screen
+  ══════════════════════════════════════════════════════════════ */
+
+  @keyframes lobbyFadeUp {
+    from { opacity:0; transform:translateY(7px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+
+  #lobby-screen {
+    position: fixed; inset: 0; z-index: 100001;
+    background: #0A0A0A;
+    display: flex; flex-direction: column; overflow: hidden;
+    transition: opacity 0.5s ease;
+  }
+  #lobby-screen.lobby-exit { opacity: 0; pointer-events: none; }
+
+  .lobby-backdrop {
+    position: absolute;
+    inset: -40px;
+    background-size: cover; background-position: center;
+    filter: blur(48px) brightness(0.32) saturate(0.75);
+    transform: scale(1.05); z-index: 0;
+    transition: background-image 1.2s ease;
+  }
+  .lobby-overlay {
+    position: absolute; inset: 0; z-index: 1; pointer-events: none;
+    background: linear-gradient(to bottom,
+      rgba(0,0,0,.55) 0%, rgba(0,0,0,.10) 35%,
+      rgba(0,0,0,.10) 65%, rgba(0,0,0,.75) 100%);
+  }
+
+  /* Header */
+  .lobby-header {
+    position: relative; z-index: 2;
+    text-align: center; padding: 28px 0 0;
+    pointer-events: none;
+  }
+  .lobby-wordmark {
+    font-family: 'Bebas Neue', inherit;
+    font-size: clamp(13px,1.6vw,18px);
+    font-weight: 700; letter-spacing: 0.45em;
+    color: var(--orange, #f5a623);
+    text-transform: uppercase; opacity: 0.9;
+  }
+
+  /* Stage */
+  .lobby-stage {
+    flex: 1; position: relative; z-index: 2;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .lobby-ticket-wrap {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 16px;
+  }
+
+  /* Ticket shape */
+  .lobby-ticket {
+    display: flex; flex-direction: row;
+    width: min(680px, 92vw);
+    height: clamp(180px, 28vw, 240px);
+    background: #1A1812;
+    border: 1px solid rgba(245,166,35,0.35);
+    position: relative; border-radius: 6px;
+    --hole: 9px;
+    -webkit-mask-image:
+      radial-gradient(circle at 50% 0,   transparent var(--hole), black calc(var(--hole) + 1px)),
+      radial-gradient(circle at 50% 100%, transparent var(--hole), black calc(var(--hole) + 1px)),
+      radial-gradient(circle at 22% 50%,  transparent 14px, black 15px),
+      radial-gradient(circle at 78% 50%,  transparent 14px, black 15px);
+    -webkit-mask-size: 20px 100%, 20px 100%, 100% 100%, 100% 100%;
+    -webkit-mask-repeat: repeat-x, repeat-x, no-repeat, no-repeat;
+    -webkit-mask-position: 0 0, 0 100%, 0 0, 0 0;
+    -webkit-mask-composite: destination-in, destination-in, destination-in, destination-in;
+    mask-image:
+      radial-gradient(circle at 50% 0,    transparent var(--hole), black calc(var(--hole) + 1px)),
+      radial-gradient(circle at 50% 100%, transparent var(--hole), black calc(var(--hole) + 1px)),
+      radial-gradient(circle at 22% 50%,  transparent 14px, black 15px),
+      radial-gradient(circle at 78% 50%,  transparent 14px, black 15px);
+    mask-size: 20px 100%, 20px 100%, 100% 100%, 100% 100%;
+    mask-repeat: repeat-x, repeat-x, no-repeat, no-repeat;
+    mask-position: 0 0, 0 100%, 0 0, 0 0;
+    mask-composite: intersect;
+  }
+
+  /* Stub */
+  .lobby-stub {
+    width: 20%; flex-shrink: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 6px; padding: 16px 8px;
+    border-right: 1px dashed rgba(245,166,35,0.3);
+  }
+  .lobby-stub-star {
+    font-size: clamp(11px,1.8vw,16px);
+    color: var(--orange, #f5a623); opacity: 0.6; line-height: 1;
+  }
+  .lobby-stub-text {
+    font-size: clamp(7px,1vw,9px); font-weight: 700;
+    letter-spacing: 0.15em;
+    color: var(--orange, #f5a623); opacity: 0.4;
+    text-align: center; margin-top: 6px;
+  }
+
+  /* Tear line */
+  .lobby-tear {
+    width: 1px;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(245,166,35,0.35) 0px, rgba(245,166,35,0.35) 4px,
+      transparent 4px, transparent 8px
+    );
+    flex-shrink: 0;
+  }
+
+  /* Ticket body */
+  .lobby-ticket-body {
+    flex: 1; position: relative; overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .lobby-quote-inner {
+    padding: 20px 28px; text-align: center;
+    pointer-events: none; user-select: none;
+  }
+  .lobby-quote-text {
+    font-size: clamp(14px,2.2vw,20px); font-weight: 600;
+    line-height: 1.55; color: #F0E6CC;
+    margin: 0 0 12px; font-style: italic;
+  }
+  .lobby-quote-attr {
+    font-size: clamp(10px,1.2vw,13px); font-weight: 500;
+    letter-spacing: 0.12em;
+    color: var(--orange, #f5a623);
+    text-transform: uppercase; margin: 0; opacity: 0.85;
+  }
+
+  /* Scratch canvas */
+  .lobby-scratch-canvas {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    cursor: crosshair; touch-action: none;
+    transition: opacity 0.4s ease;
+  }
+  .lobby-scratch-canvas.revealed { opacity: 0; pointer-events: none; }
+
+  /* Post-reveal buttons */
+  .lobby-post-reveal {
+    display: flex; gap: 12px; align-items: center;
+  }
+  .lobby-share-btn,
+  .lobby-another-btn {
+    background: transparent;
+    border: 1px solid rgba(245,166,35,0.4);
+    color: var(--orange, #f5a623);
+    font-family: 'Montserrat', inherit;
+    font-size: clamp(10px,1.1vw,12px); font-weight: 600;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    padding: 8px 20px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 8px;
+    transition: background 0.25s ease, color 0.25s ease;
+    animation: lobbyFadeUp 0.4s ease forwards;
+  }
+  .lobby-share-btn:hover {
+    background: var(--orange, #f5a623); color: #000;
+  }
+  .lobby-another-btn {
+    border-color: rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.4);
+    font-size: clamp(9px,1vw,11px);
+  }
+  .lobby-another-btn:hover {
+    color: rgba(255,255,255,0.75);
+    border-color: rgba(255,255,255,0.25);
+  }
+
+  /* Footer */
+  .lobby-footer {
+    position: relative; z-index: 2;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 36px 28px;
+  }
+  .lobby-greeting {
+    font-size: clamp(12px,1.3vw,15px); font-weight: 500;
+    color: rgba(255,255,255,0.45); letter-spacing: 0.04em;
+  }
+  .lobby-greeting strong {
+    color: rgba(255,255,255,0.75); font-weight: 700;
+  }
+  .lobby-enter-btn {
+    background: transparent;
+    border: 1px solid var(--orange, #f5a623);
+    color: var(--orange, #f5a623);
+    font-family: 'Montserrat', inherit;
+    font-size: clamp(10px,1.1vw,13px); font-weight: 700;
+    letter-spacing: 0.25em; padding: 10px 28px;
+    cursor: pointer; text-transform: uppercase;
+    transition: background 0.25s ease, color 0.25s ease;
+    position: relative; overflow: hidden;
+  }
+  .lobby-enter-btn::before {
+    content: ''; position: absolute; inset: 0;
+    background: var(--orange, #f5a623);
+    transform: translateX(-100%);
+    transition: transform 0.3s ease; z-index: 0;
+  }
+  .lobby-enter-btn:hover::before { transform: translateX(0); }
+  .lobby-enter-btn:hover { color: #000; }
+  .lobby-enter-btn span { position: relative; z-index: 1; }
+
+  /* Mobile */
+  @media (max-width:600px) {
+    .lobby-wordmark { font-size: 11px; letter-spacing: 0.4em; }
+    .lobby-footer   { padding: 16px 20px 24px; }
+    .lobby-ticket   { height: clamp(160px,48vw,200px); --hole: 7px; }
+    .lobby-stub     { width: 18%; }
+    .lobby-stub-text { display: none; }
+    .lobby-quote-inner { padding: 14px 18px; }
+    .lobby-scratch-canvas { cursor: default; }
+  }
 </style>
 </head>
 <body class="grain">
@@ -4246,25 +4292,23 @@
   <div style="color:#444;font-size:.65rem;letter-spacing:3px;text-transform:uppercase;font-family:'Montserrat',sans-serif;font-weight:600">Loading…</div>
 </div>
 
-<!-- ╔══════════════════════════════════════════════════════════╗ -->
-<!-- ║  LANDING SCREEN — shown every visit until signed in     ║ -->
-<!-- ╚══════════════════════════════════════════════════════════╝ -->
+
 <!-- ╔══════════════════════════════════════════════════════════════╗ -->
 <!-- ║  THE LOBBY — Scratch Ticket Home Screen                     ║ -->
 <!-- ╚══════════════════════════════════════════════════════════════╝ -->
-<div id="lobby-screen" class="lobby-screen" style="display:none">
+<div id="lobby-screen" style="display:none">
 
   <div class="lobby-backdrop" id="lobby-backdrop"></div>
   <div class="lobby-overlay"></div>
 
-  <div class="lobby-header" id="lobby-header">
+  <div class="lobby-header">
     <span class="lobby-wordmark">PMOVIES</span>
   </div>
 
   <main class="lobby-stage">
-    <div class="lobby-ticket-wrap" id="lobby-ticket-wrap">
+    <div class="lobby-ticket-wrap">
 
-      <div class="lobby-ticket" id="lobby-ticket">
+      <div class="lobby-ticket">
         <div class="lobby-stub">
           <span class="lobby-stub-star">★</span>
           <span class="lobby-stub-star">★</span>
@@ -4272,18 +4316,23 @@
           <span class="lobby-stub-text">ADMIT<br>ONE</span>
         </div>
         <div class="lobby-tear"></div>
-        <div class="lobby-ticket-body" id="lobby-ticket-body">
-          <div class="lobby-quote-inner" id="lobby-quote-inner">
+        <div class="lobby-ticket-body">
+          <div class="lobby-quote-inner">
             <p class="lobby-quote-text" id="lobby-quote-text"></p>
             <p class="lobby-quote-attr" id="lobby-quote-attr"></p>
           </div>
-          <canvas class="lobby-scratch-canvas" id="lobby-scratch-canvas" aria-label="Scratch to reveal quote"></canvas>
+          <canvas
+            class="lobby-scratch-canvas"
+            id="lobby-scratch-canvas"
+            aria-label="Scratch to reveal quote"
+          ></canvas>
         </div>
       </div>
 
       <div class="lobby-post-reveal" id="lobby-post-reveal" style="display:none">
         <button class="lobby-share-btn" id="lobby-share-btn">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
             <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/>
             <polyline points="16 6 12 2 8 6"/>
             <line x1="12" y1="2" x2="12" y2="15"/>
@@ -4296,10 +4345,13 @@
     </div>
   </main>
 
-  <div class="lobby-footer" id="lobby-footer">
+  <div class="lobby-footer">
     <div class="lobby-greeting" id="lobby-greeting"></div>
-    <button class="lobby-enter-btn" id="lobby-enter-btn"><span>ENTER &nbsp;→</span></button>
+    <button class="lobby-enter-btn" id="lobby-enter-btn">
+      <span>ENTER &nbsp;→</span>
+    </button>
   </div>
+
 </div>
 
 <div id="pmLandingScreen">
@@ -4338,32 +4390,29 @@
   </ul>
 </div>
 <script>
-/* Decide whether to show the Lobby or go straight to the app/auth screen.
-   Runs synchronously before Firebase resolves — no flicker. */
+/* Early routing — runs synchronously before Firebase resolves. */
 (function(){
   var path       = location.pathname;
   var isDeepLink = path !== '/' && path !== '/index.html';
-  var lobbyDone  = !!sessionStorage.getItem('pmovies_lobby_done');
+  var lobbyDone  = sessionStorage.getItem('pmovies_lobby_done') === '1';
   var isReturning = localStorage.getItem('pmovies_was_signed_in') === '1' ||
                     sessionStorage.getItem('pmovies_guest') === '1';
 
-  if (isDeepLink || lobbyDone) {
-    // Deep link or already visited lobby this session → skip lobby entirely
-    // If signed in, landing is hidden by _hideLanding() once auth resolves
-    if (isReturning) {
+  if (isDeepLink || lobbyDone || isReturning) {
+    if (isReturning || lobbyDone) {
       var el = document.getElementById('pmLandingScreen');
       if (el) el.style.display = 'none';
     }
     return;
   }
 
-  // Show the Lobby for EVERY user on their first visit of the session
+  // First visit of session — show lobby, keep auth landing hidden behind it
   var lobby = document.getElementById('lobby-screen');
   if (lobby) lobby.style.display = 'flex';
-  // Keep auth landing hidden behind lobby until ENTER is pressed
   var landing = document.getElementById('pmLandingScreen');
   if (landing) landing.style.display = 'none';
 })();
+</script>
 
 /* ── Deep-link loader dismiss helper ──────────────────────────────────────────────────
    Called by openFanReviewPage, openLobbyThread, and _loadAndShowReview once the
@@ -18046,7 +18095,7 @@ async function deleteEditorReview(key, e) {
 
   // ── Landing Screen ───────────────────────────────────────────────
   function _showLanding() {
-    // Don't show the auth screen while the Lobby is still in front
+    // Keep auth screen hidden while lobby is showing
     var lobby = document.getElementById('lobby-screen');
     if (lobby && lobby.style.display !== 'none') return;
     var el = document.getElementById('pmLandingScreen');
@@ -25921,22 +25970,23 @@ async function deleteEditorReview(key, e) {
 })();
 </script>
 
+
 <!-- ╔══════════════════════════════════════════════════════════════╗ -->
-<!-- ║  LOBBY — Scratch Ticket JS                                   ║ -->
+<!-- ║  LOBBY — Scratch Ticket JS                                  ║ -->
 <!-- ╚══════════════════════════════════════════════════════════════╝ -->
 <script>
 (function() {
   'use strict';
 
-  /* ── Constants ─────────────────────────────────────────────── */
-  var RTDB                   = 'https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app';
-  var LOBBY_SEEN_KEY         = 'pmovies_seen_quotes_v2';
-  var LOBBY_SEEN_MAX         = 40;
-  var SCRATCH_BRUSH_RADIUS   = 28;
-  var SCRATCH_REVEAL_AT      = 0.40;
-  var SCRATCH_SAMPLE_EVERY   = 32;
+  /* ── Constants ────────────────────────────────────────────── */
+  var RTDB                  = 'https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app';
+  var LOBBY_SEEN_KEY        = 'pmovies_seen_quotes_v2';
+  var LOBBY_SEEN_MAX        = 40;
+  var SCRATCH_BRUSH_RADIUS  = 28;
+  var SCRATCH_REVEAL_AT     = 0.40;
+  var SCRATCH_SAMPLE_EVERY  = 32;
 
-  /* ── Backdrop pool ─────────────────────────────────────────── */
+  /* ── Backdrop pool ────────────────────────────────────────── */
   var LOBBY_BACKDROPS = [
     'https://image.tmdb.org/t/p/w1280/tmU7GeKVybMWFButWEGl2M4GeiP.jpg',
     'https://image.tmdb.org/t/p/w1280/ilRyazdMJwN05exqhwK4tMKBYZs.jpg',
@@ -25945,22 +25995,10 @@ async function deleteEditorReview(key, e) {
     'https://image.tmdb.org/t/p/w1280/phszHPFnhmAMgJpFBFMtlxmFMkk.jpg',
     'https://image.tmdb.org/t/p/w1280/lEIaL12hSkqqe83zVvF98SxieZl.jpg',
     'https://image.tmdb.org/t/p/w1280/nadTlnTE6DdgmYsN4iWc2a2wiaI.jpg',
-    'https://image.tmdb.org/t/p/w1280/TU9NIjwzjoKPwQHoHshkFcQUCG.jpg'
+    'https://image.tmdb.org/t/p/w1280/TU9NIjwzjoKPwQHoHshkFcQUCG.jpg',
   ];
 
-  /* ── Fallback quotes (shown if Firebase is empty) ──────────── */
-  var FALLBACK_QUOTES = [
-    { id:'fq1', text:'A film is never really good unless the camera is an eye in the head of a poet.', attribution:'Orson Welles', role:'Director', approved:true },
-    { id:'fq2', text:'Cinema is a matter of what's in the frame and what's out.', attribution:'Martin Scorsese', role:'Director', approved:true },
-    { id:'fq3', text:'I dream for a living.', attribution:'Steven Spielberg', role:'Director', approved:true },
-    { id:'fq4', text:'Life is a tragedy when seen in close-up, but a comedy in long-shot.', attribution:'Charlie Chaplin', role:'Director', approved:true },
-    { id:'fq5', text:'What is drama but life with the dull bits cut out.', attribution:'Alfred Hitchcock', role:'Director', approved:true },
-    { id:'fq6', text:'Cinema is the most beautiful fraud in the world.', attribution:'Jean-Luc Godard', role:'Director', approved:true },
-    { id:'fq7', text:'Every great film should seem new every time you see it.', attribution:'Roger Ebert', role:'Critic', approved:true },
-    { id:'fq8', text:'The secret to film is that it's an illusion.', attribution:'George Lucas', role:'Director', approved:true }
-  ];
-
-  /* ── State ─────────────────────────────────────────────────── */
+  /* ── State ────────────────────────────────────────────────── */
   var lobbyQuotes    = [];
   var currentQuote   = null;
   var scratchCanvas, scratchCtx;
@@ -25968,53 +26006,58 @@ async function deleteEditorReview(key, e) {
   var strokeCount    = 0;
   var hasAutoRevealed = false;
 
-  /* ── Backdrop ──────────────────────────────────────────────── */
+  /* ══════════════════════════════════════════════════════════
+     BACKDROP
+  ══════════════════════════════════════════════════════════ */
   function setLobbyBackdrop() {
     var url = LOBBY_BACKDROPS[Math.floor(Math.random() * LOBBY_BACKDROPS.length)];
     var el  = document.getElementById('lobby-backdrop');
     if (el) el.style.backgroundImage = 'url(' + url + ')';
   }
 
-  /* ── Quote loading ─────────────────────────────────────────── */
+  /* ══════════════════════════════════════════════════════════
+     QUOTE LOADING
+  ══════════════════════════════════════════════════════════ */
   async function loadLobbyQuotes() {
     try {
       var res  = await fetch(RTDB + '/quotes.json?orderBy="approved"&equalTo=true');
-      var data = res.ok ? await res.json() : null;
-      if (data && Object.keys(data).length > 0) {
-        return Object.entries(data).map(function(e) { return Object.assign({ id: e[0] }, e[1]); });
-      }
-    } catch(_) {}
-    return FALLBACK_QUOTES;
+      var data = await res.json();
+      if (!data) return [];
+      return Object.entries(data).map(function(e) { return Object.assign({ id: e[0] }, e[1]); });
+    } catch (e) { return []; }
   }
 
   function pickNextQuote(all) {
-    var seen   = JSON.parse(localStorage.getItem(LOBBY_SEEN_KEY) || '[]');
-    var unseen = all.filter(function(q) { return !seen.includes(q.id); });
-    var pool   = unseen.length > 0 ? unseen : all;
-    var quote  = pool[Math.floor(Math.random() * pool.length)];
+    var seen    = JSON.parse(localStorage.getItem(LOBBY_SEEN_KEY) || '[]');
+    var unseen  = all.filter(function(q) { return seen.indexOf(q.id) === -1; });
+    var pool    = unseen.length > 0 ? unseen : all;
+    var quote   = pool[Math.floor(Math.random() * pool.length)];
     var updated = seen.concat([quote.id]).slice(-LOBBY_SEEN_MAX);
     localStorage.setItem(LOBBY_SEEN_KEY, JSON.stringify(updated));
     return quote;
   }
 
-  /* ── Render quote + reset scratch ─────────────────────────── */
   function renderQuote(quote) {
     currentQuote = quote;
     var qEl = document.getElementById('lobby-quote-text');
     var aEl = document.getElementById('lobby-quote-attr');
     if (qEl) qEl.textContent = '❝ ' + quote.text + ' ❞';
     if (aEl) aEl.textContent = '— ' + quote.attribution;
-    // Re-init scratch after DOM settles
+
+    var wrap = document.getElementById('lobby-post-reveal');
+    if (wrap) wrap.style.display = 'none';
+
     setTimeout(initScratchCanvas, 60);
-    // Increment useCount (fire-and-forget)
+
     fetch(RTDB + '/quotes/' + quote.id + '/useCount.json', {
       method: 'PUT',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({'.sv':{'increment':1}})
+      body: JSON.stringify({ '.sv': { increment: 1 } })
     }).catch(function(){});
   }
 
-  /* ── Scratch engine ────────────────────────────────────────── */
+  /* ══════════════════════════════════════════════════════════
+     SCRATCH ENGINE
+  ══════════════════════════════════════════════════════════ */
   function initScratchCanvas() {
     scratchCanvas = document.getElementById('lobby-scratch-canvas');
     if (!scratchCanvas) return;
@@ -26025,8 +26068,8 @@ async function deleteEditorReview(key, e) {
 
     scratchCanvas.classList.remove('revealed');
 
-    var rect = scratchCanvas.getBoundingClientRect();
     var dpr  = window.devicePixelRatio || 1;
+    var rect = scratchCanvas.getBoundingClientRect();
     scratchCanvas.width  = rect.width  * dpr;
     scratchCanvas.height = rect.height * dpr;
     scratchCtx.scale(dpr, dpr);
@@ -26043,36 +26086,24 @@ async function deleteEditorReview(key, e) {
 
   function drawScratchSurface(w, h) {
     var ctx = scratchCtx;
-    // Base — match ticket body background
-    ctx.fillStyle = '#1A1610';
+    ctx.fillStyle = '#1A1812';
     ctx.fillRect(0, 0, w, h);
-    // Subtle linen texture
+
     for (var y = 0; y < h; y += 3) {
       for (var x = 0; x < w; x += 3) {
-        var v = Math.random() * 20 + 10;
-        ctx.fillStyle = 'rgba(' + (v+10) + ',' + (v+8) + ',' + v + ',0.15)';
+        var v = Math.random() * 22 + 12;
+        ctx.fillStyle = 'rgba(' + (v+10) + ',' + (v+8) + ',' + v + ',0.18)';
         ctx.fillRect(x, y, 2, 2);
       }
     }
-    // "Scratch to reveal" hint — clearly visible
-    ctx.save();
-    ctx.globalAlpha  = 0.55;
-    ctx.fillStyle    = '#f5a623';
-    var fontSize     = Math.min(w * 0.036, 14);
-    ctx.font         = '700 ' + fontSize + 'px Montserrat,sans-serif';
-    ctx.textAlign    = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('✦  SCRATCH TO REVEAL  ✦', w / 2, h / 2);
-    ctx.restore();
 
-    // Subtle scratch direction arrows
     ctx.save();
-    ctx.globalAlpha  = 0.2;
+    ctx.globalAlpha  = 0.3;
     ctx.fillStyle    = '#f5a623';
-    ctx.font         = '600 ' + Math.min(w * 0.028, 11) + 'px Montserrat,sans-serif';
+    ctx.font         = '600 ' + Math.min(w * 0.035, 14) + 'px sans-serif';
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('← scratch anywhere →', w / 2, h / 2 + fontSize * 2);
+    ctx.fillText('SCRATCH TO REVEAL', w / 2, h / 2);
     ctx.restore();
   }
 
@@ -26102,6 +26133,7 @@ async function deleteEditorReview(key, e) {
     scratchCtx.arc(pos.x, pos.y, SCRATCH_BRUSH_RADIUS, 0, Math.PI * 2);
     scratchCtx.fill();
     scratchCtx.globalCompositeOperation = 'source-over';
+
     strokeCount++;
     if (strokeCount % SCRATCH_SAMPLE_EVERY === 0 && !hasAutoRevealed) {
       checkCoverage();
@@ -26113,7 +26145,7 @@ async function deleteEditorReview(key, e) {
     var h    = scratchCanvas.height;
     var data = scratchCtx.getImageData(0, 0, w, h).data;
     var transparent = 0;
-    var total = (w * h) / 4; // sample every 4th pixel
+    var total = (w * h) / 4;
     for (var i = 3; i < data.length; i += 16) {
       if (data[i] < 128) transparent++;
     }
@@ -26124,7 +26156,6 @@ async function deleteEditorReview(key, e) {
     if (hasAutoRevealed) return;
     hasAutoRevealed = true;
     scratchCanvas.classList.add('revealed');
-    // Remove listeners
     scratchCanvas.removeEventListener('mousedown',  onScratchStart);
     scratchCanvas.removeEventListener('mousemove',  onScratchMove);
     scratchCanvas.removeEventListener('mouseup',    onScratchEnd);
@@ -26132,7 +26163,7 @@ async function deleteEditorReview(key, e) {
     scratchCanvas.removeEventListener('touchstart', onScratchStart);
     scratchCanvas.removeEventListener('touchmove',  onScratchMove);
     scratchCanvas.removeEventListener('touchend',   onScratchEnd);
-    setTimeout(showPostRevealButtons, 460);
+    setTimeout(showPostRevealButtons, 450);
   }
 
   function showPostRevealButtons() {
@@ -26140,77 +26171,66 @@ async function deleteEditorReview(key, e) {
     if (wrap) wrap.style.display = 'flex';
   }
 
-  /* ── Greeting ──────────────────────────────────────────────── */
+  /* ══════════════════════════════════════════════════════════
+     GREETING
+  ══════════════════════════════════════════════════════════ */
   function renderLobbyGreeting() {
     var el   = document.getElementById('lobby-greeting');
     if (!el) return;
-    var user = window.pmGetUser ? window.pmGetUser() : null;
-    if (user) {
-      var name = (user.displayName || '').split(' ')[0] || '';
+    var user = window.pmGetUser && window.pmGetUser();
+    if (user && user.displayName) {
+      var name = user.displayName.split(' ')[0] || 'there';
       var hour = new Date().getHours();
-      var time = hour < 5 ? 'Good night' : hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : hour < 21 ? 'Good evening' : 'Good night';
-      el.innerHTML = name ? time + ', <strong>' + name + '</strong>' : time;
+      var time = hour < 5  ? 'Good night'     :
+                 hour < 12 ? 'Good morning'   :
+                 hour < 17 ? 'Good afternoon' :
+                 hour < 21 ? 'Good evening'   : 'Good night';
+      el.innerHTML = time + ', <strong>' + name + '</strong>';
     } else {
       el.textContent = '';
     }
   }
 
-  /* ── Enter / goHome ────────────────────────────────────────── */
-  window.lobbyEnter = function() {
+  /* ══════════════════════════════════════════════════════════
+     ENTER / GO HOME
+  ══════════════════════════════════════════════════════════ */
+  function enterApp() {
     sessionStorage.setItem('pmovies_lobby_done', '1');
     var lobby = document.getElementById('lobby-screen');
     if (!lobby) return;
-    // Fade out
     lobby.style.transition    = 'opacity 0.5s ease';
     lobby.style.opacity       = '0';
     lobby.style.pointerEvents = 'none';
     setTimeout(function() {
-      lobby.style.display    = 'none';
-      lobby.style.opacity    = '';
-      lobby.style.transition = '';
+      lobby.style.display       = 'none';
+      lobby.style.opacity       = '';
+      lobby.style.transition    = '';
       lobby.style.pointerEvents = '';
-      lobby.classList.remove('lobby-exit');
-      var user = window.pmGetUser ? window.pmGetUser() : null;
-      var isGuest = sessionStorage.getItem('pmovies_guest') === '1';
-      if (user || isGuest) {
-        // Signed-in or guest — show the app
+
+      var user = window.pmGetUser && window.pmGetUser();
+      if (user) {
         if (typeof switchTab === 'function') switchTab('discover');
-        // Also ensure pmLandingScreen is hidden
-        var landing = document.getElementById('pmLandingScreen');
-        if (landing && landing.style.display !== 'none') landing.style.display = 'none';
       } else {
-        // Not signed in — show the auth screen
         var landing = document.getElementById('pmLandingScreen');
         if (landing) { landing.style.display = 'flex'; landing.style.opacity = '1'; }
       }
     }, 520);
-  };
+  }
 
   window.goHome = function() {
-    var gs = document.getElementById('pmGreetingScreen');
-    if (gs && gs.classList.contains('gs-active') && typeof window.pmDismissGreeting === 'function') {
-      window.pmDismissGreeting();
-    }
     var lobby = document.getElementById('lobby-screen');
     if (!lobby) return;
-    // Reset post-reveal UI
     var wrap = document.getElementById('lobby-post-reveal');
     if (wrap) wrap.style.display = 'none';
-    // Show lobby
-    lobby.style.display = 'flex';
-    lobby.style.opacity = '0';
-    lobby.classList.remove('lobby-exit');
+
+    lobby.style.display    = 'flex';
+    lobby.style.opacity    = '0';
+    lobby.style.transition = '';
     sessionStorage.removeItem('pmovies_lobby_done');
+
     setLobbyBackdrop();
     renderLobbyGreeting();
-    requestAnimationFrame(function() {
-      requestAnimationFrame(function() {
-        lobby.style.transition = 'opacity 0.45s ease';
-        lobby.style.opacity    = '1';
-        setTimeout(function() { lobby.style.transition = ''; }, 480);
-      });
-    });
-    // Load quotes if not yet loaded (returning signed-in users skip initLobby visual path)
+
     if (lobbyQuotes.length) {
       renderQuote(pickNextQuote(lobbyQuotes));
     } else {
@@ -26219,18 +26239,117 @@ async function deleteEditorReview(key, e) {
         if (lobbyQuotes.length) renderQuote(pickNextQuote(lobbyQuotes));
       });
     }
+
+    requestAnimationFrame(function() {
+      lobby.style.transition = 'opacity 0.45s ease';
+      lobby.style.opacity    = '1';
+      setTimeout(function() { lobby.style.transition = ''; }, 480);
+    });
   };
 
-  /* ── "Another" ─────────────────────────────────────────────── */
-  function nextQuote() {
-    var wrap = document.getElementById('lobby-post-reveal');
-    if (wrap) wrap.style.display = 'none';
-    if (lobbyQuotes.length) renderQuote(pickNextQuote(lobbyQuotes));
-    setLobbyBackdrop();
+  /* ══════════════════════════════════════════════════════════
+     SHARE CARD
+  ══════════════════════════════════════════════════════════ */
+  function generateShareCard(quote) {
+    var W = 1200, H = 630;
+    var c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    var ctx = c.getContext('2d');
+
+    ctx.fillStyle = '#0D0B08';
+    ctx.fillRect(0, 0, W, H);
+
+    var grain = ctx.createImageData(W, H);
+    for (var i = 0; i < grain.data.length; i += 4) {
+      var v = (Math.random() * 16) | 0;
+      grain.data[i] = grain.data[i+1] = grain.data[i+2] = v;
+      grain.data[i+3] = 22;
+    }
+    ctx.putImageData(grain, 0, 0);
+
+    var TW = 840, TH = 320;
+    var TX = (W - TW) / 2, TY = (H - TH) / 2 - 20;
+    var STUB_W = TW * 0.18, HOLE_R = 10;
+
+    ctx.fillStyle = '#1A1812';
+    ctx.beginPath();
+    roundRectPath(ctx, TX, TY, TW, TH, 8);
+    ctx.fill();
+
+    ctx.strokeStyle = 'rgba(245,166,35,0.45)';
+    ctx.lineWidth   = 1.5;
+    ctx.beginPath();
+    roundRectPath(ctx, TX, TY, TW, TH, 8);
+    ctx.stroke();
+
+    ctx.fillStyle = '#0D0B08';
+    ctx.beginPath();
+    ctx.arc(TX + STUB_W + 1, TY + TH / 2, HOLE_R + 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(TX + TW - STUB_W - 1, TY + TH / 2, HOLE_R + 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    for (var x = TX + 20; x < TX + TW - 20; x += 22) {
+      ctx.beginPath(); ctx.arc(x, TY, HOLE_R, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x, TY + TH, HOLE_R, 0, Math.PI * 2); ctx.fill();
+    }
+
+    ctx.setLineDash([5, 6]);
+    ctx.strokeStyle = 'rgba(245,166,35,0.3)';
+    ctx.lineWidth   = 1;
+    ctx.beginPath();
+    ctx.moveTo(TX + STUB_W, TY + 16);
+    ctx.lineTo(TX + STUB_W, TY + TH - 16);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = 'rgba(245,166,35,0.5)';
+    ctx.font      = '14px sans-serif';
+    ctx.textAlign = 'center';
+    [TY + TH*0.3, TY + TH*0.5, TY + TH*0.7].forEach(function(sy) {
+      ctx.fillText('★', TX + STUB_W / 2, sy + 5);
+    });
+
+    var QX = TX + STUB_W + 40;
+    var QW = TW - STUB_W - 80;
+    ctx.font         = 'italic 600 ' + Math.min(QW * 0.047, 24) + 'px serif';
+    ctx.fillStyle    = '#F0E6CC';
+    ctx.textAlign    = 'left';
+    ctx.textBaseline = 'top';
+
+    var words = ('❝ ' + quote.text + ' ❞').split(' ');
+    var lines  = [], line = '';
+    for (var wi = 0; wi < words.length; wi++) {
+      var test = line ? line + ' ' + words[wi] : words[wi];
+      if (ctx.measureText(test).width > QW) { lines.push(line); line = words[wi]; }
+      else line = test;
+    }
+    if (line) lines.push(line);
+
+    var lh     = Math.min(QW * 0.065, 34);
+    var totalH = lines.length * lh + 36;
+    var textY  = TY + (TH - totalH) / 2;
+    lines.forEach(function(l, i) { ctx.fillText(l, QX, textY + i * lh); });
+
+    ctx.font         = '700 ' + Math.min(QW * 0.032, 13) + 'px sans-serif';
+    ctx.fillStyle    = '#f5a623';
+    ctx.fillText(('— ' + quote.attribution).toUpperCase(), QX, textY + lines.length * lh + 14);
+
+    ctx.font         = '700 15px sans-serif';
+    ctx.fillStyle    = 'rgba(245,166,35,0.65)';
+    ctx.textAlign    = 'right';
+    ctx.fillText('PMOVIES', W - 44, H - 42);
+
+    ctx.beginPath();
+    ctx.arc(W - 32, H - 36, 2, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(245,166,35,0.4)';
+    ctx.fill();
+
+    return c;
   }
 
-  /* ── Share card ────────────────────────────────────────────── */
-  function roundRect(ctx, x, y, w, h, r) {
+  function roundRectPath(ctx, x, y, w, h, r) {
     ctx.moveTo(x + r, y);
     ctx.lineTo(x + w - r, y);
     ctx.arcTo(x + w, y, x + w, y + r, r);
@@ -26243,266 +26362,73 @@ async function deleteEditorReview(key, e) {
     ctx.closePath();
   }
 
-  function generateShareCard(quote) {
-    var W = 1200, H = 630;
-    var c = document.createElement('canvas');
-    c.width = W; c.height = H;
-    var ctx = c.getContext('2d');
-
-    // Background
-    ctx.fillStyle = '#0D0B08';
-    ctx.fillRect(0, 0, W, H);
-
-    // Subtle grain ON TOP (globalAlpha — does not wipe background)
-    ctx.save();
-    ctx.globalAlpha = 0.05;
-    for (var gi = 0; gi < 10000; gi++) {
-      var gv = (Math.random() * 200) | 0;
-      ctx.fillStyle = 'rgb(' + gv + ',' + gv + ',' + gv + ')';
-      ctx.fillRect(Math.random() * W, Math.random() * H, 1, 1);
-    }
-    ctx.restore();
-
-    // Ticket
-    var TW = 840, TH = 310;
-    var TX = (W - TW) / 2, TY = (H - TH) / 2 - 18;
-    var STUB_W = TW * 0.18;
-    var HOLE_R = 9;
-
-    ctx.fillStyle = '#1A1610';
-    ctx.beginPath(); roundRect(ctx, TX, TY, TW, TH, 7); ctx.fill();
-    ctx.strokeStyle = 'rgba(245,165,35,.38)'; ctx.lineWidth = 1.5;
-    ctx.beginPath(); roundRect(ctx, TX, TY, TW, TH, 7); ctx.stroke();
-
-    // Semicircle punches
-    ctx.fillStyle = '#0D0B08';
-    ctx.beginPath(); ctx.arc(TX + STUB_W, TY + TH/2, HOLE_R + 4, 0, Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(TX + TW - STUB_W, TY + TH/2, HOLE_R + 4, 0, Math.PI*2); ctx.fill();
-    // Top/bottom holes
-    for (var hx = TX + 18; hx < TX + TW - 18; hx += 20) {
-      ctx.beginPath(); ctx.arc(hx, TY, HOLE_R, 0, Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.arc(hx, TY + TH, HOLE_R, 0, Math.PI*2); ctx.fill();
-    }
-
-    // Dashed stub divider
-    ctx.setLineDash([5, 6]); ctx.strokeStyle = 'rgba(245,165,35,.28)'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(TX + STUB_W, TY + 14); ctx.lineTo(TX + STUB_W, TY + TH - 14); ctx.stroke();
-    ctx.setLineDash([]);
-
-    // Stars in stub
-    ctx.fillStyle = 'rgba(245,165,35,.5)'; ctx.font = '14px sans-serif'; ctx.textAlign = 'center';
-    [TY + TH*0.3, TY + TH*0.5, TY + TH*0.7].forEach(function(sy) { ctx.fillText('★', TX + STUB_W/2, sy + 5); });
-
-    // Quote text (word-wrapped)
-    var QX = TX + STUB_W + 36;
-    var QW = TW - STUB_W - 72;
-    var fontSize = Math.min(QW * 0.044, 22);
-    ctx.font = 'italic 600 ' + fontSize + 'px serif';
-    ctx.fillStyle = '#F0E8D5'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
-
-    var words = ('❝ ' + quote.text + ' ❞').split(' ');
-    var lines = []; var cur = '';
-    for (var wi = 0; wi < words.length; wi++) {
-      var test = cur ? cur + ' ' + words[wi] : words[wi];
-      if (ctx.measureText(test).width > QW) { lines.push(cur); cur = words[wi]; }
-      else cur = test;
-    }
-    if (cur) lines.push(cur);
-    var displayLines = lines.slice(0, 6);
-    var lh = Math.min(QW * 0.062, 32);
-    var totalH = displayLines.length * lh + 34;
-    var textY  = TY + (TH - totalH) / 2;
-    displayLines.forEach(function(l, i) { ctx.fillText(l, QX, textY + i * lh); });
-
-    // Attribution
-    ctx.font = '700 ' + Math.min(QW * 0.03, 12) + 'px sans-serif';
-    ctx.fillStyle = '#f5a623';
-    ctx.fillText(('— ' + quote.attribution).toUpperCase(), QX, textY + displayLines.length * lh + 12);
-
-    // PMOVIES branding
-    ctx.font = '700 14px sans-serif'; ctx.fillStyle = 'rgba(245,165,35,.6)';
-    ctx.textAlign = 'right';
-    ctx.fillText('PMOVIES', W - 44, H - 40);
-
-    return c;
-  }
-
-  async function doShareQuote() {
+  async function generateAndShare() {
     if (!currentQuote) return;
     var btn = document.getElementById('lobby-share-btn');
-    if (btn) btn.textContent = '…';
+    if (btn) btn.textContent = '...';
     try {
-      var card = generateShareCard(currentQuote);
+      var canvas = generateShareCard(currentQuote);
       if (navigator.canShare) {
-        card.toBlob(async function(blob) {
+        canvas.toBlob(async function(blob) {
           try {
             await navigator.share({
               title: 'PMovies',
-              text: '"' + currentQuote.text + '" — ' + currentQuote.attribution,
+              text:  '“' + currentQuote.text + '” — ' + currentQuote.attribution,
               files: [new File([blob], 'pmovies-quote.png', { type: 'image/png' })],
-              url: 'https://p-movies.com'
+              url:   'https://p-movies.com'
             });
-          } catch(_) {}
+          } catch(e) {}
         }, 'image/png');
       } else {
-        var a = document.createElement('a');
-        a.href = card.toDataURL('image/png');
+        var a    = document.createElement('a');
+        a.href   = canvas.toDataURL('image/png');
         a.download = 'pmovies-quote.png';
         a.click();
       }
     } finally {
-      if (btn) btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Share Quote';
+      if (btn) btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Share Quote';
     }
   }
 
-  /* ── Admin quote management ───────────────────────────────── */
-  window._adminToggleQuoteForm = function(forceHide) {
-    var f = document.getElementById('adminQuoteForm');
-    if (!f) return;
-    var show = forceHide === false ? false : f.style.display === 'none';
-    f.style.display = show ? 'block' : 'none';
-    if (show) { var el = document.getElementById('aqf-text'); if (el) el.focus(); }
-  };
+  /* ══════════════════════════════════════════════════════════
+     INIT & ROUTING
+  ══════════════════════════════════════════════════════════ */
+  function shouldShowLobby() {
+    var path = location.pathname;
+    if (path !== '/' && path !== '/index.html') return false;
+    if (sessionStorage.getItem('pmovies_lobby_done') === '1') return false;
+    return true;
+  }
 
-  window._adminLoadQuotes = async function() {
-    var container = document.getElementById('adminQuotesList');
-    if (!container) return;
-    container.innerHTML = '<div style="color:#555;font-size:.72rem">Loading…</div>';
-    try {
-      var tok = '';
-      if (window.pmGetUser) { var u = window.pmGetUser(); if (u && u.getIdToken) tok = '?auth=' + (await u.getIdToken()); }
-      var res  = await fetch(RTDB + '/quotes.json' + tok);
-      var data = res.ok ? await res.json() : null;
-      if (!data) { container.innerHTML = '<div style="color:#555;font-size:.72rem">No quotes yet.</div>'; return; }
-      var entries = Object.entries(data).sort(function(a,b){ return (b[1].useCount||0)-(a[1].useCount||0); });
-      container.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:.72rem">'
-        + '<thead><tr style="color:#f5a623;border-bottom:1px solid #222;text-align:left">'
-        + '<th style="padding:6px 8px;width:48%">Quote</th><th style="padding:6px 8px">Attribution</th>'
-        + '<th style="padding:6px 4px;text-align:center">Shown</th>'
-        + '<th style="padding:6px 4px;text-align:center">Status</th><th style="padding:6px 4px"></th></tr></thead><tbody>'
-        + entries.map(function(e) {
-            var id = e[0], q = e[1];
-            var snippet = (q.text||'').slice(0,58) + ((q.text||'').length>58?'…':'');
-            var status = q.approved
-              ? '<span style="color:#4caf50;font-size:.65rem">✓ Live</span>'
-              : '<span style="color:#888;font-size:.65rem">⏸ Hidden</span>';
-            return '<tr style="border-bottom:1px solid #1a1a1a">'
-              + '<td style="padding:7px 8px;color:#ccc" title="'+q.text+'">"'+snippet+'"</td>'
-              + '<td style="padding:7px 8px;color:#aaa">'+(q.attribution||'—')+'</td>'
-              + '<td style="padding:7px 4px;text-align:center;color:#666">'+(q.useCount||0)+'</td>'
-              + '<td style="padding:7px 4px;text-align:center">'+status+'</td>'
-              + '<td style="padding:7px 4px;white-space:nowrap">'
-              +   '<button onclick="window._adminToggleApproval(\''+id+'\','+!!q.approved+')" style="background:transparent;border:1px solid #333;color:#aaa;font-size:.62rem;padding:3px 8px;border-radius:4px;cursor:pointer;margin-right:4px">'+(q.approved?'Hide':'Show')+'</button>'
-              +   '<button onclick="window._adminDeleteQuote(\''+id+'\')" style="background:transparent;border:1px solid #522;color:#c44;font-size:.62rem;padding:3px 8px;border-radius:4px;cursor:pointer">Del</button>'
-              + '</td></tr>';
-          }).join('')
-        + '</tbody></table>';
-    } catch(e) { container.innerHTML = '<div style="color:#c44">Failed to load.</div>'; }
-  };
-
-  window._adminToggleApproval = async function(id, current) {
-    try {
-      var tok = '';
-      if (window.pmGetUser) { var u = window.pmGetUser(); if (u && u.getIdToken) tok = '?auth=' + (await u.getIdToken()); }
-      await fetch(RTDB + '/quotes/' + id + '/approved.json' + tok, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(!current) });
-      window._adminLoadQuotes();
-    } catch(e) { alert('Failed to update.'); }
-  };
-
-  window._adminDeleteQuote = async function(id) {
-    if (!confirm('Delete this quote permanently?')) return;
-    try {
-      var tok = '';
-      if (window.pmGetUser) { var u = window.pmGetUser(); if (u && u.getIdToken) tok = '?auth=' + (await u.getIdToken()); }
-      await fetch(RTDB + '/quotes/' + id + '.json' + tok, { method:'DELETE' });
-      window._adminLoadQuotes();
-    } catch(e) { alert('Delete failed.'); }
-  };
-
-  window._adminSaveQuote = async function() {
-    var text        = (document.getElementById('aqf-text')       ||{}).value.trim();
-    var attribution = (document.getElementById('aqf-attribution') ||{}).value.trim();
-    var role        = (document.getElementById('aqf-role')        ||{}).value.trim();
-    if (!text || !attribution) { alert('Quote text and attribution are required.'); return; }
-    var quote = { text: text, attribution: attribution, role: role || null, approved: true, useCount: 0, addedBy: 'admin', language: 'en', createdAt: Date.now() };
-    try {
-      var tok = '';
-      if (window.pmGetUser) { var u = window.pmGetUser(); if (u && u.getIdToken) tok = '?auth=' + (await u.getIdToken()); }
-      await fetch(RTDB + '/quotes.json' + tok, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(quote) });
-      ['aqf-text','aqf-attribution','aqf-role'].forEach(function(i){ var el=document.getElementById(i); if(el) el.value=''; });
-      window._adminToggleQuoteForm(false);
-      window._adminLoadQuotes();
-    } catch(e) { alert('Save failed.'); }
-  };
-
-  /* ── Seed helper (run from console) ───────────────────────── */
-  window._lobbySeedQuotes = async function() {
-    var SEED = [
-      { text:'A film is never really good unless the camera is an eye in the head of a poet.', attribution:'Orson Welles', role:'Director' },
-      { text:'Cinema is a matter of what's in the frame and what's out.', attribution:'Martin Scorsese', role:'Director' },
-      { text:'I dream for a living.', attribution:'Steven Spielberg', role:'Director' },
-      { text:'Every film should have its own world, a logic and feel to it that expands beyond the exact image on the screen.', attribution:'David Lynch', role:'Director' },
-      { text:'Making a film is like going down a mine — you absolutely commit, you can't go back.', attribution:'Sam Mendes', role:'Director' },
-      { text:'The secret to film is that it's an illusion.', attribution:'George Lucas', role:'Director' },
-      { text:'Cinema is not a craft. It is an art.', attribution:'Jean-Luc Godard', role:'Director' },
-      { text:'A story should have a beginning, a middle, and an end, but not necessarily in that order.', attribution:'Jean-Luc Godard', role:'Director' },
-      { text:'The most honest form of filmmaking is to make a film for yourself.', attribution:'Peter Jackson', role:'Director' },
-      { text:'Film is one of the three universal languages, the other two: mathematics and music.', attribution:'Frank Capra', role:'Director' },
-      { text:'Life is a tragedy when seen in close-up, but a comedy in long-shot.', attribution:'Charlie Chaplin', role:'Director' },
-      { text:'What is drama but life with the dull bits cut out.', attribution:'Alfred Hitchcock', role:'Director' },
-      { text:'There are no rules in filmmaking. Only sins. And the cardinal sin is dullness.', attribution:'Frank Capra', role:'Director' },
-      { text:'Cinema is the most beautiful fraud in the world.', attribution:'Jean-Luc Godard', role:'Director' },
-      { text:'If you want a happy ending, that depends, of course, on where you stop your story.', attribution:'Orson Welles', role:'Director' },
-      { text:'The stuff that dreams are made of.', attribution:'John Huston', role:'Director' },
-      { text:'I want to make beautiful things, even if nobody cares.', attribution:'Saul Bass', role:'Designer' },
-      { text:'Every great film should seem new every time you see it.', attribution:'Roger Ebert', role:'Critic' },
-      { text:'A good film is when the price of the dinner, the theatre admission and the babysitter was well worth it.', attribution:'Alfred Hitchcock', role:'Director' },
-      { text:'Film spectators are quiet vampires.', attribution:'Jim Morrison', role:'Artist' },
-      { text:'To make a great film you need three things — the script, the script, and the script.', attribution:'Alfred Hitchcock', role:'Director' },
-      { text:'The eye sees only what the mind is prepared to comprehend.', attribution:'Henri Bergson', role:'Philosopher' },
-      { text:'Art enables us to find ourselves and lose ourselves at the same time.', attribution:'Thomas Merton', role:'Writer' },
-      { text:'We are the choices we make.', attribution:'Meryl Streep', role:'Actor' },
-      { text:'Imagination is more important than knowledge.', attribution:'Albert Einstein', role:'Scientist' },
-      { text:'Darkness cannot drive out darkness; only light can do that.', attribution:'Martin Luther King Jr.', role:'Leader' },
-      { text:'The two most important days in your life are the day you are born and the day you find out why.', attribution:'Mark Twain', role:'Writer' },
-      { text:'We don't stop playing because we grow old; we grow old because we stop playing.', attribution:'George Bernard Shaw', role:'Writer' },
-      { text:'If you don't have time to read, you don't have the time — or the tools — to write.', attribution:'Stephen King', role:'Writer' },
-      { text:'The camera is an instrument that teaches people how to see without a camera.', attribution:'Dorothea Lange', role:'Photographer' }
-    ];
-    for (var i = 0; i < SEED.length; i++) {
-      await fetch(RTDB + '/quotes.json', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify(Object.assign({}, SEED[i], { approved:true, useCount:0, addedBy:'admin', language:'en', createdAt: Date.now() }))
-      });
-    }
-    console.log('[PMovies] Seeded ' + SEED.length + ' quotes.');
-  };
-
-  /* ── Init ──────────────────────────────────────────────────── */
   async function initLobby() {
-    // Always load quotes (even if lobby is hidden) so goHome() has them ready
     if (!lobbyQuotes.length) {
       lobbyQuotes = await loadLobbyQuotes();
     }
-
     var lobby = document.getElementById('lobby-screen');
-    if (!lobby || lobby.style.display === 'none') return; // visual init only if showing
+    if (!lobby || lobby.style.display === 'none') return;
 
     setLobbyBackdrop();
     renderLobbyGreeting();
-    if (!lobbyQuotes.length) { window.lobbyEnter && window.lobbyEnter(); return; }
+    if (!lobbyQuotes.length) { enterApp(); return; }
     renderQuote(pickNextQuote(lobbyQuotes));
   }
 
-  /* ── Wire buttons ─────────────────────────────────────────── */
   function wireButtons() {
     var enterBtn   = document.getElementById('lobby-enter-btn');
     var anotherBtn = document.getElementById('lobby-another-btn');
     var shareBtn   = document.getElementById('lobby-share-btn');
-    if (enterBtn)   enterBtn.onclick = function() { window.lobbyEnter(); };
-    if (anotherBtn) anotherBtn.onclick = nextQuote;
-    if (shareBtn)   shareBtn.onclick = doShareQuote;
+
+    if (enterBtn)   enterBtn.onclick   = function() { enterApp(); };
+    if (shareBtn)   shareBtn.onclick   = function() { generateAndShare(); };
+    if (anotherBtn) anotherBtn.onclick = function() {
+      if (lobbyQuotes.length) renderQuote(pickNextQuote(lobbyQuotes));
+      setLobbyBackdrop();
+    };
+  }
+
+  if (!shouldShowLobby()) {
+    var _lobbyEl = document.getElementById('lobby-screen');
+    if (_lobbyEl) _lobbyEl.style.display = 'none';
   }
 
   if (document.readyState === 'loading') {
@@ -26512,8 +26438,50 @@ async function deleteEditorReview(key, e) {
     initLobby();
   }
 
-  // Auth resolves → refresh greeting
   window._lobbyRefreshGreeting = renderLobbyGreeting;
+
+  /* ── Seed helper (run from browser console) ─────────────────── */
+  window._lobbySeedQuotes = async function() {
+    var seeds = [
+      { text: "A film is never really good unless the camera is an eye in the head of a poet.", attribution: "Orson Welles", role: "Director" },
+      { text: "Cinema is a matter of what's in the frame and what's out.", attribution: "Martin Scorsese", role: "Director" },
+      { text: "I dream for a living.", attribution: "Steven Spielberg", role: "Director" },
+      { text: "Every film should have its own world, a logic and feel to it that expands beyond the exact image on the screen.", attribution: "David Lynch", role: "Director" },
+      { text: "Making a film is like going down a mine — you absolutely commit, you can't go back.", attribution: "Sam Mendes", role: "Director" },
+      { text: "The secret to film is that it's an illusion.", attribution: "George Lucas", role: "Director" },
+      { text: "Cinema is not a craft. It is an art.", attribution: "Jean-Luc Godard", role: "Director" },
+      { text: "A story should have a beginning, a middle, and an end, but not necessarily in that order.", attribution: "Jean-Luc Godard", role: "Director" },
+      { text: "The most honest form of filmmaking is to make a film for yourself.", attribution: "Peter Jackson", role: "Director" },
+      { text: "Film is one of the three universal languages, the other two: mathematics and music.", attribution: "Frank Capra", role: "Director" },
+      { text: "Life is a tragedy when seen in close-up, but a comedy in long-shot.", attribution: "Charlie Chaplin", role: "Director" },
+      { text: "What is drama but life with the dull bits cut out.", attribution: "Alfred Hitchcock", role: "Director" },
+      { text: "There are no rules in filmmaking. Only sins. And the cardinal sin is dullness.", attribution: "Frank Capra", role: "Director" },
+      { text: "Cinema is the most beautiful fraud in the world.", attribution: "Jean-Luc Godard", role: "Director" },
+      { text: "If you want a happy ending, that depends, of course, on where you stop your story.", attribution: "Orson Welles", role: "Director" },
+      { text: "We are the choices we make.", attribution: "Meryl Streep", role: "Actor" },
+      { text: "The stuff that dreams are made of.", attribution: "John Huston", role: "Director" },
+      { text: "I want to make beautiful things, even if nobody cares.", attribution: "Saul Bass", role: "Designer" },
+      { text: "Art enables us to find ourselves and lose ourselves at the same time.", attribution: "Thomas Merton", role: "Writer" },
+      { text: "Every great film should seem new every time you see it.", attribution: "Roger Ebert", role: "Critic" },
+      { text: "A good film is when the price of the dinner, the theatre admission and the babysitter was well worth it.", attribution: "Alfred Hitchcock", role: "Director" },
+      { text: "Film spectators are quiet vampires.", attribution: "Jim Morrison", role: "Artist" },
+      { text: "To make a great film you need three things — the script, the script, and the script.", attribution: "Alfred Hitchcock", role: "Director" },
+      { text: "The eye sees only what the mind is prepared to comprehend.", attribution: "Henri Bergson", role: "Philosopher" },
+      { text: "We don't stop playing because we grow old; we grow old because we stop playing.", attribution: "George Bernard Shaw", role: "Writer" },
+      { text: "Imagination is more important than knowledge.", attribution: "Albert Einstein", role: "Scientist" },
+    ];
+    for (var i = 0; i < seeds.length; i++) {
+      await fetch(RTDB + '/quotes.json', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(Object.assign({}, seeds[i], {
+          approved: true, useCount: 0, addedBy: 'admin',
+          language: 'en', createdAt: Date.now()
+        }))
+      });
+    }
+    console.log('Seeded ' + seeds.length + ' quotes.');
+  };
 
 })();
 </script>
