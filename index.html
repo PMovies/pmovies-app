@@ -4194,22 +4194,18 @@
 
     --hole: 9px;
     -webkit-mask-image:
-      radial-gradient(circle at 50% 0,   transparent var(--hole), black calc(var(--hole) + 1px)),
-      radial-gradient(circle at 50% 100%, transparent var(--hole), black calc(var(--hole) + 1px)),
-      radial-gradient(circle at 25% 50%,  transparent 14px, black 15px),
-      radial-gradient(circle at 95% 50%,  transparent 14px, black 15px);
-    -webkit-mask-size: 20px 100%, 20px 100%, 100% 100%, 100% 100%;
-    -webkit-mask-repeat: repeat-x, repeat-x, no-repeat, no-repeat;
-    -webkit-mask-position: 0 0, 0 100%, 0 0, 0 0;
-    -webkit-mask-composite: destination-in, destination-in, destination-in, destination-in;
+      radial-gradient(circle at 50% 0,    transparent var(--hole), black calc(var(--hole) + 1px)),
+      radial-gradient(circle at 50% 100%, transparent var(--hole), black calc(var(--hole) + 1px));
+    -webkit-mask-size: 20px 100%, 20px 100%;
+    -webkit-mask-repeat: repeat-x, repeat-x;
+    -webkit-mask-position: 0 0, 0 100%;
+    -webkit-mask-composite: destination-in, destination-in;
     mask-image:
       radial-gradient(circle at 50% 0,    transparent var(--hole), black calc(var(--hole) + 1px)),
-      radial-gradient(circle at 50% 100%, transparent var(--hole), black calc(var(--hole) + 1px)),
-      radial-gradient(circle at 25% 50%,  transparent 14px, black 15px),
-      radial-gradient(circle at 95% 50%,  transparent 14px, black 15px);
-    mask-size: 20px 100%, 20px 100%, 100% 100%, 100% 100%;
-    mask-repeat: repeat-x, repeat-x, no-repeat, no-repeat;
-    mask-position: 0 0, 0 100%, 0 0, 0 0;
+      radial-gradient(circle at 50% 100%, transparent var(--hole), black calc(var(--hole) + 1px));
+    mask-size: 20px 100%, 20px 100%;
+    mask-repeat: repeat-x, repeat-x;
+    mask-position: 0 0, 0 100%;
     mask-composite: intersect;
   }
 
@@ -4354,20 +4350,28 @@
 
   /* ── Mobile ──────────────────────────────────────────────────── */
   @media (max-width: 600px) {
-    .lobby-header      { padding-top: max(calc(env(safe-area-inset-top) + 14px), 44px); }
-    .lobby-wordmark    { font-size: 18px; letter-spacing: 0.42em; }
-    .lobby-tagline     { font-size: 7px; letter-spacing: 0.28em; margin-top: 3px; }
-    .lobby-stage       { padding: 8px 16px; }
-    .lobby-footer      {
-      padding: 10px 20px max(calc(env(safe-area-inset-bottom) + 14px), 22px);
-    }
-    .lobby-ticket      { height: clamp(150px, 44vw, 190px); --hole: 6px; }
+    /* Backdrop: lighter blur so the movie is more recognisable on mobile */
+    .lobby-backdrop    { filter: blur(10px) brightness(0.52) saturate(0.9); }
+
+    /* Header: push down a bit more + bigger wordmark */
+    .lobby-header      { padding-top: max(calc(env(safe-area-inset-top) + 28px), 56px); }
+    .lobby-wordmark    { font-size: clamp(26px, 7vw, 32px); letter-spacing: 0.5em; }
+    .lobby-tagline     { font-size: 7px; letter-spacing: 0.28em; margin-top: 4px; }
+    .lobby-header-rule { gap: 10px; padding: 5px 0 0; }
+
+    /* Stage / ticket */
+    .lobby-stage       { padding: 10px 16px; }
+    .lobby-ticket      { height: clamp(160px, 46vw, 200px); --hole: 6px; }
     .lobby-stub        { width: 19%; }
     .lobby-stub-text   { display: none; }
     .lobby-quote-inner { padding: 12px 14px; }
     .lobby-quote-text  { font-size: clamp(11px, 3.5vw, 15px); }
     .lobby-scratch-canvas { cursor: default; }
-    .lobby-header-rule { gap: 10px; padding: 4px 0 0; }
+
+    /* Footer */
+    .lobby-footer      {
+      padding: 10px 20px max(calc(env(safe-area-inset-bottom) + 14px), 22px);
+    }
     .lobby-enter-btn   { padding: 10px 24px; font-size: 10px; letter-spacing: 0.22em; }
   }
 </style>
@@ -26142,6 +26146,8 @@ async function deleteEditorReview(key, e) {
   var isScratching   = false;
   var strokeCount    = 0;
   var hasAutoRevealed = false;
+  var _shuffleDeck   = [];   // session-level shuffled copy
+  var _shuffleIdx    = 0;    // next position in the deck
 
   /* ── Fallback quotes (shown when Firebase is unreachable or user is a guest) ── */
   var _LOBBY_FALLBACK_QUOTES = [
@@ -26223,13 +26229,21 @@ async function deleteEditorReview(key, e) {
   }
 
   function pickNextQuote(all) {
-    var seen    = JSON.parse(localStorage.getItem(LOBBY_SEEN_KEY) || '[]');
-    var unseen  = all.filter(function(q) { return seen.indexOf(q.id) === -1; });
-    var pool    = unseen.length > 0 ? unseen : all;
-    var quote   = pool[Math.floor(Math.random() * pool.length)];
-    var updated = seen.concat([quote.id]).slice(-LOBBY_SEEN_MAX);
-    localStorage.setItem(LOBBY_SEEN_KEY, JSON.stringify(updated));
-    return quote;
+    if (!all || !all.length) return _LOBBY_FALLBACK_QUOTES[0];
+
+    // Reshuffle when deck is exhausted or the quote pool changed size
+    if (!_shuffleDeck.length || _shuffleIdx >= _shuffleDeck.length ||
+        _shuffleDeck.length !== all.length) {
+      _shuffleDeck = all.slice();
+      // Fisher-Yates shuffle
+      for (var i = _shuffleDeck.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var tmp = _shuffleDeck[i]; _shuffleDeck[i] = _shuffleDeck[j]; _shuffleDeck[j] = tmp;
+      }
+      _shuffleIdx = 0;
+    }
+
+    return _shuffleDeck[_shuffleIdx++];
   }
 
   function renderQuote(quote) {
