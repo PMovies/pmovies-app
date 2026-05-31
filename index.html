@@ -1821,255 +1821,174 @@
 
   /* ── LANDING SCREEN ──────────────────────────────────── */
   /* ═══════════════════════════════════════════════════════════
-     LOBBY SCREEN — Vintage Cinema Gateway
+     LOBBY SCREEN — Scratch Ticket
   ════════════════════════════════════════════════════════════ */
-  :root {
-    --lobby-black:    #0A0905;
-    --lobby-dark:     #141009;
-    --lobby-cream:    #EDE4D0;
-    --lobby-cream-dim:#A89878;
-    --lobby-gold:     #C9A84C;
-    --lobby-amber:    #8A6520;
-    --lobby-rule:     #3A3020;
+  @keyframes lobbyFadeUp {
+    from { opacity:0; transform:translateY(7px); }
+    to   { opacity:1; transform:translateY(0); }
   }
 
-  /* Grain animation */
-  @keyframes lobby-grain {
-    0%,100%{ transform:translate(0,0) }
-    10%    { transform:translate(-2%,-3%) }
-    20%    { transform:translate(3%,1%) }
-    30%    { transform:translate(-1%,4%) }
-    40%    { transform:translate(4%,-2%) }
-    50%    { transform:translate(-3%,3%) }
-    60%    { transform:translate(2%,-4%) }
-    70%    { transform:translate(-4%,1%) }
-    80%    { transform:translate(3%,4%) }
-    90%    { transform:translate(-2%,-1%) }
-  }
-
+  /* ── LOBBY SCREEN — Scratch Ticket ─────────────────────────── */
   #lobby-screen {
     position: fixed; inset: 0; z-index: 100001;
-    background-color: var(--lobby-black);
-    display: flex; flex-direction: column;
-    overflow: hidden;
-    transition: opacity 0.7s ease;
+    background: #0A0A0A;
+    display: flex; flex-direction: column; overflow: hidden;
+    transition: opacity 0.5s ease;
   }
-  #lobby-screen.lobby-hidden { opacity: 0; pointer-events: none; }
+  #lobby-screen.lobby-exit { opacity: 0; pointer-events: none; }
 
-  /* Film grain overlay */
-  #lobby-screen::after {
-    content: ''; position: fixed; inset: 0;
-    pointer-events: none; z-index: 100;
-    opacity: 0.04;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-    background-size: 200px 200px;
-    animation: lobby-grain 0.5s steps(1) infinite;
+  .lobby-backdrop {
+    position: absolute; inset: -40px;
+    background-size: cover; background-position: center;
+    filter: blur(48px) brightness(0.32) saturate(0.75);
+    transform: scale(1.05); z-index: 0;
+    transition: background-image 1.2s ease;
   }
-
-  /* Vignette */
-  .lobby-vignette {
-    position: fixed; inset: 0; pointer-events: none; z-index: 1;
-    background: radial-gradient(ellipse at center, transparent 40%, rgba(10,9,5,.55) 80%, rgba(10,9,5,.85) 100%);
+  .lobby-overlay {
+    position: absolute; inset: 0; z-index: 1; pointer-events: none;
+    background: linear-gradient(to bottom, rgba(0,0,0,.55) 0%, rgba(0,0,0,.1) 35%, rgba(0,0,0,.1) 65%, rgba(0,0,0,.75) 100%);
   }
-
-  /* Decorative rule — gradient solid (no dashed) */
-  /* Gradient rule — <div> not <hr> to avoid browser hr defaults */
-  #lobby-screen .lbs-rule {
-    display: block; height: 1px; border: none; outline: none; margin: 0; padding: 0;
-    background: linear-gradient(to right, transparent 0%, var(--lobby-gold) 15%, var(--lobby-gold) 85%, transparent 100%);
-    opacity: 0.4;
+  #lobby-screen .lobby-header {
+    position: relative; z-index: 2; text-align: center;
+    padding: 28px 0 0; pointer-events: none;
   }
-
-  /* ── All #lobby-screen styles scoped to avoid conflicts with Lobby thread tab ── */
-  #lobby-screen .lobby-header { flex-shrink: 0; padding: 28px 48px 0; position: relative; z-index: 2; }
   #lobby-screen .lobby-wordmark {
-    font-family: 'Cinzel', serif; font-weight: 600;
-    font-size: clamp(11px,1.4vw,16px); letter-spacing: 0.5em;
-    color: var(--lobby-gold); text-align: center; margin-bottom: 18px; opacity: 0.85;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(13px,1.6vw,18px); font-weight: 700;
+    letter-spacing: 0.45em; color: var(--orange);
+    text-transform: uppercase; opacity: 0.9;
   }
-
-  #lobby-screen .lobby-main {
-    flex: 1; display: grid; grid-template-columns: 260px 1fr;
-    gap: 0; padding: 32px 48px; min-height: 0;
-    position: relative; z-index: 2; align-items: center;
+  .lobby-stage {
+    flex: 1; position: relative; z-index: 2;
+    display: flex; align-items: center; justify-content: center; padding: 20px;
   }
-
-  /* Poster column — scoped */
-  #lobby-screen .lobby-poster-col {
-    display: flex; flex-direction: column; align-items: center;
-    justify-content: center; height: 100%; padding-right: 40px;
+  .lobby-ticket-wrap {
+    display: flex; flex-direction: column; align-items: center; gap: 16px;
   }
-  /* Poster card — renamed lbs-card to avoid conflict with lobby-thread .lobby-card */
-  #lobby-screen .lbs-card { opacity: 1; transition: opacity 0.5s ease, transform 0.5s ease; }
-  #lobby-screen .lbs-card.transitioning { opacity: 0; transform: translateY(6px); }
-
-  #lobby-screen .lbs-card-inner {
-    position: relative;
-    box-shadow: 0 2px 8px rgba(0,0,0,.6), 0 8px 32px rgba(0,0,0,.5), inset 0 0 0 1px rgba(201,168,76,.15);
-    border: 1px solid rgba(201,168,76,.2); background: var(--lobby-dark);
-    transform: rotate(-0.8deg);
-    transition: transform 0.4s ease, box-shadow 0.4s ease;
+  /* ── Ticket ── */
+  .lobby-ticket {
+    display: flex; flex-direction: row;
+    width: min(680px, 94vw); height: clamp(170px, 25vw, 230px);
+    background: #1A1610; border: 1px solid rgba(245,165,35,.3);
+    position: relative; border-radius: 6px; overflow: visible;
+    /* Perforated mask */
+    --hole: 8px;
+    -webkit-mask-image:
+      radial-gradient(circle at 50% 0,    transparent var(--hole), black calc(var(--hole) + 1px)),
+      radial-gradient(circle at 50% 100%, transparent var(--hole), black calc(var(--hole) + 1px)),
+      radial-gradient(circle at 21% 50%,  transparent 13px, black 14px),
+      radial-gradient(circle at 79% 50%,  transparent 13px, black 14px);
+    -webkit-mask-size: 18px 100%, 18px 100%, 100% 100%, 100% 100%;
+    -webkit-mask-repeat: repeat-x, repeat-x, no-repeat, no-repeat;
+    -webkit-mask-position: 0 0, 0 100%, 0 0, 0 0;
+    -webkit-mask-composite: destination-in, destination-in, destination-in, destination-in;
+    mask-image:
+      radial-gradient(circle at 50% 0,    transparent var(--hole), black calc(var(--hole) + 1px)),
+      radial-gradient(circle at 50% 100%, transparent var(--hole), black calc(var(--hole) + 1px)),
+      radial-gradient(circle at 21% 50%,  transparent 13px, black 14px),
+      radial-gradient(circle at 79% 50%,  transparent 13px, black 14px);
+    mask-size: 18px 100%, 18px 100%, 100% 100%, 100% 100%;
+    mask-repeat: repeat-x, repeat-x, no-repeat, no-repeat;
+    mask-position: 0 0, 0 100%, 0 0, 0 0;
+    mask-composite: intersect;
   }
-  #lobby-screen .lbs-card-inner:hover {
-    transform: rotate(0deg) scale(1.01);
-    box-shadow: 0 4px 16px rgba(0,0,0,.7), 0 12px 48px rgba(0,0,0,.6), inset 0 0 0 1px rgba(201,168,76,.3);
+  .lobby-stub {
+    width: 21%; flex-shrink: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 5px; padding: 14px 6px;
+    border-right: 1px dashed rgba(245,165,35,.25);
   }
-  #lobby-screen .lobby-poster-img {
-    display: block; width: 200px; height: auto; aspect-ratio: 2/3; object-fit: cover;
-    filter: sepia(10%) contrast(1.04) brightness(0.95);
+  .lobby-stub-star { font-size: clamp(10px,1.6vw,15px); color: var(--orange); opacity: 0.55; line-height: 1; }
+  .lobby-stub-text {
+    font-size: clamp(6px,.85vw,8px); font-weight: 700;
+    letter-spacing: 0.12em; color: var(--orange); opacity: 0.35;
+    text-align: center; margin-top: 5px;
+    font-family: 'Montserrat', sans-serif;
   }
-  #lobby-screen .lobby-film-info { text-align: center; margin-top: 14px; opacity: 0.7; }
-  #lobby-screen .lobby-film-title {
-    font-family: 'Cinzel', serif; font-size: clamp(8px,.85vw,10px);
-    letter-spacing: 0.2em; color: var(--lobby-gold); text-transform: uppercase; margin: 0 0 4px;
+  .lobby-tear {
+    width: 1px; flex-shrink: 0;
+    background: repeating-linear-gradient(to bottom, rgba(245,165,35,.3) 0, rgba(245,165,35,.3) 4px, transparent 4px, transparent 8px);
   }
-  #lobby-screen .lobby-film-meta {
-    font-family: 'Cormorant Garamond', serif; font-size: clamp(10px,1vw,12px);
-    color: var(--lobby-cream-dim); font-style: italic; margin: 0;
-  }
-  #lobby-screen .lobby-poster-ph {
-    width: 200px; aspect-ratio: 2/3; background: var(--lobby-dark);
+  .lobby-ticket-body {
+    flex: 1; position: relative; overflow: hidden;
     display: flex; align-items: center; justify-content: center;
-    color: #3A3020; font-size: 2rem;
   }
-
-  /* Quote column */
-  #lobby-screen .lobby-quote-col {
-    padding-left: 52px; border-left: 1px solid rgba(201,168,76,0.18);
-    display: flex; align-items: center; justify-content: flex-start;
-    height: 100%; min-height: 0;
+  .lobby-quote-inner {
+    padding: 18px 24px; text-align: center;
+    pointer-events: none; user-select: none;
   }
-  #lobby-screen .lobby-quote-wrap { position: relative; opacity: 1; transition: opacity 0.5s ease; width: 100%; max-width: 620px; }
-  #lobby-screen .lobby-quote-wrap.transitioning { opacity: 0; }
-
-  #lobby-screen .lobby-open-mark {
-    display: block; font-family: 'Playfair Display', serif;
-    font-size: clamp(36px,5vw,64px); line-height: 0.8;
-    color: var(--lobby-gold); opacity: 0.28; margin-bottom: 14px; user-select: none;
+  .lobby-quote-text {
+    font-family: 'Montserrat', sans-serif;
+    font-size: clamp(13px,2vw,19px); font-weight: 600;
+    line-height: 1.55; color: #F0E8D5; margin: 0 0 10px; font-style: italic;
   }
-  #lobby-screen .lobby-quote-text {
-    font-family: 'Playfair Display', serif; font-style: italic;
-    font-size: clamp(16px,2vw,25px); line-height: 1.75;
-    color: var(--lobby-cream); margin: 0; letter-spacing: 0.01em;
+  .lobby-quote-attr {
+    font-family: 'Montserrat', sans-serif;
+    font-size: clamp(9px,1.1vw,12px); font-weight: 700;
+    letter-spacing: 0.14em; color: var(--orange);
+    text-transform: uppercase; margin: 0; opacity: 0.85;
   }
-  #lobby-screen .lobby-close-mark {
-    display: block; font-family: 'Playfair Display', serif;
-    font-size: clamp(36px,5vw,64px); line-height: 0.55;
-    color: var(--lobby-gold); opacity: 0.28; text-align: right;
-    margin-top: 10px; user-select: none;
+  .lobby-scratch-canvas {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    cursor: crosshair; touch-action: none;
+    transition: opacity 0.45s ease;
   }
-  #lobby-screen .lobby-quote-footer { margin-top: 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-  #lobby-screen .lobby-attribution {
-    font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 300;
-    font-size: clamp(13px,1.3vw,16px); color: var(--lobby-cream-dim); margin: 0;
+  .lobby-scratch-canvas.revealed { opacity: 0; pointer-events: none; }
+  /* Post-reveal buttons */
+  .lobby-post-reveal { display: flex; gap: 12px; align-items: center; }
+  .lobby-share-btn, .lobby-another-btn {
+    background: transparent; border: 1px solid rgba(245,165,35,.4);
+    color: var(--orange); font-family: 'Montserrat', sans-serif;
+    font-size: clamp(9px,1vw,11px); font-weight: 700;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    padding: 8px 18px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 7px;
+    transition: background .22s ease, color .22s ease;
+    animation: lobbyFadeUp 0.4s ease forwards;
   }
-  #lobby-screen .lobby-film-ref {
-    font-family: 'Cinzel', serif; font-size: clamp(8px,.85vw,10px);
-    letter-spacing: 0.18em; color: var(--lobby-gold); opacity: 0.72; margin: 0; text-transform: uppercase;
+  .lobby-share-btn:hover { background: var(--orange); color: #000; }
+  .lobby-another-btn {
+    border-color: rgba(255,255,255,.14); color: rgba(255,255,255,.4);
   }
-  #lobby-screen .lobby-share-btn {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 5px 12px; background: transparent;
-    border: 1px solid rgba(201,168,76,.3); color: var(--lobby-cream-dim);
-    font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 0.2em;
-    cursor: pointer; opacity: 0; transition: opacity .3s ease, color .3s ease, border-color .3s ease;
-    margin-left: auto;
-  }
-  #lobby-screen .lobby-quote-wrap:hover .lobby-share-btn,
-  #lobby-screen .lobby-quote-wrap:focus-within .lobby-share-btn { opacity: 1; }
-  #lobby-screen .lobby-share-btn:hover { color: var(--lobby-gold); border-color: var(--lobby-gold); }
-
+  .lobby-another-btn:hover { color: rgba(255,255,255,.75); border-color: rgba(255,255,255,.28); }
   /* Footer */
-  #lobby-screen .lobby-footer { flex-shrink: 0; position: relative; z-index: 2; }
-  #lobby-screen .lobby-footer-inner {
+  #lobby-screen .lobby-footer {
+    position: relative; z-index: 2;
     display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 48px 22px; gap: 24px;
+    padding: 18px 36px 28px;
   }
   #lobby-screen .lobby-greeting {
-    font-family: 'Cormorant Garamond', serif; font-size: clamp(12px,1.2vw,14px);
-    color: var(--lobby-cream-dim); letter-spacing: 0.05em; flex: 1;
+    font-family: 'Open Sans', sans-serif;
+    font-size: clamp(12px,1.2vw,14px); font-weight: 400;
+    color: rgba(255,255,255,.4); letter-spacing: 0.03em;
   }
-  #lobby-screen .lobby-greeting .lobby-badge {
-    font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 0.2em;
-    color: var(--lobby-gold); border: 1px solid rgba(201,168,76,.4);
-    padding: 2px 8px; margin-left: 10px; vertical-align: middle;
-  }
-  #lobby-screen .lobby-dots { display: flex; gap: 8px; align-items: center; }
-  #lobby-screen .lobby-dot {
-    width: 5px; height: 5px; border-radius: 50%;
-    border: 1px solid rgba(201,168,76,.45); background: transparent;
-    cursor: pointer; transition: background .3s ease, border-color .3s ease; padding: 0;
-  }
-  #lobby-screen .lobby-dot.active { background: var(--lobby-gold); border-color: var(--lobby-gold); }
-
+  #lobby-screen .lobby-greeting strong { color: rgba(255,255,255,.72); font-weight: 700; }
   #lobby-screen .lobby-enter-btn {
-    display: inline-flex; align-items: center; gap: 10px;
-    padding: 10px 28px; background: transparent;
-    border: 1px solid var(--lobby-gold); color: var(--lobby-gold);
-    font-family: 'Cinzel', serif; font-size: clamp(10px,1vw,12px); font-weight: 600;
-    letter-spacing: 0.3em; cursor: pointer;
-    transition: background .3s ease, color .3s ease; position: relative; overflow: hidden;
-    flex-shrink: 0;
+    background: transparent; border: 1px solid var(--orange); color: var(--orange);
+    font-family: 'Montserrat', sans-serif;
+    font-size: clamp(10px,1.1vw,12px); font-weight: 700;
+    letter-spacing: 0.25em; padding: 10px 28px; cursor: pointer;
+    text-transform: uppercase; transition: background .25s ease, color .25s ease;
+    position: relative; overflow: hidden;
   }
   #lobby-screen .lobby-enter-btn::before {
     content: ''; position: absolute; inset: 0;
-    background: var(--lobby-gold); transform: translateX(-100%);
-    transition: transform .35s ease; z-index: 0;
+    background: var(--orange); transform: translateX(-100%);
+    transition: transform .3s ease; z-index: 0;
   }
   #lobby-screen .lobby-enter-btn:hover::before { transform: translateX(0); }
-  #lobby-screen .lobby-enter-btn span, #lobby-screen .lobby-enter-btn svg { position: relative; z-index: 1; }
-  #lobby-screen .lobby-enter-btn:hover { color: var(--lobby-black); }
-
-  /* ── Mobile ── */
-  @media (max-width: 768px) {
-    #lobby-screen .lobby-header { padding: 18px 20px 0; }
-    #lobby-screen .lobby-wordmark { font-size: 10px; letter-spacing: 0.4em; margin-bottom: 14px; }
-
-    #lobby-screen .lobby-main {
-      grid-template-columns: 1fr;
-      grid-template-rows: auto 1fr;
-      padding: 16px 20px 12px;
-      gap: 0;
-      overflow-y: auto;
-    }
-
-    /* Poster strip: small card left, film info right */
-    #lobby-screen .lobby-poster-col {
-      flex-direction: row; align-items: flex-start;
-      justify-content: flex-start; height: auto;
-      padding-right: 0; gap: 14px;
-      padding-bottom: 16px;
-      border-bottom: 1px solid rgba(201,168,76,0.12);
-    }
-    #lobby-screen .lbs-card { display: flex; flex-direction: row; align-items: flex-start; gap: 14px; width: 100%; }
-    #lobby-screen .lbs-card-inner { flex-shrink: 0; }
-    #lobby-screen .lobby-poster-img { width: 64px; }
-    #lobby-screen .lobby-poster-ph { width: 64px; font-size: 1.2rem; }
-    #lobby-screen .lobby-film-info { text-align: left; margin-top: 6px; flex: 1; }
-    #lobby-screen .lobby-film-title { font-size: 9px; }
-    #lobby-screen .lobby-film-meta { font-size: 10px; }
-
-    /* Quote: compact, no left border */
-    #lobby-screen .lobby-quote-col {
-      padding-left: 0; border-left: none;
-      padding-top: 16px; height: auto; align-items: flex-start;
-    }
-    #lobby-screen .lobby-open-mark { font-size: 34px; margin-bottom: 8px; }
-    #lobby-screen .lobby-close-mark { font-size: 34px; margin-top: 6px; }
-    #lobby-screen .lobby-quote-text { font-size: clamp(15px,4.2vw,20px); line-height: 1.65; }
-    #lobby-screen .lobby-quote-footer { margin-top: 16px; gap: 10px; }
-    #lobby-screen .lobby-attribution { font-size: 13px; }
-    #lobby-screen .lobby-film-ref { font-size: 9px; }
-    #lobby-screen .lobby-share-btn { opacity: 1; margin-left: 0; }
-
-    /* Footer */
-    #lobby-screen .lobby-footer-inner { padding: 10px 20px 18px; gap: 12px; }
-    #lobby-screen .lobby-greeting { display: none; }
-    #lobby-screen .lobby-enter-btn { padding: 9px 22px; font-size: 10px; letter-spacing: 0.25em; }
-  }
-  @media (max-width: 380px) {
-    #lobby-screen .lobby-enter-btn { padding: 8px 16px; }
-    #lobby-screen .lobby-dots { gap: 6px; }
+  #lobby-screen .lobby-enter-btn:hover { color: #000; }
+  #lobby-screen .lobby-enter-btn span { position: relative; z-index: 1; }
+  /* Mobile */
+  @media (max-width: 600px) {
+    #lobby-screen .lobby-wordmark { font-size: 11px; letter-spacing: 0.4em; }
+    #lobby-screen .lobby-footer { padding: 14px 20px 22px; }
+    .lobby-ticket { height: clamp(150px, 46vw, 190px); --hole: 7px; }
+    .lobby-stub { width: 19%; }
+    .lobby-stub-text { display: none; }
+    .lobby-quote-inner { padding: 12px 14px; }
+    .lobby-quote-text { font-size: clamp(12px,3.8vw,16px); }
   }
 
   #pmLandingScreen {
@@ -4331,65 +4250,55 @@
 <!-- ║  LANDING SCREEN — shown every visit until signed in     ║ -->
 <!-- ╚══════════════════════════════════════════════════════════╝ -->
 <!-- ╔══════════════════════════════════════════════════════════════╗ -->
-<!-- ║  THE LOBBY — Cinematic Gateway Screen                       ║ -->
+<!-- ║  THE LOBBY — Scratch Ticket Home Screen                     ║ -->
 <!-- ╚══════════════════════════════════════════════════════════════╝ -->
-<div id="lobby-screen" style="display:none">
-  <div class="lobby-vignette"></div>
+<div id="lobby-screen" class="lobby-screen" style="display:none">
+
+  <div class="lobby-backdrop" id="lobby-backdrop"></div>
+  <div class="lobby-overlay"></div>
 
   <header class="lobby-header">
-    <div class="lobby-wordmark">P M O V I E S</div>
-    <div class="lbs-rule" role="separator"></div>
+    <span class="lobby-wordmark">PMOVIES</span>
   </header>
 
-  <main class="lobby-main" id="lobby-main">
-    <div class="lobby-poster-col">
-      <div class="lbs-card" id="lobby-card">
-        <div class="lbs-card-inner">
-          <div class="lobby-poster-ph" id="lobby-poster-ph">🎬</div>
-          <img id="lobby-poster" class="lobby-poster-img" src="" alt="" loading="eager" style="display:none">
-        </div>
-        <div class="lobby-film-info" id="lobby-film-info">
-          <p class="lobby-film-title" id="lobby-film-title"></p>
-          <p class="lobby-film-meta"  id="lobby-film-meta"></p>
-        </div>
-      </div>
-    </div>
+  <main class="lobby-stage">
+    <div class="lobby-ticket-wrap" id="lobby-ticket-wrap">
 
-    <div class="lobby-quote-col">
-      <div class="lobby-quote-wrap" id="lobby-quote-wrap">
-        <span class="lobby-open-mark" aria-hidden="true">&#10077;</span>
-        <blockquote class="lobby-quote-text" id="lobby-quote-text"></blockquote>
-        <span class="lobby-close-mark" aria-hidden="true">&#10078;</span>
-        <footer class="lobby-quote-footer">
-          <p class="lobby-attribution" id="lobby-attribution"></p>
-          <p class="lobby-film-ref"    id="lobby-film-ref"></p>
-          <button class="lobby-share-btn" id="lobby-share-btn" aria-label="Share this quote">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-              <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/>
-              <polyline points="16 6 12 2 8 6"/>
-              <line x1="12" y1="2" x2="12" y2="15"/>
-            </svg>
-            Share
-          </button>
-        </footer>
+      <div class="lobby-ticket" id="lobby-ticket">
+        <div class="lobby-stub">
+          <span class="lobby-stub-star">★</span>
+          <span class="lobby-stub-star">★</span>
+          <span class="lobby-stub-star">★</span>
+          <span class="lobby-stub-text">ADMIT<br>ONE</span>
+        </div>
+        <div class="lobby-tear"></div>
+        <div class="lobby-ticket-body" id="lobby-ticket-body">
+          <div class="lobby-quote-inner" id="lobby-quote-inner">
+            <p class="lobby-quote-text" id="lobby-quote-text"></p>
+            <p class="lobby-quote-attr" id="lobby-quote-attr"></p>
+          </div>
+          <canvas class="lobby-scratch-canvas" id="lobby-scratch-canvas" aria-label="Scratch to reveal quote"></canvas>
+        </div>
       </div>
+
+      <div class="lobby-post-reveal" id="lobby-post-reveal" style="display:none">
+        <button class="lobby-share-btn" id="lobby-share-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/>
+            <polyline points="16 6 12 2 8 6"/>
+            <line x1="12" y1="2" x2="12" y2="15"/>
+          </svg>
+          Share Quote
+        </button>
+        <button class="lobby-another-btn" id="lobby-another-btn">↻ Another</button>
+      </div>
+
     </div>
   </main>
 
   <footer class="lobby-footer">
-    <div class="lbs-rule" role="separator"></div>
-    <div class="lobby-footer-inner">
-      <div class="lobby-greeting" id="lobby-greeting">A community for people who love cinema</div>
-      <div class="lobby-dots" id="lobby-dots" role="tablist" aria-label="Browse quotes"></div>
-      <div class="lobby-enter-wrap">
-        <button class="lobby-enter-btn" id="lobby-enter-btn" onclick="lobbyEnter()">
-          <span>ENTER</span>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-            <path d="M5 12h14M12 5l7 7-7 7"/>
-          </svg>
-        </button>
-      </div>
-    </div>
+    <div class="lobby-greeting" id="lobby-greeting"></div>
+    <button class="lobby-enter-btn" id="lobby-enter-btn"><span>ENTER &nbsp;→</span></button>
   </footer>
 </div>
 
@@ -19396,12 +19305,8 @@ async function deleteEditorReview(key, e) {
         +   '<div id="adminQuoteForm" style="display:none;background:#111;border:1px solid #222;border-radius:10px;padding:16px;margin-bottom:12px">'
         +     '<textarea id="aqf-text" placeholder="Quote text…" rows="3" maxlength="500" style="width:100%;background:#0d0d0d;border:1px solid #333;border-radius:8px;color:#f4f1ea;font-size:.8rem;padding:10px;box-sizing:border-box;margin-bottom:8px;resize:vertical;font-family:inherit"></textarea>'
         +     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">'
-        +       '<input id="aqf-character" placeholder="Character (optional)" style="background:#0d0d0d;border:1px solid #333;border-radius:8px;color:#f4f1ea;font-size:.8rem;padding:9px 12px">'
-        +       '<input id="aqf-film" placeholder="Film title *" style="background:#0d0d0d;border:1px solid #333;border-radius:8px;color:#f4f1ea;font-size:.8rem;padding:9px 12px">'
-        +       '<input id="aqf-tmdbid" placeholder="TMDB ID (for poster)" style="background:#0d0d0d;border:1px solid #333;border-radius:8px;color:#f4f1ea;font-size:.8rem;padding:9px 12px">'
-        +       '<input id="aqf-director" placeholder="Director" style="background:#0d0d0d;border:1px solid #333;border-radius:8px;color:#f4f1ea;font-size:.8rem;padding:9px 12px">'
-        +       '<input id="aqf-year" type="number" placeholder="Year" min="1900" max="2030" style="background:#0d0d0d;border:1px solid #333;border-radius:8px;color:#f4f1ea;font-size:.8rem;padding:9px 12px">'
-        +       '<input id="aqf-country" placeholder="Country" style="background:#0d0d0d;border:1px solid #333;border-radius:8px;color:#f4f1ea;font-size:.8rem;padding:9px 12px">'
+        +       '<input id="aqf-attribution" placeholder="Who said it (attribution) *" style="background:#0d0d0d;border:1px solid #333;border-radius:8px;color:#f4f1ea;font-size:.8rem;padding:9px 12px">'
+        +       '<input id="aqf-role" placeholder="Role — Director / Writer / Actor…" style="background:#0d0d0d;border:1px solid #333;border-radius:8px;color:#f4f1ea;font-size:.8rem;padding:9px 12px">'
         +     '</div>'
         +     '<div style="display:flex;gap:8px">'
         +       '<button onclick="window._adminSaveQuote()" style="background:rgba(201,168,76,.18);border:1px solid rgba(201,168,76,.4);color:#c9a84c;font-family:\'Montserrat\',sans-serif;font-size:.72rem;font-weight:700;padding:9px 18px;border-radius:8px;cursor:pointer">Save Quote</button>'
@@ -26017,499 +25922,417 @@ async function deleteEditorReview(key, e) {
 </script>
 
 <!-- ╔══════════════════════════════════════════════════════════════╗ -->
-<!-- ║  LOBBY — JavaScript                                          ║ -->
+<!-- ║  LOBBY — Scratch Ticket JS                                   ║ -->
 <!-- ╚══════════════════════════════════════════════════════════════╝ -->
 <script>
 (function() {
   'use strict';
 
-  /* ── Constants ────────────────────────────────────────────────── */
-  var LOBBY_RTDB           = 'https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app';
-  var LOBBY_TMDB_BASE      = 'https://api.themoviedb.org/3';
-  var LOBBY_QUOTE_SEEN_KEY = 'pmovies_seen_quotes';
-  var LOBBY_SEEN_MAX       = 30;
-  var LOBBY_AUTO_MS        = 18000; // 18 s before auto-advance
+  /* ── Constants ─────────────────────────────────────────────── */
+  var RTDB                   = 'https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app';
+  var LOBBY_SEEN_KEY         = 'pmovies_seen_quotes_v2';
+  var LOBBY_SEEN_MAX         = 40;
+  var SCRATCH_BRUSH_RADIUS   = 28;
+  var SCRATCH_REVEAL_AT      = 0.40;
+  var SCRATCH_SAMPLE_EVERY   = 32;
 
-  /* ── State ────────────────────────────────────────────────────── */
-  var _lobbyQuotes     = [];
-  var _lobbyIdx        = 0;
-  var _lobbyAutoTimer  = null;
-  var _lobbyCurrentQ   = null;
-  var _lobbyBusy       = false; // prevents concurrent transitions
-
-  /* ── Helpers ──────────────────────────────────────────────────── */
-  function _sleep(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
-
-  function _tmdbKey() {
-    return (typeof window._pmLsKey === 'function'
-      ? localStorage.getItem(window._pmLsKey('pmovies_tmdb_key'))
-      : localStorage.getItem('pmovies_tmdb_key'))
-      || 'd04038fc4e0708bd069b323b220d5dc0';
-  }
-
-  /* ── Inline fallback quotes (shown until Firebase is seeded) ─── */
-  var LOBBY_FALLBACK_QUOTES = [
-    { id:'fb1', text:"We're all on the brink of despair, all we can do is look each other in the face, keep each other company, quote a little Chekhov.", character:"Jep Gambardella", film:"The Great Beauty", tmdbId:"176283", year:2013, director:"Paolo Sorrentino", country:"Italy", approved:true },
-    { id:'fb2', text:"All those moments will be lost in time, like tears in rain.", character:"Roy Batty", film:"Blade Runner", tmdbId:"78", year:1982, director:"Ridley Scott", country:"USA", approved:true },
-    { id:'fb3', text:"Hope is a good thing, maybe the best of things, and no good thing ever dies.", character:"Andy Dufresne", film:"The Shawshank Redemption", tmdbId:"278", year:1994, director:"Frank Darabont", country:"USA", approved:true },
-    { id:'fb4', text:"You either die a hero or you live long enough to see yourself become the villain.", character:"Harvey Dent", film:"The Dark Knight", tmdbId:"155", year:2008, director:"Christopher Nolan", country:"USA", approved:true },
-    { id:'fb5', text:"The things you own end up owning you.", character:"Tyler Durden", film:"Fight Club", tmdbId:"550", year:1999, director:"David Fincher", country:"USA", approved:true },
-    { id:'fb6', text:"Carpe diem. Seize the day, boys. Make your lives extraordinary.", character:"John Keating", film:"Dead Poets Society", tmdbId:"207", year:1989, director:"Peter Weir", country:"USA", approved:true },
-    { id:'fb7', text:"I'm going to make him an offer he can't refuse.", character:"Vito Corleone", film:"The Godfather", tmdbId:"238", year:1972, director:"Francis Ford Coppola", country:"USA", approved:true },
-    { id:'fb8', text:"After all, tomorrow is another day.", character:"Scarlett O'Hara", film:"Gone with the Wind", tmdbId:"770", year:1939, director:"Victor Fleming", country:"USA", approved:true }
+  /* ── Backdrop pool ─────────────────────────────────────────── */
+  var LOBBY_BACKDROPS = [
+    'https://image.tmdb.org/t/p/w1280/tmU7GeKVybMWFButWEGl2M4GeiP.jpg',
+    'https://image.tmdb.org/t/p/w1280/ilRyazdMJwN05exqhwK4tMKBYZs.jpg',
+    'https://image.tmdb.org/t/p/w1280/oU7Oq2kFAAlGqbU4VoAE36g4hoI.jpg',
+    'https://image.tmdb.org/t/p/w1280/bSXfU4dwZyBA1vMmXvejdRXBvuF.jpg',
+    'https://image.tmdb.org/t/p/w1280/phszHPFnhmAMgJpFBFMtlxmFMkk.jpg',
+    'https://image.tmdb.org/t/p/w1280/lEIaL12hSkqqe83zVvF98SxieZl.jpg',
+    'https://image.tmdb.org/t/p/w1280/nadTlnTE6DdgmYsN4iWc2a2wiaI.jpg',
+    'https://image.tmdb.org/t/p/w1280/TU9NIjwzjoKPwQHoHshkFcQUCG.jpg'
   ];
 
-  /* ── Quote loading ────────────────────────────────────────────── */
-  async function _loadLobbyQuotes() {
+  /* ── Fallback quotes (shown if Firebase is empty) ──────────── */
+  var FALLBACK_QUOTES = [
+    { id:'fq1', text:'A film is never really good unless the camera is an eye in the head of a poet.', attribution:'Orson Welles', role:'Director', approved:true },
+    { id:'fq2', text:'Cinema is a matter of what's in the frame and what's out.', attribution:'Martin Scorsese', role:'Director', approved:true },
+    { id:'fq3', text:'I dream for a living.', attribution:'Steven Spielberg', role:'Director', approved:true },
+    { id:'fq4', text:'Life is a tragedy when seen in close-up, but a comedy in long-shot.', attribution:'Charlie Chaplin', role:'Director', approved:true },
+    { id:'fq5', text:'What is drama but life with the dull bits cut out.', attribution:'Alfred Hitchcock', role:'Director', approved:true },
+    { id:'fq6', text:'Cinema is the most beautiful fraud in the world.', attribution:'Jean-Luc Godard', role:'Director', approved:true },
+    { id:'fq7', text:'Every great film should seem new every time you see it.', attribution:'Roger Ebert', role:'Critic', approved:true },
+    { id:'fq8', text:'The secret to film is that it's an illusion.', attribution:'George Lucas', role:'Director', approved:true }
+  ];
+
+  /* ── State ─────────────────────────────────────────────────── */
+  var lobbyQuotes    = [];
+  var currentQuote   = null;
+  var scratchCanvas, scratchCtx;
+  var isScratching   = false;
+  var strokeCount    = 0;
+  var hasAutoRevealed = false;
+
+  /* ── Backdrop ──────────────────────────────────────────────── */
+  function setLobbyBackdrop() {
+    var url = LOBBY_BACKDROPS[Math.floor(Math.random() * LOBBY_BACKDROPS.length)];
+    var el  = document.getElementById('lobby-backdrop');
+    if (el) el.style.backgroundImage = 'url(' + url + ')';
+  }
+
+  /* ── Quote loading ─────────────────────────────────────────── */
+  async function loadLobbyQuotes() {
     try {
-      var res  = await fetch(LOBBY_RTDB + '/quotes.json?orderBy="approved"&equalTo=true');
+      var res  = await fetch(RTDB + '/quotes.json?orderBy="approved"&equalTo=true');
       var data = res.ok ? await res.json() : null;
       if (data && Object.keys(data).length > 0) {
         return Object.entries(data).map(function(e) { return Object.assign({ id: e[0] }, e[1]); });
       }
     } catch(_) {}
-    // Firebase empty or unreachable — use inline fallback quotes
-    return LOBBY_FALLBACK_QUOTES;
+    return FALLBACK_QUOTES;
   }
 
-  function _getNextQuote(all) {
-    var seen   = JSON.parse(localStorage.getItem(LOBBY_QUOTE_SEEN_KEY) || '[]');
+  function pickNextQuote(all) {
+    var seen   = JSON.parse(localStorage.getItem(LOBBY_SEEN_KEY) || '[]');
     var unseen = all.filter(function(q) { return !seen.includes(q.id); });
-    if (!unseen.length) {
-      localStorage.removeItem(LOBBY_QUOTE_SEEN_KEY);
-      unseen = all;
-    }
-    var q = unseen[Math.floor(Math.random() * unseen.length)];
-    var newSeen = seen.concat([q.id]).slice(-LOBBY_SEEN_MAX);
-    localStorage.setItem(LOBBY_QUOTE_SEEN_KEY, JSON.stringify(newSeen));
-    return q;
+    var pool   = unseen.length > 0 ? unseen : all;
+    var quote  = pool[Math.floor(Math.random() * pool.length)];
+    var updated = seen.concat([quote.id]).slice(-LOBBY_SEEN_MAX);
+    localStorage.setItem(LOBBY_SEEN_KEY, JSON.stringify(updated));
+    return quote;
   }
 
-  /* ── Poster fetch — goes direct to TMDB, skips filmMeta to avoid stale cache ── */
-  var _lbsPosterCache = {};
-  async function _fetchPosterUrl(tmdbId) {
-    if (!tmdbId) return null;
-    if (_lbsPosterCache[tmdbId]) return _lbsPosterCache[tmdbId];
-    try {
-      var tmdbRes = await fetch(LOBBY_TMDB_BASE + '/movie/' + tmdbId + '?api_key=' + _tmdbKey());
-      var tmdb = tmdbRes.ok ? await tmdbRes.json() : null;
-      var url = (tmdb && tmdb.poster_path) ? 'https://image.tmdb.org/t/p/w500' + tmdb.poster_path : null;
-      if (url) _lbsPosterCache[tmdbId] = url;
-      return url;
-    } catch(_) { return null; }
-  }
-
-  /* ── Render a single quote (with fade transition) ─────────────── */
-  async function _renderLobbyQuote(quote) {
-    if (_lobbyBusy) return;
-    _lobbyBusy = true;
-    _lobbyCurrentQ = quote;
-
-    var card      = document.getElementById('lobby-card');
-    var quoteWrap = document.getElementById('lobby-quote-wrap');
-    if (!card || !quoteWrap) { _lobbyBusy = false; return; }
-
-    // Fade out (use lbs-card class for transition)
-    card.classList.add('transitioning');
-    quoteWrap.classList.add('transitioning');
-    await _sleep(500);
-
-    // Fetch poster
-    var posterUrl = await _fetchPosterUrl(quote.tmdbId);
-
-    // Update poster
-    var ph  = document.getElementById('lobby-poster-ph');
-    var img = document.getElementById('lobby-poster');
-    if (posterUrl && img) {
-      img.onload = function() { img.style.display = 'block'; if(ph) ph.style.display = 'none'; };
-      img.onerror = function() { img.style.display = 'none'; if(ph) ph.style.display = 'flex'; };
-      img.src = posterUrl;
-      img.alt = quote.film || '';
-    } else {
-      if (img) img.style.display = 'none';
-      if (ph)  ph.style.display  = 'flex';
-    }
-
-    // Update film info
-    var titleEl = document.getElementById('lobby-film-title');
-    var metaEl  = document.getElementById('lobby-film-meta');
-    if (titleEl) titleEl.textContent = (quote.film || '').toUpperCase();
-    if (metaEl)  metaEl.textContent  = [quote.director, quote.country, quote.year].filter(Boolean).join('  ·  ');
-
-    // Update quote text
+  /* ── Render quote + reset scratch ─────────────────────────── */
+  function renderQuote(quote) {
+    currentQuote = quote;
     var qEl = document.getElementById('lobby-quote-text');
-    if (qEl) qEl.textContent = quote.text || '';
-
-    // Update attribution
-    var attrEl = document.getElementById('lobby-attribution');
-    var refEl  = document.getElementById('lobby-film-ref');
-    if (attrEl) attrEl.textContent = quote.character ? '— ' + quote.character : '';
-    if (refEl)  refEl.textContent  = [(quote.film || '').toUpperCase(), quote.year].filter(Boolean).join('  ·  ');
-
-    // Update active dot
-    document.querySelectorAll('.lobby-dot').forEach(function(d, i) {
-      d.classList.toggle('active', i === _lobbyIdx % Math.min(_lobbyQuotes.length, 8));
-    });
-
-    // Fade in
-    card.classList.remove('transitioning');
-    quoteWrap.classList.remove('transitioning');
-
-    // Increment useCount (fire & forget)
-    fetch(LOBBY_RTDB + '/quotes/' + quote.id + '/useCount.json', {
+    var aEl = document.getElementById('lobby-quote-attr');
+    if (qEl) qEl.textContent = '❝ ' + quote.text + ' ❞';
+    if (aEl) aEl.textContent = '— ' + quote.attribution;
+    // Re-init scratch after DOM settles
+    setTimeout(initScratchCanvas, 60);
+    // Increment useCount (fire-and-forget)
+    fetch(RTDB + '/quotes/' + quote.id + '/useCount.json', {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ '.sv': { 'increment': 1 } })
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({'.sv':{'increment':1}})
     }).catch(function(){});
-
-    _lobbyBusy = false;
   }
 
-  /* ── Dots ─────────────────────────────────────────────────────── */
-  function _renderLobbyDots() {
-    var container = document.getElementById('lobby-dots');
-    if (!container) return;
-    container.innerHTML = '';
-    var count = Math.min(_lobbyQuotes.length, 8);
-    for (var i = 0; i < count; i++) {
-      var dot = document.createElement('button');
-      dot.className = 'lobby-dot' + (i === _lobbyIdx % count ? ' active' : '');
-      dot.setAttribute('role', 'tab');
-      dot.setAttribute('aria-label', 'Quote ' + (i + 1));
-      (function(idx) {
-        dot.addEventListener('click', function() { _navigateLobby(idx); });
-      })(i);
-      container.appendChild(dot);
+  /* ── Scratch engine ────────────────────────────────────────── */
+  function initScratchCanvas() {
+    scratchCanvas = document.getElementById('lobby-scratch-canvas');
+    if (!scratchCanvas) return;
+    scratchCtx     = scratchCanvas.getContext('2d');
+    hasAutoRevealed = false;
+    strokeCount     = 0;
+    isScratching    = false;
+
+    scratchCanvas.classList.remove('revealed');
+
+    var rect = scratchCanvas.getBoundingClientRect();
+    var dpr  = window.devicePixelRatio || 1;
+    scratchCanvas.width  = rect.width  * dpr;
+    scratchCanvas.height = rect.height * dpr;
+    scratchCtx.scale(dpr, dpr);
+    drawScratchSurface(rect.width, rect.height);
+
+    scratchCanvas.addEventListener('mousedown',  onScratchStart);
+    scratchCanvas.addEventListener('mousemove',  onScratchMove);
+    scratchCanvas.addEventListener('mouseup',    onScratchEnd);
+    scratchCanvas.addEventListener('mouseleave', onScratchEnd);
+    scratchCanvas.addEventListener('touchstart', onScratchStart, { passive: false });
+    scratchCanvas.addEventListener('touchmove',  onScratchMove,  { passive: false });
+    scratchCanvas.addEventListener('touchend',   onScratchEnd);
+  }
+
+  function drawScratchSurface(w, h) {
+    var ctx = scratchCtx;
+    // Base — match ticket body background
+    ctx.fillStyle = '#1A1610';
+    ctx.fillRect(0, 0, w, h);
+    // Subtle linen texture
+    for (var y = 0; y < h; y += 3) {
+      for (var x = 0; x < w; x += 3) {
+        var v = Math.random() * 20 + 10;
+        ctx.fillStyle = 'rgba(' + (v+10) + ',' + (v+8) + ',' + v + ',0.15)';
+        ctx.fillRect(x, y, 2, 2);
+      }
+    }
+    // "Scratch to reveal" hint
+    ctx.save();
+    ctx.globalAlpha   = 0.28;
+    ctx.fillStyle     = '#f5a623';
+    var fontSize      = Math.min(w * 0.034, 13);
+    ctx.font          = '700 ' + fontSize + 'px Montserrat,sans-serif';
+    ctx.textAlign     = 'center';
+    ctx.textBaseline  = 'middle';
+    ctx.fillText('SCRATCH TO REVEAL', w / 2, h / 2);
+    ctx.restore();
+  }
+
+  function getScratchPos(e) {
+    var rect = scratchCanvas.getBoundingClientRect();
+    if (e.touches) {
+      return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+    }
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  }
+
+  function onScratchStart(e) {
+    e.preventDefault();
+    isScratching = true;
+    doScratch(getScratchPos(e));
+  }
+  function onScratchMove(e) {
+    e.preventDefault();
+    if (!isScratching) return;
+    doScratch(getScratchPos(e));
+  }
+  function onScratchEnd() { isScratching = false; }
+
+  function doScratch(pos) {
+    scratchCtx.globalCompositeOperation = 'destination-out';
+    scratchCtx.beginPath();
+    scratchCtx.arc(pos.x, pos.y, SCRATCH_BRUSH_RADIUS, 0, Math.PI * 2);
+    scratchCtx.fill();
+    scratchCtx.globalCompositeOperation = 'source-over';
+    strokeCount++;
+    if (strokeCount % SCRATCH_SAMPLE_EVERY === 0 && !hasAutoRevealed) {
+      checkCoverage();
     }
   }
 
-  /* ── Greeting ─────────────────────────────────────────────────── */
-  function _renderLobbyGreeting() {
-    var el = document.getElementById('lobby-greeting');
+  function checkCoverage() {
+    var w    = scratchCanvas.width;
+    var h    = scratchCanvas.height;
+    var data = scratchCtx.getImageData(0, 0, w, h).data;
+    var transparent = 0;
+    var total = (w * h) / 4; // sample every 4th pixel
+    for (var i = 3; i < data.length; i += 16) {
+      if (data[i] < 128) transparent++;
+    }
+    if (transparent / total >= SCRATCH_REVEAL_AT) autoReveal();
+  }
+
+  function autoReveal() {
+    if (hasAutoRevealed) return;
+    hasAutoRevealed = true;
+    scratchCanvas.classList.add('revealed');
+    // Remove listeners
+    scratchCanvas.removeEventListener('mousedown',  onScratchStart);
+    scratchCanvas.removeEventListener('mousemove',  onScratchMove);
+    scratchCanvas.removeEventListener('mouseup',    onScratchEnd);
+    scratchCanvas.removeEventListener('mouseleave', onScratchEnd);
+    scratchCanvas.removeEventListener('touchstart', onScratchStart);
+    scratchCanvas.removeEventListener('touchmove',  onScratchMove);
+    scratchCanvas.removeEventListener('touchend',   onScratchEnd);
+    setTimeout(showPostRevealButtons, 460);
+  }
+
+  function showPostRevealButtons() {
+    var wrap = document.getElementById('lobby-post-reveal');
+    if (wrap) wrap.style.display = 'flex';
+  }
+
+  /* ── Greeting ──────────────────────────────────────────────── */
+  function renderLobbyGreeting() {
+    var el   = document.getElementById('lobby-greeting');
     if (!el) return;
     var user = window.pmGetUser ? window.pmGetUser() : null;
     if (user) {
+      var name = (user.displayName || '').split(' ')[0] || '';
       var hour = new Date().getHours();
-      var tod  = hour < 5 ? 'Good night' : hour < 12 ? 'Good morning' :
-                 hour < 17 ? 'Good afternoon' : hour < 21 ? 'Good evening' : 'Good night';
-      var name = (user.displayName || user.email || '').split(' ')[0] || 'Cinephile';
-      var role = (window._pmMyProfile && window._pmMyProfile.role) ? window._pmMyProfile.role : '';
-      el.innerHTML = tod + ', ' + name +
-        (role ? ' <span class="lobby-badge">' + role.toUpperCase() + '</span>' : '');
+      var time = hour < 5 ? 'Good night' : hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : hour < 21 ? 'Good evening' : 'Good night';
+      el.innerHTML = name ? time + ', <strong>' + name + '</strong>' : time;
     } else {
-      el.textContent = 'A community for people who love cinema';
+      el.textContent = '';
     }
   }
 
-  /* ── Navigation ───────────────────────────────────────────────── */
-  function _navigateLobby(idx) {
-    _lobbyIdx = ((idx % _lobbyQuotes.length) + _lobbyQuotes.length) % _lobbyQuotes.length;
-    clearInterval(_lobbyAutoTimer);
-    _renderLobbyQuote(_lobbyQuotes[_lobbyIdx]);
-    _startLobbyAuto();
-  }
-
-  function _nextLobbyQuote() {
-    _lobbyIdx = (_lobbyIdx + 1) % _lobbyQuotes.length;
-    _renderLobbyQuote(_lobbyQuotes[_lobbyIdx]);
-  }
-
-  function _startLobbyAuto() {
-    clearInterval(_lobbyAutoTimer);
-    _lobbyAutoTimer = setInterval(_nextLobbyQuote, LOBBY_AUTO_MS);
-  }
-
-  /* ── Enter app (ENTER button) ──────────────────────────────────── */
+  /* ── Enter / goHome ────────────────────────────────────────── */
   window.lobbyEnter = function() {
-    clearInterval(_lobbyAutoTimer);
     sessionStorage.setItem('pmovies_lobby_done', '1');
     var lobby = document.getElementById('lobby-screen');
-    if (lobby) {
-      lobby.style.transition    = 'opacity 0.6s ease';
-      lobby.style.opacity       = '0';
-      lobby.style.pointerEvents = 'none';
-      setTimeout(function() {
-        lobby.style.display = 'none';
-        lobby.style.transition = '';
-        // Signed-in users land on app; others see auth
-        var user = window.pmGetUser ? window.pmGetUser() : null;
-        if (!user && sessionStorage.getItem('pmovies_guest') !== '1') {
-          var landing = document.getElementById('pmLandingScreen');
-          if (landing) { landing.style.display = 'flex'; landing.style.opacity = '1'; }
-        } else {
-          // Make sure Discover is the active tab
-          if (typeof switchTab === 'function') switchTab('discover');
-        }
-      }, 620);
-    }
+    if (!lobby) return;
+    lobby.classList.add('lobby-exit');
+    setTimeout(function() {
+      lobby.style.display = 'none';
+      lobby.classList.remove('lobby-exit');
+      var user = window.pmGetUser ? window.pmGetUser() : null;
+      if (!user && sessionStorage.getItem('pmovies_guest') !== '1') {
+        var landing = document.getElementById('pmLandingScreen');
+        if (landing) { landing.style.display = 'flex'; landing.style.opacity = '1'; }
+      } else if (typeof switchTab === 'function') {
+        switchTab('discover');
+      }
+    }, 520);
   };
 
-  /* ── Go Home (home nav button) ──────────────────────────────────── */
   window.goHome = function() {
-    // Close greeting screen if it's open
     var gs = document.getElementById('pmGreetingScreen');
-    if (gs && gs.classList.contains('gs-active')) {
-      if (typeof window.pmDismissGreeting === 'function') window.pmDismissGreeting();
+    if (gs && gs.classList.contains('gs-active') && typeof window.pmDismissGreeting === 'function') {
+      window.pmDismissGreeting();
     }
-
     var lobby = document.getElementById('lobby-screen');
     if (!lobby) return;
-
-    // Show lobby with a fresh quote
-    lobby.style.display       = 'flex';
-    lobby.style.opacity       = '0';
-    lobby.style.pointerEvents = 'auto';
-    lobby.classList.remove('lobby-hidden');
+    // Reset post-reveal UI
+    var wrap = document.getElementById('lobby-post-reveal');
+    if (wrap) wrap.style.display = 'none';
+    // Show lobby
+    lobby.style.display = 'flex';
+    lobby.style.opacity = '0';
+    lobby.classList.remove('lobby-exit');
     sessionStorage.removeItem('pmovies_lobby_done');
-
-    // Advance to a new quote (not the same one user just saw)
-    if (_lobbyQuotes.length > 1) {
-      _lobbyIdx = (_lobbyIdx + 1) % _lobbyQuotes.length;
-      _renderLobbyQuote(_lobbyQuotes[_lobbyIdx]);
-      _startLobbyAuto();
-    }
-
+    // New quote + new backdrop
+    if (lobbyQuotes.length) renderQuote(pickNextQuote(lobbyQuotes));
+    setLobbyBackdrop();
+    renderLobbyGreeting();
     requestAnimationFrame(function() {
       requestAnimationFrame(function() {
-        lobby.style.transition = 'opacity 0.5s ease';
+        lobby.style.transition = 'opacity 0.45s ease';
         lobby.style.opacity    = '1';
-        setTimeout(function() { lobby.style.transition = ''; }, 550);
+        setTimeout(function() { lobby.style.transition = ''; }, 480);
       });
     });
   };
 
-  /* ── Init ─────────────────────────────────────────────────────── */
-  async function initLobby() {
-    var lobby = document.getElementById('lobby-screen');
-    if (!lobby || lobby.style.display === 'none') return; // not showing — skip
-
-    _lobbyQuotes = await _loadLobbyQuotes();
-
-    if (!_lobbyQuotes.length) {
-      // No quotes yet — go straight to app/auth
-      window.lobbyEnter();
-      return;
-    }
-
-    var first = _getNextQuote(_lobbyQuotes);
-    _lobbyIdx  = _lobbyQuotes.findIndex(function(q) { return q.id === first.id; });
-    if (_lobbyIdx < 0) _lobbyIdx = 0;
-
-    _renderLobbyDots();
-    _renderLobbyGreeting();
-    await _renderLobbyQuote(first);
-    _startLobbyAuto();
-
-    // Keyboard nav
-    lobby.addEventListener('keydown', function(e) {
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') _navigateLobby(_lobbyIdx + 1);
-      if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   _navigateLobby(_lobbyIdx - 1);
-      if (e.key === 'Escape') window.lobbyEnter();
-    });
-
-    // Touch swipe
-    var _tx = 0;
-    lobby.addEventListener('touchstart', function(e) { _tx = e.touches[0].clientX; }, { passive: true });
-    lobby.addEventListener('touchend', function(e) {
-      var dx = e.changedTouches[0].clientX - _tx;
-      if (Math.abs(dx) > 50) _navigateLobby(dx < 0 ? _lobbyIdx + 1 : _lobbyIdx - 1);
-    }, { passive: true });
+  /* ── "Another" ─────────────────────────────────────────────── */
+  function nextQuote() {
+    var wrap = document.getElementById('lobby-post-reveal');
+    if (wrap) wrap.style.display = 'none';
+    if (lobbyQuotes.length) renderQuote(pickNextQuote(lobbyQuotes));
+    setLobbyBackdrop();
   }
 
-  /* ── Share card (Canvas API — 1200×675) ──────────────────────── */
-  async function _generateQuoteCard(quote, posterSrc) {
-    var W = 1200, H = 675;
-    var canvas = document.createElement('canvas');
-    canvas.width = W; canvas.height = H;
-    var ctx = canvas.getContext('2d');
+  /* ── Share card ────────────────────────────────────────────── */
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.arcTo(x + w, y, x + w, y + r, r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+    ctx.lineTo(x + r, y + h);
+    ctx.arcTo(x, y + h, x, y + h - r, r);
+    ctx.lineTo(x, y + r);
+    ctx.arcTo(x, y, x + r, y, r);
+    ctx.closePath();
+  }
 
-    // 1. Base background — warm near-black
-    ctx.fillStyle = '#0D0B07';
+  function generateShareCard(quote) {
+    var W = 1200, H = 630;
+    var c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    var ctx = c.getContext('2d');
+
+    // Background
+    ctx.fillStyle = '#0D0B08';
     ctx.fillRect(0, 0, W, H);
 
-    // 2. Film grain — drawn ON TOP with low globalAlpha (does not wipe background)
+    // Subtle grain ON TOP (globalAlpha — does not wipe background)
     ctx.save();
-    ctx.globalAlpha = 0.055;
-    for (var gi = 0; gi < 12000; gi++) {
-      var gv = (Math.random() * 255) | 0;
+    ctx.globalAlpha = 0.05;
+    for (var gi = 0; gi < 10000; gi++) {
+      var gv = (Math.random() * 200) | 0;
       ctx.fillStyle = 'rgb(' + gv + ',' + gv + ',' + gv + ')';
       ctx.fillRect(Math.random() * W, Math.random() * H, 1, 1);
     }
     ctx.restore();
 
-    // 3. Vignette — dark edges, keep center darker too (subtle)
-    var vig = ctx.createRadialGradient(W * 0.6, H/2, 0, W * 0.55, H/2, H * 0.9);
-    vig.addColorStop(0,   'rgba(0,0,0,0.1)');
-    vig.addColorStop(0.5, 'rgba(0,0,0,0.25)');
-    vig.addColorStop(1,   'rgba(0,0,0,0.72)');
-    ctx.fillStyle = vig; ctx.fillRect(0, 0, W, H);
+    // Ticket
+    var TW = 840, TH = 310;
+    var TX = (W - TW) / 2, TY = (H - TH) / 2 - 18;
+    var STUB_W = TW * 0.18;
+    var HOLE_R = 9;
 
-    // 4. Poster (left side)
-    var POSTER_H  = H * 0.70;
-    var POSTER_W  = POSTER_H * (2/3);
-    var POSTER_X  = 64;
-    var POSTER_Y  = (H - POSTER_H) / 2;
-    var DIVIDER_X = POSTER_X + POSTER_W + 52;
+    ctx.fillStyle = '#1A1610';
+    ctx.beginPath(); roundRect(ctx, TX, TY, TW, TH, 7); ctx.fill();
+    ctx.strokeStyle = 'rgba(245,165,35,.38)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); roundRect(ctx, TX, TY, TW, TH, 7); ctx.stroke();
 
-    if (posterSrc && !posterSrc.includes('icon-512')) {
-      try {
-        var imgEl = new Image();
-        imgEl.crossOrigin = 'anonymous';
-        await new Promise(function(res, rej) { imgEl.onload = res; imgEl.onerror = rej; imgEl.src = posterSrc; });
-        ctx.save();
-        ctx.translate(POSTER_X + POSTER_W/2, POSTER_Y + POSTER_H/2);
-        ctx.rotate(-0.018);
-        ctx.shadowColor = 'rgba(0,0,0,0.85)'; ctx.shadowBlur = 40; ctx.shadowOffsetX = 5; ctx.shadowOffsetY = 8;
-        ctx.drawImage(imgEl, -POSTER_W/2, -POSTER_H/2, POSTER_W, POSTER_H);
-        ctx.shadowColor = 'transparent';
-        ctx.strokeStyle = 'rgba(201,168,76,0.4)'; ctx.lineWidth = 1.5;
-        ctx.strokeRect(-POSTER_W/2, -POSTER_H/2, POSTER_W, POSTER_H);
-        ctx.restore();
-      } catch(_) {}
+    // Semicircle punches
+    ctx.fillStyle = '#0D0B08';
+    ctx.beginPath(); ctx.arc(TX + STUB_W, TY + TH/2, HOLE_R + 4, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(TX + TW - STUB_W, TY + TH/2, HOLE_R + 4, 0, Math.PI*2); ctx.fill();
+    // Top/bottom holes
+    for (var hx = TX + 18; hx < TX + TW - 18; hx += 20) {
+      ctx.beginPath(); ctx.arc(hx, TY, HOLE_R, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(hx, TY + TH, HOLE_R, 0, Math.PI*2); ctx.fill();
     }
 
-    // 5. Vertical gold rule
-    var vGrad = ctx.createLinearGradient(0, 48, 0, H-48);
-    vGrad.addColorStop(0,    'rgba(201,168,76,0)');
-    vGrad.addColorStop(0.15, 'rgba(201,168,76,0.4)');
-    vGrad.addColorStop(0.85, 'rgba(201,168,76,0.4)');
-    vGrad.addColorStop(1,    'rgba(201,168,76,0)');
-    ctx.fillStyle = vGrad; ctx.fillRect(DIVIDER_X, 0, 1, H);
+    // Dashed stub divider
+    ctx.setLineDash([5, 6]); ctx.strokeStyle = 'rgba(245,165,35,.28)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(TX + STUB_W, TY + 14); ctx.lineTo(TX + STUB_W, TY + TH - 14); ctx.stroke();
+    ctx.setLineDash([]);
 
-    // 6. Top + bottom horizontal rules
-    function drawHRule(y) {
-      var hGrad = ctx.createLinearGradient(40, 0, W-40, 0);
-      hGrad.addColorStop(0,    'rgba(201,168,76,0)');
-      hGrad.addColorStop(0.08, 'rgba(201,168,76,0.5)');
-      hGrad.addColorStop(0.92, 'rgba(201,168,76,0.5)');
-      hGrad.addColorStop(1,    'rgba(201,168,76,0)');
-      ctx.fillStyle = hGrad; ctx.fillRect(40, y, W-80, 1);
-    }
-    drawHRule(36); drawHRule(H-36);
+    // Stars in stub
+    ctx.fillStyle = 'rgba(245,165,35,.5)'; ctx.font = '14px sans-serif'; ctx.textAlign = 'center';
+    [TY + TH*0.3, TY + TH*0.5, TY + TH*0.7].forEach(function(sy) { ctx.fillText('★', TX + STUB_W/2, sy + 5); });
 
-    // 7. Opening quotation mark
-    var TEXT_X   = DIVIDER_X + 52;
-    var TEXT_MAX = W - TEXT_X - 56;
-    ctx.font = 'bold 80px Georgia, serif'; ctx.fillStyle = 'rgba(201,168,76,0.28)'; ctx.textBaseline = 'top';
-    ctx.fillText('❝', TEXT_X - 6, 56);
+    // Quote text (word-wrapped)
+    var QX = TX + STUB_W + 36;
+    var QW = TW - STUB_W - 72;
+    var fontSize = Math.min(QW * 0.044, 22);
+    ctx.font = 'italic 600 ' + fontSize + 'px serif';
+    ctx.fillStyle = '#F0E8D5'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
 
-    // 8. Quote text — word wrap
-    ctx.font = 'italic 28px Georgia, serif'; ctx.fillStyle = '#EDE4D0'; ctx.textBaseline = 'top';
-    var words = (quote.text || '').split(' ');
+    var words = ('❝ ' + quote.text + ' ❞').split(' ');
     var lines = []; var cur = '';
     for (var wi = 0; wi < words.length; wi++) {
       var test = cur ? cur + ' ' + words[wi] : words[wi];
-      if (ctx.measureText(test).width > TEXT_MAX) { lines.push(cur); cur = words[wi]; }
+      if (ctx.measureText(test).width > QW) { lines.push(cur); cur = words[wi]; }
       else cur = test;
     }
     if (cur) lines.push(cur);
     var displayLines = lines.slice(0, 6);
-    var LINE_H  = 46;
-    var BLOCK_H = displayLines.length * LINE_H + 90;
-    var TEXT_Y  = (H - BLOCK_H) / 2;
-    displayLines.forEach(function(l, i) { ctx.fillText(l, TEXT_X, TEXT_Y + i * LINE_H); });
+    var lh = Math.min(QW * 0.062, 32);
+    var totalH = displayLines.length * lh + 34;
+    var textY  = TY + (TH - totalH) / 2;
+    displayLines.forEach(function(l, i) { ctx.fillText(l, QX, textY + i * lh); });
 
-    // Closing mark after last line
-    ctx.font = 'bold 80px Georgia, serif'; ctx.fillStyle = 'rgba(201,168,76,0.28)';
-    var lastW = ctx.measureText(displayLines[displayLines.length-1] || '').width;
-    ctx.fillText('❞', TEXT_X + Math.min(lastW + 4, TEXT_MAX - 60), TEXT_Y + (displayLines.length-1) * LINE_H - 24);
+    // Attribution
+    ctx.font = '700 ' + Math.min(QW * 0.03, 12) + 'px sans-serif';
+    ctx.fillStyle = '#f5a623';
+    ctx.fillText(('— ' + quote.attribution).toUpperCase(), QX, textY + displayLines.length * lh + 12);
 
-    // 9. Attribution
-    var ATTR_Y = TEXT_Y + displayLines.length * LINE_H + 24;
-    if (quote.character) {
-      ctx.font = 'italic 18px Georgia, serif'; ctx.fillStyle = '#A89878'; ctx.textBaseline = 'top';
-      ctx.fillText('— ' + quote.character, TEXT_X, ATTR_Y);
-    }
-    ctx.font = '13px Arial, sans-serif'; ctx.fillStyle = 'rgba(201,168,76,0.8)';
-    ctx.fillText(
-      [(quote.film || '').toUpperCase(), quote.year].filter(Boolean).join('  ·  '),
-      TEXT_X, ATTR_Y + (quote.character ? 30 : 0)
-    );
-
-    // 10. PMovies wordmark — bottom right
-    ctx.font = '13px Arial, sans-serif'; ctx.fillStyle = 'rgba(201,168,76,0.55)';
+    // PMOVIES branding
+    ctx.font = '700 14px sans-serif'; ctx.fillStyle = 'rgba(245,165,35,.6)';
     ctx.textAlign = 'right';
-    ctx.fillText('P M O V I E S', W - 50, H - 56);
-    ctx.fillStyle = 'rgba(201,168,76,0.35)';
-    ctx.fillText('›', W - 30, H - 56);
+    ctx.fillText('PMOVIES', W - 44, H - 40);
 
-    return canvas;
+    return c;
   }
 
-  async function _shareQuote() {
-    var quote = _lobbyCurrentQ;
-    if (!quote) return;
+  async function doShareQuote() {
+    if (!currentQuote) return;
     var btn = document.getElementById('lobby-share-btn');
     if (btn) btn.textContent = '…';
     try {
-      // Re-fetch the poster at w500 for crisp canvas rendering (don't use element src)
-      var posterUrl = quote.tmdbId ? await _fetchPosterUrl(quote.tmdbId) : null;
-      var canvas = await _generateQuoteCard(quote, posterUrl);
-      var shareText = '"' + (quote.text || '').slice(0, 100) + '…" — ' + (quote.film || '');
+      var card = generateShareCard(currentQuote);
       if (navigator.canShare) {
-        canvas.toBlob(async function(blob) {
-          var file = new File([blob], 'pmovies-quote.png', { type: 'image/png' });
+        card.toBlob(async function(blob) {
           try {
             await navigator.share({
-              title: '"' + (quote.film || '') + '" — PMovies',
-              text: shareText,
-              files: navigator.canShare({ files: [file] }) ? [file] : undefined,
-              url: quote.tmdbId ? 'https://p-movies.com/film/' + quote.tmdbId : 'https://p-movies.com'
+              title: 'PMovies',
+              text: '"' + currentQuote.text + '" — ' + currentQuote.attribution,
+              files: [new File([blob], 'pmovies-quote.png', { type: 'image/png' })],
+              url: 'https://p-movies.com'
             });
           } catch(_) {}
         }, 'image/png');
       } else {
-        var link = document.createElement('a');
-        link.download = 'pmovies-quote.png';
-        link.href = canvas.toDataURL('image/png');
-        link.click();
+        var a = document.createElement('a');
+        a.href = card.toDataURL('image/png');
+        a.download = 'pmovies-quote.png';
+        a.click();
       }
     } finally {
-      if (btn) btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Share';
+      if (btn) btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Share Quote';
     }
   }
 
-  /* ── Seed quotes helper (run from browser console as admin) ─────── */
-  window._lobbySeedQuotes = async function() {
-    var SEED = [
-      { text:"We're all on the brink of despair, all we can do is look each other in the face, keep each other company, quote a little Chekhov.", character:"Jep Gambardella", film:"The Great Beauty", tmdbId:"176283", year:2013, director:"Paolo Sorrentino", country:"Italy", language:"en" },
-      { text:"You either die a hero or you live long enough to see yourself become the villain.", character:"Harvey Dent", film:"The Dark Knight", tmdbId:"155", year:2008, director:"Christopher Nolan", country:"USA", language:"en" },
-      { text:"Hope is a good thing, maybe the best of things, and no good thing ever dies.", character:"Andy Dufresne", film:"The Shawshank Redemption", tmdbId:"278", year:1994, director:"Frank Darabont", country:"USA", language:"en" },
-      { text:"The stuff that dreams are made of.", character:"Sam Spade", film:"The Maltese Falcon", tmdbId:"963", year:1941, director:"John Huston", country:"USA", language:"en" },
-      { text:"I'm going to make him an offer he can't refuse.", character:"Vito Corleone", film:"The Godfather", tmdbId:"238", year:1972, director:"Francis Ford Coppola", country:"USA", language:"en" },
-      { text:"All those moments will be lost in time, like tears in rain.", character:"Roy Batty", film:"Blade Runner", tmdbId:"78", year:1982, director:"Ridley Scott", country:"USA", language:"en" },
-      { text:"The things you own end up owning you.", character:"Tyler Durden", film:"Fight Club", tmdbId:"550", year:1999, director:"David Fincher", country:"USA", language:"en" },
-      { text:"Carpe diem. Seize the day, boys. Make your lives extraordinary.", character:"John Keating", film:"Dead Poets Society", tmdbId:"207", year:1989, director:"Peter Weir", country:"USA", language:"en" },
-      { text:"Every passing minute is another chance to turn it all around.", character:"Sofia", film:"Vanilla Sky", tmdbId:"1904", year:2001, director:"Cameron Crowe", country:"USA", language:"en" },
-      { text:"Get busy living, or get busy dying.", character:"Andy Dufresne", film:"The Shawshank Redemption", tmdbId:"278", year:1994, director:"Frank Darabont", country:"USA", language:"en" },
-      { text:"It's not who I am underneath, but what I do that defines me.", character:"Bruce Wayne", film:"Batman Begins", tmdbId:"272", year:2005, director:"Christopher Nolan", country:"USA", language:"en" },
-      { text:"A dream you dream alone is only a dream. A dream you dream together is reality.", character:null, film:"Yellow Submarine", tmdbId:"10330", year:1968, director:"George Dunning", country:"UK", language:"en" },
-      { text:"After all, tomorrow is another day.", character:"Scarlett O'Hara", film:"Gone with the Wind", tmdbId:"770", year:1939, director:"Victor Fleming", country:"USA", language:"en" },
-      { text:"My mama always said life was like a box of chocolates. You never know what you're gonna get.", character:"Forrest Gump", film:"Forrest Gump", tmdbId:"13", year:1994, director:"Robert Zemeckis", country:"USA", language:"en" },
-      { text:"To infinity and beyond!", character:"Buzz Lightyear", film:"Toy Story", tmdbId:"862", year:1995, director:"John Lasseter", country:"USA", language:"en" },
-      { text:"Just keep swimming.", character:"Dory", film:"Finding Nemo", tmdbId:"12", year:2003, director:"Andrew Stanton", country:"USA", language:"en" },
-      { text:"If you look at the sky long enough, you will no longer be lost.", character:null, film:"Timbuktu", tmdbId:"256980", year:2014, director:"Abderrahmane Sissako", country:"Mauritania", language:"en" },
-      { text:"Cinema is a matter of what's in the frame and what's out.", character:null, film:"Martin Scorsese", tmdbId:null, year:null, director:"Martin Scorsese", country:null, language:"en" },
-      { text:"The only way to get what you want in this world is through hard work.", character:"Tiana", film:"The Princess and the Frog", tmdbId:"16907", year:2009, director:"Ron Clements", country:"USA", language:"en" },
-      { text:"I live my life a quarter mile at a time.", character:"Dom Toretto", film:"The Fast and the Furious", tmdbId:"9799", year:2001, director:"Rob Cohen", country:"USA", language:"en" }
-    ];
-    for (var i = 0; i < SEED.length; i++) {
-      await fetch(LOBBY_RTDB + '/quotes.json', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(Object.assign({}, SEED[i], { approved: true, useCount: 0, addedBy: 'admin', createdAt: Date.now() }))
-      });
-    }
-    console.log('[PMovies] Lobby seed complete — ' + SEED.length + ' quotes added.');
-  };
-
-  /* ── Admin quote management ────────────────────────────────────── */
+  /* ── Admin quote management ───────────────────────────────── */
   window._adminToggleQuoteForm = function(forceHide) {
     var f = document.getElementById('adminQuoteForm');
     if (!f) return;
     var show = forceHide === false ? false : f.style.display === 'none';
     f.style.display = show ? 'block' : 'none';
-    if (show) document.getElementById('aqf-text') && document.getElementById('aqf-text').focus();
+    if (show) { var el = document.getElementById('aqf-text'); if (el) el.focus(); }
   };
 
   window._adminLoadQuotes = async function() {
@@ -26518,29 +26341,25 @@ async function deleteEditorReview(key, e) {
     container.innerHTML = '<div style="color:#555;font-size:.72rem">Loading…</div>';
     try {
       var tok = '';
-      if (window.pmGetUser) {
-        var u = window.pmGetUser();
-        if (u && u.getIdToken) tok = '?auth=' + (await u.getIdToken());
-      }
-      var res  = await fetch(LOBBY_RTDB + '/quotes.json' + tok);
+      if (window.pmGetUser) { var u = window.pmGetUser(); if (u && u.getIdToken) tok = '?auth=' + (await u.getIdToken()); }
+      var res  = await fetch(RTDB + '/quotes.json' + tok);
       var data = res.ok ? await res.json() : null;
       if (!data) { container.innerHTML = '<div style="color:#555;font-size:.72rem">No quotes yet.</div>'; return; }
       var entries = Object.entries(data).sort(function(a,b){ return (b[1].useCount||0)-(a[1].useCount||0); });
       container.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:.72rem">'
         + '<thead><tr style="color:#f5a623;border-bottom:1px solid #222;text-align:left">'
-        + '<th style="padding:6px 8px;width:45%">Quote</th><th style="padding:6px 8px">Film</th>'
-        + '<th style="padding:6px 4px;text-align:center">Yr</th><th style="padding:6px 4px;text-align:center">Shown</th>'
+        + '<th style="padding:6px 8px;width:48%">Quote</th><th style="padding:6px 8px">Attribution</th>'
+        + '<th style="padding:6px 4px;text-align:center">Shown</th>'
         + '<th style="padding:6px 4px;text-align:center">Status</th><th style="padding:6px 4px"></th></tr></thead><tbody>'
         + entries.map(function(e) {
             var id = e[0], q = e[1];
-            var snippet = (q.text||'').slice(0,55) + ((q.text||'').length>55?'…':'');
+            var snippet = (q.text||'').slice(0,58) + ((q.text||'').length>58?'…':'');
             var status = q.approved
               ? '<span style="color:#4caf50;font-size:.65rem">✓ Live</span>'
               : '<span style="color:#888;font-size:.65rem">⏸ Hidden</span>';
             return '<tr style="border-bottom:1px solid #1a1a1a">'
               + '<td style="padding:7px 8px;color:#ccc" title="'+q.text+'">"'+snippet+'"</td>'
-              + '<td style="padding:7px 8px;color:#aaa">'+( q.film||'—')+'</td>'
-              + '<td style="padding:7px 4px;text-align:center;color:#666">'+(q.year||'—')+'</td>'
+              + '<td style="padding:7px 8px;color:#aaa">'+(q.attribution||'—')+'</td>'
               + '<td style="padding:7px 4px;text-align:center;color:#666">'+(q.useCount||0)+'</td>'
               + '<td style="padding:7px 4px;text-align:center">'+status+'</td>'
               + '<td style="padding:7px 4px;white-space:nowrap">'
@@ -26549,16 +26368,16 @@ async function deleteEditorReview(key, e) {
               + '</td></tr>';
           }).join('')
         + '</tbody></table>';
-    } catch(e) { container.innerHTML = '<div style="color:#c44">Failed to load quotes.</div>'; }
+    } catch(e) { container.innerHTML = '<div style="color:#c44">Failed to load.</div>'; }
   };
 
   window._adminToggleApproval = async function(id, current) {
     try {
       var tok = '';
       if (window.pmGetUser) { var u = window.pmGetUser(); if (u && u.getIdToken) tok = '?auth=' + (await u.getIdToken()); }
-      await fetch(LOBBY_RTDB + '/quotes/' + id + '/approved.json' + tok, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(!current) });
+      await fetch(RTDB + '/quotes/' + id + '/approved.json' + tok, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(!current) });
       window._adminLoadQuotes();
-    } catch(e) { alert('Failed to update quote status.'); }
+    } catch(e) { alert('Failed to update.'); }
   };
 
   window._adminDeleteQuote = async function(id) {
@@ -26566,48 +26385,101 @@ async function deleteEditorReview(key, e) {
     try {
       var tok = '';
       if (window.pmGetUser) { var u = window.pmGetUser(); if (u && u.getIdToken) tok = '?auth=' + (await u.getIdToken()); }
-      await fetch(LOBBY_RTDB + '/quotes/' + id + '.json' + tok, { method:'DELETE' });
+      await fetch(RTDB + '/quotes/' + id + '.json' + tok, { method:'DELETE' });
       window._adminLoadQuotes();
     } catch(e) { alert('Delete failed.'); }
   };
 
   window._adminSaveQuote = async function() {
-    var text = (document.getElementById('aqf-text')||{}).value.trim();
-    var film = (document.getElementById('aqf-film')||{}).value.trim();
-    if (!text || !film) { alert('Quote text and film title are required.'); return; }
-    var quote = {
-      text: text,
-      character: (document.getElementById('aqf-character')||{}).value.trim() || null,
-      film: film,
-      tmdbId:   (document.getElementById('aqf-tmdbid')||{}).value.trim() || null,
-      director: (document.getElementById('aqf-director')||{}).value.trim() || null,
-      year:     parseInt((document.getElementById('aqf-year')||{}).value) || null,
-      country:  (document.getElementById('aqf-country')||{}).value.trim() || null,
-      language: 'en', approved: true, useCount: 0, addedBy: 'admin', createdAt: Date.now()
-    };
+    var text        = (document.getElementById('aqf-text')       ||{}).value.trim();
+    var attribution = (document.getElementById('aqf-attribution') ||{}).value.trim();
+    var role        = (document.getElementById('aqf-role')        ||{}).value.trim();
+    if (!text || !attribution) { alert('Quote text and attribution are required.'); return; }
+    var quote = { text: text, attribution: attribution, role: role || null, approved: true, useCount: 0, addedBy: 'admin', language: 'en', createdAt: Date.now() };
     try {
       var tok = '';
       if (window.pmGetUser) { var u = window.pmGetUser(); if (u && u.getIdToken) tok = '?auth=' + (await u.getIdToken()); }
-      await fetch(LOBBY_RTDB + '/quotes.json' + tok, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(quote) });
-      ['aqf-text','aqf-character','aqf-film','aqf-tmdbid','aqf-director','aqf-year','aqf-country'].forEach(function(id){ var el = document.getElementById(id); if(el) el.value=''; });
+      await fetch(RTDB + '/quotes.json' + tok, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(quote) });
+      ['aqf-text','aqf-attribution','aqf-role'].forEach(function(i){ var el=document.getElementById(i); if(el) el.value=''; });
       window._adminToggleQuoteForm(false);
       window._adminLoadQuotes();
     } catch(e) { alert('Save failed.'); }
   };
 
-  /* ── Boot ─────────────────────────────────────────────────────── */
-  var _shareBtn = document.getElementById('lobby-share-btn');
-  if (_shareBtn) _shareBtn.addEventListener('click', _shareQuote);
+  /* ── Seed helper (run from console) ───────────────────────── */
+  window._lobbySeedQuotes = async function() {
+    var SEED = [
+      { text:'A film is never really good unless the camera is an eye in the head of a poet.', attribution:'Orson Welles', role:'Director' },
+      { text:'Cinema is a matter of what's in the frame and what's out.', attribution:'Martin Scorsese', role:'Director' },
+      { text:'I dream for a living.', attribution:'Steven Spielberg', role:'Director' },
+      { text:'Every film should have its own world, a logic and feel to it that expands beyond the exact image on the screen.', attribution:'David Lynch', role:'Director' },
+      { text:'Making a film is like going down a mine — you absolutely commit, you can't go back.', attribution:'Sam Mendes', role:'Director' },
+      { text:'The secret to film is that it's an illusion.', attribution:'George Lucas', role:'Director' },
+      { text:'Cinema is not a craft. It is an art.', attribution:'Jean-Luc Godard', role:'Director' },
+      { text:'A story should have a beginning, a middle, and an end, but not necessarily in that order.', attribution:'Jean-Luc Godard', role:'Director' },
+      { text:'The most honest form of filmmaking is to make a film for yourself.', attribution:'Peter Jackson', role:'Director' },
+      { text:'Film is one of the three universal languages, the other two: mathematics and music.', attribution:'Frank Capra', role:'Director' },
+      { text:'Life is a tragedy when seen in close-up, but a comedy in long-shot.', attribution:'Charlie Chaplin', role:'Director' },
+      { text:'What is drama but life with the dull bits cut out.', attribution:'Alfred Hitchcock', role:'Director' },
+      { text:'There are no rules in filmmaking. Only sins. And the cardinal sin is dullness.', attribution:'Frank Capra', role:'Director' },
+      { text:'Cinema is the most beautiful fraud in the world.', attribution:'Jean-Luc Godard', role:'Director' },
+      { text:'If you want a happy ending, that depends, of course, on where you stop your story.', attribution:'Orson Welles', role:'Director' },
+      { text:'The stuff that dreams are made of.', attribution:'John Huston', role:'Director' },
+      { text:'I want to make beautiful things, even if nobody cares.', attribution:'Saul Bass', role:'Designer' },
+      { text:'Every great film should seem new every time you see it.', attribution:'Roger Ebert', role:'Critic' },
+      { text:'A good film is when the price of the dinner, the theatre admission and the babysitter was well worth it.', attribution:'Alfred Hitchcock', role:'Director' },
+      { text:'Film spectators are quiet vampires.', attribution:'Jim Morrison', role:'Artist' },
+      { text:'To make a great film you need three things — the script, the script, and the script.', attribution:'Alfred Hitchcock', role:'Director' },
+      { text:'The eye sees only what the mind is prepared to comprehend.', attribution:'Henri Bergson', role:'Philosopher' },
+      { text:'Art enables us to find ourselves and lose ourselves at the same time.', attribution:'Thomas Merton', role:'Writer' },
+      { text:'We are the choices we make.', attribution:'Meryl Streep', role:'Actor' },
+      { text:'Imagination is more important than knowledge.', attribution:'Albert Einstein', role:'Scientist' },
+      { text:'Darkness cannot drive out darkness; only light can do that.', attribution:'Martin Luther King Jr.', role:'Leader' },
+      { text:'The two most important days in your life are the day you are born and the day you find out why.', attribution:'Mark Twain', role:'Writer' },
+      { text:'We don't stop playing because we grow old; we grow old because we stop playing.', attribution:'George Bernard Shaw', role:'Writer' },
+      { text:'If you don't have time to read, you don't have the time — or the tools — to write.', attribution:'Stephen King', role:'Writer' },
+      { text:'The camera is an instrument that teaches people how to see without a camera.', attribution:'Dorothea Lange', role:'Photographer' }
+    ];
+    for (var i = 0; i < SEED.length; i++) {
+      await fetch(RTDB + '/quotes.json', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(Object.assign({}, SEED[i], { approved:true, useCount:0, addedBy:'admin', language:'en', createdAt: Date.now() }))
+      });
+    }
+    console.log('[PMovies] Seeded ' + SEED.length + ' quotes.');
+  };
 
-  // Init after DOM + Firebase are ready
+  /* ── Init ──────────────────────────────────────────────────── */
+  async function initLobby() {
+    var lobby = document.getElementById('lobby-screen');
+    if (!lobby || lobby.style.display === 'none') return;
+    setLobbyBackdrop();
+    renderLobbyGreeting();
+    lobbyQuotes = await loadLobbyQuotes();
+    if (!lobbyQuotes.length) { window.lobbyEnter && window.lobbyEnter(); return; }
+    renderQuote(pickNextQuote(lobbyQuotes));
+  }
+
+  /* ── Wire buttons after DOM ready ──────────────────────────── */
+  function wireButtons() {
+    var enterBtn   = document.getElementById('lobby-enter-btn');
+    var anotherBtn = document.getElementById('lobby-another-btn');
+    var shareBtn   = document.getElementById('lobby-share-btn');
+    if (enterBtn)   enterBtn.addEventListener('click', window.lobbyEnter);
+    if (anotherBtn) anotherBtn.addEventListener('click', nextQuote);
+    if (shareBtn)   shareBtn.addEventListener('click', doShareQuote);
+  }
+
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initLobby);
+    document.addEventListener('DOMContentLoaded', function() { wireButtons(); initLobby(); });
   } else {
+    wireButtons();
     initLobby();
   }
 
-  // Re-render greeting once Firebase auth resolves
-  window._lobbyRefreshGreeting = _renderLobbyGreeting;
+  // Auth resolves → refresh greeting
+  window._lobbyRefreshGreeting = renderLobbyGreeting;
 
 })();
 </script>
