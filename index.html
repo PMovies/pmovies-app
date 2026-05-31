@@ -4135,7 +4135,7 @@
   .lobby-header {
     position: relative; z-index: 2;
     display: flex; flex-direction: column; align-items: center;
-    padding: 26px 0 0; pointer-events: none; gap: 0;
+    padding: max(env(safe-area-inset-top, 0px) + 36px, 48px) 0 0; pointer-events: none; gap: 0;
   }
   .lobby-wordmark {
     font-family: 'Bebas Neue', sans-serif;
@@ -4196,8 +4196,8 @@
     -webkit-mask-image:
       radial-gradient(circle at 50% 0,   transparent var(--hole), black calc(var(--hole) + 1px)),
       radial-gradient(circle at 50% 100%, transparent var(--hole), black calc(var(--hole) + 1px)),
-      radial-gradient(circle at 22% 50%,  transparent 14px, black 15px),
-      radial-gradient(circle at 78% 50%,  transparent 14px, black 15px);
+      radial-gradient(circle at 20% 50%,  transparent 14px, black 15px),
+      radial-gradient(circle at 80% 50%,  transparent 14px, black 15px);
     -webkit-mask-size: 20px 100%, 20px 100%, 100% 100%, 100% 100%;
     -webkit-mask-repeat: repeat-x, repeat-x, no-repeat, no-repeat;
     -webkit-mask-position: 0 0, 0 100%, 0 0, 0 0;
@@ -4205,8 +4205,8 @@
     mask-image:
       radial-gradient(circle at 50% 0,    transparent var(--hole), black calc(var(--hole) + 1px)),
       radial-gradient(circle at 50% 100%, transparent var(--hole), black calc(var(--hole) + 1px)),
-      radial-gradient(circle at 22% 50%,  transparent 14px, black 15px),
-      radial-gradient(circle at 78% 50%,  transparent 14px, black 15px);
+      radial-gradient(circle at 20% 50%,  transparent 14px, black 15px),
+      radial-gradient(circle at 80% 50%,  transparent 14px, black 15px);
     mask-size: 20px 100%, 20px 100%, 100% 100%, 100% 100%;
     mask-repeat: repeat-x, repeat-x, no-repeat, no-repeat;
     mask-position: 0 0, 0 100%, 0 0, 0 0;
@@ -4354,15 +4354,21 @@
 
   /* ── Mobile ──────────────────────────────────────────────────── */
   @media (max-width: 600px) {
-    .lobby-wordmark    { font-size: 20px; letter-spacing: 0.45em; }
-    .lobby-footer      { padding: 14px 20px max(22px, env(safe-area-inset-bottom, 22px)); }
-    .lobby-ticket      { height: clamp(165px, 50vw, 210px); --hole: 7px; }
+    .lobby-header      { padding-top: max(calc(env(safe-area-inset-top) + 14px), 44px); }
+    .lobby-wordmark    { font-size: 18px; letter-spacing: 0.42em; }
+    .lobby-tagline     { font-size: 7px; letter-spacing: 0.28em; margin-top: 3px; }
+    .lobby-stage       { padding: 8px 16px; }
+    .lobby-footer      {
+      padding: 10px 20px max(calc(env(safe-area-inset-bottom) + 14px), 22px);
+    }
+    .lobby-ticket      { height: clamp(150px, 44vw, 190px); --hole: 6px; }
     .lobby-stub        { width: 19%; }
     .lobby-stub-text   { display: none; }
-    .lobby-quote-inner { padding: 14px 16px; }
-    .lobby-quote-text  { font-size: clamp(12px, 3.8vw, 16px); }
+    .lobby-quote-inner { padding: 12px 14px; }
+    .lobby-quote-text  { font-size: clamp(11px, 3.5vw, 15px); }
     .lobby-scratch-canvas { cursor: default; }
-    .lobby-header-rule { display: none; }
+    .lobby-header-rule { gap: 10px; padding: 4px 0 0; }
+    .lobby-enter-btn   { padding: 10px 24px; font-size: 10px; letter-spacing: 0.22em; }
   }
 </style>
 </head>
@@ -18581,9 +18587,12 @@ async function deleteEditorReview(key, e) {
     var hr = new Date().getHours();
     var word = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
 
-    // Show greeting screen (once per session) — skip on deep-link paths
+    // Show greeting screen (once per session) — skip on deep-link paths and while lobby is visible
+    var _lobbyEl = document.getElementById('lobby-screen');
+    var _lobbyUp = _lobbyEl && _lobbyEl.style.display !== 'none';
     if (profile && !sessionStorage.getItem('pm_greeting_done')
         && !window._deepLinkPath
+        && !_lobbyUp
         && !/^\/(fan|lobby|review)\//.test(location.pathname)) {
       _showGreetingScreen(nickname, uid, profile);
     }
@@ -26083,15 +26092,48 @@ async function deleteEditorReview(key, e) {
 
   /* ── Backdrop pool ────────────────────────────────────────── */
   var LOBBY_BACKDROPS = [
+    // The Godfather
     'https://image.tmdb.org/t/p/w1280/tmU7GeKVybMWFButWEGl2M4GeiP.jpg',
+    // Blade Runner 2049
     'https://image.tmdb.org/t/p/w1280/ilRyazdMJwN05exqhwK4tMKBYZs.jpg',
+    // 2001: A Space Odyssey
     'https://image.tmdb.org/t/p/w1280/oU7Oq2kFAAlGqbU4VoAE36g4hoI.jpg',
+    // Spirited Away
     'https://image.tmdb.org/t/p/w1280/bSXfU4dwZyBA1vMmXvejdRXBvuF.jpg',
+    // Mad Max: Fury Road
     'https://image.tmdb.org/t/p/w1280/phszHPFnhmAMgJpFBFMtlxmFMkk.jpg',
+    // Her
     'https://image.tmdb.org/t/p/w1280/lEIaL12hSkqqe83zVvF98SxieZl.jpg',
+    // La La Land
     'https://image.tmdb.org/t/p/w1280/nadTlnTE6DdgmYsN4iWc2a2wiaI.jpg',
+    // Parasite
     'https://image.tmdb.org/t/p/w1280/TU9NIjwzjoKPwQHoHshkFcQUCG.jpg',
+    // Inception
+    'https://image.tmdb.org/t/p/w1280/s2bT29y0ngXxxu2IA8AOzzXTRhd.jpg',
+    // Interstellar
+    'https://image.tmdb.org/t/p/w1280/rAiYTfKGqDCRIIqo664sY9XaALa.jpg',
+    // The Dark Knight
+    'https://image.tmdb.org/t/p/w1280/hqkIcbrOHL86UncnHIsHVcVmzue.jpg',
+    // No Country for Old Men
+    'https://image.tmdb.org/t/p/w1280/6LEPNNZRVe7iFCuNGiNiXUCn7R9.jpg',
+    // Dune (2021)
+    'https://image.tmdb.org/t/p/w1280/iopYFB1b6Bh7FWZh3onQhph1CZS.jpg',
+    // The Revenant
+    'https://image.tmdb.org/t/p/w1280/3oIS5TKhEGLXWXEHgp7QBtLDmyN.jpg',
+    // Roma
+    'https://image.tmdb.org/t/p/w1280/d0p3vuFRPRYMb5ixXFEDJFUkFW5.jpg',
+    // Arrival
+    'https://image.tmdb.org/t/p/w1280/r9PkFnRUIthgBp2JZZzD380MWZy.jpg',
+    // Once Upon a Time in Hollywood
+    'https://image.tmdb.org/t/p/w1280/8j58iEBw9pOXFD2L0nt0ZXeHviB.jpg',
+    // Portrait of a Lady on Fire
+    'https://image.tmdb.org/t/p/w1280/sQenHSbQPiNQfolHHoMBMFtfFWg.jpg',
+    // The Grand Budapest Hotel
+    'https://image.tmdb.org/t/p/w1280/iMhsOiXpqW4iKwAHJqwZGJqkT2B.jpg',
+    // Whiplash
+    'https://image.tmdb.org/t/p/w1280/fRGxZuo7jJUWQsVg9PREb98Aclp.jpg',
   ];
+  var _usedBackdrops = [];
 
   /* ── State ────────────────────────────────────────────────── */
   var lobbyQuotes    = [];
@@ -26105,9 +26147,26 @@ async function deleteEditorReview(key, e) {
      BACKDROP
   ══════════════════════════════════════════════════════════ */
   function setLobbyBackdrop() {
-    var url = LOBBY_BACKDROPS[Math.floor(Math.random() * LOBBY_BACKDROPS.length)];
-    var el  = document.getElementById('lobby-backdrop');
-    if (el) el.style.backgroundImage = 'url(' + url + ')';
+    var el = document.getElementById('lobby-backdrop');
+    if (!el) return;
+
+    // Pick a URL not recently used
+    var pool = LOBBY_BACKDROPS.filter(function(u) { return _usedBackdrops.indexOf(u) === -1; });
+    if (!pool.length) { _usedBackdrops = []; pool = LOBBY_BACKDROPS.slice(); }
+    var url = pool[Math.floor(Math.random() * pool.length)];
+    _usedBackdrops.push(url);
+    if (_usedBackdrops.length > 6) _usedBackdrops.shift();
+
+    // Preload — only apply if the image actually loads
+    var img = new Image();
+    img.onload = function() { el.style.backgroundImage = 'url(' + url + ')'; };
+    img.onerror = function() {
+      // Try any other URL once
+      var fallbacks = LOBBY_BACKDROPS.filter(function(u) { return u !== url; });
+      var fb = fallbacks[Math.floor(Math.random() * fallbacks.length)];
+      if (fb) el.style.backgroundImage = 'url(' + fb + ')';
+    };
+    img.src = url;
   }
 
   /* ══════════════════════════════════════════════════════════
@@ -26597,6 +26656,109 @@ async function deleteEditorReview(key, e) {
     console.log('Seeded ' + seeds.length + ' quotes.');
   };
 
+})();
+</script>
+
+<!-- ╔══════════════════════════════════════════════════════════════╗ -->
+<!-- ║  ADMIN — Quote Management (wired to Admin panel UI)         ║ -->
+<!-- ╚══════════════════════════════════════════════════════════════╝ -->
+<script>
+(function() {
+  var RTDB = 'https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app';
+
+  window._adminToggleQuoteForm = function(forceState) {
+    var form = document.getElementById('adminQuoteForm');
+    if (!form) return;
+    var show = forceState !== undefined ? forceState : form.style.display === 'none';
+    form.style.display = show ? 'block' : 'none';
+    if (show) {
+      var ta = document.getElementById('aqf-text');
+      if (ta) ta.focus();
+    }
+  };
+
+  window._adminLoadQuotes = async function() {
+    var list = document.getElementById('adminQuotesList');
+    if (!list) return;
+    list.innerHTML = '<span style="color:#555;font-size:.72rem">Loading…</span>';
+    try {
+      var res  = await fetch(RTDB + '/quotes.json');
+      var data = await res.json();
+      if (!data) { list.innerHTML = '<span style="color:#555;font-size:.72rem">No quotes yet.</span>'; return; }
+
+      var entries = Object.entries(data).sort(function(a, b) { return (b[1].useCount||0) - (a[1].useCount||0); });
+      var rows = entries.map(function(e) {
+        var id = e[0], q = e[1];
+        var preview = (q.text || '').slice(0, 60) + (q.text && q.text.length > 60 ? '…' : '');
+        var badge = q.approved
+          ? '<span style="color:#4caf50;font-size:.62rem;font-weight:700">● Live</span>'
+          : '<span style="color:#666;font-size:.62rem;font-weight:700">○ Hidden</span>';
+        return '<div style="display:grid;grid-template-columns:1fr auto auto auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #1a1a1a">'
+          + '<div><div style="color:#ddd;font-size:.75rem">"' + preview + '"</div>'
+          + '<div style="color:#555;font-size:.62rem;margin-top:2px">' + (q.attribution||'?') + ' · ' + (q.role||'') + ' · used ' + (q.useCount||0) + '×</div></div>'
+          + badge
+          + '<button onclick="window._adminToggleQuoteApproval(\'' + id + '\',' + !!q.approved + ')" style="background:#1a1a1a;border:1px solid #333;color:#aaa;font-size:.62rem;font-family:\'Montserrat\',sans-serif;padding:4px 10px;border-radius:6px;cursor:pointer">'
+          + (q.approved ? 'Hide' : 'Show') + '</button>'
+          + '<button onclick="window._adminDeleteQuote(\'' + id + '\')" style="background:#2a0808;border:1px solid rgba(200,50,50,.3);color:#e05252;font-size:.62rem;font-family:\'Montserrat\',sans-serif;padding:4px 10px;border-radius:6px;cursor:pointer">Del</button>'
+          + '</div>';
+      });
+      list.innerHTML = rows.join('') || '<span style="color:#555;font-size:.72rem">No quotes yet.</span>';
+    } catch(e) {
+      list.innerHTML = '<span style="color:#e05252;font-size:.72rem">Error loading quotes.</span>';
+    }
+  };
+
+  window._adminToggleQuoteApproval = async function(id, current) {
+    await fetch(RTDB + '/quotes/' + id + '/approved.json', {
+      method: 'PUT', body: JSON.stringify(!current)
+    });
+    window._adminLoadQuotes();
+  };
+
+  window._adminDeleteQuote = async function(id) {
+    if (!confirm('Delete this quote?')) return;
+    await fetch(RTDB + '/quotes/' + id + '.json', { method: 'DELETE' });
+    window._adminLoadQuotes();
+  };
+
+  window._adminSaveQuote = async function() {
+    var text  = (document.getElementById('aqf-text') || {}).value || '';
+    var attr  = (document.getElementById('aqf-attribution') || {}).value || '';
+    var role  = (document.getElementById('aqf-role') || {}).value || '';
+    text = text.trim(); attr = attr.trim(); role = role.trim();
+
+    if (!text || !attr) {
+      alert('Quote text and attribution are required.');
+      return;
+    }
+
+    var saveBtn = document.querySelector('#adminQuoteForm button');
+    if (saveBtn) { saveBtn.textContent = 'Saving…'; saveBtn.disabled = true; }
+
+    try {
+      await fetch(RTDB + '/quotes.json', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: text, attribution: attr, role: role || 'Other',
+          approved: true, useCount: 0, addedBy: 'admin',
+          language: 'en', createdAt: Date.now()
+        })
+      });
+
+      // Clear form
+      ['aqf-text','aqf-attribution','aqf-role'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+      window._adminToggleQuoteForm(false);
+      window._adminLoadQuotes();
+    } catch(e) {
+      alert('Failed to save quote. Check your connection.');
+    } finally {
+      if (saveBtn) { saveBtn.textContent = 'Save Quote'; saveBtn.disabled = false; }
+    }
+  };
 })();
 </script>
 
