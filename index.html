@@ -26718,16 +26718,28 @@ async function deleteEditorReview(key, e) {
     }
   };
 
+  async function _getAdminTok() {
+    var u = window.pmGetUser && window.pmGetUser();
+    if (!u || !u.getIdToken) return '';
+    try { return await u.getIdToken(); } catch(e) { return ''; }
+  }
+
   window._adminToggleQuoteApproval = async function(id, current) {
-    await fetch(RTDB + '/quotes/' + id + '/approved.json', {
+    var tok = await _getAdminTok();
+    var authQ = tok ? '?auth=' + tok : '';
+    var res = await fetch(RTDB + '/quotes/' + id + '/approved.json' + authQ, {
       method: 'PUT', body: JSON.stringify(!current)
     });
+    if (!res.ok) { var d = await res.json().catch(function(){return{};}); alert('Error: ' + (d.error || res.status)); return; }
     window._adminLoadQuotes();
   };
 
   window._adminDeleteQuote = async function(id) {
     if (!confirm('Delete this quote?')) return;
-    await fetch(RTDB + '/quotes/' + id + '.json', { method: 'DELETE' });
+    var tok = await _getAdminTok();
+    var authQ = tok ? '?auth=' + tok : '';
+    var res = await fetch(RTDB + '/quotes/' + id + '.json' + authQ, { method: 'DELETE' });
+    if (!res.ok) { var d = await res.json().catch(function(){return{};}); alert('Error: ' + (d.error || res.status)); return; }
     window._adminLoadQuotes();
   };
 
@@ -26746,7 +26758,9 @@ async function deleteEditorReview(key, e) {
     if (saveBtn) { saveBtn.textContent = 'Saving…'; saveBtn.disabled = true; }
 
     try {
-      await fetch(RTDB + '/quotes.json', {
+      var tok = await _getAdminTok();
+      var authQ = tok ? '?auth=' + tok : '';
+      var res = await fetch(RTDB + '/quotes.json' + authQ, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -26756,7 +26770,11 @@ async function deleteEditorReview(key, e) {
         })
       });
 
-      // Clear form
+      if (!res.ok) {
+        var d = await res.json().catch(function() { return {}; });
+        throw new Error(d.error || ('HTTP ' + res.status));
+      }
+
       ['aqf-text','aqf-attribution','aqf-role'].forEach(function(id) {
         var el = document.getElementById(id);
         if (el) el.value = '';
@@ -26764,7 +26782,7 @@ async function deleteEditorReview(key, e) {
       window._adminToggleQuoteForm(false);
       window._adminLoadQuotes();
     } catch(e) {
-      alert('Failed to save quote. Check your connection.');
+      alert('Failed to save quote: ' + e.message);
     } finally {
       if (saveBtn) { saveBtn.textContent = 'Save Quote'; saveBtn.disabled = false; }
     }
