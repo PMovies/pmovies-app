@@ -4196,8 +4196,8 @@
     -webkit-mask-image:
       radial-gradient(circle at 50% 0,   transparent var(--hole), black calc(var(--hole) + 1px)),
       radial-gradient(circle at 50% 100%, transparent var(--hole), black calc(var(--hole) + 1px)),
-      radial-gradient(circle at 20% 50%,  transparent 14px, black 15px),
-      radial-gradient(circle at 80% 50%,  transparent 14px, black 15px);
+      radial-gradient(circle at 25% 50%,  transparent 14px, black 15px),
+      radial-gradient(circle at 95% 50%,  transparent 14px, black 15px);
     -webkit-mask-size: 20px 100%, 20px 100%, 100% 100%, 100% 100%;
     -webkit-mask-repeat: repeat-x, repeat-x, no-repeat, no-repeat;
     -webkit-mask-position: 0 0, 0 100%, 0 0, 0 0;
@@ -4205,8 +4205,8 @@
     mask-image:
       radial-gradient(circle at 50% 0,    transparent var(--hole), black calc(var(--hole) + 1px)),
       radial-gradient(circle at 50% 100%, transparent var(--hole), black calc(var(--hole) + 1px)),
-      radial-gradient(circle at 20% 50%,  transparent 14px, black 15px),
-      radial-gradient(circle at 80% 50%,  transparent 14px, black 15px);
+      radial-gradient(circle at 25% 50%,  transparent 14px, black 15px),
+      radial-gradient(circle at 95% 50%,  transparent 14px, black 15px);
     mask-size: 20px 100%, 20px 100%, 100% 100%, 100% 100%;
     mask-repeat: repeat-x, repeat-x, no-repeat, no-repeat;
     mask-position: 0 0, 0 100%, 0 0, 0 0;
@@ -26174,10 +26174,20 @@ async function deleteEditorReview(key, e) {
   ══════════════════════════════════════════════════════════ */
   async function loadLobbyQuotes() {
     try {
+      // Try index query first; Firebase returns {error:"..."} if index not configured
       var res  = await fetch(RTDB + '/quotes.json?orderBy="approved"&equalTo=true');
       var data = await res.json();
-      if (!data) return [];
-      return Object.entries(data).map(function(e) { return Object.assign({ id: e[0] }, e[1]); });
+      if (data && typeof data === 'object' && !data.error && !Array.isArray(data)) {
+        var all = Object.entries(data).map(function(e) { return Object.assign({ id: e[0] }, e[1]); });
+        if (all.length > 0) return all;
+      }
+      // Fallback: fetch all and filter client-side (works without Firebase index)
+      res  = await fetch(RTDB + '/quotes.json');
+      data = await res.json();
+      if (!data || typeof data !== 'object' || data.error) return [];
+      return Object.entries(data)
+        .filter(function(e) { return e[1] && e[1].approved === true && e[1].text && e[1].attribution; })
+        .map(function(e) { return Object.assign({ id: e[0] }, e[1]); });
     } catch (e) { return []; }
   }
 
