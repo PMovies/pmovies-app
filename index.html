@@ -1872,11 +1872,11 @@
     background: radial-gradient(ellipse at center, transparent 40%, rgba(10,9,5,.55) 80%, rgba(10,9,5,.85) 100%);
   }
 
-  /* Decorative rule */
+  /* Decorative rule — gradient solid (no dashed) */
   .lobby-rule {
     border: none; height: 1px;
-    background: linear-gradient(to right, transparent, var(--lobby-gold) 20%, var(--lobby-gold) 80%, transparent);
-    opacity: 0.4; margin: 0;
+    background: linear-gradient(to right, transparent 0%, var(--lobby-gold) 15%, var(--lobby-gold) 85%, transparent 100%);
+    opacity: 0.45; margin: 0;
   }
 
   /* Header */
@@ -1897,7 +1897,8 @@
 
   /* Poster column */
   .lobby-poster-col {
-    display: flex; flex-direction: column; align-items: center; padding-right: 40px;
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; height: 100%; padding-right: 40px;
   }
   .lobby-card { opacity: 1; transition: opacity 0.5s ease, transform 0.5s ease; }
   .lobby-card.transitioning { opacity: 0; transform: translateY(6px); }
@@ -1930,16 +1931,17 @@
 
   /* Quote column */
   .lobby-quote-col {
-    padding-left: 48px; border-left: 1px solid var(--lobby-rule);
-    display: flex; align-items: center; min-height: 0;
+    padding-left: 56px; border-left: 1px solid rgba(201,168,76,0.2);
+    display: flex; align-items: center; justify-content: flex-start;
+    height: 100%; min-height: 0;
   }
-  .lobby-quote-wrap { position: relative; opacity: 1; transition: opacity 0.5s ease; }
+  .lobby-quote-wrap { position: relative; opacity: 1; transition: opacity 0.5s ease; width: 100%; max-width: 640px; }
   .lobby-quote-wrap.transitioning { opacity: 0; }
 
   .lobby-open-mark {
     display: block; font-family: 'Playfair Display', serif;
-    font-size: clamp(48px,7vw,88px); line-height: 0.7;
-    color: var(--lobby-gold); opacity: 0.35; margin-bottom: 12px; user-select: none;
+    font-size: clamp(40px,5.5vw,72px); line-height: 0.8;
+    color: var(--lobby-gold); opacity: 0.3; margin-bottom: 16px; user-select: none;
   }
   .lobby-quote-text {
     font-family: 'Playfair Display', serif; font-style: italic;
@@ -1948,9 +1950,9 @@
   }
   .lobby-close-mark {
     display: block; font-family: 'Playfair Display', serif;
-    font-size: clamp(48px,7vw,88px); line-height: 0.5;
-    color: var(--lobby-gold); opacity: 0.35; text-align: right; max-width: 640px;
-    margin-top: 8px; user-select: none;
+    font-size: clamp(40px,5.5vw,72px); line-height: 0.6;
+    color: var(--lobby-gold); opacity: 0.3; text-align: right; max-width: 640px;
+    margin-top: 12px; user-select: none;
   }
 
   .lobby-quote-footer { margin-top: 28px; display: flex; align-items: baseline; gap: 20px; flex-wrap: wrap; }
@@ -4540,7 +4542,7 @@ window._removeDlLoader = function() {
 <!-- ╔══════════════════════════════════════════════════════════════╗ -->
 <!-- ║  User Chip — fixed top-right, shown when signed in          ║ -->
 <!-- ╚══════════════════════════════════════════════════════════════╝ -->
-<button id="pmHomeToggleBtn" onclick="pmToggleHomeScreen()" aria-label="Home screen">🎬 Home</button>
+<button id="pmHomeToggleBtn" onclick="goHome()" aria-label="Home screen">🎬 Home</button>
 <button id="pmUserChip" onclick="pmToggleChipMenu(event)" aria-label="My profile">
   <div class="pm-chip-avatar" id="pmChipAvatar">P</div>
   <span class="pm-chip-name" id="pmChipName"></span>
@@ -19363,6 +19365,26 @@ async function deleteEditorReview(key, e) {
         + '</div>'
         // ── Data Cleanup Tool ──
         + '<div class="pm-admin-section" style="margin-top:32px">'
+        +   '<div class="pm-admin-section-title" style="display:flex;align-items:center;justify-content:space-between">📽 Film Quotes <button onclick="window._adminLoadQuotes()" style="background:#1a1a1a;border:1px solid rgba(201,168,76,.35);color:#c9a84c;font-family:\'Montserrat\',sans-serif;font-size:.65rem;font-weight:700;padding:5px 12px;border-radius:6px;cursor:pointer;letter-spacing:.05em">Load Quotes</button></div>'
+        +   '<div style="margin-bottom:10px"><button onclick="window._adminToggleQuoteForm()" id="adminAddQuoteBtn" style="background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.35);color:#c9a84c;font-family:\'Montserrat\',sans-serif;font-size:.72rem;font-weight:700;padding:8px 16px;border-radius:8px;cursor:pointer;letter-spacing:.05em">+ Add Quote</button></div>'
+        +   '<div id="adminQuoteForm" style="display:none;background:#111;border:1px solid #222;border-radius:10px;padding:16px;margin-bottom:12px">'
+        +     '<textarea id="aqf-text" placeholder="Quote text…" rows="3" maxlength="500" style="width:100%;background:#0d0d0d;border:1px solid #333;border-radius:8px;color:#f4f1ea;font-size:.8rem;padding:10px;box-sizing:border-box;margin-bottom:8px;resize:vertical;font-family:inherit"></textarea>'
+        +     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">'
+        +       '<input id="aqf-character" placeholder="Character (optional)" style="background:#0d0d0d;border:1px solid #333;border-radius:8px;color:#f4f1ea;font-size:.8rem;padding:9px 12px">'
+        +       '<input id="aqf-film" placeholder="Film title *" style="background:#0d0d0d;border:1px solid #333;border-radius:8px;color:#f4f1ea;font-size:.8rem;padding:9px 12px">'
+        +       '<input id="aqf-tmdbid" placeholder="TMDB ID (for poster)" style="background:#0d0d0d;border:1px solid #333;border-radius:8px;color:#f4f1ea;font-size:.8rem;padding:9px 12px">'
+        +       '<input id="aqf-director" placeholder="Director" style="background:#0d0d0d;border:1px solid #333;border-radius:8px;color:#f4f1ea;font-size:.8rem;padding:9px 12px">'
+        +       '<input id="aqf-year" type="number" placeholder="Year" min="1900" max="2030" style="background:#0d0d0d;border:1px solid #333;border-radius:8px;color:#f4f1ea;font-size:.8rem;padding:9px 12px">'
+        +       '<input id="aqf-country" placeholder="Country" style="background:#0d0d0d;border:1px solid #333;border-radius:8px;color:#f4f1ea;font-size:.8rem;padding:9px 12px">'
+        +     '</div>'
+        +     '<div style="display:flex;gap:8px">'
+        +       '<button onclick="window._adminSaveQuote()" style="background:rgba(201,168,76,.18);border:1px solid rgba(201,168,76,.4);color:#c9a84c;font-family:\'Montserrat\',sans-serif;font-size:.72rem;font-weight:700;padding:9px 18px;border-radius:8px;cursor:pointer">Save Quote</button>'
+        +       '<button onclick="window._adminToggleQuoteForm(false)" style="background:transparent;border:1px solid #333;color:#666;font-family:\'Montserrat\',sans-serif;font-size:.72rem;font-weight:700;padding:9px 14px;border-radius:8px;cursor:pointer">Cancel</button>'
+        +     '</div>'
+        +   '</div>'
+        +   '<div id="adminQuotesList" style="font-size:.75rem;color:#555">Click "Load Quotes" to view all quotes.</div>'
+        + '</div>'
+        + '<div class="pm-admin-section" style="margin-top:32px">'
         +   '<div class="pm-admin-section-title">🧹 Data Cleanup</div>'
         +   '<div style="color:#666;font-size:.72rem;margin-bottom:10px">Finds duplicate reviews. Paste a user UID below to also scan their stale likes (the 7-likes bug).</div>'
         +   '<input id="pmCleanupUid" placeholder="Optional: paste user UID to scan their likes…" style="width:100%;background:#111;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:9px 14px;color:#f4f1ea;font-size:.75rem;margin-bottom:10px;box-sizing:border-box;font-family:monospace">'
@@ -26172,22 +26194,63 @@ async function deleteEditorReview(key, e) {
     _lobbyAutoTimer = setInterval(_nextLobbyQuote, LOBBY_AUTO_MS);
   }
 
-  /* ── Enter ─────────────────────────────────────────────────────── */
+  /* ── Enter app (ENTER button) ──────────────────────────────────── */
   window.lobbyEnter = function() {
     clearInterval(_lobbyAutoTimer);
     sessionStorage.setItem('pmovies_lobby_done', '1');
     var lobby = document.getElementById('lobby-screen');
     if (lobby) {
-      lobby.classList.add('lobby-hidden');
-      setTimeout(function() { lobby.style.display = 'none'; }, 700);
+      lobby.style.transition    = 'opacity 0.6s ease';
+      lobby.style.opacity       = '0';
+      lobby.style.pointerEvents = 'none';
+      setTimeout(function() {
+        lobby.style.display = 'none';
+        lobby.style.transition = '';
+        // Signed-in users land on app; others see auth
+        var user = window.pmGetUser ? window.pmGetUser() : null;
+        if (!user && sessionStorage.getItem('pmovies_guest') !== '1') {
+          var landing = document.getElementById('pmLandingScreen');
+          if (landing) { landing.style.display = 'flex'; landing.style.opacity = '1'; }
+        } else {
+          // Make sure Discover is the active tab
+          if (typeof switchTab === 'function') switchTab('discover');
+        }
+      }, 620);
     }
-    // If user is already signed in, nothing else needed — app is behind the lobby
-    // If not signed in, reveal the auth landing screen
-    var user = window.pmGetUser ? window.pmGetUser() : null;
-    if (!user && sessionStorage.getItem('pmovies_guest') !== '1') {
-      var landing = document.getElementById('pmLandingScreen');
-      if (landing) { landing.style.display = 'flex'; landing.style.opacity = '1'; }
+  };
+
+  /* ── Go Home (home nav button) ──────────────────────────────────── */
+  window.goHome = function() {
+    // Close greeting screen if it's open
+    var gs = document.getElementById('pmGreetingScreen');
+    if (gs && gs.classList.contains('gs-active')) {
+      if (typeof window.pmDismissGreeting === 'function') window.pmDismissGreeting();
     }
+
+    var lobby = document.getElementById('lobby-screen');
+    if (!lobby) return;
+
+    // Show lobby with a fresh quote
+    lobby.style.display       = 'flex';
+    lobby.style.opacity       = '0';
+    lobby.style.pointerEvents = 'auto';
+    lobby.classList.remove('lobby-hidden');
+    sessionStorage.removeItem('pmovies_lobby_done');
+
+    // Advance to a new quote (not the same one user just saw)
+    if (_lobbyQuotes.length > 1) {
+      _lobbyIdx = (_lobbyIdx + 1) % _lobbyQuotes.length;
+      _renderLobbyQuote(_lobbyQuotes[_lobbyIdx]);
+      _startLobbyAuto();
+    }
+
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() {
+        lobby.style.transition = 'opacity 0.5s ease';
+        lobby.style.opacity    = '1';
+        setTimeout(function() { lobby.style.transition = ''; }, 550);
+      });
+    });
   };
 
   /* ── Init ─────────────────────────────────────────────────────── */
@@ -26228,118 +26291,120 @@ async function deleteEditorReview(key, e) {
     }, { passive: true });
   }
 
-  /* ── Share card (Canvas API) ──────────────────────────────────── */
-  async function _generateQuoteCard(quote, posterUrl) {
+  /* ── Share card (Canvas API — 1200×675) ──────────────────────── */
+  async function _generateQuoteCard(quote, posterSrc) {
     var W = 1200, H = 675;
     var canvas = document.createElement('canvas');
     canvas.width = W; canvas.height = H;
     var ctx = canvas.getContext('2d');
 
-    // Background
+    // 1. Base background
     ctx.fillStyle = '#0A0905';
     ctx.fillRect(0, 0, W, H);
 
-    // Film grain
-    var gd = ctx.getImageData(0, 0, W, H);
-    for (var i = 0; i < gd.data.length; i += 4) {
-      var v = (Math.random() * 20) - 10;
-      gd.data[i]   = Math.min(255, Math.max(0, gd.data[i]   + v));
-      gd.data[i+1] = Math.min(255, Math.max(0, gd.data[i+1] + v));
-      gd.data[i+2] = Math.min(255, Math.max(0, gd.data[i+2] + v));
-      gd.data[i+3] = 255;
+    // 2. Film grain (pixel noise)
+    var imageData = ctx.createImageData(W, H);
+    for (var gi = 0; gi < imageData.data.length; gi += 4) {
+      var n = (Math.random() * 18) | 0;
+      imageData.data[gi] = imageData.data[gi+1] = imageData.data[gi+2] = n;
+      imageData.data[gi+3] = 28;
     }
-    ctx.putImageData(gd, 0, 0);
+    ctx.putImageData(imageData, 0, 0);
 
-    // Vignette
-    var vig = ctx.createRadialGradient(W/2, H/2, H*0.3, W/2, H/2, H*0.75);
+    // 3. Vignette
+    var vig = ctx.createRadialGradient(W/2, H/2, H*0.25, W/2, H/2, H*0.78);
     vig.addColorStop(0, 'rgba(0,0,0,0)');
-    vig.addColorStop(1, 'rgba(0,0,0,0.75)');
-    ctx.fillStyle = vig;
-    ctx.fillRect(0, 0, W, H);
+    vig.addColorStop(1, 'rgba(0,0,0,0.72)');
+    ctx.fillStyle = vig; ctx.fillRect(0, 0, W, H);
 
-    // Poster
-    var ruleX = 64 + 40; // default if no poster
-    if (posterUrl) {
+    // 4. Poster (left side)
+    var POSTER_H  = H * 0.70;
+    var POSTER_W  = POSTER_H * (2/3);
+    var POSTER_X  = 64;
+    var POSTER_Y  = (H - POSTER_H) / 2;
+    var DIVIDER_X = POSTER_X + POSTER_W + 52;
+
+    if (posterSrc && !posterSrc.includes('icon-512')) {
       try {
         var imgEl = new Image();
         imgEl.crossOrigin = 'anonymous';
-        await new Promise(function(res, rej) {
-          imgEl.onload  = res;
-          imgEl.onerror = rej;
-          imgEl.src = posterUrl;
-        });
-        var ph = H * 0.72, pw = ph * (2/3);
-        var px = 64, py = (H - ph) / 2;
-        ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 32;
-        ctx.shadowOffsetX = 4; ctx.shadowOffsetY = 6;
+        await new Promise(function(res, rej) { imgEl.onload = res; imgEl.onerror = rej; imgEl.src = posterSrc; });
         ctx.save();
-        ctx.translate(px + pw/2, py + ph/2); ctx.rotate(-0.015);
-        ctx.drawImage(imgEl, -pw/2, -ph/2, pw, ph);
-        ctx.restore();
+        ctx.translate(POSTER_X + POSTER_W/2, POSTER_Y + POSTER_H/2);
+        ctx.rotate(-0.018);
+        ctx.shadowColor = 'rgba(0,0,0,0.85)'; ctx.shadowBlur = 40; ctx.shadowOffsetX = 5; ctx.shadowOffsetY = 8;
+        ctx.drawImage(imgEl, -POSTER_W/2, -POSTER_H/2, POSTER_W, POSTER_H);
         ctx.shadowColor = 'transparent';
-        ctx.strokeStyle = 'rgba(201,168,76,0.35)'; ctx.lineWidth = 1;
-        ctx.save();
-        ctx.translate(px + pw/2, py + ph/2); ctx.rotate(-0.015);
-        ctx.strokeRect(-pw/2, -ph/2, pw, ph);
+        ctx.strokeStyle = 'rgba(201,168,76,0.4)'; ctx.lineWidth = 1.5;
+        ctx.strokeRect(-POSTER_W/2, -POSTER_H/2, POSTER_W, POSTER_H);
         ctx.restore();
-        ruleX = px + pw + 40;
       } catch(_) {}
     }
 
-    // Vertical rule
-    var rGrad = ctx.createLinearGradient(0, 80, 0, H - 80);
-    rGrad.addColorStop(0,   'rgba(201,168,76,0)');
-    rGrad.addColorStop(0.2, 'rgba(201,168,76,0.35)');
-    rGrad.addColorStop(0.8, 'rgba(201,168,76,0.35)');
-    rGrad.addColorStop(1,   'rgba(201,168,76,0)');
-    ctx.fillStyle = rGrad; ctx.fillRect(ruleX, 0, 1, H);
+    // 5. Vertical gold rule
+    var vGrad = ctx.createLinearGradient(0, 48, 0, H-48);
+    vGrad.addColorStop(0,    'rgba(201,168,76,0)');
+    vGrad.addColorStop(0.15, 'rgba(201,168,76,0.4)');
+    vGrad.addColorStop(0.85, 'rgba(201,168,76,0.4)');
+    vGrad.addColorStop(1,    'rgba(201,168,76,0)');
+    ctx.fillStyle = vGrad; ctx.fillRect(DIVIDER_X, 0, 1, H);
 
-    // Opening quotation mark
-    var textX = ruleX + 56;
-    ctx.font = 'bold 96px serif'; ctx.fillStyle = 'rgba(201,168,76,0.3)';
-    ctx.textBaseline = 'top'; ctx.fillText('❝', textX - 8, 72);
+    // 6. Top + bottom horizontal rules
+    function drawHRule(y) {
+      var hGrad = ctx.createLinearGradient(40, 0, W-40, 0);
+      hGrad.addColorStop(0,    'rgba(201,168,76,0)');
+      hGrad.addColorStop(0.08, 'rgba(201,168,76,0.5)');
+      hGrad.addColorStop(0.92, 'rgba(201,168,76,0.5)');
+      hGrad.addColorStop(1,    'rgba(201,168,76,0)');
+      ctx.fillStyle = hGrad; ctx.fillRect(40, y, W-80, 1);
+    }
+    drawHRule(36); drawHRule(H-36);
 
-    // Quote text — word wrap
-    ctx.font = 'italic 28px serif'; ctx.fillStyle = '#EDE4D0'; ctx.textBaseline = 'top';
-    var maxW = W - textX - 64;
+    // 7. Opening quotation mark
+    var TEXT_X   = DIVIDER_X + 52;
+    var TEXT_MAX = W - TEXT_X - 56;
+    ctx.font = 'bold 80px Georgia, serif'; ctx.fillStyle = 'rgba(201,168,76,0.28)'; ctx.textBaseline = 'top';
+    ctx.fillText('❝', TEXT_X - 6, 56);
+
+    // 8. Quote text — word wrap
+    ctx.font = 'italic 28px Georgia, serif'; ctx.fillStyle = '#EDE4D0'; ctx.textBaseline = 'top';
     var words = (quote.text || '').split(' ');
     var lines = []; var cur = '';
-    words.forEach(function(w) {
-      var test = cur ? cur + ' ' + w : w;
-      if (ctx.measureText(test).width > maxW) { lines.push(cur); cur = w; }
+    for (var wi = 0; wi < words.length; wi++) {
+      var test = cur ? cur + ' ' + words[wi] : words[wi];
+      if (ctx.measureText(test).width > TEXT_MAX) { lines.push(cur); cur = words[wi]; }
       else cur = test;
-    });
+    }
     if (cur) lines.push(cur);
     var displayLines = lines.slice(0, 6);
-    var lineH = 44;
-    var textStartY = Math.max(120, (H - displayLines.length * lineH - 140) / 2);
-    displayLines.forEach(function(line, i) { ctx.fillText(line, textX, textStartY + i * lineH); });
+    var LINE_H  = 46;
+    var BLOCK_H = displayLines.length * LINE_H + 90;
+    var TEXT_Y  = (H - BLOCK_H) / 2;
+    displayLines.forEach(function(l, i) { ctx.fillText(l, TEXT_X, TEXT_Y + i * LINE_H); });
 
-    // Attribution
-    var attrY = textStartY + displayLines.length * lineH + 32;
+    // Closing mark after last line
+    ctx.font = 'bold 80px Georgia, serif'; ctx.fillStyle = 'rgba(201,168,76,0.28)';
+    var lastW = ctx.measureText(displayLines[displayLines.length-1] || '').width;
+    ctx.fillText('❞', TEXT_X + Math.min(lastW + 4, TEXT_MAX - 60), TEXT_Y + (displayLines.length-1) * LINE_H - 24);
+
+    // 9. Attribution
+    var ATTR_Y = TEXT_Y + displayLines.length * LINE_H + 24;
     if (quote.character) {
-      ctx.font = 'italic 18px serif'; ctx.fillStyle = '#A89878';
-      ctx.fillText('— ' + quote.character, textX, attrY);
+      ctx.font = 'italic 18px Georgia, serif'; ctx.fillStyle = '#A89878'; ctx.textBaseline = 'top';
+      ctx.fillText('— ' + quote.character, TEXT_X, ATTR_Y);
     }
-    ctx.font = '12px serif'; ctx.fillStyle = 'rgba(201,168,76,0.75)';
+    ctx.font = '13px Arial, sans-serif'; ctx.fillStyle = 'rgba(201,168,76,0.8)';
     ctx.fillText(
       [(quote.film || '').toUpperCase(), quote.year].filter(Boolean).join('  ·  '),
-      textX, attrY + (quote.character ? 28 : 0)
+      TEXT_X, ATTR_Y + (quote.character ? 30 : 0)
     );
 
-    // Branding
-    ctx.font = '13px serif'; ctx.fillStyle = 'rgba(201,168,76,0.5)';
-    ctx.textAlign = 'right'; ctx.fillText('P M O V I E S', W - 48, H - 36);
-
-    // Top/bottom rules
-    [40, H - 40].forEach(function(y) {
-      var hGrad = ctx.createLinearGradient(40, 0, W - 40, 0);
-      hGrad.addColorStop(0,   'rgba(201,168,76,0)');
-      hGrad.addColorStop(0.1, 'rgba(201,168,76,0.35)');
-      hGrad.addColorStop(0.9, 'rgba(201,168,76,0.35)');
-      hGrad.addColorStop(1,   'rgba(201,168,76,0)');
-      ctx.fillStyle = hGrad; ctx.fillRect(40, y, W - 80, 1);
-    });
+    // 10. PMovies wordmark — bottom right
+    ctx.font = '13px Arial, sans-serif'; ctx.fillStyle = 'rgba(201,168,76,0.55)';
+    ctx.textAlign = 'right';
+    ctx.fillText('P M O V I E S', W - 50, H - 56);
+    ctx.fillStyle = 'rgba(201,168,76,0.35)';
+    ctx.fillText('›', W - 30, H - 56);
 
     return canvas;
   }
@@ -26408,6 +26473,98 @@ async function deleteEditorReview(key, e) {
       });
     }
     console.log('[PMovies] Lobby seed complete — ' + SEED.length + ' quotes added.');
+  };
+
+  /* ── Admin quote management ────────────────────────────────────── */
+  window._adminToggleQuoteForm = function(forceHide) {
+    var f = document.getElementById('adminQuoteForm');
+    if (!f) return;
+    var show = forceHide === false ? false : f.style.display === 'none';
+    f.style.display = show ? 'block' : 'none';
+    if (show) document.getElementById('aqf-text') && document.getElementById('aqf-text').focus();
+  };
+
+  window._adminLoadQuotes = async function() {
+    var container = document.getElementById('adminQuotesList');
+    if (!container) return;
+    container.innerHTML = '<div style="color:#555;font-size:.72rem">Loading…</div>';
+    try {
+      var tok = '';
+      if (window.pmGetUser) {
+        var u = window.pmGetUser();
+        if (u && u.getIdToken) tok = '?auth=' + (await u.getIdToken());
+      }
+      var res  = await fetch(LOBBY_RTDB + '/quotes.json' + tok);
+      var data = res.ok ? await res.json() : null;
+      if (!data) { container.innerHTML = '<div style="color:#555;font-size:.72rem">No quotes yet.</div>'; return; }
+      var entries = Object.entries(data).sort(function(a,b){ return (b[1].useCount||0)-(a[1].useCount||0); });
+      container.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:.72rem">'
+        + '<thead><tr style="color:#f5a623;border-bottom:1px solid #222;text-align:left">'
+        + '<th style="padding:6px 8px;width:45%">Quote</th><th style="padding:6px 8px">Film</th>'
+        + '<th style="padding:6px 4px;text-align:center">Yr</th><th style="padding:6px 4px;text-align:center">Shown</th>'
+        + '<th style="padding:6px 4px;text-align:center">Status</th><th style="padding:6px 4px"></th></tr></thead><tbody>'
+        + entries.map(function(e) {
+            var id = e[0], q = e[1];
+            var snippet = (q.text||'').slice(0,55) + ((q.text||'').length>55?'…':'');
+            var status = q.approved
+              ? '<span style="color:#4caf50;font-size:.65rem">✓ Live</span>'
+              : '<span style="color:#888;font-size:.65rem">⏸ Hidden</span>';
+            return '<tr style="border-bottom:1px solid #1a1a1a">'
+              + '<td style="padding:7px 8px;color:#ccc" title="'+q.text+'">"'+snippet+'"</td>'
+              + '<td style="padding:7px 8px;color:#aaa">'+( q.film||'—')+'</td>'
+              + '<td style="padding:7px 4px;text-align:center;color:#666">'+(q.year||'—')+'</td>'
+              + '<td style="padding:7px 4px;text-align:center;color:#666">'+(q.useCount||0)+'</td>'
+              + '<td style="padding:7px 4px;text-align:center">'+status+'</td>'
+              + '<td style="padding:7px 4px;white-space:nowrap">'
+              +   '<button onclick="window._adminToggleApproval(\''+id+'\','+!!q.approved+')" style="background:transparent;border:1px solid #333;color:#aaa;font-size:.62rem;padding:3px 8px;border-radius:4px;cursor:pointer;margin-right:4px">'+(q.approved?'Hide':'Show')+'</button>'
+              +   '<button onclick="window._adminDeleteQuote(\''+id+'\')" style="background:transparent;border:1px solid #522;color:#c44;font-size:.62rem;padding:3px 8px;border-radius:4px;cursor:pointer">Del</button>'
+              + '</td></tr>';
+          }).join('')
+        + '</tbody></table>';
+    } catch(e) { container.innerHTML = '<div style="color:#c44">Failed to load quotes.</div>'; }
+  };
+
+  window._adminToggleApproval = async function(id, current) {
+    try {
+      var tok = '';
+      if (window.pmGetUser) { var u = window.pmGetUser(); if (u && u.getIdToken) tok = '?auth=' + (await u.getIdToken()); }
+      await fetch(LOBBY_RTDB + '/quotes/' + id + '/approved.json' + tok, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(!current) });
+      window._adminLoadQuotes();
+    } catch(e) { alert('Failed to update quote status.'); }
+  };
+
+  window._adminDeleteQuote = async function(id) {
+    if (!confirm('Delete this quote permanently?')) return;
+    try {
+      var tok = '';
+      if (window.pmGetUser) { var u = window.pmGetUser(); if (u && u.getIdToken) tok = '?auth=' + (await u.getIdToken()); }
+      await fetch(LOBBY_RTDB + '/quotes/' + id + '.json' + tok, { method:'DELETE' });
+      window._adminLoadQuotes();
+    } catch(e) { alert('Delete failed.'); }
+  };
+
+  window._adminSaveQuote = async function() {
+    var text = (document.getElementById('aqf-text')||{}).value.trim();
+    var film = (document.getElementById('aqf-film')||{}).value.trim();
+    if (!text || !film) { alert('Quote text and film title are required.'); return; }
+    var quote = {
+      text: text,
+      character: (document.getElementById('aqf-character')||{}).value.trim() || null,
+      film: film,
+      tmdbId:   (document.getElementById('aqf-tmdbid')||{}).value.trim() || null,
+      director: (document.getElementById('aqf-director')||{}).value.trim() || null,
+      year:     parseInt((document.getElementById('aqf-year')||{}).value) || null,
+      country:  (document.getElementById('aqf-country')||{}).value.trim() || null,
+      language: 'en', approved: true, useCount: 0, addedBy: 'admin', createdAt: Date.now()
+    };
+    try {
+      var tok = '';
+      if (window.pmGetUser) { var u = window.pmGetUser(); if (u && u.getIdToken) tok = '?auth=' + (await u.getIdToken()); }
+      await fetch(LOBBY_RTDB + '/quotes.json' + tok, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(quote) });
+      ['aqf-text','aqf-character','aqf-film','aqf-tmdbid','aqf-director','aqf-year','aqf-country'].forEach(function(id){ var el = document.getElementById(id); if(el) el.value=''; });
+      window._adminToggleQuoteForm(false);
+      window._adminLoadQuotes();
+    } catch(e) { alert('Save failed.'); }
   };
 
   /* ── Boot ─────────────────────────────────────────────────────── */
