@@ -4059,71 +4059,139 @@
 .fp-art-thumb { width:100%; aspect-ratio:2/3; object-fit:cover; border-radius:8px; cursor:pointer; transition:transform .15s,opacity .15s; background:#1a1a1a; }
 .fp-art-thumb:hover { transform:scale(1.04); opacity:.9; }
 
+
   /* ══════════════════════════════════════════════════════════════
      LOBBY — Scratch Ticket Home Screen
   ══════════════════════════════════════════════════════════════ */
 
   @keyframes lobbyFadeUp {
-    from { opacity:0; transform:translateY(7px); }
+    from { opacity:0; transform:translateY(8px); }
     to   { opacity:1; transform:translateY(0); }
   }
+  @keyframes lobbyPulse {
+    0%,100% { opacity:0.55; }
+    50%      { opacity:0.85; }
+  }
 
+  /* ── Screen ─────────────────────────────────────────────────── */
   #lobby-screen {
     position: fixed; inset: 0; z-index: 100001;
-    background: #0A0A0A;
+    background: #080808;
     display: flex; flex-direction: column; overflow: hidden;
     transition: opacity 0.5s ease;
   }
   #lobby-screen.lobby-exit { opacity: 0; pointer-events: none; }
 
+  /* ── Film-grain overlay ──────────────────────────────────────── */
+  #lobby-screen::before {
+    content: '';
+    position: absolute; inset: 0; z-index: 3; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
+    opacity: 1;
+  }
+
+  /* ── Backdrop ───────────────────────────────────────────────── */
   .lobby-backdrop {
-    position: absolute;
-    inset: -40px;
+    position: absolute; inset: -40px;
     background-size: cover; background-position: center;
-    filter: blur(48px) brightness(0.32) saturate(0.75);
+    filter: blur(20px) brightness(0.48) saturate(0.85);
     transform: scale(1.05); z-index: 0;
     transition: background-image 1.2s ease;
   }
+
+  /* Edge vignette — darkens corners, keeps center readable */
   .lobby-overlay {
     position: absolute; inset: 0; z-index: 1; pointer-events: none;
-    background: linear-gradient(to bottom,
-      rgba(0,0,0,.55) 0%, rgba(0,0,0,.10) 35%,
-      rgba(0,0,0,.10) 65%, rgba(0,0,0,.75) 100%);
+    background:
+      radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0,0,0,0.6) 100%),
+      linear-gradient(to bottom,
+        rgba(0,0,0,0.7) 0%,
+        rgba(0,0,0,0.05) 25%,
+        rgba(0,0,0,0.05) 70%,
+        rgba(0,0,0,0.85) 100%);
   }
 
-  /* Header */
-  .lobby-header {
+  /* ── Thin accent rule under header ──────────────────────────── */
+  .lobby-header-rule {
     position: relative; z-index: 2;
-    text-align: center; padding: 28px 0 0;
+    display: flex; align-items: center; justify-content: center;
+    gap: 14px; padding: 6px 0 0;
     pointer-events: none;
   }
-  .lobby-wordmark {
-    font-family: 'Bebas Neue', inherit;
-    font-size: clamp(13px,1.6vw,18px);
-    font-weight: 700; letter-spacing: 0.45em;
-    color: var(--orange, #f5a623);
-    text-transform: uppercase; opacity: 0.9;
+  .lobby-header-rule::before,
+  .lobby-header-rule::after {
+    content: '';
+    flex: 1; max-width: 120px; height: 1px;
+    background: linear-gradient(to right,
+      transparent, rgba(245,166,35,0.45), transparent);
+  }
+  .lobby-header-dot {
+    width: 4px; height: 4px; border-radius: 50%;
+    background: var(--orange, #f5a623);
+    opacity: 0.6;
   }
 
-  /* Stage */
+  /* ── Header ─────────────────────────────────────────────────── */
+  .lobby-header {
+    position: relative; z-index: 2;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 26px 0 0; pointer-events: none; gap: 0;
+  }
+  .lobby-wordmark {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(22px, 3vw, 36px);
+    font-weight: 400;
+    letter-spacing: 0.55em;
+    color: var(--orange, #f5a623);
+    text-transform: uppercase;
+    text-shadow: 0 0 40px rgba(245,166,35,0.35);
+    line-height: 1;
+  }
+  .lobby-tagline {
+    font-family: 'Montserrat', sans-serif;
+    font-size: clamp(8px, 0.9vw, 10px);
+    font-weight: 600;
+    letter-spacing: 0.38em;
+    color: rgba(255,255,255,0.3);
+    text-transform: uppercase;
+    margin-top: 5px;
+  }
+
+  /* ── Stage ───────────────────────────────────────────────────── */
   .lobby-stage {
     flex: 1; position: relative; z-index: 2;
     display: flex; align-items: center; justify-content: center;
-    padding: 24px;
+    padding: 16px 24px;
   }
   .lobby-ticket-wrap {
     display: flex; flex-direction: column;
-    align-items: center; gap: 16px;
+    align-items: center; gap: 18px;
   }
 
-  /* Ticket shape */
+  /* Glow halo behind the ticket */
+  .lobby-ticket-wrap::before {
+    content: '';
+    position: absolute;
+    width: min(700px, 94vw);
+    height: clamp(200px, 30vw, 280px);
+    background: radial-gradient(ellipse at center,
+      rgba(245,166,35,0.08) 0%, transparent 70%);
+    pointer-events: none;
+    border-radius: 12px;
+  }
+
+  /* ── Ticket ──────────────────────────────────────────────────── */
   .lobby-ticket {
     display: flex; flex-direction: row;
-    width: min(680px, 92vw);
-    height: clamp(180px, 28vw, 240px);
-    background: #1A1812;
-    border: 1px solid rgba(245,166,35,0.35);
+    width: min(700px, 94vw);
+    height: clamp(190px, 30vw, 256px);
+    background: linear-gradient(135deg, #1E1A12 0%, #141108 100%);
+    border: 1px solid rgba(245,166,35,0.3);
     position: relative; border-radius: 6px;
+    box-shadow:
+      0 8px 40px rgba(0,0,0,0.7),
+      0 0 0 1px rgba(245,166,35,0.08) inset;
+
     --hole: 9px;
     -webkit-mask-image:
       radial-gradient(circle at 50% 0,   transparent var(--hole), black calc(var(--hole) + 1px)),
@@ -4145,67 +4213,76 @@
     mask-composite: intersect;
   }
 
-  /* Stub */
+  /* ── Stub ────────────────────────────────────────────────────── */
   .lobby-stub {
     width: 20%; flex-shrink: 0;
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
-    gap: 6px; padding: 16px 8px;
-    border-right: 1px dashed rgba(245,166,35,0.3);
+    gap: 8px; padding: 16px 8px;
+    border-right: 1px dashed rgba(245,166,35,0.25);
+    background: rgba(0,0,0,0.15);
   }
   .lobby-stub-star {
-    font-size: clamp(11px,1.8vw,16px);
-    color: var(--orange, #f5a623); opacity: 0.6; line-height: 1;
+    font-size: clamp(13px, 2vw, 18px);
+    color: var(--orange, #f5a623);
+    opacity: 0.65; line-height: 1;
+    animation: lobbyPulse 3s ease-in-out infinite;
   }
+  .lobby-stub-star:nth-child(2) { animation-delay: .4s; }
+  .lobby-stub-star:nth-child(3) { animation-delay: .8s; }
   .lobby-stub-text {
-    font-size: clamp(7px,1vw,9px); font-weight: 700;
-    letter-spacing: 0.15em;
-    color: var(--orange, #f5a623); opacity: 0.4;
-    text-align: center; margin-top: 6px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: clamp(7px, 1vw, 10px); font-weight: 700;
+    letter-spacing: 0.2em;
+    color: var(--orange, #f5a623); opacity: 0.35;
+    text-align: center; margin-top: 4px;
+    text-transform: uppercase;
   }
 
-  /* Tear line */
+  /* ── Tear line ───────────────────────────────────────────────── */
   .lobby-tear {
-    width: 1px;
+    width: 1px; flex-shrink: 0;
     background: repeating-linear-gradient(
       to bottom,
-      rgba(245,166,35,0.35) 0px, rgba(245,166,35,0.35) 4px,
-      transparent 4px, transparent 8px
+      rgba(245,166,35,0.3) 0px, rgba(245,166,35,0.3) 5px,
+      transparent 5px, transparent 10px
     );
-    flex-shrink: 0;
   }
 
-  /* Ticket body */
+  /* ── Ticket body ─────────────────────────────────────────────── */
   .lobby-ticket-body {
     flex: 1; position: relative; overflow: hidden;
     display: flex; align-items: center; justify-content: center;
   }
   .lobby-quote-inner {
-    padding: 20px 28px; text-align: center;
+    padding: 24px 32px; text-align: center;
     pointer-events: none; user-select: none;
   }
   .lobby-quote-text {
-    font-size: clamp(14px,2.2vw,20px); font-weight: 600;
-    line-height: 1.55; color: #F0E6CC;
-    margin: 0 0 12px; font-style: italic;
+    font-family: 'Montserrat', sans-serif;
+    font-size: clamp(13px, 2vw, 19px); font-weight: 500;
+    line-height: 1.6; color: #EDE3CC;
+    margin: 0 0 14px; font-style: italic;
+    text-shadow: 0 1px 12px rgba(0,0,0,0.6);
   }
   .lobby-quote-attr {
-    font-size: clamp(10px,1.2vw,13px); font-weight: 500;
-    letter-spacing: 0.12em;
+    font-family: 'Montserrat', sans-serif;
+    font-size: clamp(9px, 1.1vw, 12px); font-weight: 700;
+    letter-spacing: 0.18em;
     color: var(--orange, #f5a623);
-    text-transform: uppercase; margin: 0; opacity: 0.85;
+    text-transform: uppercase; margin: 0; opacity: 0.9;
   }
 
-  /* Scratch canvas */
+  /* ── Scratch canvas ──────────────────────────────────────────── */
   .lobby-scratch-canvas {
     position: absolute; inset: 0;
     width: 100%; height: 100%;
     cursor: crosshair; touch-action: none;
-    transition: opacity 0.4s ease;
+    transition: opacity 0.45s ease;
   }
   .lobby-scratch-canvas.revealed { opacity: 0; pointer-events: none; }
 
-  /* Post-reveal buttons */
+  /* ── Post-reveal buttons ─────────────────────────────────────── */
   .lobby-post-reveal {
     display: flex; gap: 12px; align-items: center;
   }
@@ -4214,10 +4291,10 @@
     background: transparent;
     border: 1px solid rgba(245,166,35,0.4);
     color: var(--orange, #f5a623);
-    font-family: 'Montserrat', inherit;
-    font-size: clamp(10px,1.1vw,12px); font-weight: 600;
-    letter-spacing: 0.18em; text-transform: uppercase;
-    padding: 8px 20px; cursor: pointer;
+    font-family: 'Montserrat', sans-serif;
+    font-size: clamp(9px, 1vw, 11px); font-weight: 700;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    padding: 9px 22px; cursor: pointer;
     display: inline-flex; align-items: center; gap: 8px;
     transition: background 0.25s ease, color 0.25s ease;
     animation: lobbyFadeUp 0.4s ease forwards;
@@ -4226,58 +4303,66 @@
     background: var(--orange, #f5a623); color: #000;
   }
   .lobby-another-btn {
-    border-color: rgba(255,255,255,0.12);
-    color: rgba(255,255,255,0.4);
-    font-size: clamp(9px,1vw,11px);
+    border-color: rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.45);
+    font-size: clamp(9px, 0.95vw, 11px);
   }
   .lobby-another-btn:hover {
-    color: rgba(255,255,255,0.75);
-    border-color: rgba(255,255,255,0.25);
+    color: rgba(255,255,255,0.8);
+    border-color: rgba(255,255,255,0.3);
   }
 
-  /* Footer */
+  /* ── Footer ──────────────────────────────────────────────────── */
   .lobby-footer {
-    position: relative; z-index: 2;
+    position: relative; z-index: 4;
     display: flex; align-items: center; justify-content: space-between;
-    padding: 20px 36px 28px;
+    padding: 18px 36px max(28px, env(safe-area-inset-bottom, 28px));
   }
   .lobby-greeting {
-    font-size: clamp(12px,1.3vw,15px); font-weight: 500;
-    color: rgba(255,255,255,0.45); letter-spacing: 0.04em;
+    font-family: 'Montserrat', sans-serif;
+    font-size: clamp(11px, 1.2vw, 14px); font-weight: 500;
+    color: rgba(255,255,255,0.5); letter-spacing: 0.04em;
   }
   .lobby-greeting strong {
-    color: rgba(255,255,255,0.75); font-weight: 700;
+    color: var(--orange, #f5a623);
+    font-weight: 700;
   }
   .lobby-enter-btn {
     background: transparent;
     border: 1px solid var(--orange, #f5a623);
     color: var(--orange, #f5a623);
-    font-family: 'Montserrat', inherit;
-    font-size: clamp(10px,1.1vw,13px); font-weight: 700;
-    letter-spacing: 0.25em; padding: 10px 28px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: clamp(10px, 1.1vw, 12px); font-weight: 700;
+    letter-spacing: 0.3em; padding: 11px 32px;
     cursor: pointer; text-transform: uppercase;
-    transition: background 0.25s ease, color 0.25s ease;
+    transition: background 0.25s ease, color 0.25s ease,
+                box-shadow 0.25s ease;
     position: relative; overflow: hidden;
   }
   .lobby-enter-btn::before {
     content: ''; position: absolute; inset: 0;
     background: var(--orange, #f5a623);
-    transform: translateX(-100%);
+    transform: translateX(-101%);
     transition: transform 0.3s ease; z-index: 0;
   }
   .lobby-enter-btn:hover::before { transform: translateX(0); }
-  .lobby-enter-btn:hover { color: #000; }
+  .lobby-enter-btn:hover {
+    color: #000;
+    box-shadow: 0 0 24px rgba(245,166,35,0.4);
+  }
   .lobby-enter-btn span { position: relative; z-index: 1; }
 
-  /* Mobile */
-  @media (max-width:600px) {
-    .lobby-wordmark { font-size: 11px; letter-spacing: 0.4em; }
-    .lobby-footer   { padding: 16px 20px 24px; }
-    .lobby-ticket   { height: clamp(160px,48vw,200px); --hole: 7px; }
-    .lobby-stub     { width: 18%; }
-    .lobby-stub-text { display: none; }
-    .lobby-quote-inner { padding: 14px 18px; }
+  /* ── Mobile ──────────────────────────────────────────────────── */
+  @media (max-width: 600px) {
+    .lobby-wordmark    { font-size: 20px; letter-spacing: 0.45em; }
+    .lobby-footer      { padding: 14px 20px max(22px, env(safe-area-inset-bottom, 22px)); }
+    .lobby-ticket      { height: clamp(165px, 50vw, 210px); --hole: 7px; }
+    .lobby-stub        { width: 19%; }
+    .lobby-stub-text   { display: none; }
+    .lobby-quote-inner { padding: 14px 16px; }
+    .lobby-quote-text  { font-size: clamp(12px, 3.8vw, 16px); }
     .lobby-scratch-canvas { cursor: default; }
+    .lobby-header-rule { display: none; }
   }
 </style>
 </head>
@@ -4303,6 +4388,12 @@
 
   <div class="lobby-header">
     <span class="lobby-wordmark">PMOVIES</span>
+    <span class="lobby-tagline">Your Cinema · Your Mood · Your Film</span>
+  </div>
+  <div class="lobby-header-rule" aria-hidden="true">
+    <span class="lobby-header-dot"></span>
+    <span class="lobby-header-dot"></span>
+    <span class="lobby-header-dot"></span>
   </div>
 
   <main class="lobby-stage">
@@ -4390,7 +4481,9 @@
   </ul>
 </div>
 <script>
-/* Early routing — runs synchronously before Firebase resolves. */
+/* Early routing — runs synchronously before Firebase resolves.
+   The lobby shows for EVERY user on their first visit of the session.
+   Only skip: deep links to other paths, or lobbyDone already set this session. */
 (function(){
   var path       = location.pathname;
   var isDeepLink = path !== '/' && path !== '/index.html';
@@ -4398,15 +4491,16 @@
   var isReturning = localStorage.getItem('pmovies_was_signed_in') === '1' ||
                     sessionStorage.getItem('pmovies_guest') === '1';
 
-  if (isDeepLink || lobbyDone || isReturning) {
-    if (isReturning || lobbyDone) {
+  if (isDeepLink || lobbyDone) {
+    // Skip lobby — hide auth landing for returning users (auth resolves and hides it properly)
+    if (isReturning) {
       var el = document.getElementById('pmLandingScreen');
       if (el) el.style.display = 'none';
     }
     return;
   }
 
-  // First visit of session — show lobby, keep auth landing hidden behind it
+  // First visit of session — show lobby for everyone, keep auth landing hidden
   var lobby = document.getElementById('lobby-screen');
   if (lobby) lobby.style.display = 'flex';
   var landing = document.getElementById('pmLandingScreen');
@@ -4414,6 +4508,7 @@
 })();
 </script>
 
+<script>
 /* ── Deep-link loader dismiss helper ──────────────────────────────────────────────────
    Called by openFanReviewPage, openLobbyThread, and _loadAndShowReview once the
    review/thread overlay is visible, so the #dlLoader splash fades out cleanly. */
@@ -26086,24 +26181,42 @@ async function deleteEditorReview(key, e) {
 
   function drawScratchSurface(w, h) {
     var ctx = scratchCtx;
-    ctx.fillStyle = '#1A1812';
+
+    // Base gradient — warm dark
+    var grad = ctx.createLinearGradient(0, 0, w, h);
+    grad.addColorStop(0, '#1E1A12');
+    grad.addColorStop(1, '#141108');
+    ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
 
-    for (var y = 0; y < h; y += 3) {
-      for (var x = 0; x < w; x += 3) {
-        var v = Math.random() * 22 + 12;
-        ctx.fillStyle = 'rgba(' + (v+10) + ',' + (v+8) + ',' + v + ',0.18)';
-        ctx.fillRect(x, y, 2, 2);
+    // Film-grain noise
+    for (var y = 0; y < h; y += 2) {
+      for (var x = 0; x < w; x += 2) {
+        var v = Math.random() * 18 + 8;
+        ctx.fillStyle = 'rgba(' + (v+10) + ',' + (v+8) + ',' + v + ',0.15)';
+        ctx.fillRect(x, y, 1, 1);
       }
     }
 
+    // Subtle horizontal scan lines
     ctx.save();
-    ctx.globalAlpha  = 0.3;
+    ctx.globalAlpha = 0.04;
+    ctx.fillStyle   = '#000';
+    for (var sy = 0; sy < h; sy += 4) {
+      ctx.fillRect(0, sy, w, 1);
+    }
+    ctx.restore();
+
+    // "Scratch to reveal" hint
+    var fontSize = Math.min(w * 0.032, 13);
+    ctx.save();
+    ctx.globalAlpha  = 0.38;
     ctx.fillStyle    = '#f5a623';
-    ctx.font         = '600 ' + Math.min(w * 0.035, 14) + 'px sans-serif';
+    ctx.font         = '700 ' + fontSize + 'px Montserrat, sans-serif';
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('SCRATCH TO REVEAL', w / 2, h / 2);
+    ctx.letterSpacing = '0.25em';
+    ctx.fillText('✦  SCRATCH TO REVEAL  ✦', w / 2, h / 2);
     ctx.restore();
   }
 
@@ -26196,6 +26309,7 @@ async function deleteEditorReview(key, e) {
   ══════════════════════════════════════════════════════════ */
   function enterApp() {
     sessionStorage.setItem('pmovies_lobby_done', '1');
+    sessionStorage.setItem('pm_greeting_done', '1'); // lobby replaces the greeting screen
     var lobby = document.getElementById('lobby-screen');
     if (!lobby) return;
     lobby.style.transition    = 'opacity 0.5s ease';
