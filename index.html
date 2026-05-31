@@ -26143,6 +26143,34 @@ async function deleteEditorReview(key, e) {
   var strokeCount    = 0;
   var hasAutoRevealed = false;
 
+  /* ── Fallback quotes (shown when Firebase is unreachable or user is a guest) ── */
+  var _LOBBY_FALLBACK_QUOTES = [
+    { id:'fb1', text:'A film is never really good unless the camera is an eye in the head of a poet.', attribution:'Orson Welles', role:'Director' },
+    { id:'fb2', text:'Cinema is a matter of what\'s in the frame and what\'s out.', attribution:'Martin Scorsese', role:'Director' },
+    { id:'fb3', text:'Every frame of a movie is a painting.', attribution:'Akira Kurosawa', role:'Director' },
+    { id:'fb4', text:'A story should have a beginning, a middle, and an end — but not necessarily in that order.', attribution:'Jean-Luc Godard', role:'Director' },
+    { id:'fb5', text:'The job of the director is to make the audience feel that they are inside the movie.', attribution:'Alfred Hitchcock', role:'Director' },
+    { id:'fb6', text:'Film is the art of the moment. A single frame can contain an entire world.', attribution:'Abbas Kiarostami', role:'Director' },
+    { id:'fb7', text:'Making a film is like going down into the darkest part of yourself.', attribution:'Ingmar Bergman', role:'Director' },
+    { id:'fb8', text:'The movies are the only business where you can go out front and applaud yourself.', attribution:'Will Rogers', role:'Actor' },
+  ];
+
+  /* ── Auth-ready promise: resolves with Firebase user once auth settles (max 2.5s) ── */
+  var _lobbyAuthReady = new Promise(function(resolve) {
+    var timer = setTimeout(function() { resolve(null); }, 2500);
+    try {
+      if (window.firebase && typeof firebase.auth === 'function') {
+        var unsub = firebase.auth().onAuthStateChanged(function(user) {
+          clearTimeout(timer);
+          try { unsub(); } catch(e) {}
+          resolve(user);
+        });
+      } else {
+        clearTimeout(timer); resolve(null);
+      }
+    } catch(e) { clearTimeout(timer); resolve(null); }
+  });
+
   /* ══════════════════════════════════════════════════════════
      BACKDROP
   ══════════════════════════════════════════════════════════ */
@@ -26173,22 +26201,25 @@ async function deleteEditorReview(key, e) {
      QUOTE LOADING
   ══════════════════════════════════════════════════════════ */
   async function loadLobbyQuotes() {
+    // Wait for Firebase auth to settle, then get a token
+    var tok = '';
     try {
-      // Try index query first; Firebase returns {error:"..."} if index not configured
-      var res  = await fetch(RTDB + '/quotes.json?orderBy="approved"&equalTo=true');
+      var user = await _lobbyAuthReady;
+      if (user && user.getIdToken) tok = await user.getIdToken();
+    } catch(e) {}
+
+    // No token means guest or auth unavailable — use fallback quotes
+    if (!tok) return _LOBBY_FALLBACK_QUOTES.slice();
+
+    try {
+      var res  = await fetch(RTDB + '/quotes.json?auth=' + tok);
       var data = await res.json();
-      if (data && typeof data === 'object' && !data.error && !Array.isArray(data)) {
-        var all = Object.entries(data).map(function(e) { return Object.assign({ id: e[0] }, e[1]); });
-        if (all.length > 0) return all;
-      }
-      // Fallback: fetch all and filter client-side (works without Firebase index)
-      res  = await fetch(RTDB + '/quotes.json');
-      data = await res.json();
-      if (!data || typeof data !== 'object' || data.error) return [];
-      return Object.entries(data)
+      if (!data || typeof data !== 'object' || data.error) return _LOBBY_FALLBACK_QUOTES.slice();
+      var all = Object.entries(data)
         .filter(function(e) { return e[1] && e[1].approved === true && e[1].text && e[1].attribution; })
         .map(function(e) { return Object.assign({ id: e[0] }, e[1]); });
-    } catch (e) { return []; }
+      return all.length ? all : _LOBBY_FALLBACK_QUOTES.slice();
+    } catch(e) { return _LOBBY_FALLBACK_QUOTES.slice(); }
   }
 
   function pickNextQuote(all) {
@@ -26584,15 +26615,21 @@ async function deleteEditorReview(key, e) {
   }
 
   async function initLobby() {
-    if (!lobbyQuotes.length) {
-      lobbyQuotes = await loadLobbyQuotes();
-    }
     var lobby = document.getElementById('lobby-screen');
     if (!lobby || lobby.style.display === 'none') return;
 
+    // Show backdrop and greeting immediately — no auth needed for these
     setLobbyBackdrop();
     renderLobbyGreeting();
-    if (!lobbyQuotes.length) { enterApp(); return; }
+
+    // Load quotes (waits up to 2.5s for Firebase auth to settle)
+    if (!lobbyQuotes.length) {
+      lobbyQuotes = await loadLobbyQuotes();
+    }
+
+    // Re-check lobby is still visible (user may have clicked ENTER during load)
+    if (!lobby || lobby.style.display === 'none') return;
+
     renderQuote(pickNextQuote(lobbyQuotes));
   }
 
@@ -26692,8 +26729,11 @@ async function deleteEditorReview(key, e) {
     if (!list) return;
     list.innerHTML = '<span style="color:#555;font-size:.72rem">Loading…</span>';
     try {
-      var res  = await fetch(RTDB + '/quotes.json');
+      var tok  = await _getAdminTok();
+      var authQ = tok ? '?auth=' + tok : '';
+      var res  = await fetch(RTDB + '/quotes.json' + authQ);
       var data = await res.json();
+      if (data && data.error) throw new Error(data.error);
       if (!data) { list.innerHTML = '<span style="color:#555;font-size:.72rem">No quotes yet.</span>'; return; }
 
       var entries = Object.entries(data).sort(function(a, b) { return (b[1].useCount||0) - (a[1].useCount||0); });
