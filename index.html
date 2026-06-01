@@ -11671,14 +11671,25 @@ async function getBrowserFingerprint() {
   return fp;
 }
 
+/* ── Auth-token helper for vote RTDB reads/writes ── */
+async function _voteTok() {
+  try {
+    const u = window.pmGetUser && window.pmGetUser();
+    if (u && u.getIdToken) return await u.getIdToken();
+  } catch(e) {}
+  return '';
+}
+
 // Sync RTDB fingerprint votes → localStorage (restores votes even in incognito)
 async function syncFpVotes() {
   try {
-    const fp  = await getStableFp();
-    const res = await fetch(`${RTDB}/${dbPath('votesByFp')}/${fp}.json`);
+    const fp    = await getStableFp();
+    const tok   = await _voteTok();
+    const authQ = tok ? '?auth=' + tok : '';
+    const res   = await fetch(`${RTDB}/${dbPath('votesByFp')}/${fp}.json${authQ}`);
     if (!res.ok) return;
     const data = await res.json();
-    if (!data) return;
+    if (!data || data.error) return;
     const serverIds = Object.keys(data);
     const local     = getMyVotes();
     const merged    = [...new Set([...local, ...serverIds])];
@@ -12162,9 +12173,11 @@ async function loadVoteFeed() {
   track.innerHTML = '<div class="vote-feed-inner"><span class="vote-feed-item" style="opacity:.4">Loading recent votes…</span></div>';
   try {
     // Derive recent votes from communityVotes (sorted by lastVoted) — no separate path needed
-    const res  = await fetch(`${RTDB}/${dbPath('communityVotes')}.json`);
-    const data = res.ok ? await res.json() : null;
-    const events = data
+    const tok   = await _voteTok();
+    const authQ = tok ? '?auth=' + tok : '';
+    const res   = await fetch(`${RTDB}/${dbPath('communityVotes')}.json${authQ}`);
+    const data  = res.ok ? await res.json() : null;
+    const events = (data && !data.error)
       ? Object.values(data)
           .filter(e => e && e.lastVoted && e.title)
           .sort((a, b) => b.lastVoted - a.lastVoted)
@@ -12191,7 +12204,9 @@ async function loadVoteFeed() {
 
 async function writeVoteEvent(title, poster) {
   try {
-    const r = await fetch(`${RTDB}/voteEvents.json`, {
+    const tok = await _voteTok();
+    const authQ = tok ? '?auth=' + tok : '';
+    const r = await fetch(`${RTDB}/voteEvents.json${authQ}`, {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ title, poster: poster || '', ts: Date.now() })
     });
@@ -12581,9 +12596,11 @@ async function loadTop100() {
   // Sync fingerprint votes first — restores votes even after incognito/cleared storage
   await syncFpVotes();
   try {
-    const res  = await fetch(`${RTDB}/${dbPath('communityVotes')}.json`);
-    const data = res.ok ? await res.json() : null;
-    if (!data) { renderTop100([]); return; }
+    const tok   = await _voteTok();
+    const authQ = tok ? '?auth=' + tok : '';
+    const res   = await fetch(`${RTDB}/${dbPath('communityVotes')}.json${authQ}`);
+    const data  = res.ok ? await res.json() : null;
+    if (!data || data.error) { renderTop100([]); return; }
     const all = Object.entries(data).map(([id, m]) => ({ id, ...m }));
 
     // Update community stats from ALL votes (not just the displayed subset)
@@ -16047,11 +16064,13 @@ function maybeSaveMini50RankSnap(list) {
 /* ── FP vote sync (restores votes after cleared storage / incognito) ── */
 async function syncMini50FpVotes() {
   try {
-    const fp  = await getStableFp();
-    const res = await fetch(`${RTDB}/${dbPath('votesByFpMini')}/${fp}.json`);
+    const fp    = await getStableFp();
+    const tok   = await _voteTok();
+    const authQ = tok ? '?auth=' + tok : '';
+    const res   = await fetch(`${RTDB}/${dbPath('votesByFpMini')}/${fp}.json${authQ}`);
     if (!res.ok) return;
     const data = await res.json();
-    if (!data) return;
+    if (!data || data.error) return;
     const merged = [...new Set([...getMini50Votes(), ...Object.keys(data)])];
     if (merged.length > getMini50Votes().length) saveMini50Votes(merged);
   } catch(_) {}
@@ -16215,9 +16234,11 @@ async function loadTop50Mini() {
     // Don't let the FP sync failure block the whole list from loading
     await syncMini50FpVotes().catch(() => {});
 
-    const res  = await fetch(`${RTDB}/${dbPath('miniSeriesVotes')}.json`);
-    const data = res.ok ? await res.json() : null;
-    if (!data) { renderMini50([]); mini50Loaded = true; return; }
+    const tok   = await _voteTok();
+    const authQ = tok ? '?auth=' + tok : '';
+    const res   = await fetch(`${RTDB}/${dbPath('miniSeriesVotes')}.json${authQ}`);
+    const data  = res.ok ? await res.json() : null;
+    if (!data || data.error) { renderMini50([]); mini50Loaded = true; return; }
 
     const all = Object.entries(data).map(([id, m]) => ({ id, ...m }));
 
@@ -16264,9 +16285,11 @@ async function loadMini50VoteFeed() {
   bar.style.display = 'flex';
   track.innerHTML = '<div class="vote-feed-inner"><span class="vote-feed-item" style="opacity:.4">Loading…</span></div>';
   try {
-    const res  = await fetch(`${RTDB}/${dbPath('miniSeriesVotes')}.json`);
-    const data = res.ok ? await res.json() : null;
-    const events = data
+    const tok   = await _voteTok();
+    const authQ = tok ? '?auth=' + tok : '';
+    const res   = await fetch(`${RTDB}/${dbPath('miniSeriesVotes')}.json${authQ}`);
+    const data  = res.ok ? await res.json() : null;
+    const events = (data && !data.error)
       ? Object.values(data).filter(e => e && e.lastVoted && e.title)
           .sort((a, b) => b.lastVoted - a.lastVoted).slice(0, 16)
       : [];
