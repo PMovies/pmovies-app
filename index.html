@@ -11165,19 +11165,39 @@ window._removeDlLoader = function() {
     document.getElementById('adminSaveBtn').disabled = false;
   }
 
+  async function _challengeTok() {
+    try {
+      const u = window.pmGetUser && window.pmGetUser();
+      if (u && u.getIdToken) return await u.getIdToken();
+    } catch(e) {}
+    return '';
+  }
+
   async function saveChallenge() {
     if (!selectedChallenge) return;
     const deadline = new Date(document.getElementById('adminDeadline').value).getTime();
     const btn = document.getElementById('adminSaveBtn');
     btn.textContent = 'Saving…'; btn.disabled = true;
-    const payload = { ...selectedChallenge, deadline, setAt: Date.now() };
-    await fetch(`${RTDB}/weeklyChallenge.json`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    btn.textContent = '✓ Challenge Set!';
-    setTimeout(() => { closeAdmin(); loadWeeklyChallenge(); }, 1200);
+    try {
+      const tok = await _challengeTok();
+      if (!tok) throw new Error('Not authenticated — please sign in first.');
+      const payload = { ...selectedChallenge, deadline, setAt: Date.now() };
+      const res = await fetch(`${RTDB}/weeklyChallenge.json?auth=${tok}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error || ('HTTP ' + res.status));
+      }
+      btn.textContent = '✓ Challenge Set!';
+      setTimeout(() => { closeAdmin(); loadWeeklyChallenge(); }, 1200);
+    } catch(err) {
+      btn.textContent = 'Save Failed';
+      btn.disabled = false;
+      alert('Could not save challenge: ' + err.message);
+    }
   }
 
   let _currentChallengeTitle = '';
@@ -11185,9 +11205,11 @@ window._removeDlLoader = function() {
 
   async function loadWeeklyChallenge() {
     try {
-      const res  = await fetch(`${RTDB}/weeklyChallenge.json`);
+      const tok = await _challengeTok();
+      const authQ = tok ? '?auth=' + tok : '';
+      const res  = await fetch(`${RTDB}/weeklyChallenge.json${authQ}`);
       const data = res.ok ? await res.json() : null;
-      if (!data || !data.title) return;
+      if (!data || !data.title || data.error) return;
       renderChallenge(data);
     } catch(_) {}
   }
