@@ -4353,8 +4353,8 @@
     /* Backdrop: lighter blur so the movie is more recognisable on mobile */
     .lobby-backdrop    { filter: blur(10px) brightness(0.52) saturate(0.9); }
 
-    /* Header: push down a bit more + bigger wordmark */
-    .lobby-header      { padding-top: max(calc(env(safe-area-inset-top) + 28px), 56px); }
+    /* Header: lower to eye level + bigger wordmark */
+    .lobby-header      { padding-top: max(calc(env(safe-area-inset-top) + 110px), 152px); }
     .lobby-wordmark    { font-size: clamp(26px, 7vw, 32px); letter-spacing: 0.5em; }
     .lobby-tagline     { font-size: 7px; letter-spacing: 0.28em; margin-top: 4px; }
     .lobby-header-rule { gap: 10px; padding: 5px 0 0; }
@@ -26184,6 +26184,10 @@ async function deleteEditorReview(key, e) {
     var el = document.getElementById('lobby-backdrop');
     if (!el) return;
 
+    // Immediate warm gradient so it's never a pitch-black void while image loads
+    el.style.backgroundImage =
+      'linear-gradient(135deg, #1a1408 0%, #0d0b08 55%, #14100d 100%)';
+
     // Pick a URL not recently used
     var pool = LOBBY_BACKDROPS.filter(function(u) { return _usedBackdrops.indexOf(u) === -1; });
     if (!pool.length) { _usedBackdrops = []; pool = LOBBY_BACKDROPS.slice(); }
@@ -26191,14 +26195,17 @@ async function deleteEditorReview(key, e) {
     _usedBackdrops.push(url);
     if (_usedBackdrops.length > 6) _usedBackdrops.shift();
 
-    // Preload — only apply if the image actually loads
+    // Preload primary — only apply after it fully loads
     var img = new Image();
     img.onload = function() { el.style.backgroundImage = 'url(' + url + ')'; };
     img.onerror = function() {
-      // Try any other URL once
+      // Primary failed — preload a fallback before applying it too
       var fallbacks = LOBBY_BACKDROPS.filter(function(u) { return u !== url; });
       var fb = fallbacks[Math.floor(Math.random() * fallbacks.length)];
-      if (fb) el.style.backgroundImage = 'url(' + fb + ')';
+      if (!fb) return;
+      var img2 = new Image();
+      img2.onload = function() { el.style.backgroundImage = 'url(' + fb + ')'; };
+      img2.src = fb;
     };
     img.src = url;
   }
@@ -26494,6 +26501,12 @@ async function deleteEditorReview(key, e) {
       grain.data[i+3] = 22;
     }
     ctx.putImageData(grain, 0, 0);
+    // putImageData replaces pixel alpha directly — restore the opaque dark base
+    // underneath the grain so the PNG exports as solid (not transparent / white)
+    ctx.globalCompositeOperation = 'destination-over';
+    ctx.fillStyle = '#0D0B08';
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'source-over';
 
     var TW = 840, TH = 320;
     var TX = (W - TW) / 2, TY = (H - TH) / 2 - 20;
