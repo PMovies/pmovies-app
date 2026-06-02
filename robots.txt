@@ -1,4 +1,41 @@
 User-agent: *
+
+# Block Firebase database endpoints
+Disallow: /*.json
+Disallow: /*.json?
+
+# Block API endpoints
+Disallow: /search/
+Disallow: /images
+Disallow: /image/
+
+# Block Cloudinary upload paths
+Disallow: /upload/
+
+# Block internal app sections
+Disallow: /theaterLeaderboard/
+Disallow: /theaterLogs/
+Disallow: /userVotes/
+Disallow: /followers/
+Disallow: /follows/
+Disallow: /notifications/
+Disallow: /usernames/
+Disallow: /u/
+Disallow: /fan-review/
+Disallow: /lists/
+Disallow: /admins/
+Disallow: /fan/
+Disallow: /movie/
+Disallow: /userLists/
+Disallow: /users/
+Disallow: /fanReviews/
+Disallow: /editorReviews/
+
+# Allow real public pages
 Allow: /
+Allow: /press
+Allow: /weekly
+Allow: /about
+
 
 Sitemap: https://p-movies.com/sitemap.xml
