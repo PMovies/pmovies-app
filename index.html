@@ -24451,7 +24451,7 @@ async function deleteEditorReview(key, e) {
               ? '<img class="fp-review-av" src="'+_esc(rev.photoURL)+'" alt="" loading="lazy" style="border-radius:50%">'
               : '<div class="fp-review-av" style="background:#2a1800;display:flex;align-items:center;justify-content:center;color:#f5a623;font-size:.8rem;font-weight:700;font-family:\'Bebas Neue\',sans-serif">'+_esc(displayName.slice(0,1).toUpperCase())+'</div>';
             var clickFn = 'fpOpenReview(\''+_esc(uid)+'\',\''+_esc(rev.slug||'')+'\',\''+_esc(rev.fp||'')+'\')';
-            return '<div class="fp-review-card" onclick="'+clickFn+'">'+
+            return '<div class="fp-review-card" data-rating="'+(rev.rating||0)+'" data-ts="'+(rev.timestamp||0)+'" onclick="'+clickFn+'">'+
               '<div class="fp-review-card-head">'+
               avHtml+
               '<div class="fp-review-card-meta">'+
@@ -24912,13 +24912,23 @@ async function deleteEditorReview(key, e) {
   };
 
   window.fpSetSort = function(mode, btn) {
-    document.querySelectorAll('.fp-sort-btn').forEach(function(b){b.classList.remove('active');});
+    document.querySelectorAll('.fp-sort-btn').forEach(function(b){ b.classList.remove('active'); });
     if (btn) btn.classList.add('active');
     var list = document.getElementById('fpReviewList');
     if (!list) return;
     var cards = Array.from(list.querySelectorAll('.fp-review-card'));
-    // Sort DOM order (data in data attributes not stored, so this is visual-only re-sort placeholder)
-    // Full re-sort would require re-fetching — acceptable for now
+    if (!cards.length) return;
+    cards.sort(function(a, b) {
+      if (mode === 'top') {
+        // Primary: rating descending; secondary: newest first as tiebreak
+        var rDiff = parseFloat(b.dataset.rating || 0) - parseFloat(a.dataset.rating || 0);
+        return rDiff !== 0 ? rDiff : parseFloat(b.dataset.ts || 0) - parseFloat(a.dataset.ts || 0);
+      }
+      // mode === 'new': newest first
+      return parseFloat(b.dataset.ts || 0) - parseFloat(a.dataset.ts || 0);
+    });
+    // Re-append in sorted order (moves DOM nodes — no re-fetch needed)
+    cards.forEach(function(c) { list.appendChild(c); });
   };
 
   // Intercept closeFanReviewPage + closeEditorRead to return to film page when opened from it
