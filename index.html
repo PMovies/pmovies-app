@@ -947,6 +947,8 @@
   .rb-trusted .reviewer-badge-label    { background:rgba(33,150,243,.18); color:#64b5f6; border:1px solid rgba(33,150,243,.35); box-shadow:0 0 8px rgba(33,150,243,.28); }
   /* Legend — royal purple glow */
   .rb-legend .reviewer-badge-label     { background:rgba(186,104,200,.22); color:#ce93d8; border:1px solid rgba(186,104,200,.4); box-shadow:0 0 12px rgba(186,104,200,.4); }
+  /* Founder — premium gold, always above the score ladder */
+  .rb-founder .reviewer-badge-label    { background:rgba(245,166,35,.28); color:#f5a623; border:1px solid rgba(245,166,35,.65); box-shadow:0 0 12px rgba(245,166,35,.4); }
 
 
   /* ── Hover Backdrop ── */
@@ -15394,9 +15396,24 @@ async function _loadUserBadge(uid) {
   if (_userBadgeCache[uid] || _userBadgeCache['_l_' + uid]) return;
   _userBadgeCache['_l_' + uid] = true;
   try {
-    const res   = await fetch(`${RTDB}/users/${uid}/contributionScore.json`);
-    const score = res.ok ? (await res.json() || 0) : 0;
-    const b     = _scoreToBadge(score);
+    // Auth token — needed for RTDB reads and for seeing isEditor flag correctly
+    let tok = '';
+    try { const u = window.pmGetUser && window.pmGetUser(); if (u && u.getIdToken) tok = await u.getIdToken(); } catch(e) {}
+    const authQ = tok ? '?auth=' + tok : '';
+
+    // Fetch contribution score AND isEditor flag in parallel
+    const [scoreRes, editorRes] = await Promise.all([
+      fetch(`${RTDB}/users/${uid}/contributionScore.json${authQ}`),
+      fetch(`${RTDB}/users/${uid}/isEditor.json${authQ}`)
+    ]);
+    const score    = scoreRes.ok  ? (await scoreRes.json()  || 0)    : 0;
+    const isEditor = editorRes.ok ? (await editorRes.json())         : false;
+
+    // Founder takes precedence over score-based tiers
+    const b = (isEditor === true)
+      ? { cls: 'rb-founder', icon: '🔑', label: 'Founder' }
+      : _scoreToBadge(score);
+
     _userBadgeCache[uid] = b;
     delete _userBadgeCache['_l_' + uid];
     document.querySelectorAll(`.reviewer-badge-placeholder[data-badge-uid="${uid}"]`).forEach(el => {
