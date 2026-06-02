@@ -19136,11 +19136,13 @@ async function deleteEditorReview(key, e) {
           if (fp) window._pmProfileRevMap[fp] = r;
         });
       }
-      // Correct profile.reviewCount in-place if we have a real count from cache
-      if (realReviewCount > 0 && realReviewCount !== (profile.reviewCount || 0)) {
+      // Correct profile.reviewCount in-place if we have a real count from cache.
+      // Also self-heals negative counts (e.g. -4 from over-decremented deletes).
+      var storedCount = profile.reviewCount || 0;
+      if (realReviewCount >= 0 && realReviewCount !== storedCount) {
         profile.reviewCount = realReviewCount;
-        // Persist fix to RTDB silently
-        if (isOwn && _pmUser) {
+        // Persist fix to RTDB silently (covers negative-count recovery too)
+        if (_pmUser) {
           _pmUser.getIdToken().then(function(tok) {
             fetch(RTDB + '/users/' + uid + '/reviewCount.json?auth=' + tok, {
               method: 'PUT', body: JSON.stringify(realReviewCount)
@@ -19148,6 +19150,8 @@ async function deleteEditorReview(key, e) {
           });
         }
       }
+      // Floor negative counts defensively — should never display below 0
+      if ((profile.reviewCount || 0) < 0) profile.reviewCount = 0;
 
       // Hero backdrop
       var heroHtml = '<div class="pm-prof-hero" id="pmProfHeroWrap">'
@@ -19168,7 +19172,7 @@ async function deleteEditorReview(key, e) {
         }).join('');
       } else {
         statsHtml = [
-          { val: profile.reviewCount || 0, lbl: 'Reviews',   id: 'pmProfStatRevBar'   },
+          { val: Math.max(0, profile.reviewCount || 0), lbl: 'Reviews',   id: 'pmProfStatRevBar'   },
           { val: '…',                       lbl: 'Followers', id: 'pmProfStatFollowers' },
           { val: '…',                       lbl: 'Following', id: 'pmProfStatFollowing' },
           { val: score,                     lbl: 'Score',     id: ''                   }
@@ -20395,7 +20399,7 @@ async function deleteEditorReview(key, e) {
     var nickname    = profile.nickname || 'Film Lover';
     var username    = profile.username ? '@' + profile.username : '';
     var score       = profile.contributionScore || 0;
-    var reviews     = profile.reviewCount    || 0;
+    var reviews     = Math.max(0, profile.reviewCount    || 0);
     var likes       = profile.likesReceived  || 0;
     var favFilm     = profile.favFilmAllTime || profile.favFilm || '';
     var isEditorCard = profile.isEditor === true;
@@ -21201,11 +21205,13 @@ async function deleteEditorReview(key, e) {
       var token = await _pmUser.getIdToken();
       // Delete from fanReviews
       await fetch(RTDB + '/fanReviews/' + encodeURIComponent(reviewKey) + '.json?auth=' + token, { method: 'DELETE' });
-      // Decrement user review count
+      // Decrement user review count — read first so we never go below 0
       if (uid) {
-        await fetch(RTDB + '/users/' + uid + '.json?auth=' + token, {
-          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ reviewCount: { '.sv': { increment: -1 } } })
+        var rcRes = await fetch(RTDB + '/users/' + uid + '/reviewCount.json?auth=' + token);
+        var rcCurr = rcRes.ok ? (await rcRes.json() || 0) : 0;
+        await fetch(RTDB + '/users/' + uid + '/reviewCount.json?auth=' + token, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(Math.max(0, rcCurr - 1))
         });
       }
       // Remove from all in-memory caches so re-renders don't bring it back
@@ -21230,10 +21236,13 @@ async function deleteEditorReview(key, e) {
     try {
       var token = await _pmUser.getIdToken();
       await fetch(RTDB + '/seriesFanReviews/' + encodeURIComponent(reviewKey) + '.json?auth=' + token, { method: 'DELETE' });
+      // Decrement user review count — read first so we never go below 0
       if (uid) {
-        await fetch(RTDB + '/users/' + uid + '.json?auth=' + token, {
-          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ reviewCount: { '.sv': { increment: -1 } } })
+        var srcRes = await fetch(RTDB + '/users/' + uid + '/reviewCount.json?auth=' + token);
+        var srcCurr = srcRes.ok ? (await srcRes.json() || 0) : 0;
+        await fetch(RTDB + '/users/' + uid + '/reviewCount.json?auth=' + token, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(Math.max(0, srcCurr - 1))
         });
       }
       // Remove from in-memory caches
