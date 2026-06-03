@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pmovies-v381';
+const CACHE_NAME = 'pmovies-v383';
 
 const APP_SHELL = [
   '/',
@@ -114,3 +114,76 @@ self.addEventListener('fetch', event => {
     })
   );
 });
+
+/* ───────── PUSH ───────── */
+
+// Critical design rule: push event does ZERO network requests.
+// Only the data already inside the payload is used to show the notification.
+// Data is fetched ONLY when the user taps (notificationclick).
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+
+  let payload;
+  try { payload = event.data.json(); } catch { return; }
+
+  const { title = 'PMovies', body = '', data = {} } = payload;
+
+  // Stable tag collapses duplicate notifications (e.g. ranking re-runs)
+  const tag = data.movieId   ? `pmovies-movie-${data.movieId}`
+             : data.reviewId ? `pmovies-review-${data.reviewId}`
+             : 'pmovies-general';
+
+  const options = {
+    body,
+    icon:     '/icons/icon-192.png',
+    badge:    '/icons/icon-192.png',   // fallback — replace with /icons/badge-72.png when available
+    tag,
+    renotify: false,
+    data,
+    vibrate:  [100, 50, 100],
+    actions: [
+      { action: 'open',    title: 'View' },
+      { action: 'dismiss', title: 'Dismiss' }
+    ]
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+/* ───────── NOTIFICATION CLICK ───────── */
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  if (event.action === 'dismiss') return;
+
+  const payload   = event.notification.data || {};
+  const targetUrl = buildNotificationUrl(payload);
+
+  event.waitUntil(
+    self.clients
+      .matchAll({ type: 'window', includeUncontrolled: true })
+      .then((clientList) => {
+        // App already open — focus it and post the payload
+        for (const client of clientList) {
+          if (client.url.startsWith(self.location.origin) && 'focus' in client) {
+            client.focus();
+            client.postMessage({ type: 'PMOVIES_NOTIFICATION_CLICK', payload });
+            return;
+          }
+        }
+        // App not open — open with URL params so SPA knows what to navigate to
+        if (self.clients.openWindow) return self.clients.openWindow(targetUrl);
+      })
+  );
+});
+
+function buildNotificationUrl(payload) {
+  const base   = self.location.origin;
+  const params = new URLSearchParams();
+  if (payload.type)     params.set('pn_type',   payload.type);
+  if (payload.movieId)  params.set('pn_movie',  payload.movieId);
+  if (payload.userId)   params.set('pn_user',   payload.userId);
+  if (payload.reviewId) params.set('pn_review', payload.reviewId);
+  const qs = params.toString();
+  return qs ? `${base}/?${qs}` : base + '/';
+}

@@ -7506,6 +7506,13 @@ window._removeDlLoader = function() {
   const DEFAULT_FB_SENDER_ID   = '887168953314';
   const DEFAULT_FB_BUCKET      = 'pmovies-f0ddc.firebasestorage.app';
 
+  // ── Push Notifications ──────────────────────────────────────
+  // Replace with your actual key after running: npx web-push generate-vapid-keys
+  const VAPID_PUBLIC_KEY       = 'BN8bVEEhEctQ8wj71ok2MGPyFAqc9X55CNSvZopt_O5z8QsQGwbo-Tny-NqEiEYNzv0YQsgHWdTUsGnt2t1knkE';
+  // Cloudflare push worker endpoint + admin secret
+  const PUSH_WORKER_URL        = 'https://pmovies-push.7vb72sb45p.workers.dev';
+  const PUSH_WORKER_SECRET     = 'kCXPB0Ojtdl8fOz-ftPGwf8JaxBpTagplfNURkRUoWY';
+
   function initFb() {
     if (fbDb) return true;
     const apiKey     = localStorage.getItem('fb_apiKey')     || DEFAULT_FB_API_KEY;
@@ -10773,6 +10780,8 @@ window._removeDlLoader = function() {
     renderTvRv();
     // Load Movie Night event state once on startup
     if (typeof pmLoadEventFilm === 'function') pmLoadEventFilm();
+    // Handle notification tap params (URL or postMessage)
+    if (typeof pmCheckNotificationParams === 'function') pmCheckNotificationParams();
     // Deep-link: open a fan review directly from URL (hash or clean-slug path)
     (function() {
       var h  = location.hash.replace('#', '');
@@ -11766,6 +11775,172 @@ window._removeDlLoader = function() {
     };
   };
 })();
+</script>
+
+<script>
+/* ══════════════════════════════════════
+   PUSH NOTIFICATIONS
+══════════════════════════════════════ */
+var _PM_PUSH_RTDB = 'https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app';
+
+/* ── Utility: VAPID key to Uint8Array ── */
+function urlBase64ToUint8Array(b64) {
+  var pad  = '='.repeat((4 - b64.length % 4) % 4);
+  var raw  = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from(Array.from(raw).map(function(c) { return c.charCodeAt(0); }));
+}
+
+/* ── Subscribe ── */
+async function pmSubscribePush() {
+  if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) return false;
+  if (Notification.permission === 'denied') return false;
+  var perm = Notification.permission;
+  if (perm === 'default') perm = await Notification.requestPermission();
+  if (perm !== 'granted') return false;
+  try {
+    var reg      = await navigator.serviceWorker.ready;
+    var existing = await reg.pushManager.getSubscription();
+    if (existing) { await pmSavePushSubscription(existing); return true; }
+    var sub = await reg.pushManager.subscribe({
+      userVisibleOnly:      true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+    });
+    await pmSavePushSubscription(sub);
+    return true;
+  } catch(err) { console.error('[Push] Subscribe failed:', err); return false; }
+}
+
+/* ── Save subscription to Firebase RTDB (REST API) ── */
+async function pmSavePushSubscription(subscription) {
+  var user = window.pmGetUser && window.pmGetUser();
+  if (!user) return;
+  var tok    = await user.getIdToken();
+  var subJs  = subscription.toJSON();
+  await fetch(_PM_PUSH_RTDB + '/pushSubscriptions/' + user.uid + '.json?auth=' + tok, {
+    method:  'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({
+      endpoint:  subJs.endpoint,
+      keys:      subJs.keys,
+      updatedAt: Date.now(),
+      platform:  /iPhone|iPad|Android/.test(navigator.userAgent) ? 'mobile' : 'desktop'
+    })
+  });
+}
+
+/* ── Unsubscribe ── */
+async function pmUnsubscribePush() {
+  var reg = await navigator.serviceWorker.ready;
+  var sub = await reg.pushManager.getSubscription();
+  if (sub) await sub.unsubscribe();
+  var user = window.pmGetUser && window.pmGetUser();
+  if (!user) return;
+  var tok = await user.getIdToken();
+  await fetch(_PM_PUSH_RTDB + '/pushSubscriptions/' + user.uid + '.json?auth=' + tok, { method: 'DELETE' });
+}
+
+/* ── Notification click: lazy-load handler (called after user taps) ── */
+function pmHandleNotificationPayload(payload) {
+  if (!payload) return;
+  switch (payload.type) {
+    case 'movie_night':
+    case 'ranking':
+    case 'film':
+    case 'review':
+    case 'fanart':
+      if (payload.movieId && typeof openFilmPage === 'function') openFilmPage(payload.movieId);
+      break;
+    case 'follow':
+      if (payload.userId && typeof pmOpenProfile === 'function') pmOpenProfile(payload.userId);
+      break;
+    default:
+      break;
+  }
+}
+
+/* ── URL params handler (app opened fresh from notification tap) ── */
+function pmCheckNotificationParams() {
+  var params = new URLSearchParams(location.search);
+  if (!params.has('pn_type')) return;
+  var payload = {
+    type:     params.get('pn_type'),
+    movieId:  params.get('pn_movie')  || null,
+    userId:   params.get('pn_user')   || null,
+    reviewId: params.get('pn_review') || null
+  };
+  history.replaceState({}, '', location.pathname); // clean URL
+  setTimeout(function() { pmHandleNotificationPayload(payload); }, 700);
+}
+
+/* ── SW message listener (app was already open when notification tapped) ── */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', function(event) {
+    if (event.data && event.data.type === 'PMOVIES_NOTIFICATION_CLICK') {
+      pmHandleNotificationPayload(event.data.payload);
+    }
+  });
+}
+
+/* ── Push toggle UI (rendered into a container element) ── */
+async function pmRenderPushToggle(container) {
+  if (!container) return;
+  if (!('Notification' in window) || !('PushManager' in window)) {
+    container.innerHTML = '<p style="color:#555;font-size:.75rem;font-family:\'Montserrat\',sans-serif;margin:0">Push notifications not supported on this device.</p>';
+    return;
+  }
+  var reg      = await navigator.serviceWorker.ready;
+  var existing = await reg.pushManager.getSubscription();
+  var isOn     = !!(existing && Notification.permission === 'granted');
+  container.innerHTML =
+    '<div style="display:flex;align-items:center;justify-content:space-between;gap:16px">'
+    + '<div>'
+    +   '<div style="font-size:.82rem;font-weight:700;color:#ddd;font-family:\'Montserrat\',sans-serif">🔔 Push Notifications</div>'
+    +   '<div style="font-size:.72rem;color:#555;margin-top:2px;font-family:\'Montserrat\',sans-serif">Movie Night, new reviews, follow activity</div>'
+    + '</div>'
+    + '<button id="pmPushToggleBtn" onclick="pmTogglePush(this)" style="background:'+(isOn?'#f5a623':'#222')+';color:'+(isOn?'#000':'#888')+';border:none;border-radius:20px;padding:7px 20px;font-size:.78rem;font-weight:800;cursor:pointer;font-family:\'Montserrat\',sans-serif;transition:all .2s;flex-shrink:0">'
+    +   (isOn ? 'ON' : 'OFF')
+    + '</button>'
+    + '</div>';
+}
+
+async function pmTogglePush(btn) {
+  btn.disabled = true; btn.textContent = '…';
+  var reg      = await navigator.serviceWorker.ready;
+  var existing = await reg.pushManager.getSubscription();
+  if (existing) {
+    await pmUnsubscribePush();
+    btn.textContent = 'OFF'; btn.style.background = '#222'; btn.style.color = '#888';
+  } else {
+    var ok = await pmSubscribePush();
+    if (ok) { btn.textContent = 'ON'; btn.style.background = '#f5a623'; btn.style.color = '#000'; }
+    else    { btn.textContent = 'Blocked'; }
+  }
+  btn.disabled = false;
+}
+
+/* ── Admin: broadcast push notification ── */
+async function pmAdminSendPush() {
+  var title   = (document.getElementById('pmPushTitle')  ||{}).value?.trim() || '';
+  var body    = (document.getElementById('pmPushBody')   ||{}).value?.trim() || '';
+  var type    = (document.getElementById('pmPushType')   ||{}).value || 'general';
+  var movieId = (document.getElementById('pmPushMovieId')||{}).value?.trim() || '';
+  var status  = document.getElementById('pmPushStatus');
+  if (!title || !body) { if (status) { status.style.color='#e55'; status.textContent='Title and body are required.'; } return; }
+  if (status) { status.style.color='#888'; status.textContent='Sending…'; }
+  var data = { type };
+  if (movieId) data.movieId = movieId;
+  try {
+    var res = await fetch(PUSH_WORKER_URL + '/push/send-all', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + PUSH_WORKER_SECRET },
+      body:    JSON.stringify({ title, notifBody: body, data })
+    });
+    var text = await res.text();
+    if (status) { status.style.color = res.ok ? '#f5a623' : '#e55'; status.textContent = res.ok ? '✓ ' + text : 'Error: ' + text; }
+  } catch(err) {
+    if (status) { status.style.color='#e55'; status.textContent='Network error: '+err.message; }
+  }
+}
 </script>
 
 <script>
@@ -19784,8 +19959,9 @@ async function deleteEditorReview(key, e) {
         + '</div>'
         + '<div style="padding:0 28px;font-size:.72rem;color:#444" id="pmProfMemberLineStat">' + (memberLine || '') + '</div>';
 
-      // Overview tab
-      var overviewHtml = tasteInner + reviewStrip;
+      // Overview tab — own profile gets a push-toggle row at the bottom
+      var overviewHtml = tasteInner + reviewStrip
+        + (isOwn ? '<div id="pmPushToggleContainer" style="margin:8px 0 0;padding:16px 28px;border-top:1px solid rgba(255,255,255,.05)"></div>' : '');
 
       // Relative time helper
       var _relTime = function(ts) {
@@ -19941,6 +20117,25 @@ async function deleteEditorReview(key, e) {
         +   '</div>'
         +   '<div id="pmCleanupResult" style="margin-top:16px"></div>'
         + '</div>'
+        // ── Push Broadcast ──
+        + '<div class="pm-admin-section" style="margin-top:32px">'
+        +   '<div class="pm-admin-section-title">🔔 Send Push Notification</div>'
+        +   '<div style="display:flex;flex-direction:column;gap:10px;max-width:440px">'
+        +     '<select id="pmPushType" style="background:#111;border:1px solid #333;border-radius:10px;padding:10px 14px;color:#fff;font-size:.82rem;font-family:\'Montserrat\',sans-serif;width:100%;box-sizing:border-box">'
+        +       '<option value="general">General Announcement</option>'
+        +       '<option value="movie_night">Movie Night</option>'
+        +       '<option value="ranking">Ranking Update</option>'
+        +       '<option value="film">Film Spotlight</option>'
+        +       '<option value="fanart">New Fan Art</option>'
+        +       '<option value="review">New Review</option>'
+        +     '</select>'
+        +     '<input id="pmPushTitle" type="text" placeholder="Title (max 60 chars)" maxlength="60" style="background:#111;border:1px solid #333;border-radius:10px;padding:10px 14px;color:#fff;font-size:.82rem;font-family:\'Montserrat\',sans-serif;width:100%;box-sizing:border-box"/>'
+        +     '<textarea id="pmPushBody" placeholder="Message body (max 120 chars)" rows="2" maxlength="120" style="background:#111;border:1px solid #333;border-radius:10px;padding:10px 14px;color:#fff;font-size:.82rem;font-family:\'Montserrat\',sans-serif;width:100%;box-sizing:border-box;resize:vertical"></textarea>'
+        +     '<input id="pmPushMovieId" type="text" placeholder="TMDB Movie ID (optional — tapping notification opens film page)" style="background:#111;border:1px solid #333;border-radius:10px;padding:10px 14px;color:#fff;font-size:.82rem;font-family:\'Montserrat\',sans-serif;width:100%;box-sizing:border-box"/>'
+        +     '<button onclick="pmAdminSendPush()" style="background:#f5a623;color:#000;border:none;border-radius:10px;padding:11px;font-size:.82rem;font-weight:800;cursor:pointer;font-family:\'Montserrat\',sans-serif">Broadcast to All</button>'
+        +     '<div id="pmPushStatus" style="font-size:.78rem;color:#666;font-family:\'Montserrat\',sans-serif;min-height:18px"></div>'
+        +   '</div>'
+        + '</div>'
         : '';
 
       content.innerHTML = heroHtml
@@ -19961,6 +20156,12 @@ async function deleteEditorReview(key, e) {
         +   '<div class="pm-prof-sidebar">' + sidebarHtml + '</div>'
         + '</div>'
         + '<div style="height:40px"></div>';
+
+      // ── Async: render push notification toggle for own profile ──
+      if (isOwn && typeof pmRenderPushToggle === 'function') {
+        var _ptc = document.getElementById('pmPushToggleContainer');
+        if (_ptc) pmRenderPushToggle(_ptc);
+      }
 
       // ── Async: load theater log immediately (populates sidebar + pre-fills tab) ──
       if (typeof window.pmTrLoadProfileSection === 'function') {
