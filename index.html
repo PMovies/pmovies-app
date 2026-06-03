@@ -11681,6 +11681,12 @@ window._removeDlLoader = function() {
     return !!(window._eventFilm && String(window._eventFilm.tmdbId) === String(tmdbId));
   };
 
+  /* True only when the event is live AND today is Thursday (local time).
+     Used by features that are Thursday-only: watch counter + scratch quote. */
+  window.pmIsEventThursday = function() {
+    return !!(window._eventFilm && new Date().getDay() === 4);
+  };
+
   window.pmEventBadgeHtml = function() {
     return '<div class="pm-event-badge" title="Movie Night Pick">🎬 Movie Night</div>';
   };
@@ -11696,9 +11702,9 @@ window._removeDlLoader = function() {
     });
   };
 
-  /* Used by the scratch-ticket quote override */
+  /* Used by the scratch-ticket quote override — Thursday only */
   window.pmGetEventQuoteOverride = function() {
-    if (!window._eventFilm) return null;
+    if (!window.pmIsEventThursday()) return null;
     var ef = window._eventFilm;
     return {
       text:        'Tonight we\'re all watching ' + ef.title + '. Join us.',
@@ -24726,6 +24732,7 @@ async function deleteEditorReview(key, e) {
 
   async function pmInjectWatchCounter(tmdbId) {
     if (!window.pmIsEventFilm || !window.pmIsEventFilm(tmdbId)) return;
+    if (!window.pmIsEventThursday || !window.pmIsEventThursday()) return; // Thursday only
     if (document.getElementById('pmWatchCounter')) return;
     var user = window.pmGetUser && window.pmGetUser();
     var alreadyTapped = false;
