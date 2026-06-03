@@ -6037,7 +6037,9 @@ window._removeDlLoader = function() {
       return;
     }
     const grid = document.createElement('div'); grid.className = 'movies-grid';
-    filtered.forEach((m, i) => grid.appendChild(buildMovieCard(m, i)));
+    filtered.forEach((m, i) => grid.appendChild(buildMovieCard(m, i, function(movie) {
+      navigateToFilm(movie.id, movie.title);
+    })));
     content.appendChild(grid);
   }
 
@@ -6744,7 +6746,7 @@ window._removeDlLoader = function() {
   }
 
   /* ══ RENDER MOVIES ══ */
-  function buildMovieCard(m, idx) {
+  function buildMovieCard(m, idx, onCardClick) {
     const year   = m.release_date ? m.release_date.slice(0,4) : '—';
     const rating = m.vote_average ? m.vote_average.toFixed(1) : '—';
     const poster = m.poster_path ? IMG + m.poster_path : null;
@@ -6798,7 +6800,10 @@ window._removeDlLoader = function() {
       </div>`;
 
     card.addEventListener('click', e => {
-      if (!e.target.closest('.wl-btn') && !e.target.closest('.card-actions')) openModal(m);
+      if (!e.target.closest('.wl-btn') && !e.target.closest('.card-actions')) {
+        if (onCardClick) onCardClick(m);
+        else openModal(m);
+      }
     });
     // Hero backdrop on hover
     if (m.backdrop_path) {
