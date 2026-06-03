@@ -24875,13 +24875,14 @@ async function deleteEditorReview(key, e) {
 
     // Store a minimal film object for watchlist mutations
     window._fpSidebarFilm = {
-      id:           numId,
-      title:        title,
-      poster_path:  posterPath,
-      vote_average: film ? (film.vote_average || 0) : 0,
-      release_date: film ? (film.release_date || '') : '',
-      overview:     film ? (film.overview || '') : '',
-      genre_ids:    film && film.genres ? film.genres.map(function(g){ return g.id; }) : []
+      id:            numId,
+      title:         title,
+      poster_path:   posterPath,
+      backdrop_path: film ? (film.backdrop_path || '') : '',
+      vote_average:  film ? (film.vote_average || 0) : 0,
+      release_date:  film ? (film.release_date || '') : '',
+      overview:      film ? (film.overview || '') : '',
+      genre_ids:     film && film.genres ? film.genres.map(function(g){ return g.id; }) : []
     };
 
     // ── LEFT: Quick Actions ───────────────────────────────────────
@@ -24897,6 +24898,10 @@ async function deleteEditorReview(key, e) {
       + '<hr class="fp-sb-divider">'
       + '<button class="fp-sb-btn" onclick="fpOpenWriteSheet(\''+_esc(String(tmdbId))+'\',\''+_esc(title)+'\')">'
       +   '<span class="fp-sb-btn-icon">✍️</span>Write a Review'
+      + '</button>'
+      + '<hr class="fp-sb-divider">'
+      + '<button class="fp-sb-btn" onclick="pmShareFilmCard()">'
+      +   '<span class="fp-sb-btn-icon">↗</span>Share'
       + '</button>';
 
     // ── RIGHT: More Like This ──────────────────────────────────────
@@ -25087,6 +25092,159 @@ async function deleteEditorReview(key, e) {
   window.pmInjectEventBanner     = pmInjectEventBanner;
   window.pmTriggerEventFireworks = pmTriggerEventFireworks;
   window.pmInjectWatchCounter    = pmInjectWatchCounter;
+
+  /* ── Share Film Card ──────────────────────────────────────────────
+     Generates a 1200×630 canvas image (backdrop + title + year) and
+     shares it via Web Share API, or downloads it as a fallback.
+  ─────────────────────────────────────────────────────────────────── */
+  window.pmShareFilmCard = async function() {
+    var film = window._fpSidebarFilm;
+    if (!film) return;
+
+    var title       = film.title || '';
+    var releaseDate = film.release_date || '';
+    var year        = releaseDate ? releaseDate.slice(0, 4) : '';
+    var backdropUrl = film.backdrop_path
+      ? 'https://image.tmdb.org/t/p/w1280' + film.backdrop_path
+      : null;
+
+    // Show loading state on the button
+    var btns = document.querySelectorAll('[onclick="pmShareFilmCard()"]');
+    btns.forEach(function(b) { b._origText = b.innerHTML; b.innerHTML = '⏳ Generating…'; b.disabled = true; });
+    var restore = function() { btns.forEach(function(b) { if (b._origText) b.innerHTML = b._origText; b.disabled = false; }); };
+
+    var W = 1200, H = 630;
+    var canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H;
+    var ctx = canvas.getContext('2d');
+
+    // ── 1. Backdrop ──────────────────────────────────────────────────
+    if (backdropUrl) {
+      try {
+        await new Promise(function(resolve, reject) {
+          var img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = function() {
+            var scale = Math.max(W / img.width, H / img.height);
+            var iW = img.width * scale, iH = img.height * scale;
+            ctx.drawImage(img, (W - iW) / 2, (H - iH) / 2, iW, iH);
+            resolve();
+          };
+          img.onerror = reject;
+          img.src = backdropUrl;
+        });
+      } catch(_e) {
+        ctx.fillStyle = '#0d0d0d';
+        ctx.fillRect(0, 0, W, H);
+      }
+    } else {
+      ctx.fillStyle = '#0d0d0d';
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    // ── 2. Gradient overlays ─────────────────────────────────────────
+    // Bottom gradient — text readability
+    var botGrad = ctx.createLinearGradient(0, H * 0.25, 0, H);
+    botGrad.addColorStop(0, 'rgba(0,0,0,0)');
+    botGrad.addColorStop(0.55, 'rgba(0,0,0,0.72)');
+    botGrad.addColorStop(1, 'rgba(0,0,0,0.92)');
+    ctx.fillStyle = botGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Top gradient — branding strip
+    var topGrad = ctx.createLinearGradient(0, 0, 0, 120);
+    topGrad.addColorStop(0, 'rgba(0,0,0,0.55)');
+    topGrad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = topGrad;
+    ctx.fillRect(0, 0, W, 120);
+
+    // ── 3. PMovies branding — top left ───────────────────────────────
+    ctx.fillStyle = '#f5a623';
+    ctx.font = '700 22px Montserrat, Arial, sans-serif';
+    ctx.letterSpacing = '0.12em';
+    ctx.fillText('PMOVIES', 48, 52);
+    ctx.letterSpacing = '0';
+
+    // ── 4. Movie title ───────────────────────────────────────────────
+    ctx.fillStyle = '#ffffff';
+    var titleFontSize = 80;
+    ctx.font = '700 ' + titleFontSize + 'px "Bebas Neue", Impact, Arial Black, sans-serif';
+
+    // Word-wrap title
+    var maxW = W - 96;
+    var words = title.split(' ');
+    var lines = [], cur = '';
+    words.forEach(function(w) {
+      var test = cur ? cur + ' ' + w : w;
+      if (ctx.measureText(test).width > maxW && cur) { lines.push(cur); cur = w; }
+      else cur = test;
+    });
+    if (cur) lines.push(cur);
+
+    // If title is very long, shrink font
+    if (lines.length > 3) {
+      titleFontSize = 60;
+      ctx.font = '700 ' + titleFontSize + 'px "Bebas Neue", Impact, Arial Black, sans-serif';
+      lines = []; cur = '';
+      words.forEach(function(w) {
+        var test = cur ? cur + ' ' + w : w;
+        if (ctx.measureText(test).width > maxW && cur) { lines.push(cur); cur = w; }
+        else cur = test;
+      });
+      if (cur) lines.push(cur);
+    }
+
+    var lineH    = titleFontSize * 1.1;
+    var dateH    = year ? 44 : 0;
+    var blockH   = lines.length * lineH + dateH;
+    var startY   = H - 52 - blockH;
+
+    lines.forEach(function(l, i) {
+      ctx.fillText(l, 48, startY + i * lineH);
+    });
+
+    // ── 5. Release year ──────────────────────────────────────────────
+    if (year) {
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.font = '400 28px Montserrat, Arial, sans-serif';
+      ctx.fillText(year, 50, startY + lines.length * lineH + 34);
+    }
+
+    // ── 6. Website watermark — bottom right ──────────────────────────
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.font = '400 18px Montserrat, Arial, sans-serif';
+    var watermark = 'p-movies.com';
+    var wmW = ctx.measureText(watermark).width;
+    ctx.fillText(watermark, W - wmW - 40, H - 28);
+
+    // ── 7. Share ─────────────────────────────────────────────────────
+    canvas.toBlob(async function(blob) {
+      restore();
+      var safeName = title.replace(/[^a-z0-9]/gi, '-').toLowerCase().replace(/-+/g, '-');
+      var file = new File([blob], 'pmovies-' + safeName + '.jpg', { type: 'image/jpeg' });
+
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files:  [file],
+            title:  title + (year ? ' (' + year + ')' : ''),
+            text:   'Watching ' + title + (year ? ' (' + year + ')' : '') + ' — PMovies'
+          });
+          return;
+        } catch(e) {
+          if (e.name === 'AbortError') return; // user cancelled — silent
+        }
+      }
+
+      // Fallback: download the image
+      var a = document.createElement('a');
+      a.download = 'pmovies-' + safeName + '.jpg';
+      a.href = URL.createObjectURL(blob);
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function() { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    }, 'image/jpeg', 0.93);
+  };
 
   // navigateToFilm — used by movie card clicks (pushState for proper back-button history)
   window.navigateToFilm = function(tmdbId, title) {
@@ -25311,6 +25469,7 @@ async function deleteEditorReview(key, e) {
       )
       +'</div>'
       +'<button class="fp-cta-btn" onclick="fpOpenWriteSheet(\''+_esc(String(tmdbId))+'\',\''+_esc(title)+'\')" style="margin-top:12px">✍️ Write a review</button>'
+      +'<button class="fp-cta-btn" onclick="pmShareFilmCard()" style="margin-top:6px">↗ Share Film Card</button>'
       +'</div>';
 
     // Lobby section
