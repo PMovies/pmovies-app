@@ -11743,9 +11743,9 @@ window._removeDlLoader = function() {
       // Race-condition fix: if the user landed on the event film page before this
       // fetch completed, re-trigger banner / fireworks / watch counter now.
       if (window._eventFilm && window._fpCurrentId && window.pmIsEventFilm(window._fpCurrentId)) {
-        if (typeof pmInjectEventBanner   === 'function') pmInjectEventBanner(window._fpCurrentId);
-        if (typeof pmTriggerEventFireworks === 'function') pmTriggerEventFireworks(window._fpCurrentId);
-        if (typeof pmInjectWatchCounter  === 'function') pmInjectWatchCounter(window._fpCurrentId);
+        if (typeof window.pmInjectEventBanner     === 'function') window.pmInjectEventBanner(window._fpCurrentId);
+        if (typeof window.pmTriggerEventFireworks === 'function') window.pmTriggerEventFireworks(window._fpCurrentId);
+        if (typeof window.pmInjectWatchCounter    === 'function') window.pmInjectWatchCounter(window._fpCurrentId);
       }
     } catch(e) { window._eventFilm = null; }
   };
@@ -25072,6 +25072,11 @@ async function deleteEditorReview(key, e) {
       if (btn) { btn.disabled=false; btn.textContent='👁 Watching tonight?'; btn.classList.remove('pm-watch-btn--done'); }
     }
   };
+
+  // Expose event film-page functions on window so pmLoadEventFilm (different IIFE) can call them
+  window.pmInjectEventBanner     = pmInjectEventBanner;
+  window.pmTriggerEventFireworks = pmTriggerEventFireworks;
+  window.pmInjectWatchCounter    = pmInjectWatchCounter;
 
   // navigateToFilm — used by movie card clicks (pushState for proper back-button history)
   window.navigateToFilm = function(tmdbId, title) {
