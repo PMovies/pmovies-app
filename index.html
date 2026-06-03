@@ -11738,7 +11738,15 @@ window._removeDlLoader = function() {
       var now = Date.now();
       var isLive = data.active === true && now >= data.activeFrom && now <= data.activeTo;
       window._eventFilm = isLive ? data : null;
+      // Re-stamp badges on all visible cards
       if (window.pmRefreshEventBadges) window.pmRefreshEventBadges();
+      // Race-condition fix: if the user landed on the event film page before this
+      // fetch completed, re-trigger banner / fireworks / watch counter now.
+      if (window._eventFilm && window._fpCurrentId && window.pmIsEventFilm(window._fpCurrentId)) {
+        if (typeof pmInjectEventBanner   === 'function') pmInjectEventBanner(window._fpCurrentId);
+        if (typeof pmTriggerEventFireworks === 'function') pmTriggerEventFireworks(window._fpCurrentId);
+        if (typeof pmInjectWatchCounter  === 'function') pmInjectWatchCounter(window._fpCurrentId);
+      }
     } catch(e) { window._eventFilm = null; }
   };
 
@@ -11764,8 +11772,9 @@ window._removeDlLoader = function() {
     if (!window._eventFilm) return;
     document.querySelectorAll('[data-tmdb-id]').forEach(function(card) {
       if (!window.pmIsEventFilm(card.dataset.tmdbId)) return;
-      if (getComputedStyle(card).position === 'static') card.style.position = 'relative';
-      card.insertAdjacentHTML('afterbegin', window.pmEventBadgeHtml());
+      // Insert inside .poster-wrap so the absolute position lands over the poster image
+      var wrap = card.querySelector('.poster-wrap') || card;
+      wrap.insertAdjacentHTML('afterbegin', window.pmEventBadgeHtml());
     });
   };
 
@@ -11775,7 +11784,7 @@ window._removeDlLoader = function() {
     var ef = window._eventFilm;
     return {
       text:        'Tonight we\'re all watching ' + ef.title + '. Join us.',
-      attribution: (ef.nickname || 'Movie Night') + (ef.twitterHandle ? ' · ' + ef.twitterHandle : ''),
+      attribution: ef.nickname || 'Movie Night',
       isEvent:     true,
       id:          '__event__'
     };
@@ -24803,6 +24812,7 @@ async function deleteEditorReview(key, e) {
 
   window.openFilmPage = function(tmdbId) {
     _fpCurrentId = String(tmdbId);
+    window._fpCurrentId = _fpCurrentId; // expose for pmLoadEventFilm race-condition fix
     var page = document.getElementById('filmPage');
     var fpContent = document.getElementById('fpContent');
     var fpTitle = document.getElementById('fpHeaderTitle');
@@ -24839,6 +24849,7 @@ async function deleteEditorReview(key, e) {
     if (page) page.classList.remove('open');
     document.body.style.overflow = '';
     _fpCurrentId = null;
+    window._fpCurrentId = null;
     window._fpSidebarFilm = null;
     var lsb = document.getElementById('fpSidebarLeft');
     var rsb = document.getElementById('fpSidebarRight');
