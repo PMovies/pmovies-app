@@ -11740,6 +11740,11 @@ window._removeDlLoader = function() {
       window._eventFilm = isLive ? data : null;
       // Re-stamp badges on all visible cards
       if (window.pmRefreshEventBadges) window.pmRefreshEventBadges();
+      // Quote consistency fix: update lobby scratch ticket if it loaded before _eventFilm resolved
+      if (window._eventFilm && window.pmIsEventThursday && window.pmIsEventThursday()) {
+        var _evQ = window.pmGetEventQuoteOverride && window.pmGetEventQuoteOverride();
+        if (_evQ && window.pmRenderLobbyQuote) window.pmRenderLobbyQuote(_evQ);
+      }
       // Race-condition fix: if the user landed on the event film page before this
       // fetch completed, re-trigger banner / fireworks / watch counter now.
       if (window._eventFilm && window._fpCurrentId && window.pmIsEventFilm(window._fpCurrentId)) {
@@ -24987,7 +24992,12 @@ async function deleteEditorReview(key, e) {
     }
     var pos = [[canvas.width*.25,canvas.height*.35],[canvas.width*.75,canvas.height*.28],
                [canvas.width*.5,canvas.height*.45],[canvas.width*.35,canvas.height*.22]];
-    pos.forEach(function(p,i){ setTimeout(function(){ spawnBurst(p[0],p[1]); }, i*320); });
+    // Spawn first burst immediately so the RAF loop starts with particles
+    spawnBurst(pos[0][0], pos[0][1]);
+    // Remaining bursts staggered
+    for (var _bi=1; _bi<pos.length; _bi++) {
+      (function(p,delay){ setTimeout(function(){ spawnBurst(p[0],p[1]); }, delay); })(pos[_bi], _bi*320);
+    }
     var rafId;
     function animate() {
       ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -24998,10 +25008,10 @@ async function deleteEditorReview(key, e) {
         ctx.save(); ctx.globalAlpha=p.alpha; ctx.fillStyle=p.color;
         ctx.beginPath(); ctx.arc(p.x,p.y,p.radius,0,Math.PI*2); ctx.fill(); ctx.restore();
       }
-      if (particles.length>0) rafId=requestAnimationFrame(animate); else canvas.remove();
+      rafId = requestAnimationFrame(animate); // always keep running until the timeout cleans up
     }
     animate();
-    setTimeout(function(){ cancelAnimationFrame(rafId); canvas.remove(); }, 3500);
+    setTimeout(function(){ cancelAnimationFrame(rafId); if (canvas.parentNode) canvas.remove(); }, 4000);
   }
 
   async function pmInjectWatchCounter(tmdbId) {
@@ -27180,6 +27190,8 @@ async function deleteEditorReview(key, e) {
 
     return _shuffleDeck[_shuffleIdx++];
   }
+
+  window.pmRenderLobbyQuote = function(quote) { renderQuote(quote); };
 
   function renderQuote(quote) {
     currentQuote = quote;
