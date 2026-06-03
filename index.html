@@ -4020,6 +4020,55 @@
   .fp-sidebar { display: none; }
   .fp-inner   { margin: 0 auto; } /* restore centre-alignment when single-column */
 }
+
+/* ── MOVIE NIGHT EVENT SYSTEM ─────────────────────────── */
+.pm-event-badge {
+  position:absolute; top:7px; left:7px;
+  background:#f5a623; color:#000;
+  font-size:.68rem; border-radius:6px; padding:3px 7px;
+  font-weight:800; font-family:'Montserrat',sans-serif;
+  letter-spacing:.03em; z-index:4; pointer-events:none;
+  box-shadow:0 2px 8px rgba(0,0,0,.5);
+  animation:pmEventBadgePulse 2.5s ease-in-out infinite;
+}
+@keyframes pmEventBadgePulse {
+  0%,100% { opacity:1; transform:scale(1); }
+  50%     { opacity:.72; transform:scale(.92); }
+}
+#pmEventBanner { width:100%; margin-bottom:18px; animation:pmBannerSlideIn .35s ease-out; }
+@keyframes pmBannerSlideIn {
+  from { opacity:0; transform:translateY(-12px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.pm-event-banner-inner {
+  display:flex; align-items:center; gap:10px;
+  background:linear-gradient(90deg,rgba(212,160,23,.13) 0%,rgba(212,160,23,.06) 100%);
+  border:1px solid rgba(212,160,23,.3); border-radius:12px;
+  padding:11px 16px; font-family:'Montserrat',sans-serif;
+  font-size:.82rem; color:#ccc;
+}
+.pm-event-banner-icon { font-size:1.1rem; flex-shrink:0; }
+.pm-event-banner-text { flex:1; }
+.pm-event-banner-text strong { color:#f5a623; }
+.pm-event-banner-link { color:#f5a623; text-decoration:none; opacity:.8; }
+.pm-event-banner-link:hover { opacity:1; text-decoration:underline; }
+.pm-event-banner-close { background:none; border:none; color:#555; cursor:pointer; font-size:.85rem; padding:2px 5px; flex-shrink:0; line-height:1; }
+.pm-event-banner-close:hover { color:#aaa; }
+#pmWatchCounter { margin:14px 0 20px; }
+.pm-watch-counter-inner { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.pm-watch-btn {
+  background:#f5a623; color:#000; border:none; border-radius:22px;
+  padding:9px 22px; font-size:.82rem; font-weight:800;
+  font-family:'Montserrat',sans-serif; cursor:pointer;
+  transition:transform .15s; flex-shrink:0;
+}
+.pm-watch-btn:hover:not(:disabled) { transform:scale(1.04); }
+.pm-watch-btn--done { background:#2a2a2a !important; color:#f5a623 !important; cursor:default; }
+.pm-watch-btn:disabled:not(.pm-watch-btn--done) { opacity:.45; cursor:not-allowed; }
+.pm-watch-count { font-size:.78rem; color:#888; font-family:'Montserrat',sans-serif; }
+.mn-field-label { font-size:.72rem; color:#666; font-family:'Montserrat',sans-serif; display:block; margin-bottom:4px; }
+.mn-preview-box { display:none; background:#111; border:1px solid #222; border-radius:12px; padding:14px; margin-top:4px; }
+.mn-section-title { color:#f5a623; font-family:'Bebas Neue',sans-serif; font-size:1.2rem; letter-spacing:.06em; margin:0 0 16px; border-top:1px solid #222; padding-top:16px; }
 .fp-header { position:sticky; top:0; z-index:10; background:rgba(13,13,13,.94); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border-bottom:1px solid rgba(255,255,255,.06); padding:11px 16px; padding-top:max(11px,calc(env(safe-area-inset-top,0px) + 8px)); display:flex; align-items:center; gap:12px; }
 .fp-back-btn { background:none; border:none; color:#f5a623; font-size:1.1rem; cursor:pointer; padding:4px 8px 4px 2px; flex-shrink:0; }
 .fp-header-title { flex:1; font-family:'Bebas Neue',sans-serif; font-size:1.1rem; color:#eee; letter-spacing:.06em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -6753,12 +6802,16 @@ window._removeDlLoader = function() {
     const status = getMovieStatus(m.id);
     const statusIcon = { want: '🔖', watched: '✓', fav: '★' }[status] || '♡';
     const statusClass = status ? `status-${status}` : '';
-    const lbEntry = lbReviewMap.get(m.id) || lbReviewTitleMap.get(normLbTitle(m.title));
+    const lbEntry   = lbReviewMap.get(m.id) || lbReviewTitleMap.get(normLbTitle(m.title));
+    const isEventFm = typeof window.pmIsEventFilm === 'function' && window.pmIsEventFilm(m.id);
+    const evBadge   = isEventFm && typeof window.pmEventBadgeHtml === 'function' ? window.pmEventBadgeHtml() : '';
     const card   = document.createElement('div');
     card.className = 'movie-card reveal-hidden';
+    card.dataset.tmdbId = m.id;
     card.style.animationDelay = (idx * 0.05) + 's';
     card.innerHTML = `
       <div class="poster-wrap">
+        ${evBadge}
         ${poster ? `<img class="movie-poster" src="${poster}" alt="${esc(m.title)}" loading="lazy"/>` : `<div class="no-poster">🎬</div>`}
         <div class="rating-badge"><span>★</span>${rating}</div>
         <button class="wl-btn ${statusClass}" data-id="${m.id}" onclick="toggleWlPicker(event,this.dataset.movie)" data-movie="${encodeURIComponent(JSON.stringify(m))}" title="${status ? 'Remove from list' : 'Add to list'}">${statusIcon}</button>
@@ -10718,6 +10771,8 @@ window._removeDlLoader = function() {
     setInterval(loadFriendsReviews, 60 * 60 * 1000); // rotate every hour
     renderWatchlist();
     renderTvRv();
+    // Load Movie Night event state once on startup
+    if (typeof pmLoadEventFilm === 'function') pmLoadEventFilm();
     // Deep-link: open a fan review directly from URL (hash or clean-slug path)
     (function() {
       var h  = location.hash.replace('#', '');
@@ -11171,6 +11226,38 @@ window._removeDlLoader = function() {
         <button class="admin-save-btn" id="adminSaveBtn" onclick="saveChallenge()" disabled>Set Challenge</button>
         <button class="admin-cancel-btn" onclick="closeAdmin()">Cancel</button>
       </div>
+
+      <!-- ── MOVIE NIGHT ─────────────────────────── -->
+      <div style="margin-top:24px">
+        <div class="mn-section-title">🎬 Weekly Movie Night</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <input id="mnTmdbId" class="mn-input" type="text" placeholder="TMDB Movie ID" oninput="pmMovieNightPreview()"/>
+          <input id="mnTitle"  class="mn-input" type="text" placeholder="Film title"/>
+          <input id="mnNickname" class="mn-input" type="text" placeholder="Nickname (e.g. Jigsaw)" oninput="pmMovieNightPreview()"/>
+          <input id="mnTwitter"  class="mn-input" type="text" placeholder="Twitter handle (e.g. @jigsawXYZ)" oninput="pmMovieNightPreview()"/>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div><label class="mn-field-label">Active From</label><input id="mnFrom" class="mn-input" type="datetime-local"/></div>
+            <div><label class="mn-field-label">Active To</label><input id="mnTo"   class="mn-input" type="datetime-local"/></div>
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.82rem;color:#aaa;font-family:'Montserrat',sans-serif">
+            <input type="checkbox" id="mnActive" checked style="width:16px;height:16px;accent-color:#f5a623"/>
+            Active (uncheck to disable without deleting)
+          </label>
+          <!-- Banner preview -->
+          <div id="mnPreview" class="mn-preview-box">
+            <div style="font-size:.68rem;color:#555;font-family:'Montserrat',sans-serif;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Banner Preview</div>
+            <div class="pm-event-banner-inner" style="pointer-events:none">
+              <span class="pm-event-banner-icon">🎬</span>
+              <span class="pm-event-banner-text" id="mnPreviewText"></span>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:4px">
+            <button onclick="pmSaveMovieNight()" style="flex:1;background:#f5a623;color:#000;border:none;border-radius:10px;padding:11px;font-size:.82rem;font-weight:800;cursor:pointer;font-family:'Montserrat',sans-serif">Save &amp; Activate</button>
+            <button onclick="pmClearMovieNight()" style="background:#1a1a1a;color:#888;border:1px solid #333;border-radius:10px;padding:11px 18px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:'Montserrat',sans-serif">Clear</button>
+          </div>
+          <div id="mnStatus" style="font-size:.78rem;color:#666;font-family:'Montserrat',sans-serif;min-height:18px"></div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -11457,6 +11544,170 @@ window._removeDlLoader = function() {
 
   // Load challenge on startup
   loadWeeklyChallenge();
+
+  /* ── MOVIE NIGHT ADMIN ─────────────────────────────────── */
+  function _mnEv(id) { return document.getElementById(id); }
+
+  function pmMovieNightPreview() {
+    var nickname = (_mnEv('mnNickname')||{}).value?.trim() || '';
+    var twitter  = (_mnEv('mnTwitter') ||{}).value?.trim() || '';
+    var preview  = _mnEv('mnPreview');
+    var text     = _mnEv('mnPreviewText');
+    if (!preview || !text) return;
+    if (nickname || twitter) {
+      preview.style.display = 'block';
+      text.innerHTML = '<strong>' + esc(nickname||'…') + '\'s Movie Night</strong>'
+        + ' &nbsp;·&nbsp; This Thursday &nbsp;·&nbsp;'
+        + '<span style="color:#f5a623;opacity:.8">' + esc(twitter||'@…') + '</span>';
+    } else {
+      preview.style.display = 'none';
+    }
+  }
+
+  async function pmSaveMovieNight() {
+    var tmdbId   = (_mnEv('mnTmdbId')  ||{}).value?.trim() || '';
+    var title    = (_mnEv('mnTitle')   ||{}).value?.trim() || '';
+    var nickname = (_mnEv('mnNickname')||{}).value?.trim() || '';
+    var twitter  = (_mnEv('mnTwitter') ||{}).value?.trim() || '';
+    var fromVal  = (_mnEv('mnFrom')    ||{}).value || '';
+    var toVal    = (_mnEv('mnTo')      ||{}).value || '';
+    var active   = (_mnEv('mnActive')  ||{}).checked !== false;
+    var status   = _mnEv('mnStatus');
+    if (!tmdbId || !title || !nickname || !twitter || !fromVal || !toVal) {
+      if (status) { status.style.color='#e55'; status.textContent='All fields are required.'; }
+      return;
+    }
+    if (status) { status.style.color='#666'; status.textContent='Saving…'; }
+    try {
+      const tok = await _challengeTok();
+      if (!tok) throw new Error('Not authenticated');
+      const payload = {
+        tmdbId, title, nickname, twitterHandle: twitter,
+        activeFrom: new Date(fromVal).getTime(),
+        activeTo:   new Date(toVal).getTime(),
+        active, watchCount: 0, watchers: {}
+      };
+      const res = await fetch(RTDB + '/eventFilm.json?auth=' + tok, {
+        method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
+      });
+      if (!res.ok) { const d=await res.json().catch(()=>({})); throw new Error(d.error||'HTTP '+res.status); }
+      if (status) { status.style.color='#f5a623'; status.textContent='✓ Movie Night set — '+title+' is live'; }
+      // Refresh global event state
+      if (typeof pmLoadEventFilm === 'function') pmLoadEventFilm();
+    } catch(err) {
+      if (status) { status.style.color='#e55'; status.textContent='Save failed: '+err.message; }
+    }
+  }
+
+  async function pmClearMovieNight() {
+    var status = _mnEv('mnStatus');
+    try {
+      const tok = await _challengeTok();
+      if (!tok) throw new Error('Not authenticated');
+      await fetch(RTDB + '/eventFilm.json?auth=' + tok, { method:'DELETE' });
+      if (status) { status.style.color='#888'; status.textContent='Event cleared.'; }
+      window._eventFilm = null;
+      if (typeof pmRefreshEventBadges === 'function') pmRefreshEventBadges();
+    } catch(err) {
+      if (status) { status.style.color='#e55'; status.textContent='Error: '+err.message; }
+    }
+  }
+
+  function _mnNextThurFri() {
+    var now = new Date(); var day = now.getDay();
+    var dtu = (4 - day + 7) % 7 || 7;
+    var thu = new Date(now); thu.setDate(now.getDate() + dtu); thu.setHours(0,0,0,0);
+    var fri = new Date(thu); fri.setDate(thu.getDate() + 1); fri.setHours(23,59,59,0);
+    var pad = n => String(n).padStart(2,'0');
+    var fmt = d => d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());
+    return { thu: fmt(thu), fri: fmt(fri) };
+  }
+
+  // Pre-fill Movie Night dates when admin panel opens
+  var _origOpenAdmin = window.openAdmin;
+  window.openAdmin = function() {
+    _origOpenAdmin && _origOpenAdmin.apply(this, arguments);
+    var df = _mnNextThurFri();
+    var fromEl = _mnEv('mnFrom'); if (fromEl && !fromEl.value) fromEl.value = df.thu;
+    var toEl   = _mnEv('mnTo');   if (toEl   && !toEl.value)   toEl.value   = df.fri;
+    // Pre-fill with current live event if one exists
+    fetch(RTDB + '/eventFilm.json').then(r=>r.json()).then(function(d) {
+      if (!d || d.error) return;
+      if (_mnEv('mnTmdbId'))   _mnEv('mnTmdbId').value   = d.tmdbId||'';
+      if (_mnEv('mnTitle'))    _mnEv('mnTitle').value     = d.title||'';
+      if (_mnEv('mnNickname')) _mnEv('mnNickname').value  = d.nickname||'';
+      if (_mnEv('mnTwitter'))  _mnEv('mnTwitter').value   = d.twitterHandle||'';
+      if (_mnEv('mnActive'))   _mnEv('mnActive').checked  = !!d.active;
+      var pad = n => String(n).padStart(2,'0');
+      var fmt = ts => { var d2=new Date(ts); return d2.getFullYear()+'-'+pad(d2.getMonth()+1)+'-'+pad(d2.getDate())+'T'+pad(d2.getHours())+':'+pad(d2.getMinutes()); };
+      if (d.activeFrom && _mnEv('mnFrom')) _mnEv('mnFrom').value = fmt(d.activeFrom);
+      if (d.activeTo   && _mnEv('mnTo'))   _mnEv('mnTo').value   = fmt(d.activeTo);
+      pmMovieNightPreview();
+    }).catch(function(){});
+  };
+</script>
+
+<script>
+/* ══════════════════════════════════════
+   MOVIE NIGHT EVENT SYSTEM — globals
+══════════════════════════════════════ */
+(function() {
+  var _EV_RTDB = 'https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app';
+
+  window._eventFilm = null;
+
+  async function _evTok() {
+    try { var u = window.pmGetUser && window.pmGetUser(); if (u && u.getIdToken) return await u.getIdToken(); } catch(e) {}
+    return '';
+  }
+
+  /* Load /eventFilm from RTDB, evaluate active window, cache globally */
+  window.pmLoadEventFilm = async function() {
+    try {
+      var tok = await _evTok();
+      var authQ = tok ? '?auth=' + tok : '';
+      var res = await fetch(_EV_RTDB + '/eventFilm.json' + authQ);
+      if (!res.ok) return;
+      var data = await res.json();
+      if (!data || data.error) { window._eventFilm = null; window.pmRefreshEventBadges && window.pmRefreshEventBadges(); return; }
+      var now = Date.now();
+      var isLive = data.active === true && now >= data.activeFrom && now <= data.activeTo;
+      window._eventFilm = isLive ? data : null;
+      if (window.pmRefreshEventBadges) window.pmRefreshEventBadges();
+    } catch(e) { window._eventFilm = null; }
+  };
+
+  window.pmIsEventFilm = function(tmdbId) {
+    return !!(window._eventFilm && String(window._eventFilm.tmdbId) === String(tmdbId));
+  };
+
+  window.pmEventBadgeHtml = function() {
+    return '<div class="pm-event-badge" title="Movie Night Pick">🎬 Movie Night</div>';
+  };
+
+  /* Re-stamp the event badge on all currently-visible film cards */
+  window.pmRefreshEventBadges = function() {
+    document.querySelectorAll('.pm-event-badge').forEach(function(el) { el.remove(); });
+    if (!window._eventFilm) return;
+    document.querySelectorAll('[data-tmdb-id]').forEach(function(card) {
+      if (!window.pmIsEventFilm(card.dataset.tmdbId)) return;
+      if (getComputedStyle(card).position === 'static') card.style.position = 'relative';
+      card.insertAdjacentHTML('afterbegin', window.pmEventBadgeHtml());
+    });
+  };
+
+  /* Used by the scratch-ticket quote override */
+  window.pmGetEventQuoteOverride = function() {
+    if (!window._eventFilm) return null;
+    var ef = window._eventFilm;
+    return {
+      text:        'Tonight we\'re all watching ' + ef.title + '. Join us.',
+      attribution: (ef.nickname || 'Movie Night') + (ef.twitterHandle ? ' · ' + ef.twitterHandle : ''),
+      isEvent:     true,
+      id:          '__event__'
+    };
+  };
+})();
 </script>
 
 <script>
@@ -24409,6 +24660,138 @@ async function deleteEditorReview(key, e) {
     }
   };
 
+  /* ── MOVIE NIGHT: film page injections ──────────────────── */
+
+  function pmInjectEventBanner(tmdbId) {
+    if (!window.pmIsEventFilm || !window.pmIsEventFilm(tmdbId)) return;
+    if (document.getElementById('pmEventBanner')) return;
+    var ef = window._eventFilm;
+    var handle = (ef.twitterHandle||'').replace(/^@/,'');
+    var banner = document.createElement('div');
+    banner.id = 'pmEventBanner';
+    banner.innerHTML =
+      '<div class="pm-event-banner-inner">'
+      + '<span class="pm-event-banner-icon">🎬</span>'
+      + '<span class="pm-event-banner-text"><strong>' + _esc(ef.nickname||'Movie Night') + '\'s Movie Night</strong>'
+      + ' &nbsp;·&nbsp; This Thursday &nbsp;·&nbsp;'
+      + (handle ? '<a href="https://x.com/'+_esc(handle)+'" target="_blank" rel="noopener" class="pm-event-banner-link">'+_esc(ef.twitterHandle)+'</a>' : '')
+      + '</span>'
+      + '<button class="pm-event-banner-close" onclick="this.closest(\'#pmEventBanner\').remove()" aria-label="Dismiss">✕</button>'
+      + '</div>';
+    var fc = document.getElementById('fpContent');
+    if (fc) fc.insertAdjacentElement('afterbegin', banner);
+  }
+
+  function pmTriggerEventFireworks(tmdbId) {
+    if (!window.pmIsEventFilm || !window.pmIsEventFilm(tmdbId)) return;
+    if (document.getElementById('pmFireworksCanvas')) return;
+    var canvas = document.createElement('canvas');
+    canvas.id = 'pmFireworksCanvas';
+    Object.assign(canvas.style, { position:'fixed', inset:'0', width:'100vw', height:'100vh', pointerEvents:'none', zIndex:'9999' });
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+    document.body.appendChild(canvas);
+    var ctx        = canvas.getContext('2d');
+    var particles  = [];
+    var COLORS     = ['#f5a623','#fff','#ffd700','#e8e8e8','#ffb347'];
+    function spawnBurst(x, y) {
+      var count = 52 + Math.floor(Math.random()*20);
+      for (var i=0;i<count;i++) {
+        var angle = (Math.PI*2/count)*i;
+        var speed = 2.5 + Math.random()*4;
+        particles.push({ x:x, y:y, vx:Math.cos(angle)*speed, vy:Math.sin(angle)*speed,
+          alpha:1, radius:2+Math.random()*2.5,
+          color:COLORS[Math.floor(Math.random()*COLORS.length)],
+          decay:0.013+Math.random()*0.01, gravity:0.07 });
+      }
+    }
+    var pos = [[canvas.width*.25,canvas.height*.35],[canvas.width*.75,canvas.height*.28],
+               [canvas.width*.5,canvas.height*.45],[canvas.width*.35,canvas.height*.22]];
+    pos.forEach(function(p,i){ setTimeout(function(){ spawnBurst(p[0],p[1]); }, i*320); });
+    var rafId;
+    function animate() {
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      for (var i=particles.length-1;i>=0;i--) {
+        var p=particles[i];
+        p.x+=p.vx; p.y+=p.vy; p.vy+=p.gravity; p.alpha-=p.decay;
+        if (p.alpha<=0) { particles.splice(i,1); continue; }
+        ctx.save(); ctx.globalAlpha=p.alpha; ctx.fillStyle=p.color;
+        ctx.beginPath(); ctx.arc(p.x,p.y,p.radius,0,Math.PI*2); ctx.fill(); ctx.restore();
+      }
+      if (particles.length>0) rafId=requestAnimationFrame(animate); else canvas.remove();
+    }
+    animate();
+    setTimeout(function(){ cancelAnimationFrame(rafId); canvas.remove(); }, 3500);
+  }
+
+  async function pmInjectWatchCounter(tmdbId) {
+    if (!window.pmIsEventFilm || !window.pmIsEventFilm(tmdbId)) return;
+    if (document.getElementById('pmWatchCounter')) return;
+    var user = window.pmGetUser && window.pmGetUser();
+    var alreadyTapped = false;
+    if (user) {
+      try {
+        var tok = await user.getIdToken();
+        var r = await fetch(_RTDB + '/eventFilm/watchers/' + user.uid + '.json?auth=' + tok);
+        alreadyTapped = r.ok && (await r.json()) === true;
+      } catch(e) {}
+    }
+    var wrap = document.createElement('div');
+    wrap.id = 'pmWatchCounter';
+    var btnLabel = alreadyTapped ? "✓ You're in" : (user ? '👁 Watching tonight?' : '👁 Sign in to join');
+    var btnClass = 'pm-watch-btn' + (alreadyTapped ? ' pm-watch-btn--done' : '');
+    wrap.innerHTML =
+      '<div class="pm-watch-counter-inner">'
+      + '<button id="pmWatchBtn" class="'+btnClass+'" onclick="window.pmTapWatching()"'
+      + (alreadyTapped || !user ? ' disabled' : '') + '>'+btnLabel+'</button>'
+      + '<span id="pmWatchCountLabel" class="pm-watch-count"></span>'
+      + '</div>';
+    var banner = document.getElementById('pmEventBanner');
+    var fc     = document.getElementById('fpContent');
+    if (banner) banner.insertAdjacentElement('afterend', wrap);
+    else if (fc) fc.insertAdjacentElement('afterbegin', wrap);
+    // Load current count
+    _pmRefreshWatchCount();
+  }
+
+  async function _pmRefreshWatchCount() {
+    try {
+      var r = await fetch(_RTDB + '/eventFilm/watchCount.json');
+      var count = r.ok ? (await r.json() || 0) : 0;
+      var label = document.getElementById('pmWatchCountLabel');
+      if (!label) return;
+      label.textContent = count === 0 ? 'Be the first tonight'
+        : count === 1 ? '1 PMovies user watching tonight'
+        : count + ' PMovies users watching tonight';
+    } catch(e) {}
+  }
+
+  window.pmTapWatching = async function() {
+    var user = window.pmGetUser && window.pmGetUser();
+    if (!user || !window._eventFilm) return;
+    var btn = document.getElementById('pmWatchBtn');
+    if (btn) { btn.disabled=true; btn.textContent="✓ You're in"; btn.classList.add('pm-watch-btn--done'); }
+    try {
+      var tok = await user.getIdToken();
+      // Guard: check if already tapped on another device
+      var chk = await fetch(_RTDB+'/eventFilm/watchers/'+user.uid+'.json?auth='+tok);
+      if (chk.ok && await chk.json()===true) return; // already counted
+      // Write watcher entry + increment counter
+      await Promise.all([
+        fetch(_RTDB+'/eventFilm/watchers/'+user.uid+'.json?auth='+tok, {
+          method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(true)
+        }),
+        fetch(_RTDB+'/eventFilm/watchCount.json?auth='+tok, {
+          method:'PUT', headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({'.sv':{'increment':1}})
+        })
+      ]);
+      setTimeout(_pmRefreshWatchCount, 800);
+    } catch(e) {
+      if (btn) { btn.disabled=false; btn.textContent='👁 Watching tonight?'; btn.classList.remove('pm-watch-btn--done'); }
+    }
+  };
+
   // navigateToFilm — used by movie card clicks (pushState for proper back-button history)
   window.navigateToFilm = function(tmdbId, title) {
     var slug = String(title||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
@@ -24728,6 +25111,11 @@ async function deleteEditorReview(key, e) {
     // Populate sidebars (only visible on screens ≥ 1180px)
     _renderFpSidebars(tmdbId, film, title, year, posterPath);
 
+    // Movie Night event treatments (banner + fireworks + watch counter)
+    pmInjectEventBanner(tmdbId);
+    pmTriggerEventFireworks(tmdbId);
+    pmInjectWatchCounter(tmdbId);
+
     // Kick off async fetches
     _fetchFilmTheater(tmdbId);
     _fetchEditorReview(tmdbId);
@@ -24971,7 +25359,12 @@ async function deleteEditorReview(key, e) {
     var lbl = document.getElementById('fpRevStarLabel');
     if (lbl) lbl.textContent = 'Tap to rate';
     var hl = document.getElementById('fpRevHeadline'); if (hl) hl.value = '';
-    var tx = document.getElementById('fpRevText'); if (tx) tx.value = '';
+    var tx = document.getElementById('fpRevText'); if (tx) {
+      tx.value = '';
+      tx.placeholder = (typeof window.pmIsEventFilm === 'function' && window.pmIsEventFilm(tmdbId))
+        ? 'Watched it for Movie Night? Drop your take — the community wants to know.'
+        : 'Your full review…';
+    }
     var btn = document.getElementById('fpRevSubmitBtn'); if (btn) { btn.textContent = 'POST REVIEW'; btn.disabled = false; }
     overlay.classList.add('open');
   };
@@ -26514,10 +26907,12 @@ async function deleteEditorReview(key, e) {
 
     setTimeout(initScratchCanvas, 60);
 
-    fetch(RTDB + '/quotes/' + quote.id + '/useCount.json', {
-      method: 'PUT',
-      body: JSON.stringify({ '.sv': { increment: 1 } })
-    }).catch(function(){});
+    if (quote.id && quote.id !== '__event__') {
+      fetch(RTDB + '/quotes/' + quote.id + '/useCount.json', {
+        method: 'PUT',
+        body: JSON.stringify({ '.sv': { increment: 1 } })
+      }).catch(function(){});
+    }
   }
 
   /* ══════════════════════════════════════════════════════════
@@ -26906,7 +27301,9 @@ async function deleteEditorReview(key, e) {
     // Re-check lobby is still visible (user may have clicked ENTER during load)
     if (!lobby || lobby.style.display === 'none') return;
 
-    renderQuote(pickNextQuote(lobbyQuotes));
+    // Movie Night event quote takes priority when active
+    var _evQ = typeof window.pmGetEventQuoteOverride === 'function' && window.pmGetEventQuoteOverride();
+    renderQuote(_evQ || pickNextQuote(lobbyQuotes));
   }
 
   function wireButtons() {
@@ -26917,7 +27314,9 @@ async function deleteEditorReview(key, e) {
     if (enterBtn)   enterBtn.onclick   = function() { enterApp(); };
     if (shareBtn)   shareBtn.onclick   = function() { generateAndShare(); };
     if (anotherBtn) anotherBtn.onclick = function() {
-      if (lobbyQuotes.length) renderQuote(pickNextQuote(lobbyQuotes));
+      var _evQ2 = typeof window.pmGetEventQuoteOverride === 'function' && window.pmGetEventQuoteOverride();
+      if (_evQ2) renderQuote(_evQ2);
+      else if (lobbyQuotes.length) renderQuote(pickNextQuote(lobbyQuotes));
       setLobbyBackdrop();
     };
   }
