@@ -11231,8 +11231,15 @@ window._removeDlLoader = function() {
       <div style="margin-top:24px">
         <div class="mn-section-title">🎬 Weekly Movie Night</div>
         <div style="display:flex;flex-direction:column;gap:10px">
-          <input id="mnTmdbId" class="mn-input" type="text" placeholder="TMDB Movie ID" oninput="pmMovieNightPreview()"/>
-          <input id="mnTitle"  class="mn-input" type="text" placeholder="Film title"/>
+          <!-- Movie search — replaces raw ID + title inputs -->
+          <div style="position:relative">
+            <input id="mnSearch" class="mn-input" type="text" placeholder="Search for a film…" oninput="mnSearchMovies(this.value)" autocomplete="off"/>
+            <div class="admin-search-results" id="mnSearchResults" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:20"></div>
+          </div>
+          <div id="mnSelectedDisplay" style="display:none;font-size:.78rem;color:#f5a623;font-family:'Montserrat',sans-serif;padding:2px 0"></div>
+          <!-- Hidden — populated by mnSelectMovie() -->
+          <input type="hidden" id="mnTmdbId"/>
+          <input type="hidden" id="mnTitle"/>
           <input id="mnNickname" class="mn-input" type="text" placeholder="Nickname (e.g. Jigsaw)" oninput="pmMovieNightPreview()"/>
           <input id="mnTwitter"  class="mn-input" type="text" placeholder="Twitter handle (e.g. @jigsawXYZ)" oninput="pmMovieNightPreview()"/>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -11548,6 +11555,44 @@ window._removeDlLoader = function() {
   /* ── MOVIE NIGHT ADMIN ─────────────────────────────────── */
   function _mnEv(id) { return document.getElementById(id); }
 
+  /* Movie Night film search (TMDB) */
+  var _mnSearchTimer;
+  function mnSearchMovies(q) {
+    clearTimeout(_mnSearchTimer);
+    var box = _mnEv('mnSearchResults');
+    if (!q.trim()) { if (box) box.style.display = 'none'; return; }
+    _mnSearchTimer = setTimeout(async function() {
+      var res  = await fetch(TMDB + '/search/movie?api_key=' + getKey() + '&query=' + encodeURIComponent(q) + '&language=en-US&page=1');
+      var data = res.ok ? await res.json() : null;
+      var hits = (data?.results || []).slice(0, 6);
+      if (!hits.length) { if (box) box.style.display = 'none'; return; }
+      if (box) {
+        box.innerHTML = hits.map(function(m) {
+          return '<div class="admin-search-item" onclick="mnSelectMovie(' + m.id + ',\'' + escJs(m.title) + '\',\'' + escJs(m.release_date ? m.release_date.slice(0,4) : '') + '\')">'
+            + (m.poster_path ? '<img src="https://image.tmdb.org/t/p/w92' + m.poster_path + '"/>' : '<div style="width:32px;height:48px;background:#222;border-radius:4px"></div>')
+            + '<div class="admin-search-item-info">'
+            + '<div class="admin-search-item-title">' + esc(m.title) + '</div>'
+            + '<div class="admin-search-item-year">' + (m.release_date ? m.release_date.slice(0,4) : '') + '</div>'
+            + '</div></div>';
+        }).join('');
+        box.style.display = 'block';
+      }
+    }, 300);
+  }
+
+  function mnSelectMovie(id, title, year) {
+    var hidId  = _mnEv('mnTmdbId');
+    var hidTtl = _mnEv('mnTitle');
+    var srch   = _mnEv('mnSearch');
+    var disp   = _mnEv('mnSelectedDisplay');
+    var box    = _mnEv('mnSearchResults');
+    if (hidId)  hidId.value  = String(id);
+    if (hidTtl) hidTtl.value = title;
+    if (srch)   srch.value   = '';
+    if (disp)   { disp.style.display = 'block'; disp.textContent = '✓ ' + title + (year ? ' (' + year + ')' : ''); }
+    if (box)    box.style.display = 'none';
+  }
+
   function pmMovieNightPreview() {
     var nickname = (_mnEv('mnNickname')||{}).value?.trim() || '';
     var twitter  = (_mnEv('mnTwitter') ||{}).value?.trim() || '';
@@ -11556,9 +11601,11 @@ window._removeDlLoader = function() {
     if (!preview || !text) return;
     if (nickname || twitter) {
       preview.style.display = 'block';
-      text.innerHTML = '<strong>' + esc(nickname||'…') + '\'s Movie Night</strong>'
-        + ' &nbsp;·&nbsp; This Thursday &nbsp;·&nbsp;'
-        + '<span style="color:#f5a623;opacity:.8">' + esc(twitter||'@…') + '</span>';
+      var nickUpper = (nickname || '…').toUpperCase();
+      var tw = twitter || '@…';
+      text.innerHTML = '<strong>' + esc(nickUpper) + '\'S MOVIE NIGHT</strong>'
+        + ' &nbsp;·&nbsp; Thursday &nbsp;·&nbsp;'
+        + '<span style="color:#f5a623;opacity:.8">' + esc(tw) + '\'s Suggestion</span>';
     } else {
       preview.style.display = 'none';
     }
@@ -11635,6 +11682,11 @@ window._removeDlLoader = function() {
       if (!d || d.error) return;
       if (_mnEv('mnTmdbId'))   _mnEv('mnTmdbId').value   = d.tmdbId||'';
       if (_mnEv('mnTitle'))    _mnEv('mnTitle').value     = d.title||'';
+      // Show pre-filled film in the search display
+      if (d.title) {
+        var disp = _mnEv('mnSelectedDisplay');
+        if (disp) { disp.style.display='block'; disp.textContent='✓ ' + d.title; }
+      }
       if (_mnEv('mnNickname')) _mnEv('mnNickname').value  = d.nickname||'';
       if (_mnEv('mnTwitter'))  _mnEv('mnTwitter').value   = d.twitterHandle||'';
       if (_mnEv('mnActive'))   _mnEv('mnActive').checked  = !!d.active;
@@ -24672,15 +24724,19 @@ async function deleteEditorReview(key, e) {
     if (!window.pmIsEventFilm || !window.pmIsEventFilm(tmdbId)) return;
     if (document.getElementById('pmEventBanner')) return;
     var ef = window._eventFilm;
-    var handle = (ef.twitterHandle||'').replace(/^@/,'');
+    var handle     = (ef.twitterHandle||'').replace(/^@/,'');
+    var nickUpper  = (ef.nickname||'Movie Night').toUpperCase();
     var banner = document.createElement('div');
     banner.id = 'pmEventBanner';
     banner.innerHTML =
       '<div class="pm-event-banner-inner">'
       + '<span class="pm-event-banner-icon">🎬</span>'
-      + '<span class="pm-event-banner-text"><strong>' + _esc(ef.nickname||'Movie Night') + '\'s Movie Night</strong>'
-      + ' &nbsp;·&nbsp; This Thursday &nbsp;·&nbsp;'
-      + (handle ? '<a href="https://x.com/'+_esc(handle)+'" target="_blank" rel="noopener" class="pm-event-banner-link">'+_esc(ef.twitterHandle)+'</a>' : '')
+      + '<span class="pm-event-banner-text">'
+      + '<strong>' + _esc(nickUpper) + '\'S MOVIE NIGHT</strong>'
+      + ' &nbsp;·&nbsp; Thursday &nbsp;·&nbsp;'
+      + (handle
+          ? '<a href="https://x.com/'+_esc(handle)+'" target="_blank" rel="noopener" class="pm-event-banner-link">'+_esc(ef.twitterHandle)+'</a>\'s Suggestion'
+          : '')
       + '</span>'
       + '<button class="pm-event-banner-close" onclick="this.closest(\'#pmEventBanner\').remove()" aria-label="Dismiss">✕</button>'
       + '</div>';
