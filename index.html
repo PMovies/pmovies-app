@@ -24348,19 +24348,14 @@ async function deleteEditorReview(key, e) {
     };
 
     // ── LEFT: Quick Actions ───────────────────────────────────────
-    var wlStatus     = (typeof getMovieStatus === 'function') ? getMovieStatus(numId) : null;
-    var isWant       = wlStatus === 'want';
-    var isWatched    = wlStatus === 'watched' || wlStatus === 'fav';
-    var wantTxt      = isWant    ? '🔖 In Watchlist'   : '＋ Add to Watchlist';
-    var watchedTxt   = isWatched ? '✓ Watched'          : '✓ Mark as Watched';
+    var wlStatus = (typeof getMovieStatus === 'function') ? getMovieStatus(numId) : null;
+    var isWant   = wlStatus === 'want';
+    var wantTxt  = isWant ? '🔖 In Watchlist' : '＋ Add to Watchlist';
 
     leftEl.innerHTML =
       '<div class="fp-sb-label">Quick Actions</div>'
       + '<button class="fp-sb-btn'+(isWant?' fp-sb-active':'')+'" id="fpSbWantBtn" onclick="fpSbToggle(\'want\')">'
       +   '<span class="fp-sb-btn-icon">'+(isWant?'🔖':'📌')+'</span>'+wantTxt
-      + '</button>'
-      + '<button class="fp-sb-btn'+(isWatched?' fp-sb-active':'')+'" id="fpSbWatchedBtn" onclick="fpSbToggle(\'watched\')">'
-      +   '<span class="fp-sb-btn-icon">'+(isWatched?'✓':'○')+'</span>'+watchedTxt
       + '</button>'
       + '<hr class="fp-sb-divider">'
       + '<button class="fp-sb-btn" onclick="fpOpenWriteSheet(\''+_esc(String(tmdbId))+'\',\''+_esc(title)+'\')">'
@@ -24399,19 +24394,13 @@ async function deleteEditorReview(key, e) {
     } else {
       setMovieStatus(film, status);
     }
-    // Reflect new state in sidebar buttons
-    var newStatus   = (typeof getMovieStatus === 'function') ? getMovieStatus(film.id) : null;
-    var isWant      = newStatus === 'want';
-    var isWatched   = newStatus === 'watched' || newStatus === 'fav';
-    var wantBtn     = document.getElementById('fpSbWantBtn');
-    var watchedBtn  = document.getElementById('fpSbWatchedBtn');
+    // Reflect new state in the watchlist button only
+    var newStatus = (typeof getMovieStatus === 'function') ? getMovieStatus(film.id) : null;
+    var isWant    = newStatus === 'want';
+    var wantBtn   = document.getElementById('fpSbWantBtn');
     if (wantBtn) {
       wantBtn.className = 'fp-sb-btn' + (isWant ? ' fp-sb-active' : '');
       wantBtn.innerHTML = '<span class="fp-sb-btn-icon">'+(isWant?'🔖':'📌')+'</span>'+(isWant?'🔖 In Watchlist':'＋ Add to Watchlist');
-    }
-    if (watchedBtn) {
-      watchedBtn.className = 'fp-sb-btn' + (isWatched ? ' fp-sb-active' : '');
-      watchedBtn.innerHTML = '<span class="fp-sb-btn-icon">'+(isWatched?'✓':'○')+'</span>'+(isWatched?'✓ Watched':'✓ Mark as Watched');
     }
   };
 
