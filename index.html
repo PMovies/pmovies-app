@@ -7039,7 +7039,7 @@ window._removeDlLoader = function() {
         <div class="pm-posters-row">`;
       matchedPosters.slice(0, 4).forEach(p => {
         const safeKey = (p._key || '').replace(/'/g, "\\'");
-        html += `<img class="pm-poster-thumb" src="${esc(p.cloudinaryUrl)}" alt="${esc(p.movie)}" title="by ${esc(p.artistName)}" onclick="pmOpenPosterLightbox('${safeKey}')" loading="lazy" />`;
+        html += `<img class="pm-poster-thumb" src="${esc(cdnImg(p.cloudinaryUrl, 400))}" alt="${esc(p.movie)}" title="by ${esc(p.artistName)}" onclick="pmOpenPosterLightbox('${safeKey}')" loading="lazy" />`;
       });
       html += `</div>`;
       html += `<button class="pm-see-all" onclick="closeModal(null);switchTab('posters')">See all fan art →</button>`;
@@ -15431,6 +15431,10 @@ function _authorBadge() { return ''; }
 ══════════════════════════════════════════════════ */
 
 const CLOUDINARY_CLOUD = 'dmkgrsl1j';
+function cdnImg(url, w = 800) {
+  if (!url || !url.includes('cloudinary.com')) return url;
+  return url.replace('/upload/', `/upload/f_auto,q_auto,w_${w}/`);
+}
 const CLOUDINARY_PRESET = 'PMovies';
 const POSTERS_RTDB_PENDING  = `${RTDB}/posterUploads/pending.json`;
 const POSTERS_RTDB_APPROVED = `${RTDB}/posterUploads/approved.json`;
@@ -15502,7 +15506,7 @@ function posterCardHTML(key, p) {
   return `
     <div class="poster-card pm-del-wrap" id="pcard-${key}">
       ${isAdminView ? `<button class="pm-del-btn" onclick="event.stopPropagation();pmAdminDeleteItem('posterUploads/approved','${key}',this.closest('.poster-card'))">✕</button>` : ''}
-      <img src="${p.cloudinaryUrl}" alt="${esc(p.movie)} poster by ${esc(p.artistName)}" loading="lazy" style="cursor:pointer" />
+      <img src="${cdnImg(p.cloudinaryUrl, 900)}" alt="${esc(p.movie)} poster by ${esc(p.artistName)}" loading="lazy" style="cursor:pointer" />
       <div class="poster-card-info">
         <div class="poster-card-movie">${esc(p.movie)} <span style="color:#555;font-weight:400">(${p.year})</span></div>
         <div class="poster-card-artist">by ${p.uid ? `<span class="pm-profile-link" onclick="event.stopPropagation();pmOpenProfile('${p.uid}')" style="cursor:pointer">${esc(p.artistName)}</span>` : esc(p.artistName)}</div>
@@ -15758,7 +15762,7 @@ function postersOpenLightbox(key) {
   const p = _postersData.get(key);
   if (!p) return;
   _postersLightboxKey = key;
-  document.getElementById('postersLightboxImg').src = p.cloudinaryUrl;
+  document.getElementById('postersLightboxImg').src = cdnImg(p.cloudinaryUrl, 1400);
   document.getElementById('postersLightboxMovie').textContent = `${p.movie} (${p.year})`;
   const lbArtist = document.getElementById('postersLightboxArtist');
   if (lbArtist) {
@@ -15873,7 +15877,7 @@ async function postersLoadPending() {
     badge.textContent = `${entries.length} pending`;
     grid.innerHTML = entries.map(([key,p]) => `
       <div class="poster-pending-card" id="ppend-${key}">
-        <img src="${p.cloudinaryUrl}" alt="" />
+        <img src="${cdnImg(p.cloudinaryUrl, 900)}" alt="" />
         <div class="poster-pending-info">
           <div class="poster-pending-movie">${esc(p.movie)} (${p.year})</div>
           <div class="poster-pending-meta">by ${esc(p.artistName)} · ${new Date(p.uploadDate).toLocaleDateString()}</div>
@@ -21972,7 +21976,7 @@ async function deleteEditorReview(key, e) {
 
       // ── 3. Update nav chip avatar ─────────────────────────────────────────────
       var chipAvatar = document.getElementById('pmChipAvatar');
-      if (chipAvatar) chipAvatar.innerHTML = '<img src="' + _esc(avatarUrl) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>';
+      if (chipAvatar) chipAvatar.innerHTML = '<img src="' + _esc(cdnImg(avatarUrl, 200)) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>';
 
       // ── 4. Update Theater Race leaderboard entry (background) ─────────────────
       // The leaderboard stores avatar at log-time; PATCH the existing entry so the
@@ -24731,7 +24735,7 @@ async function deleteEditorReview(key, e) {
       grid.innerHTML = matches.slice(0,9).map(function(e){
         var p = e[1], key = e[0];
         var imgSrc = p.cloudinaryUrl || p.imageUrl || p.url || '';
-        return '<img class="fp-art-thumb" src="'+_esc(imgSrc)+'" alt="'+_esc(p.movie||'')+'" loading="lazy" onclick="if(typeof postersOpenLightbox===\'function\')postersOpenLightbox(\''+_esc(key)+'\');else if(typeof switchTab===\'function\')switchTab(\'posters\')">';
+        return '<img class="fp-art-thumb" src="'+_esc(cdnImg(imgSrc, 400))+'" alt="'+_esc(p.movie||'')+'" loading="lazy" onclick="if(typeof postersOpenLightbox===\'function\')postersOpenLightbox(\''+_esc(key)+'\');else if(typeof switchTab===\'function\')switchTab(\'posters\')">';
       }).join('');
     } catch(_e) { if (pill) pill.textContent = '0'; }
   }
