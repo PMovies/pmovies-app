@@ -11299,11 +11299,11 @@ window._removeDlLoader = function() {
     document.getElementById('adminPwWrap').style.display = 'none';
     document.getElementById('adminForm').style.display = 'block';
     document.getElementById('challengeAdminPwInput').value = '';
-    // Pre-fill deadline to next Thursday 23:59
-    const d = new Date(); const day = d.getDay();
+    // Pre-fill deadline to next Thursday 23:59 UTC+3
+    const d = new Date(Date.now() + 3 * 60 * 60 * 1000); const day = d.getUTCDay();
     const daysToThurs = (4 - day + 7) % 7 || 7;
-    d.setDate(d.getDate() + daysToThurs);
-    d.setHours(23, 59, 0, 0);
+    d.setUTCDate(d.getUTCDate() + daysToThurs);
+    d.setUTCHours(20, 59, 0, 0); // 23:59 UTC+3 = 20:59 UTC
     const iso = d.toISOString().slice(0, 16);
     document.getElementById('adminDeadline').value = iso;
   }
@@ -11670,13 +11670,17 @@ window._removeDlLoader = function() {
   }
 
   function _mnNextThurFri() {
-    var now = new Date(); var day = now.getDay();
-    var dtu = (4 - day + 7) % 7 || 7;
-    var thu = new Date(now); thu.setDate(now.getDate() + dtu); thu.setHours(0,0,0,0);
-    var fri = new Date(thu); fri.setDate(thu.getDate() + 1); fri.setHours(23,59,59,0);
-    var pad = n => String(n).padStart(2,'0');
-    var fmt = d => d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());
-    return { thu: fmt(thu), fri: fmt(fri) };
+    // All calculations in UTC+3
+    var now3 = new Date(Date.now() + 3 * 60 * 60 * 1000);
+    var day  = now3.getUTCDay();
+    var dtu  = (4 - day + 7) % 7 || 7;
+    // Thursday 00:00 UTC+3 = Thursday 21:00 UTC (prev day)
+    var thu3 = new Date(now3); thu3.setUTCDate(now3.getUTCDate() + dtu); thu3.setUTCHours(0,0,0,0);
+    var fri3 = new Date(thu3); fri3.setUTCDate(thu3.getUTCDate() + 1);   fri3.setUTCHours(23,59,59,0);
+    var pad  = n => String(n).padStart(2,'0');
+    // Format as local datetime-local string (UTC+3 values)
+    var fmt  = d => d.getUTCFullYear()+'-'+pad(d.getUTCMonth()+1)+'-'+pad(d.getUTCDate())+'T'+pad(d.getUTCHours())+':'+pad(d.getUTCMinutes());
+    return { thu: fmt(thu3), fri: fmt(fri3) };
   }
 
   // Pre-fill Movie Night dates when admin panel opens
@@ -11745,7 +11749,9 @@ window._removeDlLoader = function() {
   /* True only when the event is live AND today is Thursday (local time).
      Used by features that are Thursday-only: watch counter + scratch quote. */
   window.pmIsEventThursday = function() {
-    return !!(window._eventFilm && new Date().getDay() === 4);
+    if (!window._eventFilm) return false;
+    var utc3 = new Date(Date.now() + 3 * 60 * 60 * 1000);
+    return utc3.getUTCDay() === 4;
   };
 
   window.pmEventBadgeHtml = function() {
@@ -19218,7 +19224,7 @@ async function deleteEditorReview(key, e) {
     var greeting = document.getElementById('pmWelcomeGreeting');
     var quoteEl  = document.getElementById('pmWelcomeQuote');
 
-    var hr = new Date().getHours();
+    var hr = new Date(Date.now() + 3 * 60 * 60 * 1000).getUTCHours();
     var word = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
 
     // Show greeting screen (once per session) — skip on deep-link paths and while lobby is visible
@@ -19411,7 +19417,7 @@ async function deleteEditorReview(key, e) {
     var el = document.getElementById('pmGreetingScreen');
     if (!el) return;
 
-    var hr = new Date().getHours();
+    var hr = new Date(Date.now() + 3 * 60 * 60 * 1000).getUTCHours();
     var word, timeLabel, bgGrad;
     if (hr >= 5 && hr < 12) {
       word = 'Good morning,'; timeLabel = '🌅 Morning';
@@ -22840,7 +22846,7 @@ async function deleteEditorReview(key, e) {
         // Refresh welcome strip greeting
         var greetEl = document.getElementById('pmWelcomeGreeting');
         if (greetEl) {
-          var hr = new Date().getHours();
+          var hr = new Date(Date.now() + 3 * 60 * 60 * 1000).getUTCHours();
           var word = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
           var badgeSpan = document.getElementById('pmWelcomeBadge');
           var badgeHtml = badgeSpan ? badgeSpan.outerHTML : '';
