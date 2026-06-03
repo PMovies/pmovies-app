@@ -3950,8 +3950,76 @@
 /* ── Film Full Page ── */
 #filmPage { display:none; position:fixed; inset:0; z-index:9997; background:#0d0d0d; overflow-y:auto; -webkit-overflow-scrolling:touch; }
 #filmPage.open { display:block; }
-/* Centered content wrapper — gives the Letterboxd "breathing room" feel */
-.fp-inner { max-width:780px; margin:0 auto; position:relative; }
+/* ── Three-column layout wrapper ───────────────────────────────── */
+.fp-page-layout {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center; /* centers the 3-col group on ultra-wide screens */
+  width: 100%;
+  min-height: 100%;
+}
+/* Centred content column */
+.fp-inner { max-width:780px; margin:0; position:relative; flex:1; min-width:0; }
+
+/* Sidebar — shared base */
+.fp-sidebar {
+  width: 200px;
+  flex-shrink: 0;
+  align-self: flex-start;
+  position: sticky;
+  top: 54px; /* clears the sticky fp-header (~52px) */
+  max-height: calc(100vh - 60px);
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding: 22px 14px 24px;
+}
+.fp-sidebar::-webkit-scrollbar { display: none; }
+
+/* Section title */
+.fp-sb-label {
+  font-family: 'Montserrat', sans-serif;
+  font-size: .5rem; font-weight: 800; letter-spacing: .12em;
+  color: #3a3a3a; text-transform: uppercase; margin-bottom: 10px;
+}
+.fp-sb-divider { border: none; border-top: 1px solid #191919; margin: 12px 0; }
+
+/* ── Left sidebar: Quick Action buttons ── */
+.fp-sb-btn {
+  width: 100%; display: flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07);
+  border-radius: 10px; color: #888;
+  font-family: 'Montserrat', sans-serif; font-size: .62rem; font-weight: 700;
+  letter-spacing: .03em; padding: 9px 11px;
+  cursor: pointer; margin-bottom: 7px; text-align: left; transition: all .15s;
+}
+.fp-sb-btn:hover { border-color: rgba(245,166,35,.35); color: #f5a623; background: rgba(245,166,35,.06); }
+.fp-sb-btn.fp-sb-active { border-color: rgba(245,166,35,.5); color: #f5a623; background: rgba(245,166,35,.1); }
+.fp-sb-btn-icon { font-size: .9rem; line-height: 1; flex-shrink: 0; }
+
+/* ── Right sidebar: Similar film cards ── */
+.fp-sb-rec {
+  display: flex; align-items: center; gap: 9px;
+  padding: 7px 0; border-bottom: 1px solid #141414;
+  cursor: pointer; transition: opacity .15s;
+}
+.fp-sb-rec:last-child { border-bottom: none; }
+.fp-sb-rec:hover { opacity: .7; }
+.fp-sb-rec-poster {
+  width: 36px; height: 54px; border-radius: 5px; object-fit: cover;
+  background: #1a1a1a; flex-shrink: 0;
+}
+.fp-sb-rec-title {
+  font-family: 'Montserrat', sans-serif; font-size: .62rem; font-weight: 700;
+  color: #ccc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+.fp-sb-rec-year { font-size: .56rem; color: #555; font-family: 'Montserrat', sans-serif; }
+
+/* Hide sidebars when there isn't enough horizontal room */
+@media (max-width: 1180px) {
+  .fp-sidebar { display: none; }
+  .fp-inner   { margin: 0 auto; } /* restore centre-alignment when single-column */
+}
 .fp-header { position:sticky; top:0; z-index:10; background:rgba(13,13,13,.94); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border-bottom:1px solid rgba(255,255,255,.06); padding:11px 16px; padding-top:max(11px,calc(env(safe-area-inset-top,0px) + 8px)); display:flex; align-items:center; gap:12px; }
 .fp-back-btn { background:none; border:none; color:#f5a623; font-size:1.1rem; cursor:pointer; padding:4px 8px 4px 2px; flex-shrink:0; }
 .fp-header-title { flex:1; font-family:'Bebas Neue',sans-serif; font-size:1.1rem; color:#eee; letter-spacing:.06em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -5544,12 +5612,19 @@ window._removeDlLoader = function() {
 
 <!-- Film Full Page Overlay -->
 <div id="filmPage">
-  <div class="fp-inner">
-    <div class="fp-header">
-      <button class="fp-back-btn" onclick="closeFilmPage()">←</button>
-      <div class="fp-header-title" id="fpHeaderTitle">Loading…</div>
+  <div class="fp-page-layout">
+    <!-- Left sidebar: Quick Actions (desktop only) -->
+    <aside class="fp-sidebar fp-sidebar-left" id="fpSidebarLeft"></aside>
+    <!-- Main content column -->
+    <div class="fp-inner">
+      <div class="fp-header">
+        <button class="fp-back-btn" onclick="closeFilmPage()">←</button>
+        <div class="fp-header-title" id="fpHeaderTitle">Loading…</div>
+      </div>
+      <div id="fpContent"></div>
     </div>
-    <div id="fpContent"></div>
+    <!-- Right sidebar: More Like This (desktop only) -->
+    <aside class="fp-sidebar fp-sidebar-right" id="fpSidebarRight"></aside>
   </div>
 </div>
 
@@ -24243,9 +24318,101 @@ async function deleteEditorReview(key, e) {
     if (page) page.classList.remove('open');
     document.body.style.overflow = '';
     _fpCurrentId = null;
+    window._fpSidebarFilm = null;
+    var lsb = document.getElementById('fpSidebarLeft');
+    var rsb = document.getElementById('fpSidebarRight');
+    if (lsb) lsb.innerHTML = '';
+    if (rsb) rsb.innerHTML = '';
     try {
       if (location.pathname.match(/^\/film\//)) history.pushState({ fromFilm: true }, '', '/');
     } catch(_e) {}
+  };
+
+  /* ── Sidebar: populate both panels ─────────────────────────────── */
+  function _renderFpSidebars(tmdbId, film, title, year, posterPath) {
+    var leftEl  = document.getElementById('fpSidebarLeft');
+    var rightEl = document.getElementById('fpSidebarRight');
+    if (!leftEl || !rightEl) return;
+
+    var numId = parseInt(tmdbId, 10) || tmdbId;
+
+    // Store a minimal film object for watchlist mutations
+    window._fpSidebarFilm = {
+      id:           numId,
+      title:        title,
+      poster_path:  posterPath,
+      vote_average: film ? (film.vote_average || 0) : 0,
+      release_date: film ? (film.release_date || '') : '',
+      overview:     film ? (film.overview || '') : '',
+      genre_ids:    film && film.genres ? film.genres.map(function(g){ return g.id; }) : []
+    };
+
+    // ── LEFT: Quick Actions ───────────────────────────────────────
+    var wlStatus     = (typeof getMovieStatus === 'function') ? getMovieStatus(numId) : null;
+    var isWant       = wlStatus === 'want';
+    var isWatched    = wlStatus === 'watched' || wlStatus === 'fav';
+    var wantTxt      = isWant    ? '🔖 In Watchlist'   : '＋ Add to Watchlist';
+    var watchedTxt   = isWatched ? '✓ Watched'          : '✓ Mark as Watched';
+
+    leftEl.innerHTML =
+      '<div class="fp-sb-label">Quick Actions</div>'
+      + '<button class="fp-sb-btn'+(isWant?' fp-sb-active':'')+'" id="fpSbWantBtn" onclick="fpSbToggle(\'want\')">'
+      +   '<span class="fp-sb-btn-icon">'+(isWant?'🔖':'📌')+'</span>'+wantTxt
+      + '</button>'
+      + '<button class="fp-sb-btn'+(isWatched?' fp-sb-active':'')+'" id="fpSbWatchedBtn" onclick="fpSbToggle(\'watched\')">'
+      +   '<span class="fp-sb-btn-icon">'+(isWatched?'✓':'○')+'</span>'+watchedTxt
+      + '</button>'
+      + '<hr class="fp-sb-divider">'
+      + '<button class="fp-sb-btn" onclick="fpOpenWriteSheet(\''+_esc(String(tmdbId))+'\',\''+_esc(title)+'\')">'
+      +   '<span class="fp-sb-btn-icon">✍️</span>Write a Review'
+      + '</button>';
+
+    // ── RIGHT: More Like This ──────────────────────────────────────
+    var similar = (film && film.similar && film.similar.results)
+      ? film.similar.results.filter(function(m){ return m.poster_path && m.title; }).slice(0, 6)
+      : [];
+
+    if (!similar.length) { rightEl.innerHTML = ''; return; }
+
+    rightEl.innerHTML =
+      '<div class="fp-sb-label">More Like This</div>'
+      + similar.map(function(m) {
+          var mYear = m.release_date ? m.release_date.slice(0,4) : '';
+          return '<div class="fp-sb-rec" onclick="navigateToFilm('+m.id+',\''+_esc(m.title)+'\')">'
+            + '<img class="fp-sb-rec-poster" src="https://image.tmdb.org/t/p/w185'+m.poster_path+'" loading="lazy" alt="">'
+            + '<div class="fp-sb-rec-info">'
+            +   '<div class="fp-sb-rec-title">'+_esc(m.title)+'</div>'
+            +   '<div class="fp-sb-rec-year">'+mYear+'</div>'
+            + '</div>'
+            + '</div>';
+        }).join('');
+  }
+
+  /* Toggle a watchlist status from the sidebar buttons */
+  window.fpSbToggle = function(status) {
+    var film = window._fpSidebarFilm;
+    if (!film) return;
+    if (typeof setMovieStatus !== 'function') return;
+    var current = (typeof getMovieStatus === 'function') ? getMovieStatus(film.id) : null;
+    if (current === status) {
+      if (typeof removeFromWatchlist === 'function') removeFromWatchlist(film.id);
+    } else {
+      setMovieStatus(film, status);
+    }
+    // Reflect new state in sidebar buttons
+    var newStatus   = (typeof getMovieStatus === 'function') ? getMovieStatus(film.id) : null;
+    var isWant      = newStatus === 'want';
+    var isWatched   = newStatus === 'watched' || newStatus === 'fav';
+    var wantBtn     = document.getElementById('fpSbWantBtn');
+    var watchedBtn  = document.getElementById('fpSbWatchedBtn');
+    if (wantBtn) {
+      wantBtn.className = 'fp-sb-btn' + (isWant ? ' fp-sb-active' : '');
+      wantBtn.innerHTML = '<span class="fp-sb-btn-icon">'+(isWant?'🔖':'📌')+'</span>'+(isWant?'🔖 In Watchlist':'＋ Add to Watchlist');
+    }
+    if (watchedBtn) {
+      watchedBtn.className = 'fp-sb-btn' + (isWatched ? ' fp-sb-active' : '');
+      watchedBtn.innerHTML = '<span class="fp-sb-btn-icon">'+(isWatched?'✓':'○')+'</span>'+(isWatched?'✓ Watched':'✓ Mark as Watched');
+    }
   };
 
   // navigateToFilm — used by movie card clicks (pushState for proper back-button history)
@@ -24563,6 +24730,9 @@ async function deleteEditorReview(key, e) {
         });
       } catch(_e) {}
     }
+
+    // Populate sidebars (only visible on screens ≥ 1180px)
+    _renderFpSidebars(tmdbId, film, title, year, posterPath);
 
     // Kick off async fetches
     _fetchFilmTheater(tmdbId);
