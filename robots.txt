@@ -1,3 +1,26 @@
+# ── Social / OG card crawlers — full access needed for link preview cards ──
+User-agent: Twitterbot
+Disallow:
+
+User-agent: facebookexternalhit
+Disallow:
+
+User-agent: WhatsApp
+Disallow:
+
+User-agent: TelegramBot
+Disallow:
+
+User-agent: LinkedInBot
+Disallow:
+
+User-agent: Slackbot
+Disallow:
+
+User-agent: Discordbot
+Disallow:
+
+# ── All other crawlers (Google, Bing, etc.) ──────────────────────────────
 User-agent: *
 
 # Block Firebase database endpoints
@@ -36,6 +59,5 @@ Allow: /
 Allow: /press
 Allow: /weekly
 Allow: /about
-
 
 Sitemap: https://p-movies.com/sitemap.xml
