@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pmovies-v390';
+const CACHE_NAME = 'pmovies-v391';
 
 const APP_SHELL = [
   '/',

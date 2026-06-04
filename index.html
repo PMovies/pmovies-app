@@ -19247,7 +19247,7 @@ async function deleteEditorReview(key, e) {
     if (profile && !sessionStorage.getItem('pm_greeting_done')
         && !window._deepLinkPath
         && !_lobbyUp
-        && !/^\/(fan|lobby|review)\//.test(location.pathname)) {
+        && !/^\/(fan|lobby|review|film)\//.test(location.pathname)) {
       _showGreetingScreen(nickname, uid, profile);
     }
 
