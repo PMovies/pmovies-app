@@ -25108,9 +25108,10 @@ async function deleteEditorReview(key, e) {
 
     var title       = film.title || 'Film';
     var year        = (film.release_date || '').slice(0, 4);
+    var slug        = String(title).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     var shareTitle  = title + (year ? ' (' + year + ')' : '');
     var shareText   = 'Check out ' + shareTitle + ' on PMovies';
-    var shareUrl    = 'https://p-movies.com/film/' + id;
+    var shareUrl    = 'https://p-movies.com/film/' + id + (slug ? '/' + slug : '');
 
     // Native share sheet (mobile / desktop Chrome 89+)
     if (navigator.share) {
