@@ -1,24 +1,24 @@
 # ── Social / OG card crawlers — full access needed for link preview cards ──
 User-agent: Twitterbot
-Disallow:
+Allow: /
 
 User-agent: facebookexternalhit
-Disallow:
+Allow: /
 
 User-agent: WhatsApp
-Disallow:
+Allow: /
 
 User-agent: TelegramBot
-Disallow:
+Allow: /
 
 User-agent: LinkedInBot
-Disallow:
+Allow: /
 
 User-agent: Slackbot
-Disallow:
+Allow: /
 
 User-agent: Discordbot
-Disallow:
+Allow: /
 
 # ── All other crawlers (Google, Bing, etc.) ──────────────────────────────
 User-agent: *
