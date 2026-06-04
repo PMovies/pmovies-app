@@ -4621,11 +4621,11 @@
                     sessionStorage.getItem('pmovies_guest') === '1';
 
   if (isDeepLink || lobbyDone) {
-    // Skip lobby — hide auth landing for returning users (auth resolves and hides it properly)
-    if (isReturning) {
-      var el = document.getElementById('pmLandingScreen');
-      if (el) el.style.display = 'none';
-    }
+    // Always hide the auth landing screen on any deep-link path — the content
+    // (film/fan/lobby/review page) should be visible to everyone including guests.
+    // onAuthStateChanged will re-show it if needed once the deep-link content is dismissed.
+    var el = document.getElementById('pmLandingScreen');
+    if (el) el.style.display = 'none';
     return;
   }
 
@@ -10794,6 +10794,18 @@ window._removeDlLoader = function() {
         // Clean slug URL — CF Worker serves index.html directly; pathname still set correctly
         var slug = pn.slice(5).split('?')[0];
         if (slug) setTimeout(function() { _deepLinkFanSlug(slug); }, 200);
+      }
+    })();
+
+    // Deep-link: open film page directly from /film/{tmdbId} or /film/{tmdbId}/{slug} URL
+    (function() {
+      var _fm = location.pathname.match(/^\/film\/(\d+)(?:\/[\w-]+)?$/);
+      if (_fm) {
+        var _fid = _fm[1];
+        // 300ms lets the app shell render first so the film page overlay has a proper backdrop
+        setTimeout(function() {
+          if (typeof openFilmPage === 'function') openFilmPage(_fid);
+        }, 300);
       }
     })();
   });
@@ -18853,6 +18865,10 @@ async function deleteEditorReview(key, e) {
     // Keep auth screen hidden while lobby is showing
     var lobby = document.getElementById('lobby-screen');
     if (lobby && lobby.style.display !== 'none') return;
+    // Don't cover an open film / fan / review / lobby deep-link overlay
+    var filmPage = document.getElementById('filmPage');
+    if (filmPage && filmPage.classList.contains('open')) return;
+    if (/^\/(film|fan|review|lobby)\//.test(location.pathname)) return;
     var el = document.getElementById('pmLandingScreen');
     if (el) { el.style.display = 'flex'; el.style.opacity = '1'; }
   }
@@ -24863,6 +24879,14 @@ async function deleteEditorReview(key, e) {
     try {
       if (location.pathname.match(/^\/film\//)) history.pushState({ fromFilm: true }, '', '/');
     } catch(_e) {}
+    // If visitor arrived via a /film/ deep-link and is not signed in,
+    // show the sign-in landing screen now that they've dismissed the film page.
+    if (!_pmUser) {
+      var _ld = document.getElementById('pmLandingScreen');
+      if (_ld && _ld.style.display === 'none') {
+        _ld.style.display = 'flex'; _ld.style.opacity = '1';
+      }
+    }
   };
 
   /* ── Sidebar: populate both panels ─────────────────────────────── */
