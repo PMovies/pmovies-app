@@ -8443,6 +8443,14 @@ window._removeDlLoader = function() {
       // Return address bar to root
       try { history.pushState(null, '', '/#movies'); } catch(e) {}
     }
+    // If visitor arrived via deep-link and is not signed in,
+    // show the sign-in landing screen now that the review is dismissed.
+    if (!(window.pmGetUser && window.pmGetUser())) {
+      var _ld = document.getElementById('pmLandingScreen');
+      if (_ld && _ld.style.display === 'none') {
+        _ld.style.display = 'flex'; _ld.style.opacity = '1';
+      }
+    }
   }
 
   // ── Edit review helpers ───────────────────────────────────────────
@@ -24881,7 +24889,7 @@ async function deleteEditorReview(key, e) {
     } catch(_e) {}
     // If visitor arrived via a /film/ deep-link and is not signed in,
     // show the sign-in landing screen now that they've dismissed the film page.
-    if (!_pmUser) {
+    if (!(window.pmGetUser && window.pmGetUser())) {
       var _ld = document.getElementById('pmLandingScreen');
       if (_ld && _ld.style.display === 'none') {
         _ld.style.display = 'flex'; _ld.style.opacity = '1';
