@@ -8336,7 +8336,7 @@ window._removeDlLoader = function() {
       rating:    rating,
       stars:     '★'.repeat(Math.round(rating)),
       headline:  String(raw.headline || '').slice(0, 200).trim(),
-      text:      String(raw.text     || '').slice(0, 600),
+      text:      String(raw.text     || ''),
       uid:       raw.uid       || null,
       photoURL:  raw.photoURL  || null,
       timestamp: raw.timestamp || null,
@@ -10018,8 +10018,12 @@ window._removeDlLoader = function() {
         if (meta && meta.fp) {
           metaFp = meta.fp;
           _slugRegistry.set(slug, meta.fp);
+          // Push-ID FPs (new format): always load full text from fanReviews via _deepLinkFanReview.
+          if (meta.fp.startsWith('-')) {
+            _deepLinkFanReview(meta.fp); return;
+          }
           if (meta.text) {
-            // Store full review in the profile map so openFanReviewPage finds it instantly
+            // Old-format FP (base64-encoded): use meta.text as best available source
             window._pmProfileRevMap = window._pmProfileRevMap || {};
             window._pmProfileRevMap[meta.fp] = {
               name:       meta.name      || 'Anonymous',
@@ -10101,7 +10105,13 @@ window._removeDlLoader = function() {
         if (meta && meta.fp) {
           metaFp = meta.fp;
           _slugRegistry.set(slug, meta.fp);
+          // Push-ID FPs (new format, starts with '-'): always go through _deepLinkFanReview
+          // so the full text is loaded from fanReviews — fanReviewMeta.text may be stale/truncated.
+          if (meta.fp.startsWith('-')) {
+            _deepLinkFanReview(meta.fp); return;
+          }
           if (meta.text) {
+            // Old-format FP (base64-encoded): fanReviews won't have it, use meta.text as best available
             window._pmProfileRevMap = window._pmProfileRevMap || {};
             window._pmProfileRevMap[meta.fp] = {
               name:       meta.name      || 'Anonymous',
