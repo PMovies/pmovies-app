@@ -4121,6 +4121,9 @@
 .fp-review-card-meta { flex:1; min-width:0; }
 .fp-review-card-name { font-size:.68rem; font-weight:700; color:#ccc; font-family:'Montserrat',sans-serif; }
 .fp-review-stars { color:#f5a623; font-size:.7rem; letter-spacing:1px; }
+.fp-review-stars .s-full  { color:#f5a623; }
+.fp-review-stars .s-half  { display:inline-block; background:linear-gradient(to right,#f5a623 50%,#333 50%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+.fp-review-stars .s-empty { color:#333; }
 .fp-review-date { font-size:.55rem; color:#444; }
 .fp-review-snippet { font-size:.78rem; color:#aaa; line-height:1.55; }
 .fp-review-more { color:#f5a623; font-size:.67rem; font-family:'Montserrat',sans-serif; font-weight:700; cursor:pointer; margin-top:4px; display:inline-block; }
@@ -24846,7 +24849,10 @@ async function deleteEditorReview(key, e) {
     if(d<dy*30) return Math.floor(d/dy)+'d ago';
     return new Date(ms).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
   }
-  function _stars(r) { var s=''; for(var i=1;i<=5;i++) s+= i<=Math.round(r)?'★':'☆'; return s; }
+  function _stars(r) {
+    var full = Math.floor(r || 0), half = ((r || 0) % 1) >= 0.5;
+    return '★'.repeat(full) + (half ? '½' : '') + '☆'.repeat(5 - full - (half ? 1 : 0));
+  }
 
   /* ═══════════════════════════════════════════════════
      PART 4 — FILM FULL PAGE
@@ -25397,7 +25403,7 @@ async function deleteEditorReview(key, e) {
               avHtml+
               '<div class="fp-review-card-meta">'+
               '<div class="fp-review-card-name">'+_esc(displayName)+'</div>'+
-              '<div class="fp-review-stars">'+_stars(rev.rating||0)+'</div>'+
+              '<div class="fp-review-stars">'+_starsHtml(rev.rating||0)+'</div>'+
               '</div>'+
               '<div class="fp-review-date">'+_relTime(rev.timestamp||0)+'</div>'+
               '</div>'+
