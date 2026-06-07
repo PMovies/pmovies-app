@@ -7669,6 +7669,10 @@ window._removeDlLoader = function() {
 
   // ── Fan Review Like (Firebase-backed, shared across users) ──────
   function fanReviewFp(r) {
+    // Prefer the RTDB push-id — it's guaranteed unique, avoids collisions for users with
+    // long names whose content-hash prefix is identical across all their reviews.
+    if (r._rtdbKey && r._rtdbKey.startsWith('-')) return r._rtdbKey;
+    // Legacy / Firestore reviews: fall back to the content-based hash.
     return btoa(encodeURIComponent(`${(r.name||'').toLowerCase()}|${(r.movie||'').toLowerCase()}|${(r.text||'').slice(0,40).toLowerCase()}`)).slice(0,24);
   }
   let _fanLikeCache  = {};   // safeKey → count  (backward-compat display)
