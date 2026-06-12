@@ -959,6 +959,8 @@
 
   /* ── Vote Pulse ── */
   @keyframes votePulse { 0%{transform:scale(1)} 35%{transform:scale(1.3);box-shadow:0 0 0 10px rgba(232,160,32,.18)} 100%{transform:scale(1);box-shadow:none} }
+  @keyframes pmIsSpin  { to { transform: rotate(360deg) } }
+  @keyframes pmIsPulse { 0%,100% { opacity:.4 } 50% { opacity:1 } }
   .vote-pulse { animation: votePulse .55s cubic-bezier(.36,.07,.19,.97); }
 
   /* ── Confetti Canvas ── */
@@ -4889,6 +4891,27 @@ window._removeDlLoader = function() {
     <div class="search-dropdown" id="searchDropdown"></div>
   </div>
   <div class="section-label search-results-label" id="searchResultsLabel"></div>
+
+  <!-- PMOVIES LENS -->
+  <button onclick="pmIsOpen()" style="
+    display:flex;align-items:center;gap:12px;width:100%;
+    padding:14px 18px;margin-bottom:20px;
+    background:rgba(212,168,67,.06);
+    border:1px dashed rgba(212,168,67,.3);
+    border-radius:12px;color:#d4a843;
+    font-size:14px;font-weight:500;cursor:pointer;
+    transition:all .2s;text-align:left;
+  " onmouseover="this.style.background='rgba(212,168,67,.1)';this.style.borderColor='rgba(212,168,67,.5)'"
+     onmouseout="this.style.background='rgba(212,168,67,.06)';this.style.borderColor='rgba(212,168,67,.3)'">
+    <span style="font-size:22px">🎬</span>
+    <div>
+      <div>PMovies Lens</div>
+      <div style="font-size:11px;color:rgba(212,168,67,.55);font-weight:400;margin-top:2px">
+        Drop a screenshot, poster, or any frame — we'll identify it
+      </div>
+    </div>
+    <span style="margin-left:auto;opacity:.4;font-size:18px">↑</span>
+  </button>
 
   <!-- FOTD Day Button -->
   <div class="fotd-day-wrap" id="fotdDiscoverCard" style="display:none">
@@ -27905,6 +27928,494 @@ async function deleteEditorReview(key, e) {
     }
   };
 })();
+</script>
+
+<!-- ══ Image Search Modal ══════════════════════════════════════════════════ -->
+<div id="pmIsModal" style="
+  display:none;position:fixed;inset:0;z-index:1000;
+  background:rgba(0,0,0,.85);backdrop-filter:blur(8px);
+  overflow-y:auto;padding:20px;
+" onclick="if(event.target===this)pmIsClose()">
+
+  <div style="
+    max-width:620px;width:100%;margin:40px auto;
+    background:#111318;border:1px solid rgba(255,255,255,.08);
+    border-radius:16px;overflow:hidden;
+  ">
+
+    <!-- Header -->
+    <div style="
+      display:flex;align-items:center;justify-content:space-between;
+      padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.06);
+    ">
+      <div>
+        <div style="font-size:15px;font-weight:600;color:#ece9e4">PMovies Lens</div>
+        <div style="font-size:11px;color:#444;margin-top:2px">
+          Powered by Aziz &nbsp;·&nbsp; CLIP ViT-B-32
+          <span id="pmIsIndexCount"></span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div id="pmIsModelDot" style="
+          width:7px;height:7px;border-radius:50%;
+          background:#333;transition:background .3s;
+        "></div>
+        <span id="pmIsModelLabel" style="font-size:11px;color:#444">Loading…</span>
+        <button onclick="pmIsClose()" style="
+          background:none;border:none;color:#555;font-size:22px;
+          cursor:pointer;line-height:1;padding:4px;margin-left:4px;
+        ">×</button>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div style="padding:22px 20px">
+
+      <!-- Idle: drop zone -->
+      <div id="pmIsIdle">
+        <div id="pmIsDropZone"
+          onclick="document.getElementById('pmIsFileInput').click()"
+          ondragover="event.preventDefault();this.style.borderColor='#d4a843';this.style.background='rgba(212,168,67,.06)'"
+          ondragleave="this.style.borderColor='rgba(212,168,67,.25)';this.style.background='rgba(212,168,67,.02)'"
+          ondrop="event.preventDefault();this.style.borderColor='rgba(212,168,67,.25)';this.style.background='rgba(212,168,67,.02)';pmIsHandleFile(event.dataTransfer.files[0])"
+          style="
+            border:2px dashed rgba(212,168,67,.25);border-radius:12px;
+            padding:48px 24px;text-align:center;cursor:pointer;
+            background:rgba(212,168,67,.02);transition:all .2s;
+          "
+          onmouseover="this.style.borderColor='rgba(212,168,67,.45)'"
+          onmouseout="this.style.borderColor='rgba(212,168,67,.25)'">
+          <input type="file" id="pmIsFileInput" accept="image/*" style="display:none"
+            onchange="pmIsHandleFile(this.files[0])">
+          <div style="font-size:44px;margin-bottom:14px">🎬</div>
+          <div style="font-size:15px;font-weight:600;color:#ece9e4;margin-bottom:6px">
+            Drop a movie image here
+          </div>
+          <div style="font-size:13px;color:#555;margin-bottom:20px">
+            Screenshots · Posters · Memes · Dark scenes
+          </div>
+          <span style="
+            padding:9px 22px;border:1px solid rgba(212,168,67,.3);
+            border-radius:9px;font-size:13px;font-weight:500;
+            color:#d4a843;background:rgba(212,168,67,.08);
+          ">Choose file</span>
+          <div style="font-size:11px;color:#2a2a2a;margin-top:14px">
+            JPG · PNG · WebP · GIF · max 20 MB
+          </div>
+        </div>
+      </div>
+
+      <!-- Searching -->
+      <div id="pmIsSearching" style="display:none;text-align:center;padding:54px 0">
+        <div style="
+          width:42px;height:42px;margin:0 auto 18px;border-radius:50%;
+          border:3px solid rgba(212,168,67,.1);border-top-color:#d4a843;
+          animation:pmIsSpin .75s linear infinite;
+        "></div>
+        <div style="font-size:14px;color:#8c8a84;margin-bottom:20px">Analysing image…</div>
+        <div id="pmIsSteps" style="display:inline-flex;flex-direction:column;gap:9px;text-align:left"></div>
+      </div>
+
+      <!-- Result -->
+      <div id="pmIsResult" style="display:none"></div>
+
+      <!-- Error -->
+      <div id="pmIsError" style="display:none;text-align:center;padding:44px 0">
+        <div style="font-size:36px;margin-bottom:12px">⚠️</div>
+        <div id="pmIsErrorMsg" style="font-size:14px;color:#e05a5a;margin-bottom:20px"></div>
+        <button onclick="pmIsReset()" style="
+          padding:9px 22px;background:rgba(255,255,255,.05);
+          border:1px solid rgba(255,255,255,.08);border-radius:9px;
+          font-size:13px;color:#ece9e4;cursor:pointer;
+        ">← Try again</button>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div style="
+      padding:11px 20px;border-top:1px solid rgba(255,255,255,.04);
+      text-align:center;font-size:11px;color:#1e1e1e;
+    ">
+      PMovies Lens &nbsp;·&nbsp; Powered by Aziz &nbsp;·&nbsp; runs entirely in your browser
+    </div>
+  </div>
+</div>
+<!-- ══ End Image Search Modal ══════════════════════════════════════════════ -->
+
+<!-- ══ Image Search — main script ══════════════════════════════════════════ -->
+<script>
+(function() {
+  function _esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  var _PM_IS_STEPS = ['Reading image','Generating visual embedding','Searching index','Ranking results'];
+  var _pmIsStepTimer = null;
+
+  window.pmIsOpen = function() {
+    document.getElementById('pmIsModal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    pmIsReset();
+  };
+
+  window.pmIsClose = function() {
+    document.getElementById('pmIsModal').style.display = 'none';
+    document.body.style.overflow = '';
+    document.getElementById('pmIsFileInput').value = '';
+  };
+
+  window.pmIsReset = function() {
+    clearInterval(_pmIsStepTimer);
+    document.getElementById('pmIsIdle').style.display      = 'block';
+    document.getElementById('pmIsSearching').style.display = 'none';
+    document.getElementById('pmIsResult').style.display    = 'none';
+    document.getElementById('pmIsError').style.display     = 'none';
+    document.getElementById('pmIsFileInput').value = '';
+  };
+
+  function _pmIsShowState(s) {
+    ['Idle','Searching','Result','Error'].forEach(function(n) {
+      document.getElementById('pmIs' + n).style.display = n === s ? 'block' : 'none';
+    });
+  }
+
+  function _pmIsStartSteps() {
+    clearInterval(_pmIsStepTimer);
+    var idx = 0;
+    var el = document.getElementById('pmIsSteps');
+    el.innerHTML = _PM_IS_STEPS.map(function(label, i) {
+      return '<div id="_pmIsStep'+i+'" style="display:flex;align-items:center;gap:10px;font-size:13px;color:#333;transition:color .25s">' +
+             '<div id="_pmIsDot'+i+'" style="width:19px;height:19px;border-radius:50%;flex-shrink:0;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.03);display:flex;align-items:center;justify-content:center;font-size:9px;transition:all .25s"></div>' +
+             label + '</div>';
+    }).join('');
+
+    function advance() {
+      if (idx > 0) {
+        document.getElementById('_pmIsStep'+(idx-1)).style.color = '#1d9e75';
+        var d = document.getElementById('_pmIsDot'+(idx-1));
+        d.style.background = '#1d9e75'; d.style.borderColor = '#1d9e75'; d.textContent = '✓';
+      }
+      var cur = document.getElementById('_pmIsStep'+idx);
+      var dot = document.getElementById('_pmIsDot'+idx);
+      if (cur) { cur.style.color = '#ece9e4'; dot.style.background = '#d4a843'; dot.style.borderColor = '#d4a843'; dot.textContent = '●'; }
+      idx++;
+      if (idx > _PM_IS_STEPS.length) clearInterval(_pmIsStepTimer);
+    }
+    advance();
+    _pmIsStepTimer = setInterval(advance, 520);
+  }
+
+  function _pmIsCompleteSteps() {
+    clearInterval(_pmIsStepTimer);
+    _PM_IS_STEPS.forEach(function(_, i) {
+      var s = document.getElementById('_pmIsStep'+i);
+      var d = document.getElementById('_pmIsDot'+i);
+      if (s) s.style.color = '#1d9e75';
+      if (d) { d.style.background = '#1d9e75'; d.style.borderColor = '#1d9e75'; d.textContent = '✓'; }
+    });
+  }
+
+  window.pmIsHandleFile = async function(file) {
+    if (!file || !file.type.startsWith('image/')) {
+      document.getElementById('pmIsErrorMsg').textContent = 'Please upload an image file.';
+      _pmIsShowState('Error'); return;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      document.getElementById('pmIsErrorMsg').textContent = 'File too large — please use an image under 20 MB.';
+      _pmIsShowState('Error'); return;
+    }
+    if (!window._pmIs || !window._pmIs.meta) {
+      document.getElementById('pmIsErrorMsg').textContent = 'Index not loaded yet — please try again in a moment.';
+      _pmIsShowState('Error'); return;
+    }
+    _pmIsShowState('Searching');
+    _pmIsStartSteps();
+    try {
+      var t0 = performance.now();
+      var res = await window._pmIsSearch(file);
+      var elapsed = Math.round(performance.now() - t0);
+      _pmIsCompleteSteps();
+      _pmIsRenderResult(res.results, elapsed, res.usedCLIP);
+      _pmIsShowState('Result');
+    } catch(e) {
+      clearInterval(_pmIsStepTimer);
+      document.getElementById('pmIsErrorMsg').textContent = e.message || 'Something went wrong.';
+      _pmIsShowState('Error');
+    }
+  };
+
+  function _pmIsRenderResult(results, elapsed, usedCLIP) {
+    var el   = document.getElementById('pmIsResult');
+    var best = results[0];
+    if (!best || best.confidence < 20) {
+      el.innerHTML = '<div style="text-align:center;padding:32px 0">' +
+        '<div style="font-size:32px;margin-bottom:10px">🔍</div>' +
+        '<div style="font-weight:600;color:#ece9e4;margin-bottom:6px">No confident match found</div>' +
+        '<div style="font-size:13px;color:#555">Try a different image — a clearer scene or a poster works best.</div>' +
+        '<button onclick="pmIsReset()" style="margin-top:20px;padding:8px 20px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:9px;font-size:13px;color:#ece9e4;cursor:pointer">← Try another</button>' +
+        '</div>';
+      return;
+    }
+    var conf      = best.confidence;
+    var confColor = conf >= 85 ? '#1d9e75' : conf >= 65 ? '#c49a2a' : '#e05a5a';
+    var posterUrl = best.poster ? 'https://image.tmdb.org/t/p/w342' + best.poster : '';
+    var similar   = results.slice(1, 6);
+    var similarHtml = '';
+    if (similar.length) {
+      similarHtml = '<div style="margin-bottom:16px">' +
+        '<div style="font-size:12px;color:#444;margin-bottom:9px">Visually similar</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px">' +
+        similar.map(function(m) {
+          return '<div onclick="pmIsOpenFilm('+m.id+')" style="border:1px solid rgba(255,255,255,.06);border-radius:8px;overflow:hidden;cursor:pointer;background:#0d0f14;transition:all .15s"' +
+            ' onmouseover="this.style.borderColor=\'rgba(212,168,67,.3)\';this.style.transform=\'translateY(-2px)\'"' +
+            ' onmouseout="this.style.borderColor=\'rgba(255,255,255,.06)\';this.style.transform=\'none\'">' +
+            '<div style="height:78px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:22px;background:#111">' +
+            (m.poster ? '<img src="https://image.tmdb.org/t/p/w342'+m.poster+'" alt="" style="width:100%;height:100%;object-fit:cover" onerror="this.parentNode.textContent=\'🎬\'">' : '🎬') +
+            '</div><div style="padding:6px 8px 8px">' +
+            '<div style="font-size:11px;font-weight:500;color:#ece9e4;line-height:1.3;margin-bottom:2px">'+_esc(m.title)+'</div>' +
+            '<div style="font-size:10px;color:#333">'+(m.year||'')+'</div>' +
+            '<div style="font-size:10px;color:#7a6a2a;margin-top:2px">'+m.confidence+'%</div>' +
+            '</div></div>';
+        }).join('') +
+        '</div></div>';
+    }
+    el.innerHTML =
+      '<div style="background:#0d0f14;border:1px solid rgba(212,168,67,.18);border-radius:12px;overflow:hidden;margin-bottom:14px">' +
+        '<div style="display:flex;gap:16px;padding:16px">' +
+          '<div style="width:82px;height:120px;border-radius:7px;overflow:hidden;flex-shrink:0;background:#111;border:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:26px">' +
+          (posterUrl ? '<img src="'+posterUrl+'" alt="" style="width:100%;height:100%;object-fit:cover" onerror="this.parentNode.textContent=\'🎬\'">' : '🎬') +
+          '</div>' +
+          '<div style="flex:1;min-width:0">' +
+            '<div style="font-size:10px;color:#444;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Best match</div>' +
+            '<div style="font-size:19px;font-weight:700;color:#ece9e4;line-height:1.2;margin-bottom:3px">'+_esc(best.title)+'</div>' +
+            '<div style="font-size:12px;color:#555;margin-bottom:12px">'+[best.year,(best.genres||[]).slice(0,3).join(', ')].filter(Boolean).join(' · ')+'</div>' +
+            '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">' +
+              '<div style="flex:1;height:4px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden">' +
+                '<div id="_pmIsConfFill" style="height:100%;width:0;background:'+confColor+';border-radius:2px;transition:width 1.1s ease"></div>' +
+              '</div>' +
+              '<span style="font-size:14px;font-weight:600;color:'+confColor+';min-width:36px">'+conf+'%</span>' +
+            '</div>' +
+            (best.overview ? '<p style="font-size:12px;color:#3a3a3a;line-height:1.55;margin-bottom:12px">'+_esc(best.overview.slice(0,200))+'…</p>' : '') +
+            '<button onclick="pmIsOpenFilm('+best.id+')" style="padding:8px 18px;background:#d4a843;color:#000;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">View Film →</button>' +
+            (!usedCLIP ? '<span style="margin-left:10px;font-size:11px;color:#444">fast mode</span>' : '') +
+          '</div>' +
+        '</div>' +
+        '<div style="border-top:1px solid rgba(255,255,255,.04);padding:9px 16px;display:flex;align-items:center;gap:10px">' +
+          '<span id="_pmIsFb" style="font-size:12px;color:#2a2a2a;flex:1">Was this correct?' +
+            '<button onclick="_pmIsFeedback(true)" style="margin-left:6px;font-size:11px;padding:3px 9px;background:none;border:1px solid rgba(255,255,255,.07);border-radius:20px;color:#555;cursor:pointer">👍</button>' +
+            '<button onclick="_pmIsFeedback(false)" style="margin-left:4px;font-size:11px;padding:3px 9px;background:none;border:1px solid rgba(255,255,255,.07);border-radius:20px;color:#555;cursor:pointer">👎</button>' +
+          '</span>' +
+          '<span style="font-size:10px;color:#222">'+elapsed+'ms</span>' +
+        '</div>' +
+      '</div>' +
+      similarHtml +
+      '<div style="text-align:center">' +
+        '<button onclick="pmIsReset()" style="font-size:13px;color:#555;background:none;border:1px solid rgba(255,255,255,.06);border-radius:9px;padding:8px 20px;cursor:pointer">← Try another image</button>' +
+      '</div>';
+    setTimeout(function() {
+      var fill = document.getElementById('_pmIsConfFill');
+      if (fill) fill.style.width = conf + '%';
+    }, 60);
+  }
+
+  window._pmIsFeedback = function(correct) {
+    var el = document.getElementById('_pmIsFb');
+    if (el) el.innerHTML = '<span style="color:'+(correct?'#1d9e75':'#555')+'">'+(correct?'✓ Thanks!':'Noted.')+'</span>';
+  };
+
+  window.pmIsOpenFilm = function(tmdbId) {
+    pmIsClose();
+    if (typeof openFilmPage === 'function') openFilmPage(tmdbId);
+  };
+})();
+</script>
+
+<!-- ══ Image Search — CLIP module engine ═══════════════════════════════════ -->
+<script type="module">
+import {
+  AutoProcessor,
+  CLIPVisionModelWithProjection,
+  RawImage,
+  env,
+} from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
+
+window._pmIs = {
+  modelState: 'idle',
+  meta: null, emb: null, embCount: 0, embDim: 0,
+  processor: null, model: null,
+};
+
+function normalise(vec) {
+  let norm = 0;
+  for (let i = 0; i < vec.length; i++) norm += vec[i] * vec[i];
+  norm = Math.sqrt(norm);
+  const out = new Float32Array(vec.length);
+  if (norm > 0) for (let i = 0; i < vec.length; i++) out[i] = vec[i] / norm;
+  return out;
+}
+
+async function loadData() {
+  try {
+    const [metaRes, embRes] = await Promise.all([
+      fetch('data/metadata.json'),
+      fetch('data/embeddings.bin'),
+    ]);
+    if (!metaRes.ok || !embRes.ok) throw new Error('data files not found');
+    window._pmIs.meta = await metaRes.json();
+    const buf = await embRes.arrayBuffer();
+    const hdr = new Uint32Array(buf, 0, 2);
+    window._pmIs.embCount = hdr[0];
+    window._pmIs.embDim   = hdr[1];
+    window._pmIs.emb      = new Float32Array(buf, 8, hdr[0] * hdr[1]);
+    const countEl = document.getElementById('pmIsIndexCount');
+    if (countEl) {
+      const unique = new Set(window._pmIs.meta.vectors.map(v => v.id)).size;
+      countEl.textContent = ' · ' + unique.toLocaleString() + ' films';
+    }
+  } catch (e) {
+    console.warn('[PMoviesLens] Could not load index:', e.message);
+  }
+}
+
+async function loadModel() {
+  window._pmIs.modelState = 'loading';
+  _updateBadge();
+  env.allowLocalModels = false;
+  env.useBrowserCache  = true;
+  try {
+    window._pmIs.processor = await AutoProcessor.from_pretrained('Xenova/clip-vit-base-patch32');
+    window._pmIs.model = await CLIPVisionModelWithProjection.from_pretrained(
+      'Xenova/clip-vit-base-patch32',
+      { quantized: true, progress_callback(info) {
+        if (info.status === 'progress' && info.total > 0) {
+          const pct = Math.round((info.loaded / info.total) * 100);
+          const label = document.getElementById('pmIsModelLabel');
+          if (label) label.textContent = 'Loading model ' + pct + '%';
+        }
+      }}
+    );
+    window._pmIs.modelState = 'ready';
+  } catch (e) {
+    window._pmIs.modelState = 'failed';
+    console.warn('[PMoviesLens] CLIP failed, using perceptual fallback:', e.message);
+  }
+  _updateBadge();
+}
+
+function _updateBadge() {
+  const dot   = document.getElementById('pmIsModelDot');
+  const label = document.getElementById('pmIsModelLabel');
+  if (!dot || !label) return;
+  const map = { idle:['#333','Initialising'], loading:['#c49a2a',''], ready:['#1d9e75','AI ready'], failed:['#e05a5a','Fast mode'] };
+  const [color, text] = map[window._pmIs.modelState] || map.idle;
+  dot.style.background = color;
+  if (text) label.textContent = text;
+  dot.style.animation = window._pmIs.modelState === 'loading' ? 'pmIsPulse 1.4s ease-in-out infinite' : '';
+}
+
+async function embedCLIP(blob) {
+  const img    = await RawImage.fromBlob(blob);
+  const inputs = await window._pmIs.processor(img);
+  const { image_embeds } = await window._pmIs.model(inputs);
+  return normalise(image_embeds.data);
+}
+
+async function embedPerceptual(blob) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(blob);
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = c.height = 64;
+      c.getContext('2d').drawImage(img, 0, 0, 64, 64);
+      const px = c.getContext('2d').getImageData(0, 0, 64, 64).data;
+      URL.revokeObjectURL(url);
+      const DIM = 512, N = 64 * 64;
+      const feat = new Float32Array(DIM);
+      for (let i = 0; i < N; i++) {
+        feat[Math.floor(px[i*4]   / 4)]++;
+        feat[64  + Math.floor(px[i*4+1] / 4)]++;
+        feat[128 + Math.floor(px[i*4+2] / 4)]++;
+      }
+      for (let i = 0; i < 192; i++) feat[i] /= N;
+      let off = 192;
+      for (let bi = 0; bi < 8 && off + 2 < DIM; bi++)
+        for (let bj = 0; bj < 8 && off + 2 < DIM; bj++) {
+          let r = 0, g = 0, b = 0;
+          for (let pi = 0; pi < 8; pi++)
+            for (let pj = 0; pj < 8; pj++) {
+              const idx = ((bi*8+pi)*64+(bj*8+pj))*4;
+              r += px[idx]/255; g += px[idx+1]/255; b += px[idx+2]/255;
+            }
+          feat[off]=r/64; feat[off+1]=g/64; feat[off+2]=b/64; off+=3;
+        }
+      const gray = new Float32Array(N);
+      for (let i = 0; i < N; i++)
+        gray[i] = (px[i*4]*.299 + px[i*4+1]*.587 + px[i*4+2]*.114) / 255;
+      let lOff = 384;
+      for (let bi = 0; bi < 4 && lOff+3 < DIM; bi++)
+        for (let bj = 0; bj < 4 && lOff+3 < DIM; bj++) {
+          let s=0,sq=0,mn=1,mx=0;
+          for (let pi=0;pi<16;pi++) for(let pj=0;pj<16;pj++) {
+            const v=gray[(bi*16+pi)*64+(bj*16+pj)];
+            s+=v;sq+=v*v;if(v<mn)mn=v;if(v>mx)mx=v;
+          }
+          feat[lOff]=s/256;feat[lOff+1]=Math.sqrt(Math.max(0,sq/256-(s/256)**2));
+          feat[lOff+2]=mn;feat[lOff+3]=mx;lOff+=4;
+        }
+      resolve(normalise(feat));
+    };
+    img.onerror = () => reject(new Error('Could not read image'));
+    img.src = url;
+  });
+}
+
+function searchVectors(query) {
+  const { emb, embCount, embDim } = window._pmIs;
+  const hits = [];
+  for (let i = 0; i < embCount; i++) {
+    let dot = 0, off = i * embDim;
+    for (let j = 0; j < embDim; j++) dot += query[j] * emb[off + j];
+    hits.push([dot, i]);
+  }
+  hits.sort((a, b) => b[0] - a[0]);
+  return hits.slice(0, 60);
+}
+
+function aggregate(hits) {
+  const byId = {};
+  for (const [score, idx] of hits) {
+    const v = window._pmIs.meta.vectors[idx];
+    if (!byId[v.id]) byId[v.id] = { ...v, scores: [] };
+    byId[v.id].scores.push(score);
+  }
+  return Object.values(byId).map(m => {
+    const s = m.scores;
+    const avg = s.reduce((a,b)=>a+b,0)/s.length;
+    const max = Math.max(...s);
+    const clip = avg*.4 + max*.4 + Math.min(s.length/5,1)*.2;
+    return { ...m, clipScore: clip, confidence: Math.min(Math.round(clip*100), 99) };
+  }).sort((a,b) => b.clipScore - a.clipScore).slice(0, 8);
+}
+
+window._pmIsSearch = async function(blob) {
+  if (window._pmIs.modelState === 'loading') {
+    await new Promise(resolve => {
+      const poll = setInterval(() => {
+        if (window._pmIs.modelState !== 'loading') { clearInterval(poll); resolve(); }
+      }, 300);
+      setTimeout(() => { clearInterval(poll); resolve(); }, 10000);
+    });
+  }
+  const query = window._pmIs.modelState === 'ready'
+    ? await embedCLIP(blob)
+    : await embedPerceptual(blob);
+  const hits    = searchVectors(query);
+  const results = aggregate(hits);
+  return { results, usedCLIP: window._pmIs.modelState === 'ready' };
+};
+
+await loadData();
+loadModel();
 </script>
 
 </body>
