@@ -603,7 +603,8 @@ function loop(now){
     if(justAny('Enter','Space')||roundEndTimer<=0){
       if(scores.player>=2||scores.cpu>=2){
         matchWinner=scores.player>=2?'player':'cpu'; scene='match_end';
-        if(matchWinner==='player' && playerChar==='spidey'){
+        const spideyController = playerChar==='spidey' ? 'player' : 'cpu';
+        if(matchWinner===spideyController){
           victoryAudio.currentTime=0; victoryAudio.play().catch(()=>{});
         }
       }
