@@ -108,30 +108,39 @@ canvas.addEventListener('touchend', e => {
 }, { passive:false });
 
 // ── Audio ─────────────────────────────────────────────────────────────────────
-let AC = null, _audioReady = false;
+let AC = null, _audioUnlocked = false;
+const victoryAudio = new Audio('spidey-victory.mp3');
+victoryAudio.volume = 0.75;
 
 function _unlockAudio() {
-  if (_audioReady) return;
+  if (_audioUnlocked) return;
+  _audioUnlocked = true;
   try {
-    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    AC = new (window.AudioContext || window.webkitAudioContext)();
     const buf = AC.createBuffer(1, 1, 22050);
     const src = AC.createBufferSource();
     src.buffer = buf; src.connect(AC.destination); src.start(0);
     AC.resume();
-    _audioReady = true;
   } catch(e) {}
+  // Pre-unlock the <audio> element so later .play() calls work on iOS
+  victoryAudio.play().then(() => { victoryAudio.pause(); victoryAudio.currentTime = 0; }).catch(() => {});
 }
+
+// Capture phase fires before canvas touchstart — ensures unlock on very first tap
+document.addEventListener('touchstart', _unlockAudio, { once: true, capture: true, passive: true });
+document.addEventListener('click',      _unlockAudio, { once: true, capture: true, passive: true });
 
 function tone(freq, type, dur, vol = 0.3) {
   if (!AC) return;
-  if (AC.state === 'suspended') AC.resume();
+  if (AC.state !== 'running') AC.resume();
   try {
+    const now = AC.currentTime;
     const o = AC.createOscillator(), g = AC.createGain();
     o.type = type; o.frequency.value = freq;
-    g.gain.setValueAtTime(vol, AC.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + dur);
+    g.gain.setValueAtTime(vol, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + dur);
     o.connect(g); g.connect(AC.destination);
-    o.start(); o.stop(AC.currentTime + dur);
+    o.start(now); o.stop(now + dur);
   } catch(e) {}
 }
 const sfx = {
@@ -592,13 +601,18 @@ function loop(now){
   } else if(scene==='round_end'){
     roundEndTimer-=dt; drawRoundEnd();
     if(justAny('Enter','Space')||roundEndTimer<=0){
-      if(scores.player>=2||scores.cpu>=2){ matchWinner=scores.player>=2?'player':'cpu'; scene='match_end'; }
+      if(scores.player>=2||scores.cpu>=2){
+        matchWinner=scores.player>=2?'player':'cpu'; scene='match_end';
+        if(matchWinner==='player' && playerChar==='spidey'){
+          victoryAudio.currentTime=0; victoryAudio.play().catch(()=>{});
+        }
+      }
       else { round++; initRound(); }
     }
 
   } else if(scene==='match_end'){
     drawMatchEnd();
-    if(justAny('Enter','Space')){ round=1; scores={player:0,cpu:0}; scene='select'; }
+    if(justAny('Enter','Space')){ victoryAudio.pause(); victoryAudio.currentTime=0; round=1; scores={player:0,cpu:0}; scene='select'; }
   }
 
   touchPressed.clear();
