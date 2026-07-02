@@ -8,7 +8,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { width: 100%; height: 100%; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; touch-action: none; }
 canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; touch-action: none; }
-#back { position: fixed; top: 12px; left: 14px; color: #555; font: 600 11px/1 monospace; text-decoration: none; letter-spacing: 1px; z-index: 10; }
+#back { position: fixed; top: 0; left: 0; padding: 18px 22px; color: #666; font: 600 11px/1 monospace; text-decoration: none; letter-spacing: 1px; z-index: 1000; -webkit-tap-highlight-color: rgba(255,255,255,.15); touch-action: auto; }
 #back:hover, #back:active { color: #fff; }
 #portrait-warn {
   display: none; position: fixed; inset: 0; background: #000;
@@ -112,22 +112,27 @@ let AC = null, _audioReady = false;
 
 function _unlockAudio() {
   if (_audioReady) return;
-  AC = AC || new (window.AudioContext || window.webkitAudioContext)();
-  // Silent buffer — the only way to unlock iOS audio
-  const buf = AC.createBuffer(1, 1, 22050);
-  const src = AC.createBufferSource();
-  src.buffer = buf; src.connect(AC.destination); src.start(0);
-  AC.resume().then(() => { _audioReady = true; });
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    const buf = AC.createBuffer(1, 1, 22050);
+    const src = AC.createBufferSource();
+    src.buffer = buf; src.connect(AC.destination); src.start(0);
+    AC.resume();
+    _audioReady = true;
+  } catch(e) {}
 }
 
 function tone(freq, type, dur, vol = 0.3) {
-  if (!_audioReady || !AC) return;
-  const o = AC.createOscillator(), g = AC.createGain();
-  o.type = type; o.frequency.value = freq;
-  g.gain.setValueAtTime(vol, AC.currentTime);
-  g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + dur);
-  o.connect(g); g.connect(AC.destination);
-  o.start(); o.stop(AC.currentTime + dur);
+  if (!AC) return;
+  if (AC.state === 'suspended') AC.resume();
+  try {
+    const o = AC.createOscillator(), g = AC.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol, AC.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + dur);
+    o.connect(g); g.connect(AC.destination);
+    o.start(); o.stop(AC.currentTime + dur);
+  } catch(e) {}
 }
 const sfx = {
   punch:   ()=>{ tone(180,'square',0.08,0.5); tone(110,'sawtooth',0.06,0.3); },
@@ -147,8 +152,8 @@ const GRAVITY      = 1900;
 const JUMP_VEL     = -620;
 const ATTACK_RANGE = 70;
 const CHARS = {
-  spidey:  { name:'SPIDER-MAN', movie:'Marvel · Jul 2025',  color:'#cc1111', color2:'#0a2fd6', speed:230, power:13, defense:0.55, specialPower:22, specialName:'WEB SHOT!',      specialColor:'#88aaff' },
-  odyssey: { name:'ODYSSEUS',   movie:'Nolan · Jul 2025',   color:'#b8860b', color2:'#8b4513', speed:175, power:13, defense:0.58, specialPower:22, specialName:'WARRIOR RAGE!', specialColor:'#ff8800' },
+  spidey:  { name:'SPIDER-MAN', movie:'Marvel · Jul 2026',  color:'#cc1111', color2:'#0a2fd6', speed:230, power:13, defense:0.55, specialPower:22, specialName:'WEB SHOT!',      specialColor:'#88aaff' },
+  odyssey: { name:'ODYSSEUS',   movie:'Nolan · Jul 2026',   color:'#b8860b', color2:'#8b4513', speed:175, power:13, defense:0.58, specialPower:22, specialName:'WARRIOR RAGE!', specialColor:'#ff8800' },
 };
 
 // ── Game state ────────────────────────────────────────────────────────────────
@@ -460,7 +465,7 @@ function drawTitle(){
   ctx.font='bold 38px monospace'; ctx.fillStyle='#000'; ctx.fillText('PMOVIES ARENA',W/2+3,108+3);
   ctx.fillStyle='#ffcc00'; ctx.fillText('PMOVIES ARENA',W/2,108);
   ctx.font='bold 12px monospace'; ctx.fillStyle='#cc1111'; ctx.fillText('SPIDER-MAN  ✦  ODYSSEUS',W/2,140);
-  ctx.font='8px monospace'; ctx.fillStyle='#666'; ctx.fillText('JULY 2025 · BEST OF 3 ROUNDS',W/2,158);
+  ctx.font='8px monospace'; ctx.fillStyle='#666'; ctx.fillText('JULY 2026 · BEST OF 3 ROUNDS',W/2,158);
   if(Math.floor(Date.now()/550)%2){ ctx.font='bold 9px monospace'; ctx.fillStyle='#ffcc00'; ctx.fillText(TOUCH?'TAP TO START':'PRESS  ENTER  TO  START',W/2,220); }
   if(!TOUCH){
     ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(W/2-200,250,400,64);
