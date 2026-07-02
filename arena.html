@@ -81,6 +81,7 @@ function getZonesFromTouches(tList) {
 
 canvas.addEventListener('touchstart', e => {
   e.preventDefault();
+  _unlockAudio();
   if (scene==='title'||scene==='round_end'||scene==='match_end') { pressed['Enter']=true; return; }
   if (scene==='select') {
     for (let i=0;i<e.changedTouches.length;i++) {
@@ -107,15 +108,26 @@ canvas.addEventListener('touchend', e => {
 }, { passive:false });
 
 // ── Audio ─────────────────────────────────────────────────────────────────────
-let AC;
-function getAC() { if (!AC) AC=new AudioContext(); return AC; }
-function tone(freq,type,dur,vol=0.3) {
-  const ac=getAC(); if(ac.state==='suspended') ac.resume();
-  const o=ac.createOscillator(),g=ac.createGain();
-  o.type=type; o.frequency.value=freq;
-  g.gain.setValueAtTime(vol,ac.currentTime);
-  g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+dur);
-  o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime+dur);
+let AC = null, _audioReady = false;
+
+function _unlockAudio() {
+  if (_audioReady) return;
+  AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+  // Silent buffer — the only way to unlock iOS audio
+  const buf = AC.createBuffer(1, 1, 22050);
+  const src = AC.createBufferSource();
+  src.buffer = buf; src.connect(AC.destination); src.start(0);
+  AC.resume().then(() => { _audioReady = true; });
+}
+
+function tone(freq, type, dur, vol = 0.3) {
+  if (!_audioReady || !AC) return;
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.setValueAtTime(vol, AC.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + dur);
+  o.connect(g); g.connect(AC.destination);
+  o.start(); o.stop(AC.currentTime + dur);
 }
 const sfx = {
   punch:   ()=>{ tone(180,'square',0.08,0.5); tone(110,'sawtooth',0.06,0.3); },
@@ -150,7 +162,7 @@ let p1, p2;
 
 // ── Keyboard input ────────────────────────────────────────────────────────────
 const keys={}, pressed={};
-window.addEventListener('keydown',e=>{ if(!keys[e.code]) pressed[e.code]=true; keys[e.code]=true; if(['ArrowUp','ArrowDown','Space'].includes(e.code)) e.preventDefault(); });
+window.addEventListener('keydown',e=>{ _unlockAudio(); if(!keys[e.code]) pressed[e.code]=true; keys[e.code]=true; if(['ArrowUp','ArrowDown','Space'].includes(e.code)) e.preventDefault(); });
 window.addEventListener('keyup',  e=>{ keys[e.code]=false; });
 function just(c){ const v=pressed[c]; pressed[c]=false; return v; }
 function justAny(...cc){ return cc.some(c=>just(c)); }
