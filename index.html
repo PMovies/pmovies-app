@@ -4853,9 +4853,6 @@ window._removeDlLoader = function() {
   <button class="pmovies-tab" id="tab-btn-editor" onclick="switchTab('editor')" role="tab">
     <span class="tab-icon">✍️</span>Editor
   </button>
-  <a href="weekly.html" class="pmovies-tab" style="text-decoration:none" title="PMovies Weekly newsletter">
-    <span class="tab-icon">📰</span>Weekly
-  </a>
 </nav>
 <!-- ╔══════════════════════════════════════════════════════════╗ -->
 <!-- ║  THEATER RACE STRIP  (always visible below tab nav)     ║ -->
@@ -4934,14 +4931,6 @@ window._removeDlLoader = function() {
     <span style="margin-left:auto;opacity:.4;font-size:18px">▶</span>
   </a>
 
-  <!-- FOTD Day Button -->
-  <div class="fotd-day-wrap" id="fotdDiscoverCard" style="display:none">
-    <button class="fotd-day-btn" onclick="_fotdStripClick()">
-      <span class="fotd-day-star">⭐</span>
-      <span>Movie of the Day</span>
-      <span class="fotd-day-dot"></span>
-    </button>
-  </div>
 
   <!-- MOOD PICKER -->
   <div class="mood-intro" id="moodLabel">
@@ -15465,11 +15454,7 @@ async function initFilmOfDay() {
   // Render the discovery strip below the search bar
   _renderFOTDStrip();
 
-  // Show popup once per day — if already seen/voted today, skip
-  const seen = localStorage.getItem(seenKey);
-  if (seen !== _fotdToday) {
-    setTimeout(() => _showFOTDRating(), 900);
-  }
+  // Popup permanently disabled
 }
 
 async function _fotdPickAndStore(dateKey) {
@@ -16685,15 +16670,6 @@ async function postersReject(key) {
     </div>
   </div>
 
-  <!-- Film of the Day Overlay -->
-  <div id="fotdOverlay" class="fotd-overlay" style="display:none" onclick="if(event.target.id==='fotdOverlay')_skipFOTD()">
-    <div class="fotd-card">
-      <div class="fotd-backdrop" id="fotdBackdrop">
-        <div class="fotd-gradient"></div>
-      </div>
-      <div class="fotd-content" id="fotdContent"></div>
-    </div>
-  </div>
 
 <script>
 /* ══════════════════════════════════════════════════════
