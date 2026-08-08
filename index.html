@@ -17977,7 +17977,7 @@ async function _erSaveCard() {
   rrPath(PX, PY, PW, PH, 18); ctx.stroke();
 
   // ── 4. Text block below poster ────────────────────────────────────────────
-  var TY = PY + PH + 68;
+  var TY = PY + PH + 110;
   ctx.textAlign = 'center';
 
   // Movie title (bold, 2 lines max)
@@ -18000,15 +18000,31 @@ async function _erSaveCard() {
     TY += 54;
   } else { TY += 34; }
 
+  // Festival badge — shown when review has an active festival tag
+  if (r.festival) {
+    TY += 18;
+    ctx.font = '500 28px Arial';
+    var _fTxt = r.festival.toUpperCase();
+    var _fW   = Math.min(ctx.measureText(_fTxt).width + 60, W - 200);
+    var _fX   = Math.round((W - _fW) / 2);
+    ctx.fillStyle = 'rgba(245,166,35,0.10)';
+    rrPath(_fX, TY, _fW, 52, 26); ctx.fill();
+    ctx.strokeStyle = 'rgba(245,166,35,0.40)'; ctx.lineWidth = 1.5;
+    rrPath(_fX, TY, _fW, 52, 26); ctx.stroke();
+    ctx.fillStyle = '#f5a623'; ctx.textAlign = 'center';
+    ctx.fillText(_fTxt, W / 2, TY + 35);
+    TY += 72;
+  }
+
   // Gold divider
   ctx.fillStyle = '#f5a623'; ctx.fillRect(Math.round((W - 72) / 2), TY, 72, 2);
-  TY += 52;
+  TY += 84;
 
   // Stars (centred)
   var rating = r.rating || 0;
   ctx.font = '64px Arial'; ctx.fillStyle = '#f5a623';
   ctx.fillText(starsStr(rating), W / 2, TY);
-  TY += 46;
+  TY += 62;
   ctx.font = '400 32px Arial'; ctx.fillStyle = 'rgba(255,255,255,0.38)';
   ctx.fillText(String(rating) + ' / 5', W / 2, TY);
   TY += 80;
