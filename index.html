@@ -18032,13 +18032,18 @@ async function _erSaveCard() {
   // Headline (one line, italic)
   if (r.headline) {
     ctx.font = 'italic 44px Arial'; ctx.fillStyle = 'rgba(255,255,255,0.72)';
-    var hl = '“' + r.headline + '”';
+    var hl = '”' + r.headline + '”';
     if (ctx.measureText(hl).width > W - 160) {
       while (hl.length > 6 && ctx.measureText(hl).width > W - 160)
         hl = hl.slice(0, -2) + '…”';
     }
     ctx.fillText(hl, W / 2, TY);
+    TY += 58;
   }
+
+  // Byline
+  ctx.font = '400 30px Arial'; ctx.fillStyle = 'rgba(255,255,255,0.38)';
+  ctx.fillText('By: ' + (r.author || 'Ahmed Khaled'), W / 2, TY);
 
   // ── 5. Bottom bar — URL ───────────────────────────────────────────────────
   var BAR_Y = H - 130;
