@@ -17911,23 +17911,31 @@ async function _erSaveCard() {
     return lines;
   }
 
-  // Draw backdrop image (or solid fallback)
+  // Draw backdrop image (or solid fallback).
+  // Fetch via blob URL to avoid TMDB canvas-taint (CORS restriction on drawImage).
+  // Falls back to the Cloudflare proxy then to a solid background.
   async function drawBg() {
-    if (r.backdrop) {
+    if (!r.backdrop) { ctx.fillStyle = '#111'; ctx.fillRect(0, 0, W, H * 0.6); return; }
+    var sources = [
+      'https://image.tmdb.org/t/p/w1280' + r.backdrop,
+      'https://p-movies.com/fan/img' + r.backdrop,
+    ];
+    for (var si = 0; si < sources.length; si++) {
       try {
-        var img = new Image(); img.crossOrigin = 'anonymous';
-        await new Promise(function(res, rej) {
-          img.onload = res; img.onerror = rej;
-          img.src = 'https://image.tmdb.org/t/p/w1280' + r.backdrop;
-        });
-        // Scale to fill width; centre vertically in top 60% of card
+        var resp = await fetch(sources[si]);
+        if (!resp.ok) continue;
+        var blob = await resp.blob();
+        var burl = URL.createObjectURL(blob);
+        var img  = new Image();
+        await new Promise(function(res, rej) { img.onload = res; img.onerror = rej; img.src = burl; });
         var scale = W / img.naturalWidth;
         var ih    = img.naturalHeight * scale;
         ctx.drawImage(img, 0, 0, W, ih);
-      } catch(_) { ctx.fillStyle = '#111'; ctx.fillRect(0, 0, W, H * 0.6); }
-    } else {
-      ctx.fillStyle = '#111'; ctx.fillRect(0, 0, W, H * 0.6);
+        URL.revokeObjectURL(burl);
+        return;
+      } catch(_) {}
     }
+    ctx.fillStyle = '#111'; ctx.fillRect(0, 0, W, H * 0.6);
   }
 
   await drawBg();
@@ -17963,12 +17971,13 @@ async function _erSaveCard() {
   });
   var afterTitle = TY + 60 + Math.min(titleLines.length, 2) * 110 + 30;
 
-  // Stars
+  // Stars — measure width with the stars font BEFORE switching to the rating font
   var rating = r.rating || 0;
   ctx.font = '60px Arial'; ctx.fillStyle = '#f5a623';
   ctx.fillText(starsStr(rating), 72, afterTitle + 60);
+  var starsW = ctx.measureText(starsStr(rating)).width;
   ctx.font = '500 34px Arial'; ctx.fillStyle = 'rgba(255,255,255,0.5)';
-  ctx.fillText(rating + '/5', 72 + ctx.measureText(starsStr(rating)).width + 20, afterTitle + 60);
+  ctx.fillText(rating + '/5', 72 + starsW + 24, afterTitle + 52);
 
   // Divider
   ctx.fillStyle = '#f5a623'; ctx.fillRect(72, afterTitle + 90, 80, 3);
