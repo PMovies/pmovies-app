@@ -17881,8 +17881,29 @@ async function _erSaveCard() {
   canvas.width = W; canvas.height = H;
   var ctx = canvas.getContext('2d');
 
-  // Helper: rounded rect
-  function rr(x, y, w, h, rad) {
+  // Fetch image as blob URL to avoid TMDB canvas-taint
+  async function loadImg(url) {
+    var resp = await fetch(url);
+    if (!resp.ok) throw new Error('bad status');
+    var blob = await resp.blob();
+    var burl = URL.createObjectURL(blob);
+    var img  = new Image();
+    await new Promise(function(res, rej) { img.onload = res; img.onerror = rej; img.src = burl; });
+    URL.revokeObjectURL(burl);
+    return img;
+  }
+  async function tryLoad(srcs) {
+    for (var i = 0; i < srcs.length; i++) { try { return await loadImg(srcs[i]); } catch(_) {} }
+    return null;
+  }
+
+  function starsStr(n) {
+    var f = Math.floor(n), h = (n - f) >= 0.5 ? 1 : 0;
+    return '★'.repeat(f) + (h ? '½' : '') + '☆'.repeat(5 - f - h);
+  }
+
+  // Rounded rect clip/stroke helper
+  function rrPath(x, y, w, h, rad) {
     ctx.beginPath();
     ctx.moveTo(x + rad, y);
     ctx.lineTo(x + w - rad, y); ctx.quadraticCurveTo(x + w, y, x + w, y + rad);
@@ -17892,141 +17913,137 @@ async function _erSaveCard() {
     ctx.closePath();
   }
 
-  // Star string helper
-  function starsStr(n) {
-    var f = Math.floor(n), h = (n - f) >= 0.5 ? 1 : 0;
-    return '★'.repeat(f) + (h ? '½' : '') + '☆'.repeat(5 - f - h);
+  // ── 1. Atmospheric background: blurred backdrop fills canvas ──────────────
+  var bgPath = r.backdrop || r.poster;
+  var bgImg  = bgPath ? await tryLoad([
+    'https://image.tmdb.org/t/p/w1280' + bgPath,
+    'https://p-movies.com/fan/img'      + bgPath,
+  ]) : null;
+
+  if (bgImg) {
+    // Downscale trick: tiny canvas → stretch back up = cheap box blur
+    var tmp = document.createElement('canvas');
+    tmp.width = 120; tmp.height = Math.round(120 * H / W);
+    var tc   = tmp.getContext('2d');
+    var bs   = Math.max(tmp.width / bgImg.naturalWidth, tmp.height / bgImg.naturalHeight);
+    tc.drawImage(bgImg, 0, 0, bgImg.naturalWidth * bs, bgImg.naturalHeight * bs);
+    ctx.drawImage(tmp, 0, 0, W, H);
+  } else {
+    ctx.fillStyle = '#0a0a14'; ctx.fillRect(0, 0, W, H);
   }
 
-  // Wrap text helper — returns array of lines
-  function wrapText(text, maxWidth, font) {
-    ctx.font = font;
-    var words = text.split(' '), lines = [], cur = '';
-    words.forEach(function(w) {
-      var test = cur ? cur + ' ' + w : w;
-      if (ctx.measureText(test).width > maxWidth && cur) { lines.push(cur); cur = w; }
-      else cur = test;
-    });
-    if (cur) lines.push(cur);
-    return lines;
+  // Heavy dark overlay so text pops; subtle vignette at edges
+  ctx.fillStyle = 'rgba(4,4,12,0.84)'; ctx.fillRect(0, 0, W, H);
+  var vig = ctx.createRadialGradient(W / 2, H * 0.45, H * 0.25, W / 2, H * 0.45, H * 0.85);
+  vig.addColorStop(0, 'rgba(0,0,0,0)'); vig.addColorStop(1, 'rgba(0,0,0,0.55)');
+  ctx.fillStyle = vig; ctx.fillRect(0, 0, W, H);
+
+  // ── 2. PMovies wordmark — top centre ─────────────────────────────────────
+  ctx.textAlign = 'left'; ctx.font = 'bold 48px Arial';
+  var _pW  = ctx.measureText('P').width;
+  var _mW  = ctx.measureText('MOVIES').width;
+  var _wX  = Math.round((W - _pW - _mW) / 2);
+  ctx.fillStyle = '#f5a623'; ctx.fillText('P', _wX, 132);
+  ctx.fillStyle = '#ffffff'; ctx.fillText('MOVIES', _wX + _pW, 132);
+  ctx.fillStyle = '#f5a623'; ctx.fillRect(_wX, 147, _pW + _mW, 2);
+
+  // ── 3. Movie poster — centred, 2:3, hero of the card ─────────────────────
+  var PW = 560, PH = 840, PX = Math.round((W - PW) / 2), PY = 216;
+
+  var posterImg = await tryLoad(
+    r.poster
+      ? ['https://image.tmdb.org/t/p/w500' + r.poster,  'https://p-movies.com/fan/img' + r.poster]
+      : r.backdrop
+        ? ['https://image.tmdb.org/t/p/w780' + r.backdrop, 'https://p-movies.com/fan/img' + r.backdrop]
+        : []
+  );
+
+  // Drop shadow behind poster
+  ctx.shadowColor = 'rgba(0,0,0,0.75)'; ctx.shadowBlur = 64; ctx.shadowOffsetY = 28;
+  ctx.fillStyle = '#111'; rrPath(PX, PY, PW, PH, 18); ctx.fill();
+  ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+
+  if (posterImg) {
+    ctx.save();
+    rrPath(PX, PY, PW, PH, 18); ctx.clip();
+    var ps  = Math.max(PW / posterImg.naturalWidth, PH / posterImg.naturalHeight);
+    var pdw = posterImg.naturalWidth * ps, pdh = posterImg.naturalHeight * ps;
+    ctx.drawImage(posterImg, PX + (PW - pdw) / 2, PY + (PH - pdh) / 2, pdw, pdh);
+    ctx.restore();
   }
 
-  // Draw backdrop image (or solid fallback).
-  // Fetch via blob URL to avoid TMDB canvas-taint (CORS restriction on drawImage).
-  // Falls back to the Cloudflare proxy then to a solid background.
-  async function drawBg() {
-    if (!r.backdrop) { ctx.fillStyle = '#111'; ctx.fillRect(0, 0, W, H * 0.6); return; }
-    var sources = [
-      'https://image.tmdb.org/t/p/w1280' + r.backdrop,
-      'https://p-movies.com/fan/img' + r.backdrop,
-    ];
-    for (var si = 0; si < sources.length; si++) {
-      try {
-        var resp = await fetch(sources[si]);
-        if (!resp.ok) continue;
-        var blob = await resp.blob();
-        var burl = URL.createObjectURL(blob);
-        var img  = new Image();
-        await new Promise(function(res, rej) { img.onload = res; img.onerror = rej; img.src = burl; });
-        var scale = W / img.naturalWidth;
-        var ih    = img.naturalHeight * scale;
-        ctx.drawImage(img, 0, 0, W, ih);
-        URL.revokeObjectURL(burl);
-        return;
-      } catch(_) {}
-    }
-    ctx.fillStyle = '#111'; ctx.fillRect(0, 0, W, H * 0.6);
-  }
+  // Subtle border ring
+  ctx.strokeStyle = 'rgba(255,255,255,0.14)'; ctx.lineWidth = 2;
+  rrPath(PX, PY, PW, PH, 18); ctx.stroke();
 
-  await drawBg();
+  // ── 4. Text block below poster ────────────────────────────────────────────
+  var TY = PY + PH + 68;
+  ctx.textAlign = 'center';
 
-  // Gradient overlay — top to solid black
-  var grad = ctx.createLinearGradient(0, 0, 0, H);
-  grad.addColorStop(0,   'rgba(0,0,0,0.15)');
-  grad.addColorStop(0.4, 'rgba(0,0,0,0.55)');
-  grad.addColorStop(0.6, 'rgba(0,0,0,0.92)');
-  grad.addColorStop(1,   'rgba(0,0,0,1)');
-  ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
-
-  // PMovies wordmark — top-left
-  ctx.font = 'bold 52px Arial'; ctx.textAlign = 'left'; ctx.letterSpacing = '2px';
-  ctx.fillStyle = '#f5a623'; ctx.fillText('P', 72, 120);
-  ctx.fillStyle = '#ffffff'; ctx.fillText('MOVIES', 108, 120);
-
-  // Title block — lower third start
-  var TY = 1020;
-  ctx.textAlign = 'left'; ctx.letterSpacing = '0px';
-
-  // Year pill
-  if (r.year) {
-    ctx.font = '600 34px Arial'; ctx.fillStyle = 'rgba(255,255,255,0.45)';
-    ctx.fillText(String(r.year), 72, TY);
-  }
-
-  // Movie title — large, bold, wraps to 2 lines
-  var titleLines = wrapText(r.title || '', W - 144, 'bold 96px Arial');
-  ctx.font = 'bold 96px Arial'; ctx.fillStyle = '#ffffff';
-  titleLines.slice(0, 2).forEach(function(line, i) {
-    ctx.fillText(line, 72, TY + 60 + i * 110);
+  // Movie title (bold, 2 lines max)
+  ctx.font = 'bold 74px Arial';
+  ctx.fillStyle = '#ffffff';
+  var _tw = r.title || '', _twords = _tw.split(' '), _tlines = [''];
+  _twords.forEach(function(w) {
+    var test = _tlines[_tlines.length - 1] + (_tlines[_tlines.length - 1] ? ' ' : '') + w;
+    if (ctx.measureText(test).width > W - 160 && _tlines[_tlines.length - 1]) _tlines.push(w);
+    else _tlines[_tlines.length - 1] = test;
   });
-  var afterTitle = TY + 60 + Math.min(titleLines.length, 2) * 110 + 30;
+  _tlines.slice(0, 2).forEach(function(line, i) { ctx.fillText(line, W / 2, TY + i * 94); });
+  TY += Math.min(_tlines.length, 2) * 94;
 
-  // Stars — measure width with the stars font BEFORE switching to the rating font
+  // Year
+  if (r.year) {
+    TY += 22;
+    ctx.font = '400 36px Arial'; ctx.fillStyle = 'rgba(255,255,255,0.32)';
+    ctx.fillText(String(r.year), W / 2, TY);
+    TY += 54;
+  } else { TY += 34; }
+
+  // Gold divider
+  ctx.fillStyle = '#f5a623'; ctx.fillRect(Math.round((W - 72) / 2), TY, 72, 2);
+  TY += 52;
+
+  // Stars (centred)
   var rating = r.rating || 0;
-  ctx.font = '60px Arial'; ctx.fillStyle = '#f5a623';
-  ctx.fillText(starsStr(rating), 72, afterTitle + 60);
-  var starsW = ctx.measureText(starsStr(rating)).width;
-  ctx.font = '500 34px Arial'; ctx.fillStyle = 'rgba(255,255,255,0.5)';
-  ctx.fillText(rating + '/5', 72 + starsW + 24, afterTitle + 52);
+  ctx.font = '64px Arial'; ctx.fillStyle = '#f5a623';
+  ctx.fillText(starsStr(rating), W / 2, TY);
+  TY += 46;
+  ctx.font = '400 32px Arial'; ctx.fillStyle = 'rgba(255,255,255,0.38)';
+  ctx.fillText(String(rating) + ' / 5', W / 2, TY);
+  TY += 80;
 
-  // Divider
-  ctx.fillStyle = '#f5a623'; ctx.fillRect(72, afterTitle + 90, 80, 3);
-
-  // Headline
-  var hlY = afterTitle + 160;
+  // Headline (one line, italic)
   if (r.headline) {
-    var hlLines = wrapText('"' + r.headline + '"', W - 144, 'italic 52px Arial');
-    ctx.font = 'italic 52px Arial'; ctx.fillStyle = 'rgba(255,255,255,0.9)';
-    hlLines.slice(0, 3).forEach(function(line, i) { ctx.fillText(line, 72, hlY + i * 70); });
-    hlY += Math.min(hlLines.length, 3) * 70 + 40;
+    ctx.font = 'italic 44px Arial'; ctx.fillStyle = 'rgba(255,255,255,0.72)';
+    var hl = '“' + r.headline + '”';
+    if (ctx.measureText(hl).width > W - 160) {
+      while (hl.length > 6 && ctx.measureText(hl).width > W - 160)
+        hl = hl.slice(0, -2) + '…”';
+    }
+    ctx.fillText(hl, W / 2, TY);
   }
 
-  // Review excerpt (first ~180 chars)
-  var excerpt = (r.text || '').replace(/<[^>]+>/g, '').trim().slice(0, 180);
-  if (excerpt.length === 180) excerpt += '…';
-  if (excerpt) {
-    var exLines = wrapText(excerpt, W - 144, '400 40px Arial');
-    ctx.font = '400 40px Arial'; ctx.fillStyle = 'rgba(255,255,255,0.55)';
-    exLines.slice(0, 4).forEach(function(line, i) { ctx.fillText(line, 72, hlY + i * 58); });
-  }
-
-  // Bottom strip — URL
+  // ── 5. Bottom bar — URL ───────────────────────────────────────────────────
+  var BAR_Y = H - 130;
+  ctx.fillStyle = 'rgba(255,255,255,0.04)'; ctx.fillRect(0, BAR_Y, W, 130);
   var slug = r.slug || '';
   var reviewUrl = slug ? 'p-movies.com/review/' + slug : 'p-movies.com';
-  ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fillRect(0, H - 160, W, 160);
-  ctx.font = '500 36px Arial'; ctx.fillStyle = 'rgba(255,255,255,0.35)';
-  ctx.textAlign = 'center'; ctx.letterSpacing = '1px';
-  ctx.fillText('READ THE FULL REVIEW AT', W / 2, H - 100);
-  ctx.font = 'bold 44px Arial'; ctx.fillStyle = '#f5a623'; ctx.letterSpacing = '0px';
-  ctx.fillText(reviewUrl, W / 2, H - 48);
+  ctx.textAlign = 'center';
+  ctx.font = '400 28px Arial'; ctx.fillStyle = 'rgba(255,255,255,0.28)';
+  ctx.fillText('READ FULL REVIEW', W / 2, BAR_Y + 44);
+  ctx.font = 'bold 34px Arial'; ctx.fillStyle = '#f5a623';
+  ctx.fillText(reviewUrl, W / 2, BAR_Y + 90);
 
-  // Export
+  // ── Export ────────────────────────────────────────────────────────────────
   canvas.toBlob(function(blob) {
     var filename = 'pmovies-' + (r.slug || 'review') + '.png';
     if (btn) { btn.textContent = '📸 Card'; btn.disabled = false; }
-    // Mobile: native share with image file
     if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], filename, { type: 'image/png' })] })) {
-      navigator.share({
-        files: [new File([blob], filename, { type: 'image/png' })],
-        title: (r.title || 'Review') + ' — PMovies'
-      }).catch(function() {});
+      navigator.share({ files: [new File([blob], filename, { type: 'image/png' })], title: (r.title || 'Review') + ' — PMovies' }).catch(function() {});
       return;
     }
-    // Desktop / fallback: download
-    var a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = filename;
-    a.click();
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click();
     setTimeout(function() { URL.revokeObjectURL(a.href); }, 5000);
   }, 'image/png');
 }
