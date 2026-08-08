@@ -17718,16 +17718,21 @@ function _renderReviewPage(r) {
         fetch(_erMetaUrl, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            slug:      _erSlug,
-            title:     r.title    || '',
-            year:      r.year     || '',
-            headline:  r.headline || '',
-            backdrop:  r.backdrop || null,
-            rating:    r.rating   || 0,
-            tmdbId:    r.tmdbId   || null,
-            updatedAt: Date.now()
-          })
+          body: JSON.stringify(function() {
+            var _rt = r.rating || 0;
+            var _rf = Math.floor(_rt), _rh = (_rt - _rf) >= 0.5 ? 1 : 0;
+            return {
+              slug:      _erSlug,
+              title:     r.title    || '',
+              year:      r.year     || '',
+              headline:  r.headline || '',
+              backdrop:  r.backdrop || null,
+              rating:    _rt,
+              starsStr:  '★'.repeat(_rf) + (_rh ? '½' : '') + '☆'.repeat(5 - _rf - _rh),
+              tmdbId:    r.tmdbId   || null,
+              updatedAt: Date.now()
+            };
+          }())
         });
       };
       if (_erMetaUser) {
@@ -17740,6 +17745,8 @@ function _renderReviewPage(r) {
 
   // Stash review object so the Edit button can pass it to openEditorAdmin safely
   window._erEditTarget = r;
+  // Stash for _erShare() and _erSaveCard()
+  window._erCurrentReview = r;
 
   let page = document.getElementById('erPage');
   if (!page) {
@@ -17768,6 +17775,7 @@ function _renderReviewPage(r) {
     <div style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 16px);right:16px;z-index:10001;display:flex;gap:8px;transition:top .2s" class="er-action-bar">
       ${_isEditorAdmin() ? `<button onclick="_erEditFromPage()" style="background:rgba(0,0,0,.65);border:none;color:#ddd;font-size:.62rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;padding:11px 15px;border-radius:20px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font-family:Montserrat,sans-serif">✏️ Edit</button>` : ''}
       <button id="erTranslateBtn" onclick="_erTranslate()" style="background:rgba(0,0,0,.65);border:none;color:#ddd;font-size:.62rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;padding:11px 15px;border-radius:20px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font-family:Montserrat,sans-serif">🌐 Translate</button>
+      <button id="erCardBtn" onclick="_erSaveCard()" style="background:rgba(0,0,0,.65);border:none;color:#ddd;font-size:.62rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;padding:11px 15px;border-radius:20px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font-family:Montserrat,sans-serif">📸 Card</button>
       <button id="erShareBtn" onclick="_erShare()" style="background:rgba(0,0,0,.65);border:none;color:#ddd;font-size:.62rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;padding:11px 15px;border-radius:20px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font-family:Montserrat,sans-serif">🔗 Share</button>
     </div>
     <div style="position:relative;width:100%;height:56vw;max-height:500px;min-height:220px;overflow:hidden">
@@ -17826,10 +17834,12 @@ function _erShare() {
   } else if ((location.hash || '').startsWith('#review/')) {
     slug = location.hash.replace('#review/', '').split('?')[0].trim();
   }
-  // Append ?v=2 so Twitter treats old reviews as a new URL and re-scrapes fresh OG data.
+  // Use updatedAt as cache buster so Twitter re-scrapes whenever the review changes.
   // The Cloudflare Worker ignores query params for routing — slug matching is unaffected.
+  var _rev = window._erCurrentReview;
+  var _ts  = (_rev && (_rev.updatedAt || _rev.timestamp)) ? Math.floor((_rev.updatedAt || _rev.timestamp) / 1000) : Date.now();
   var url  = slug
-    ? 'https://p-movies.com/review/' + slug + '?v=3'
+    ? 'https://p-movies.com/review/' + slug + '?t=' + _ts
     : 'https://p-movies.com/';
   var btn  = document.getElementById('erShareBtn');
 
@@ -17852,6 +17862,164 @@ function _erShare() {
   } else {
     _copyFallback();
   }
+}
+
+/* ── Instagram / Story card generator ──────────────────────────────────────
+   Draws a 1080×1920 canvas card (Story aspect ratio) with:
+   • Movie backdrop as background
+   • Stars + headline + review excerpt
+   • Review URL for the link sticker
+   Then offers native share (mobile) or direct download (desktop).          */
+async function _erSaveCard() {
+  var r   = window._erCurrentReview;
+  var btn = document.getElementById('erCardBtn');
+  if (!r) return;
+  if (btn) { btn.textContent = '⏳ Building…'; btn.disabled = true; }
+
+  var W = 1080, H = 1920;
+  var canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  var ctx = canvas.getContext('2d');
+
+  // Helper: rounded rect
+  function rr(x, y, w, h, rad) {
+    ctx.beginPath();
+    ctx.moveTo(x + rad, y);
+    ctx.lineTo(x + w - rad, y); ctx.quadraticCurveTo(x + w, y, x + w, y + rad);
+    ctx.lineTo(x + w, y + h - rad); ctx.quadraticCurveTo(x + w, y + h, x + w - rad, y + h);
+    ctx.lineTo(x + rad, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - rad);
+    ctx.lineTo(x, y + rad); ctx.quadraticCurveTo(x, y, x + rad, y);
+    ctx.closePath();
+  }
+
+  // Star string helper
+  function starsStr(n) {
+    var f = Math.floor(n), h = (n - f) >= 0.5 ? 1 : 0;
+    return '★'.repeat(f) + (h ? '½' : '') + '☆'.repeat(5 - f - h);
+  }
+
+  // Wrap text helper — returns array of lines
+  function wrapText(text, maxWidth, font) {
+    ctx.font = font;
+    var words = text.split(' '), lines = [], cur = '';
+    words.forEach(function(w) {
+      var test = cur ? cur + ' ' + w : w;
+      if (ctx.measureText(test).width > maxWidth && cur) { lines.push(cur); cur = w; }
+      else cur = test;
+    });
+    if (cur) lines.push(cur);
+    return lines;
+  }
+
+  // Draw backdrop image (or solid fallback)
+  async function drawBg() {
+    if (r.backdrop) {
+      try {
+        var img = new Image(); img.crossOrigin = 'anonymous';
+        await new Promise(function(res, rej) {
+          img.onload = res; img.onerror = rej;
+          img.src = 'https://image.tmdb.org/t/p/w1280' + r.backdrop;
+        });
+        // Scale to fill width; centre vertically in top 60% of card
+        var scale = W / img.naturalWidth;
+        var ih    = img.naturalHeight * scale;
+        ctx.drawImage(img, 0, 0, W, ih);
+      } catch(_) { ctx.fillStyle = '#111'; ctx.fillRect(0, 0, W, H * 0.6); }
+    } else {
+      ctx.fillStyle = '#111'; ctx.fillRect(0, 0, W, H * 0.6);
+    }
+  }
+
+  await drawBg();
+
+  // Gradient overlay — top to solid black
+  var grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0,   'rgba(0,0,0,0.15)');
+  grad.addColorStop(0.4, 'rgba(0,0,0,0.55)');
+  grad.addColorStop(0.6, 'rgba(0,0,0,0.92)');
+  grad.addColorStop(1,   'rgba(0,0,0,1)');
+  ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+
+  // PMovies wordmark — top-left
+  ctx.font = 'bold 52px Arial'; ctx.textAlign = 'left'; ctx.letterSpacing = '2px';
+  ctx.fillStyle = '#f5a623'; ctx.fillText('P', 72, 120);
+  ctx.fillStyle = '#ffffff'; ctx.fillText('MOVIES', 108, 120);
+
+  // Title block — lower third start
+  var TY = 1020;
+  ctx.textAlign = 'left'; ctx.letterSpacing = '0px';
+
+  // Year pill
+  if (r.year) {
+    ctx.font = '600 34px Arial'; ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.fillText(String(r.year), 72, TY);
+  }
+
+  // Movie title — large, bold, wraps to 2 lines
+  var titleLines = wrapText(r.title || '', W - 144, 'bold 96px Arial');
+  ctx.font = 'bold 96px Arial'; ctx.fillStyle = '#ffffff';
+  titleLines.slice(0, 2).forEach(function(line, i) {
+    ctx.fillText(line, 72, TY + 60 + i * 110);
+  });
+  var afterTitle = TY + 60 + Math.min(titleLines.length, 2) * 110 + 30;
+
+  // Stars
+  var rating = r.rating || 0;
+  ctx.font = '60px Arial'; ctx.fillStyle = '#f5a623';
+  ctx.fillText(starsStr(rating), 72, afterTitle + 60);
+  ctx.font = '500 34px Arial'; ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.fillText(rating + '/5', 72 + ctx.measureText(starsStr(rating)).width + 20, afterTitle + 60);
+
+  // Divider
+  ctx.fillStyle = '#f5a623'; ctx.fillRect(72, afterTitle + 90, 80, 3);
+
+  // Headline
+  var hlY = afterTitle + 160;
+  if (r.headline) {
+    var hlLines = wrapText('"' + r.headline + '"', W - 144, 'italic 52px Arial');
+    ctx.font = 'italic 52px Arial'; ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    hlLines.slice(0, 3).forEach(function(line, i) { ctx.fillText(line, 72, hlY + i * 70); });
+    hlY += Math.min(hlLines.length, 3) * 70 + 40;
+  }
+
+  // Review excerpt (first ~180 chars)
+  var excerpt = (r.text || '').replace(/<[^>]+>/g, '').trim().slice(0, 180);
+  if (excerpt.length === 180) excerpt += '…';
+  if (excerpt) {
+    var exLines = wrapText(excerpt, W - 144, '400 40px Arial');
+    ctx.font = '400 40px Arial'; ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    exLines.slice(0, 4).forEach(function(line, i) { ctx.fillText(line, 72, hlY + i * 58); });
+  }
+
+  // Bottom strip — URL
+  var slug = r.slug || '';
+  var reviewUrl = slug ? 'p-movies.com/review/' + slug : 'p-movies.com';
+  ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fillRect(0, H - 160, W, 160);
+  ctx.font = '500 36px Arial'; ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.textAlign = 'center'; ctx.letterSpacing = '1px';
+  ctx.fillText('READ THE FULL REVIEW AT', W / 2, H - 100);
+  ctx.font = 'bold 44px Arial'; ctx.fillStyle = '#f5a623'; ctx.letterSpacing = '0px';
+  ctx.fillText(reviewUrl, W / 2, H - 48);
+
+  // Export
+  canvas.toBlob(function(blob) {
+    var filename = 'pmovies-' + (r.slug || 'review') + '.png';
+    if (btn) { btn.textContent = '📸 Card'; btn.disabled = false; }
+    // Mobile: native share with image file
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], filename, { type: 'image/png' })] })) {
+      navigator.share({
+        files: [new File([blob], filename, { type: 'image/png' })],
+        title: (r.title || 'Review') + ' — PMovies'
+      }).catch(function() {});
+      return;
+    }
+    // Desktop / fallback: download
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    setTimeout(function() { URL.revokeObjectURL(a.href); }, 5000);
+  }, 'image/png');
 }
 
 /* ── Translate review in-place via Google Translate (no API key needed) ── */
