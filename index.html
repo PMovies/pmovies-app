@@ -9923,6 +9923,14 @@ window._removeDlLoader = function() {
         }
         var rev = found[1];
         rev._key = found[0];
+        // Track view — skip admin's own visits
+        if (found[0] && !(typeof _isEditorAdmin === 'function' && _isEditorAdmin())) {
+          fetch('https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app/editorReviewStats/' + found[0] + '.json', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ viewCount: { '.sv': { increment: 1 } }, lastViewedAt: { '.sv': 'timestamp' } })
+          }).catch(function() {});
+        }
         // _renderReviewPage is always defined by now (async fetch completes after all scripts)
         if (typeof _renderReviewPage === 'function') {
           _renderReviewPage(rev);
@@ -17770,7 +17778,10 @@ function _renderReviewPage(r) {
           ${festivalBadge}
           <span style="font-size:.95rem;color:#f5a623">${stars}</span>
         </div>
-        <div style="font-size:.65rem;font-weight:700;letter-spacing:1.5px;color:#888;text-transform:uppercase;margin-bottom:8px">By Ahmed Khaled</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <span style="font-size:.65rem;font-weight:700;letter-spacing:1.5px;color:#888;text-transform:uppercase">By Ahmed Khaled</span>
+          ${_isEditorAdmin() ? `<span id="_erViewCount" style="font-size:.58rem;font-weight:700;letter-spacing:1px;color:#555;text-transform:uppercase;background:rgba(255,255,255,.05);border-radius:6px;padding:2px 7px">👁 …</span>` : ''}
+        </div>
         <div style="display:flex;gap:5px;flex-wrap:wrap">${tags}</div>
       </div>
     </div>
@@ -17780,6 +17791,17 @@ function _renderReviewPage(r) {
     </div>`;
   page.scrollTop = 0;
   document.body.style.overflow = 'hidden';
+
+  // Populate view count badge (admin only)
+  if (_isEditorAdmin() && r._key) {
+    fetch('https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app/editorReviewStats/' + r._key + '/viewCount.json')
+      .then(function(res) { return res.json(); })
+      .then(function(count) {
+        var el = document.getElementById('_erViewCount');
+        if (el && typeof count === 'number') el.textContent = '👁 ' + count;
+      })
+      .catch(function() {});
+  }
 }
 
 function closeEditorRead() {
