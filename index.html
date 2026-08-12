@@ -18013,8 +18013,10 @@ async function _erSaveCard() {
     ctx.font = 'italic 44px Arial'; ctx.fillStyle = 'rgba(255,255,255,0.72)';
     var hl = '”' + r.headline + '”';
     if (ctx.measureText(hl).width > W - 160) {
-      while (hl.length > 6 && ctx.measureText(hl).width > W - 160)
-        hl = hl.slice(0, -2) + '…”';
+      var hlBase = '”' + r.headline;
+      while (hlBase.length > 2 && ctx.measureText(hlBase + '…”').width > W - 160)
+        hlBase = hlBase.slice(0, -1);
+      hl = hlBase + '…”';
     }
     ctx.fillText(hl, W / 2, TY);
     TY += 58;
