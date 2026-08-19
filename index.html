@@ -1617,7 +1617,7 @@
     .jnl-upload-wrap{border:2px dashed rgba(255,255,255,.08);border-radius:12px;padding:32px 24px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;position:relative;background:rgba(255,255,255,.02)}
     .jnl-upload-wrap:hover,.jnl-upload-wrap.drag{border-color:rgba(245,166,35,.4);background:rgba(245,166,35,.03)}
     .jnl-upload-label{font-size:.78rem;color:#555;pointer-events:none;line-height:1.5}
-    .jnl-upload-preview{width:100%;max-height:220px;object-fit:cover;border-radius:8px;margin-top:14px;display:none}
+    .jnl-upload-preview{width:100%;height:200px;object-fit:cover;object-position:center;border-radius:8px;margin-top:14px;display:none}
     .jnl-progress{height:3px;background:rgba(245,166,35,.2);border-radius:2px;overflow:hidden;margin-top:8px;display:none}
     .jnl-progress-bar{height:100%;background:#f5a623;width:0;transition:width .2s}
     .jnl-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
@@ -28397,8 +28397,7 @@ async function deleteEditorReview(key, e) {
 
   function _jnlLoadCollections() {
     var db = _jnlDb(); if (!db) return;
-    db.collection('journal').doc('collections').collection('items')
-      .orderBy('order').get()
+    db.collection('journal/collections/items').get()
       .then(function(snap) {
         _jnlCollections = {};
         snap.forEach(function(doc) { _jnlCollections[doc.id] = doc.data(); });
@@ -28406,23 +28405,16 @@ async function deleteEditorReview(key, e) {
         _jnlRefreshCollSelect();
       })
       .catch(function() {
-        // Try flat collection path as fallback
-        db.collection('journal/collections/items').orderBy('order').get()
+        // Fallback: nested path
+        db.collection('journal').doc('collections').collection('items').get()
           .then(function(snap) {
+            _jnlCollections = {};
             snap.forEach(function(doc) { _jnlCollections[doc.id] = doc.data(); });
             _jnlRenderCollections();
             _jnlRefreshCollSelect();
           }).catch(function() {
-            // Last resort: try without orderBy
-            db.collection('journal/collections/items').get()
-              .then(function(snap) {
-                snap.forEach(function(doc) { _jnlCollections[doc.id] = doc.data(); });
-                _jnlRenderCollections();
-                _jnlRefreshCollSelect();
-              }).catch(function() {
                 var g = document.getElementById('jnlCollectionsGrid');
                 if (g) g.innerHTML = '<div class="jnl-loading">No collections yet.</div>';
-              });
           });
       });
   }
@@ -28867,22 +28859,28 @@ async function deleteEditorReview(key, e) {
   };
 
   window._jnlPreviewSubmit = function() {
-    var title     = (document.getElementById('jnlSTitle') ? document.getElementById('jnlSTitle').value : '').trim();
-    var body      = document.getElementById('jnlSBody') ? document.getElementById('jnlSBody').innerHTML : '';
-    var tagline   = (document.getElementById('jnlSTagline') ? document.getElementById('jnlSTagline').value : '').trim();
-    var user      = window.pmGetUser && window.pmGetUser();
-    var authorName= user ? (user.displayName || user.email || '') : '';
-    var formWrap  = document.getElementById('jnlFormWrap');
-    var prevWrap  = document.getElementById('jnlPreviewWrap');
+    var title      = (document.getElementById('jnlSTitle') ? document.getElementById('jnlSTitle').value : '').trim();
+    var body       = document.getElementById('jnlSBody') ? document.getElementById('jnlSBody').innerHTML : '';
+    var tagline    = (document.getElementById('jnlSTagline') ? document.getElementById('jnlSTagline').value : '').trim();
+    var user       = window.pmGetUser && window.pmGetUser();
+    var authorName = user ? (user.displayName || user.email || '') : '';
+    var formWrap   = document.getElementById('jnlFormWrap');
+    var prevWrap   = document.getElementById('jnlPreviewWrap');
     if (!formWrap || !prevWrap) return;
-    var header    = document.querySelector('.jnl-sub-header');
+    // Use uploaded URL if ready, else fall back to local blob URL for preview
+    var localPrev  = document.getElementById('jnlUploadPreview');
+    var backdropSrc = _jnlUploadedBackdropUrl || (localPrev && localPrev.src && localPrev.src.startsWith('blob:') ? localPrev.src : null);
+    // Hide er-back (close-overlay button) so it doesn't overlap the Edit button
+    var erBack = _jnlSubmitOverlay ? _jnlSubmitOverlay.querySelector('.er-back') : null;
+    if (erBack) erBack.style.display = 'none';
+    var header = _jnlSubmitOverlay ? _jnlSubmitOverlay.querySelector('.jnl-sub-header') : null;
     if (header) header.style.display = 'none';
 
     prevWrap.innerHTML =
-      '<button onclick="_jnlEditSubmit()" style="position:fixed;top:calc(env(safe-area-inset-top,0px)+14px);left:14px;z-index:10001;background:rgba(0,0,0,.75);border:1px solid rgba(255,255,255,.15);color:#fff;font-size:.75rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;padding:9px 16px;border-radius:20px;backdrop-filter:blur(10px)">← Edit</button>' +
-      (_jnlUploadedBackdropUrl
-        ? '<img class="jnl-art-backdrop" src="' + _jnlEsc(_jnlUploadedBackdropUrl) + '" alt="">'
-        : '<div class="jnl-art-backdrop" style="background:linear-gradient(160deg,#181818,#0a0a0a)"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.7rem;letter-spacing:2px;color:#333;text-transform:uppercase">No cover image</div></div>') +
+      '<button onclick="_jnlEditSubmit()" style="position:fixed;top:calc(env(safe-area-inset-top,0px)+14px);left:14px;z-index:10002;background:rgba(0,0,0,.8);border:1px solid rgba(255,255,255,.15);color:#fff;font-size:.72rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;padding:9px 18px;border-radius:20px;backdrop-filter:blur(10px)">← Edit</button>' +
+      (backdropSrc
+        ? '<img class="jnl-art-backdrop" src="' + _jnlEsc(backdropSrc) + '" alt="">'
+        : '<div class="jnl-art-backdrop" style="background:linear-gradient(160deg,#181818,#0a0a0a);position:relative"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.7rem;letter-spacing:2px;color:#333;text-transform:uppercase">No cover image yet</div></div>') +
       '<div class="jnl-art-inner">' +
         '<h1 class="jnl-art-title">' + _jnlEsc(title || 'Untitled') + '</h1>' +
         '<div class="jnl-art-byline">By <strong>' + _jnlEsc(authorName) + '</strong>' +
@@ -28899,10 +28897,12 @@ async function deleteEditorReview(key, e) {
   window._jnlEditSubmit = function() {
     var formWrap = document.getElementById('jnlFormWrap');
     var prevWrap = document.getElementById('jnlPreviewWrap');
-    var header   = document.querySelector('.jnl-sub-header');
     if (formWrap) formWrap.style.display = 'block';
     if (prevWrap) { prevWrap.style.display = 'none'; prevWrap.innerHTML = ''; }
-    if (header)   header.style.display = '';
+    var erBack = _jnlSubmitOverlay ? _jnlSubmitOverlay.querySelector('.er-back') : null;
+    if (erBack) erBack.style.display = '';
+    var header = _jnlSubmitOverlay ? _jnlSubmitOverlay.querySelector('.jnl-sub-header') : null;
+    if (header) header.style.display = '';
     if (_jnlSubmitOverlay) _jnlSubmitOverlay.scrollTop = 0;
   };
 
