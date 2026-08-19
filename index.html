@@ -28944,20 +28944,35 @@ async function deleteEditorReview(key, e) {
     var lbl = document.getElementById('jnlUploadLabel'); if (lbl) lbl.style.display = 'none';
     if (prog) prog.style.display = 'block';
     if (btn)  btn.disabled = true;
-    var ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
-    var path  = 'journal/backdrops/tmp_' + Date.now() + '.' + ext;
-    var ref   = firebase.storage().ref(path);
-    var task  = ref.put(file);
-    task.on('state_changed',
-      function(snap) { var pct = (snap.bytesTransferred / snap.totalBytes) * 100; if (bar) bar.style.width = pct + '%'; },
-      function(err)  { alert('Upload failed: ' + err.message); if (btn) btn.disabled = false; },
-      function() {
-        task.snapshot.ref.getDownloadURL().then(function(url) {
-          _jnlUploadedBackdropUrl = url;
+    var ext  = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
+    var path = 'journal/backdrops/tmp_' + Date.now() + '.' + ext;
+    try {
+      var ref  = firebase.storage().ref(path);
+      var task = ref.put(file);
+      task.on('state_changed',
+        function(snap) { var pct = (snap.bytesTransferred / snap.totalBytes) * 100; if (bar) bar.style.width = pct + '%'; },
+        function(err)  {
+          if (prog) prog.style.display = 'none';
           if (btn) btn.disabled = false;
-        });
-      }
-    );
+          var msg = document.getElementById('jnlSubmitMsg');
+          if (msg) { msg.style.display = 'block'; msg.style.color = '#e05555'; msg.textContent = 'Upload failed: ' + (err.message || 'Storage permission denied. Check Firebase Storage rules.'); }
+        },
+        function() {
+          task.snapshot.ref.getDownloadURL().then(function(url) {
+            _jnlUploadedBackdropUrl = url;
+            if (btn) btn.disabled = false;
+            if (prog) prog.style.display = 'none';
+          }).catch(function(err) {
+            if (btn) btn.disabled = false;
+          });
+        }
+      );
+    } catch(e) {
+      if (btn) btn.disabled = false;
+      if (prog) prog.style.display = 'none';
+      var msg2 = document.getElementById('jnlSubmitMsg');
+      if (msg2) { msg2.style.display = 'block'; msg2.style.color = '#e05555'; msg2.textContent = 'Storage not available. Check Firebase Storage setup.'; }
+    }
   };
 
   window._jnlSubmitArticle = function() {
