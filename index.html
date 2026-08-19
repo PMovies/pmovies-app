@@ -28382,10 +28382,17 @@ async function deleteEditorReview(key, e) {
   function _jnlRefreshCollSelect() {
     var sel = document.getElementById('jnlSColl'); if (!sel) return;
     var cur = sel.value;
-    sel.innerHTML = Object.keys(_jnlCollections).map(function(id) {
+    var keys = Object.keys(_jnlCollections);
+    sel.innerHTML = keys.map(function(id) {
       return '<option value="' + id + '">' + _jnlEsc(_jnlCollections[id].title||id) + '</option>';
     }).join('') + '<option value="__suggest">Suggest new collection…</option>';
-    if (cur && sel.querySelector('option[value="' + cur + '"]')) sel.value = cur;
+    if (cur && cur !== '__suggest' && sel.querySelector('option[value="' + cur + '"]')) {
+      sel.value = cur;
+    } else if (keys.length > 0) {
+      sel.value = keys[0];
+      var sug = document.getElementById('jnlSCollSuggest');
+      if (sug) sug.style.display = 'none';
+    }
   }
 
   function _jnlLoadCollections() {
@@ -28406,8 +28413,16 @@ async function deleteEditorReview(key, e) {
             _jnlRenderCollections();
             _jnlRefreshCollSelect();
           }).catch(function() {
-            var g = document.getElementById('jnlCollectionsGrid');
-            if (g) g.innerHTML = '<div class="jnl-loading">No collections yet.</div>';
+            // Last resort: try without orderBy
+            db.collection('journal/collections/items').get()
+              .then(function(snap) {
+                snap.forEach(function(doc) { _jnlCollections[doc.id] = doc.data(); });
+                _jnlRenderCollections();
+                _jnlRefreshCollSelect();
+              }).catch(function() {
+                var g = document.getElementById('jnlCollectionsGrid');
+                if (g) g.innerHTML = '<div class="jnl-loading">No collections yet.</div>';
+              });
           });
       });
   }
@@ -28797,11 +28812,11 @@ async function deleteEditorReview(key, e) {
         '</div>' +
 
         '<div class="jnl-field">' +
-          '<label class="jnl-label">Cover Image * <span style="font-weight:400;opacity:.45;text-transform:none;letter-spacing:0;font-size:.6rem">· JPG/PNG, max 5 MB</span></label>' +
+          '<label class="jnl-label">Cover Image * <span style="font-weight:400;opacity:.45;text-transform:none;letter-spacing:0;font-size:.6rem">· JPG/PNG/WebP, max 5 MB</span></label>' +
           '<div class="jnl-upload-wrap" id="jnlUploadWrap" onclick="document.getElementById(\'jnlFileInput\').click()">' +
             '<div class="jnl-upload-label" id="jnlUploadLabel"><span style="font-size:2rem;display:block;margin-bottom:10px;opacity:.4">▣</span>Click to choose cover image</div>' +
             '<img class="jnl-upload-preview" id="jnlUploadPreview">' +
-            '<input type="file" id="jnlFileInput" accept="image/jpeg,image/png" style="display:none" onchange="_jnlHandleFile(this)">' +
+            '<input type="file" id="jnlFileInput" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="_jnlHandleFile(this)">' +
           '</div>' +
           '<div class="jnl-progress" id="jnlProgress"><div class="jnl-progress-bar" id="jnlProgressBar"></div></div>' +
         '</div>' +
@@ -28809,7 +28824,7 @@ async function deleteEditorReview(key, e) {
         '<div class="jnl-field">' +
           '<label class="jnl-label">Collection *</label>' +
           '<select class="jnl-input jnl-select" id="jnlSColl" onchange="_jnlCollChange(this)">' + collOptions + '</select>' +
-          '<input class="jnl-input" id="jnlSCollSuggest" style="display:none;margin-top:8px" maxlength="80" placeholder="Suggest a collection name…">' +
+          '<input class="jnl-input" id="jnlSCollSuggest" style="display:' + (Object.keys(_jnlCollections).length === 0 ? 'block' : 'none') + ';margin-top:8px" maxlength="80" placeholder="Name your suggested collection…">' +
         '</div>' +
 
         '<hr class="jnl-divider">' +
@@ -28898,7 +28913,7 @@ async function deleteEditorReview(key, e) {
 
   window._jnlHandleFile = function(input) {
     var file = input.files[0]; if (!file) return;
-    if (!['image/jpeg','image/png'].includes(file.type)) { alert('JPG or PNG only.'); return; }
+    if (!['image/jpeg','image/png','image/webp'].includes(file.type)) { alert('JPG, PNG or WebP only.'); return; }
     if (file.size > 5 * 1024 * 1024) { alert('File must be under 5 MB.'); return; }
     var preview = document.getElementById('jnlUploadPreview');
     var prog    = document.getElementById('jnlProgress');
@@ -28908,7 +28923,7 @@ async function deleteEditorReview(key, e) {
     var lbl = document.getElementById('jnlUploadLabel'); if (lbl) lbl.style.display = 'none';
     if (prog) prog.style.display = 'block';
     if (btn)  btn.disabled = true;
-    var ext   = file.type === 'image/png' ? 'png' : 'jpg';
+    var ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
     var path  = 'journal/backdrops/tmp_' + Date.now() + '.' + ext;
     var ref   = firebase.storage().ref(path);
     var task  = ref.put(file);
