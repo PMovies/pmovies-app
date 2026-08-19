@@ -1598,25 +1598,37 @@
     /* Submission overlay */
     .jnl-submit-overlay{position:fixed;inset:0;z-index:9999;background:#0a0a0a;overflow-y:auto;display:none}
     .jnl-submit-overlay.open{display:block}
-    .jnl-submit-inner{max-width:640px;margin:0 auto;padding:40px 22px 80px}
+    .jnl-sub-header{display:flex;align-items:flex-end;justify-content:space-between;max-width:640px;margin:0 auto;padding:28px 22px 0;gap:16px}
+    .jnl-sub-tag{font-size:.6rem;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:#f5a623;margin-bottom:5px}
+    .jnl-sub-heading{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:2px;color:#fff;line-height:1}
+    .jnl-preview-btn{flex-shrink:0;background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.3);color:#f5a623;border-radius:20px;padding:9px 18px;font-size:.65rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;white-space:nowrap;transition:background .2s}
+    .jnl-preview-btn:hover{background:rgba(245,166,35,.2)}
+    .jnl-submit-inner{max-width:640px;margin:0 auto;padding:28px 22px 80px}
     .jnl-submit-title{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:2px;color:#fff;margin-bottom:6px}
     .jnl-submit-sub{font-size:.8rem;color:#666;margin-bottom:32px}
-    .jnl-field{margin-bottom:22px}
-    .jnl-label{font-size:.65rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#888;margin-bottom:8px;display:block}
+    .jnl-field{margin-bottom:24px}
+    .jnl-label{font-size:.62rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#777;margin-bottom:9px;display:block}
     .jnl-input{width:100%;background:#111;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:12px 14px;color:#e0d8cc;font-size:.9rem;font-family:inherit;outline:none;transition:border-color .2s;box-sizing:border-box}
     .jnl-input:focus{border-color:rgba(245,166,35,.5)}
-    .jnl-input::placeholder{color:#444}
-    .jnl-textarea{resize:vertical;min-height:260px;line-height:1.7}
+    .jnl-input::placeholder{color:#383838}
+    .jnl-title-input{font-size:1.1rem!important;font-weight:600!important;letter-spacing:.3px}
+    .jnl-textarea{resize:vertical;min-height:280px;line-height:1.75}
     .jnl-select{appearance:none;background:#111 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23555'/%3E%3C/svg%3E") no-repeat right 14px center}
-    .jnl-upload-wrap{border:2px dashed rgba(255,255,255,.1);border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:border-color .2s;position:relative}
-    .jnl-upload-wrap:hover,.jnl-upload-wrap.drag{border-color:rgba(245,166,35,.4)}
-    .jnl-upload-label{font-size:.8rem;color:#666;pointer-events:none}
-    .jnl-upload-preview{width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin-top:12px;display:none}
+    .jnl-upload-wrap{border:2px dashed rgba(255,255,255,.08);border-radius:12px;padding:32px 24px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;position:relative;background:rgba(255,255,255,.02)}
+    .jnl-upload-wrap:hover,.jnl-upload-wrap.drag{border-color:rgba(245,166,35,.4);background:rgba(245,166,35,.03)}
+    .jnl-upload-label{font-size:.78rem;color:#555;pointer-events:none;line-height:1.5}
+    .jnl-upload-preview{width:100%;max-height:220px;object-fit:cover;border-radius:8px;margin-top:14px;display:none}
     .jnl-progress{height:3px;background:rgba(245,166,35,.2);border-radius:2px;overflow:hidden;margin-top:8px;display:none}
     .jnl-progress-bar{height:100%;background:#f5a623;width:0;transition:width .2s}
-    .jnl-submit-btn{width:100%;background:#f5a623;color:#000;border:none;border-radius:10px;padding:15px;font-size:.85rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:opacity .2s}
+    .jnl-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+    .jnl-toolbar-btns{display:flex;gap:4px}
+    .jnl-toolbar-btn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#aaa;border-radius:6px;width:30px;height:26px;font-size:.78rem;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:background .15s}
+    .jnl-toolbar-btn:hover{background:rgba(255,255,255,.12);color:#fff}
+    .jnl-wordcount{font-size:.6rem;color:#444;text-align:right;margin-top:6px;letter-spacing:.5px}
+    .jnl-submit-btn{width:100%;background:#f5a623;color:#000;border:none;border-radius:10px;padding:15px;font-size:.85rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:opacity .2s;margin-top:8px}
     .jnl-submit-btn:disabled{opacity:.4;cursor:default}
     .jnl-msg{font-size:.8rem;color:#f5a623;margin-top:14px;text-align:center;display:none}
+    .jnl-divider{border:none;border-top:1px solid rgba(255,255,255,.06);margin:28px 0}
     /* Admin overlay */
     .jnl-admin-overlay{position:fixed;inset:0;z-index:9999;background:#0a0a0a;overflow-y:auto;display:none}
     .jnl-admin-overlay.open{display:block}
@@ -28757,36 +28769,116 @@ async function deleteEditorReview(key, e) {
 
     _jnlSubmitOverlay.innerHTML =
       '<button onclick="_jnlCloseSubmit()" class="er-back">←</button>' +
-      '<div class="jnl-submit-inner">' +
-        '<div class="jnl-submit-title">Submit Article</div>' +
-        '<div class="jnl-submit-sub">Writing for The Journal · PMovies</div>' +
 
-        '<div class="jnl-field"><label class="jnl-label">Title *</label>' +
-          '<input class="jnl-input" id="jnlSTitle" maxlength="120" placeholder="Article title…"></div>' +
+      '<div class="jnl-sub-header">' +
+        '<div>' +
+          '<div class="jnl-sub-tag">The Journal · PMovies</div>' +
+          '<div class="jnl-sub-heading">Submit Your Writing</div>' +
+        '</div>' +
+        '<button class="jnl-preview-btn" onclick="_jnlPreviewSubmit()">Preview ↗</button>' +
+      '</div>' +
 
-        '<div class="jnl-field"><label class="jnl-label">Cover Image * (JPG/PNG, max 5 MB)</label>' +
+      '<div class="jnl-submit-inner" id="jnlFormWrap">' +
+
+        '<div class="jnl-field">' +
+          '<label class="jnl-label">Article Title *</label>' +
+          '<input class="jnl-input jnl-title-input" id="jnlSTitle" maxlength="120" placeholder="Give your article a title…">' +
+        '</div>' +
+
+        '<div class="jnl-field">' +
+          '<label class="jnl-label">Cover Image * <span style="font-weight:400;opacity:.45;text-transform:none;letter-spacing:0;font-size:.6rem">· JPG/PNG, max 5 MB</span></label>' +
           '<div class="jnl-upload-wrap" id="jnlUploadWrap" onclick="document.getElementById(\'jnlFileInput\').click()">' +
-            '<div class="jnl-upload-label">Click to choose image</div>' +
+            '<div class="jnl-upload-label" id="jnlUploadLabel"><span style="font-size:2rem;display:block;margin-bottom:10px;opacity:.4">▣</span>Click to choose cover image</div>' +
             '<img class="jnl-upload-preview" id="jnlUploadPreview">' +
             '<input type="file" id="jnlFileInput" accept="image/jpeg,image/png" style="display:none" onchange="_jnlHandleFile(this)">' +
           '</div>' +
           '<div class="jnl-progress" id="jnlProgress"><div class="jnl-progress-bar" id="jnlProgressBar"></div></div>' +
         '</div>' +
 
-        '<div class="jnl-field"><label class="jnl-label">Collection *</label>' +
+        '<div class="jnl-field">' +
+          '<label class="jnl-label">Collection *</label>' +
           '<select class="jnl-input jnl-select" id="jnlSColl" onchange="_jnlCollChange(this)">' + collOptions + '</select>' +
-          '<input class="jnl-input" id="jnlSCollSuggest" style="display:none;margin-top:8px" maxlength="80" placeholder="Suggest a collection name…"></div>' +
+          '<input class="jnl-input" id="jnlSCollSuggest" style="display:none;margin-top:8px" maxlength="80" placeholder="Suggest a collection name…">' +
+        '</div>' +
 
-        '<div class="jnl-field"><label class="jnl-label">Article *</label>' +
-          '<div class="jnl-input jnl-textarea" id="jnlSBody" contenteditable dir="auto" style="min-height:300px;overflow-y:auto" data-placeholder="Write your article here…"></div></div>' +
+        '<hr class="jnl-divider">' +
 
-        '<div class="jnl-field"><label class="jnl-label">Your tagline <span style="opacity:.5">(optional)</span></label>' +
-          '<input class="jnl-input" id="jnlSTagline" maxlength="80" placeholder="e.g. Film critic based in Cairo"></div>' +
+        '<div class="jnl-field">' +
+          '<div class="jnl-toolbar">' +
+            '<label class="jnl-label" style="margin-bottom:0">Article *</label>' +
+            '<div class="jnl-toolbar-btns">' +
+              '<button type="button" class="jnl-toolbar-btn" onmousedown="event.preventDefault();document.execCommand(\'bold\')" title="Bold"><b>B</b></button>' +
+              '<button type="button" class="jnl-toolbar-btn" onmousedown="event.preventDefault();document.execCommand(\'italic\')" title="Italic"><i>I</i></button>' +
+              '<button type="button" class="jnl-toolbar-btn" onmousedown="event.preventDefault();document.execCommand(\'underline\')" title="Underline"><u>U</u></button>' +
+              '<button type="button" class="jnl-toolbar-btn" onmousedown="event.preventDefault();document.execCommand(\'insertUnorderedList\')" title="List" style="font-size:.9rem">≡</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="jnl-input jnl-textarea" id="jnlSBody" contenteditable dir="auto" style="min-height:320px;overflow-y:auto" data-placeholder="Write your article here…" oninput="_jnlUpdateWordCount()"></div>' +
+          '<div class="jnl-wordcount" id="jnlWordCount">0 words</div>' +
+        '</div>' +
+
+        '<hr class="jnl-divider">' +
+
+        '<div class="jnl-field">' +
+          '<label class="jnl-label">Your Tagline <span style="font-weight:400;opacity:.45;text-transform:none;letter-spacing:0;font-size:.6rem">(optional)</span></label>' +
+          '<input class="jnl-input" id="jnlSTagline" maxlength="80" placeholder="e.g. Film critic based in Cairo">' +
+        '</div>' +
 
         '<button class="jnl-submit-btn" id="jnlSubmitBtn" onclick="_jnlSubmitArticle()">Submit for Review</button>' +
         '<div id="jnlSubmitMsg" class="jnl-msg"></div>' +
-      '</div>';
+      '</div>' +
+
+      '<div id="jnlPreviewWrap" style="display:none"></div>';
   }
+
+  window._jnlUpdateWordCount = function() {
+    var el = document.getElementById('jnlSBody');
+    var countEl = document.getElementById('jnlWordCount');
+    if (!el || !countEl) return;
+    var text = (el.innerText || el.textContent || '').trim();
+    var words = text ? text.split(/\s+/).filter(function(w) { return w.length > 0; }).length : 0;
+    countEl.textContent = words + (words === 1 ? ' word' : ' words');
+  };
+
+  window._jnlPreviewSubmit = function() {
+    var title     = (document.getElementById('jnlSTitle') ? document.getElementById('jnlSTitle').value : '').trim();
+    var body      = document.getElementById('jnlSBody') ? document.getElementById('jnlSBody').innerHTML : '';
+    var tagline   = (document.getElementById('jnlSTagline') ? document.getElementById('jnlSTagline').value : '').trim();
+    var user      = window.pmGetUser && window.pmGetUser();
+    var authorName= user ? (user.displayName || user.email || '') : '';
+    var formWrap  = document.getElementById('jnlFormWrap');
+    var prevWrap  = document.getElementById('jnlPreviewWrap');
+    if (!formWrap || !prevWrap) return;
+    var header    = document.querySelector('.jnl-sub-header');
+    if (header) header.style.display = 'none';
+
+    prevWrap.innerHTML =
+      '<button onclick="_jnlEditSubmit()" style="position:fixed;top:calc(env(safe-area-inset-top,0px)+14px);left:14px;z-index:10001;background:rgba(0,0,0,.75);border:1px solid rgba(255,255,255,.15);color:#fff;font-size:.75rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;padding:9px 16px;border-radius:20px;backdrop-filter:blur(10px)">← Edit</button>' +
+      (_jnlUploadedBackdropUrl
+        ? '<img class="jnl-art-backdrop" src="' + _jnlEsc(_jnlUploadedBackdropUrl) + '" alt="">'
+        : '<div class="jnl-art-backdrop" style="background:linear-gradient(160deg,#181818,#0a0a0a)"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.7rem;letter-spacing:2px;color:#333;text-transform:uppercase">No cover image</div></div>') +
+      '<div class="jnl-art-inner">' +
+        '<h1 class="jnl-art-title">' + _jnlEsc(title || 'Untitled') + '</h1>' +
+        '<div class="jnl-art-byline">By <strong>' + _jnlEsc(authorName) + '</strong>' +
+          (tagline ? ' · <span style="font-style:italic">' + _jnlEsc(tagline) + '</span>' : '') +
+        '</div>' +
+        '<div class="jnl-art-body" dir="auto">' + body + '</div>' +
+      '</div>';
+
+    formWrap.style.display = 'none';
+    prevWrap.style.display = 'block';
+    if (_jnlSubmitOverlay) _jnlSubmitOverlay.scrollTop = 0;
+  };
+
+  window._jnlEditSubmit = function() {
+    var formWrap = document.getElementById('jnlFormWrap');
+    var prevWrap = document.getElementById('jnlPreviewWrap');
+    var header   = document.querySelector('.jnl-sub-header');
+    if (formWrap) formWrap.style.display = 'block';
+    if (prevWrap) { prevWrap.style.display = 'none'; prevWrap.innerHTML = ''; }
+    if (header)   header.style.display = '';
+    if (_jnlSubmitOverlay) _jnlSubmitOverlay.scrollTop = 0;
+  };
 
   window._jnlCollChange = function(sel) {
     var sug = document.getElementById('jnlSCollSuggest');
@@ -28802,6 +28894,7 @@ async function deleteEditorReview(key, e) {
     var bar     = document.getElementById('jnlProgressBar');
     var btn     = document.getElementById('jnlSubmitBtn');
     if (preview) { preview.src = URL.createObjectURL(file); preview.style.display = 'block'; }
+    var lbl = document.getElementById('jnlUploadLabel'); if (lbl) lbl.style.display = 'none';
     if (prog) prog.style.display = 'block';
     if (btn)  btn.disabled = true;
     var ext   = file.type === 'image/png' ? 'png' : 'jpg';
