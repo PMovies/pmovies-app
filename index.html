@@ -9962,14 +9962,16 @@ window._removeDlLoader = function() {
       var _jnlArtId = window._pendingJournalArticle;
       window._pendingJournalArticle = null;
       try { switchTab('journal'); } catch(e) {}
-      setTimeout(function() { if (typeof window._jnlOpenArticle === 'function') window._jnlOpenArticle(_jnlArtId); }, 500);
+      try { history.replaceState(null, '', '/article/' + _jnlArtId); } catch(e) {}
+      setTimeout(function() { if (typeof window._jnlOpenArticle === 'function') window._jnlOpenArticle(_jnlArtId); }, 700);
     }
 
     // Journal submit deep-link via /journal-submit
     if (window._pendingJournalSubmit) {
       window._pendingJournalSubmit = null;
       try { switchTab('journal'); } catch(e) {}
-      setTimeout(function() { if (typeof _jnlOpenSubmit === 'function') _jnlOpenSubmit(); }, 500);
+      try { history.replaceState(null, '', '/journal-submit'); } catch(e) {}
+      setTimeout(function() { if (typeof window._jnlOpenSubmit === 'function') window._jnlOpenSubmit(); }, 700);
     }
 
     const hash = location.hash.replace('#', '');
