@@ -45,13 +45,16 @@
       if (h === '#lobby') history.replaceState(null, '', p + location.search);
     }
     if ((m = p.match(/^\/review\/([\w-]+)$/))) window._pendingEditorReview = m[1];
+    if (p === '/journal-submit') window._pendingJournalSubmit = true;
+    if ((m = p.match(/^\/article\/([\w-]+)$/))) window._pendingJournalArticle = m[1];
 
     // ── Show full-screen loader for any deep-link so landing page never flashes ──
     // Checks both the pathname (direct visit) and the hash (Worker redirect via /#fan/…)
-    var _isDeepLink = /^\/(fan|lobby|review)\//.test(p)
+    var _isDeepLink = /^\/(fan|lobby|review|article)\//.test(p) || p === '/journal-submit'
       || h.startsWith('#fan/')
       || h.startsWith('#fan-review/')
-      || h.startsWith('#review/');
+      || h.startsWith('#review/')
+      || h.startsWith('#article/');
     if (_isDeepLink) {
       window._deepLinkPath = true;
       document.getElementById('dlLoaderStyle').textContent =
@@ -1542,6 +1545,90 @@
   @media(max-width:600px){
     .posters-heading{font-size:1.6rem;}
     .posters-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));}
+
+    /* ── THE JOURNAL TAB ── */
+    .jnl-header{padding:36px 0 28px;margin-bottom:28px}
+    .jnl-eyebrow{font-size:.62rem;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:#f5a623;margin-bottom:8px}
+    .jnl-title{font-family:'Bebas Neue',sans-serif;font-size:3rem;letter-spacing:3px;color:#fff;line-height:1;margin:0 0 10px}
+    .jnl-subtitle{font-size:.82rem;color:#777;line-height:1.6;max-width:520px;margin-bottom:22px}
+    .jnl-divider{height:1px;background:rgba(255,255,255,.07)}
+    .jnl-section-label{font-size:.6rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#555;margin-bottom:16px}
+    .jnl-loading{color:#555;font-size:.8rem;letter-spacing:1px;padding:20px 0}
+    .jnl-collections-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-bottom:8px}
+    .jnl-coll-card{background:#111;border:1px solid rgba(255,255,255,.07);border-radius:12px;overflow:hidden;cursor:pointer;transition:transform .2s,border-color .2s}
+    .jnl-coll-card:hover{transform:translateY(-3px);border-color:rgba(245,166,35,.35)}
+    .jnl-coll-cover{width:100%;height:120px;object-fit:cover;display:block;background:#1a1a1a}
+    .jnl-coll-cover-placeholder{width:100%;height:120px;background:linear-gradient(135deg,#1a1a1a,#222);display:flex;align-items:center;justify-content:center;font-size:2rem}
+    .jnl-coll-body{padding:14px}
+    .jnl-coll-title{font-size:.9rem;font-weight:700;color:#e8e0d0;letter-spacing:.3px;margin-bottom:4px}
+    .jnl-coll-desc{font-size:.75rem;color:#666;line-height:1.5;margin-bottom:8px}
+    .jnl-coll-meta{font-size:.65rem;color:#f5a623;letter-spacing:.5px}
+    .jnl-articles-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px}
+    .jnl-article-card{background:#111;border:1px solid rgba(255,255,255,.07);border-radius:12px;overflow:hidden;cursor:pointer;transition:transform .2s,border-color .2s}
+    .jnl-article-card:hover{transform:translateY(-3px);border-color:rgba(245,166,35,.35)}
+    .jnl-article-cover{width:100%;height:150px;object-fit:cover;display:block;background:#1a1a1a}
+    .jnl-article-body{padding:14px}
+    .jnl-article-tag{display:inline-block;font-size:.58rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#f5a623;border:1px solid rgba(245,166,35,.3);border-radius:4px;padding:2px 7px;margin-bottom:8px}
+    .jnl-article-title{font-size:.92rem;font-weight:700;color:#e8e0d0;line-height:1.4;margin-bottom:6px}
+    .jnl-article-by{font-size:.72rem;color:#777}
+    .jnl-article-date{font-size:.65rem;color:#555;margin-top:4px}
+    .jnl-editors-row{display:flex;gap:16px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none}
+    .jnl-editors-row::-webkit-scrollbar{display:none}
+    .jnl-editor-chip{flex-shrink:0;background:#111;border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px 16px;cursor:pointer;transition:border-color .2s;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:100px;text-align:center}
+    .jnl-editor-chip:hover{border-color:rgba(245,166,35,.35)}
+    .jnl-editor-avatar{width:40px;height:40px;border-radius:50%;object-fit:cover;background:#222}
+    .jnl-editor-initials{width:40px;height:40px;border-radius:50%;background:rgba(245,166,35,.15);display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:700;color:#f5a623;letter-spacing:.5px}
+    .jnl-editor-name{font-size:.72rem;font-weight:700;color:#ccc;letter-spacing:.3px}
+    .jnl-editor-count{font-size:.62rem;color:#555}
+    /* Article overlay */
+    .jnl-article-overlay{position:fixed;inset:0;z-index:9999;background:#0a0a0a;overflow-y:auto;display:none}
+    .jnl-article-overlay.open{display:block}
+    .jnl-art-backdrop{width:100%;aspect-ratio:16/9;max-height:420px;object-fit:cover;object-position:center;display:block;background:#111}
+    .jnl-art-inner{max-width:700px;margin:0 auto;padding:32px 22px 80px}
+    .jnl-art-coll-tag{display:inline-block;font-size:.6rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#f5a623;border:1px solid rgba(245,166,35,.3);border-radius:4px;padding:3px 9px;margin-bottom:18px;cursor:pointer}
+    .jnl-art-title{font-family:'Bebas Neue',sans-serif;font-size:2.6rem;letter-spacing:2px;color:#fff;line-height:1.1;margin-bottom:16px}
+    .jnl-art-byline{font-size:.8rem;color:#888;margin-bottom:28px}
+    .jnl-art-byline strong{color:#ccc;cursor:pointer}
+    .jnl-art-body{font-size:1rem;color:#b0a898;line-height:1.9;max-width:660px}
+    .jnl-art-body h2{font-size:1.3rem;color:#e8dcc8;font-weight:700;margin:32px 0 12px}
+    .jnl-art-body h3{font-size:1.1rem;color:#d0c4b0;font-weight:600;margin:24px 0 10px}
+    .jnl-art-body blockquote{border-left:3px solid #f5a623;padding:10px 18px;margin:20px 0;background:rgba(245,166,35,.04);font-style:italic;color:#999}
+    .jnl-art-body a{color:#f5a623;text-decoration:none}
+    .jnl-art-body p{margin-bottom:18px}
+    /* Submission overlay */
+    .jnl-submit-overlay{position:fixed;inset:0;z-index:9999;background:#0a0a0a;overflow-y:auto;display:none}
+    .jnl-submit-overlay.open{display:block}
+    .jnl-submit-inner{max-width:640px;margin:0 auto;padding:40px 22px 80px}
+    .jnl-submit-title{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:2px;color:#fff;margin-bottom:6px}
+    .jnl-submit-sub{font-size:.8rem;color:#666;margin-bottom:32px}
+    .jnl-field{margin-bottom:22px}
+    .jnl-label{font-size:.65rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#888;margin-bottom:8px;display:block}
+    .jnl-input{width:100%;background:#111;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:12px 14px;color:#e0d8cc;font-size:.9rem;font-family:inherit;outline:none;transition:border-color .2s;box-sizing:border-box}
+    .jnl-input:focus{border-color:rgba(245,166,35,.5)}
+    .jnl-input::placeholder{color:#444}
+    .jnl-textarea{resize:vertical;min-height:260px;line-height:1.7}
+    .jnl-select{appearance:none;background:#111 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23555'/%3E%3C/svg%3E") no-repeat right 14px center}
+    .jnl-upload-wrap{border:2px dashed rgba(255,255,255,.1);border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:border-color .2s;position:relative}
+    .jnl-upload-wrap:hover,.jnl-upload-wrap.drag{border-color:rgba(245,166,35,.4)}
+    .jnl-upload-label{font-size:.8rem;color:#666;pointer-events:none}
+    .jnl-upload-preview{width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin-top:12px;display:none}
+    .jnl-progress{height:3px;background:rgba(245,166,35,.2);border-radius:2px;overflow:hidden;margin-top:8px;display:none}
+    .jnl-progress-bar{height:100%;background:#f5a623;width:0;transition:width .2s}
+    .jnl-submit-btn{width:100%;background:#f5a623;color:#000;border:none;border-radius:10px;padding:15px;font-size:.85rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:opacity .2s}
+    .jnl-submit-btn:disabled{opacity:.4;cursor:default}
+    .jnl-msg{font-size:.8rem;color:#f5a623;margin-top:14px;text-align:center;display:none}
+    /* Admin overlay */
+    .jnl-admin-overlay{position:fixed;inset:0;z-index:9999;background:#0a0a0a;overflow-y:auto;display:none}
+    .jnl-admin-overlay.open{display:block}
+    .jnl-admin-inner{max-width:780px;margin:0 auto;padding:40px 22px 80px}
+    .jnl-pending-row{background:#111;border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:16px;margin-bottom:14px;cursor:pointer;transition:border-color .2s}
+    .jnl-pending-row:hover{border-color:rgba(245,166,35,.3)}
+    .jnl-pending-title{font-size:.95rem;font-weight:700;color:#e0d8cc;margin-bottom:4px}
+    .jnl-pending-meta{font-size:.7rem;color:#666}
+    .jnl-admin-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}
+    .jnl-btn-pub{background:#f5a623;color:#000;border:none;border-radius:8px;padding:10px 22px;font-size:.75rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer}
+    .jnl-btn-rej{background:transparent;color:#e05555;border:1px solid rgba(224,85,85,.4);border-radius:8px;padding:10px 22px;font-size:.75rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer}
+    .jnl-btn-back{background:transparent;color:#888;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:10px 18px;font-size:.75rem;cursor:pointer}
 
     /* ── EDITOR TAB ── */
     .editor-hero{padding:36px 0 28px;border-bottom:1px solid rgba(255,255,255,.07);margin-bottom:28px}
@@ -4860,6 +4947,9 @@ window._removeDlLoader = function() {
   <button class="pmovies-tab" id="tab-btn-editor" onclick="switchTab('editor')" role="tab">
     <span class="tab-icon">✍️</span>Editor
   </button>
+  <button class="pmovies-tab" id="tab-btn-journal" onclick="switchTab('journal')" role="tab">
+    <span class="tab-icon">📰</span>The Journal
+  </button>
 </nav>
 <!-- ╔══════════════════════════════════════════════════════════╗ -->
 <!-- ║  THEATER RACE STRIP  (always visible below tab nav)     ║ -->
@@ -5597,6 +5687,56 @@ window._removeDlLoader = function() {
     </div>
   </div>
 </div><!-- /tab-panel-lobby -->
+
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!-- ║  THE JOURNAL TAB PANEL                                   ║ -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<div class="tab-panel" id="tab-panel-journal">
+  <!-- Admin: pending submissions badge -->
+  <div id="jnlAdminBanner" style="display:none;background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.25);border-radius:10px;padding:12px 18px;margin-bottom:24px;display:none;align-items:center;justify-content:space-between;gap:12px">
+    <span style="font-size:.75rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#f5a623">📋 Pending Submissions: <span id="jnlPendingCount">…</span></span>
+    <button onclick="_jnlOpenAdmin()" style="background:#f5a623;color:#000;border:none;border-radius:8px;padding:7px 16px;font-size:.7rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer">Review</button>
+  </div>
+
+  <!-- Tab header -->
+  <div class="jnl-header">
+    <div class="jnl-eyebrow">PMovies Editorial</div>
+    <h2 class="jnl-title">THE JOURNAL</h2>
+    <p class="jnl-subtitle">Editorial coverage, festival journalism, and cinema writing from the PMovies community.</p>
+    <div class="jnl-divider"></div>
+  </div>
+
+  <!-- Collections grid -->
+  <div id="jnlCollectionsWrap">
+    <div class="jnl-section-label">Collections</div>
+    <div class="jnl-collections-grid" id="jnlCollectionsGrid">
+      <div class="jnl-loading">Loading collections…</div>
+    </div>
+  </div>
+
+  <!-- Active collection filter header -->
+  <div id="jnlFilterHeader" style="display:none;align-items:center;gap:12px;margin:24px 0 16px">
+    <span id="jnlFilterLabel" style="font-size:.75rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#f5a623"></span>
+    <button onclick="_jnlClearFilter()" style="background:none;border:1px solid rgba(255,255,255,.15);color:#888;border-radius:20px;padding:4px 14px;font-size:.7rem;cursor:pointer;letter-spacing:.5px">✕ Clear</button>
+  </div>
+
+  <!-- Articles feed -->
+  <div style="margin-top:32px">
+    <div class="jnl-section-label" id="jnlArticlesSectionLabel">Recent Articles</div>
+    <div class="jnl-articles-grid" id="jnlArticlesGrid">
+      <div class="jnl-loading">Loading articles…</div>
+    </div>
+    <div id="jnlArticlesEmpty" style="display:none;text-align:center;padding:40px 0;color:#555;font-size:.85rem;letter-spacing:1px">No articles yet.</div>
+  </div>
+
+  <!-- Editors list -->
+  <div id="jnlEditorsWrap" style="margin-top:44px">
+    <div class="jnl-section-label">Contributors</div>
+    <div class="jnl-editors-row" id="jnlEditorsRow">
+      <div class="jnl-loading">Loading contributors…</div>
+    </div>
+  </div>
+</div><!-- /tab-panel-journal -->
 
 <!-- New Lobby Post Modal -->
 <div class="lobby-modal-overlay" id="lobbyModalOverlay" onclick="if(event.target===this)closeLobbyNewPost()">
@@ -9417,7 +9557,7 @@ window._removeDlLoader = function() {
   /* ══ TAB NAVIGATION ══ */
   function switchTab(name) {
     let foryouWasActive = false;
-    ['discover','foryou','movies','lists','series','backed','posters','lobby','editor'].forEach(t => {
+    ['discover','foryou','movies','lists','series','backed','posters','lobby','editor','journal'].forEach(t => {
       const panel = document.getElementById('tab-panel-' + t);
       if (!panel) return;
       const wasActive = panel.classList.contains('active');
@@ -9443,6 +9583,7 @@ window._removeDlLoader = function() {
       if (typeof _isEditorAdmin === 'function' && _isEditorAdmin()) { const wb = document.getElementById('editorWriteBtn'); if (wb) wb.style.display = ''; }
       if (!editorLoaded) loadEditorReviews();
     }
+    if (name === 'journal') { if (typeof loadJournal === 'function') loadJournal(); }
 
     if (name === 'series') {
       if (nowAiringHeroes.length) {
@@ -9467,6 +9608,8 @@ window._removeDlLoader = function() {
       ? 'Discover &nbsp;·&nbsp; Support &nbsp;·&nbsp; Share the Love'
       : name === 'foryou'
       ? 'Let\'s discover together &nbsp;·&nbsp; who are you today?'
+      : name === 'journal'
+      ? 'Editorial &nbsp;·&nbsp; Festival Coverage &nbsp;·&nbsp; Cinema Writing'
       : 'Your Cinema &nbsp;·&nbsp; Your Mood &nbsp;·&nbsp; Your Film';
     window.scrollTo({ top: 0, behavior: 'smooth' });
     // Bug 3 fix: don't clobber a clean /lobby/{postId} URL when switching to lobby tab
@@ -9814,6 +9957,21 @@ window._removeDlLoader = function() {
       if (typeof _loadAndShowReview === 'function') _loadAndShowReview(_edSlug);
     }
 
+    // Journal article deep-link via /article/{id}
+    if (window._pendingJournalArticle) {
+      var _jnlArtId = window._pendingJournalArticle;
+      window._pendingJournalArticle = null;
+      try { switchTab('journal'); } catch(e) {}
+      setTimeout(function() { if (typeof window._jnlOpenArticle === 'function') window._jnlOpenArticle(_jnlArtId); }, 500);
+    }
+
+    // Journal submit deep-link via /journal-submit
+    if (window._pendingJournalSubmit) {
+      window._pendingJournalSubmit = null;
+      try { switchTab('journal'); } catch(e) {}
+      setTimeout(function() { if (typeof _jnlOpenSubmit === 'function') _jnlOpenSubmit(); }, 500);
+    }
+
     const hash = location.hash.replace('#', '');
 
     // Fan review slug deep-link: #fan/{slug} or #fan/{username}/{movie-slug}
@@ -9872,7 +10030,7 @@ window._removeDlLoader = function() {
     }
 
     const tabName = hash.split('?')[0]; // strip any ?admin=... from the hash before matching
-    if (['discover','foryou','movies','lists','series','backed','posters','lobby','editor'].includes(tabName)) switchTab(tabName);
+    if (['discover','foryou','movies','lists','series','backed','posters','lobby','editor','journal'].includes(tabName)) switchTab(tabName);
     // Show Write Review button immediately if admin (button hidden by default via inline style)
     if (typeof _isEditorAdmin === 'function' && _isEditorAdmin()) {
       const wb = document.getElementById('editorWriteBtn');
@@ -28163,7 +28321,574 @@ async function deleteEditorReview(key, e) {
 })();
 </script>
 
+<!-- ╔══════════════════════════════════════════════════════════════╗ -->
+<!-- ║  THE JOURNAL — Full feature implementation                   ║ -->
+<!-- ╚══════════════════════════════════════════════════════════════╝ -->
+<script>
+(function() {
+  'use strict';
 
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  var RTDB_BASE = 'https://pmovies-f0ddc-default-rtdb.europe-west1.firebasedatabase.app';
+  var _jnlInited = false;
+  var _jnlCollections = {};  // id → data
+  var _jnlActiveCollection = null;
+  var _jnlActiveEditor = null;
+
+  function _jnlDb() {
+    if (!firebase.apps.length) return null;
+    return firebase.firestore();
+  }
+
+  function _jnlEsc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function _jnlFmtDate(ts) {
+    if (!ts) return '';
+    var d = ts.toDate ? ts.toDate() : new Date(ts);
+    return d.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+  }
+
+  function _jnlIsAdmin() {
+    return typeof _isEditorAdmin === 'function' && _isEditorAdmin();
+  }
+
+  // ── Entry point ────────────────────────────────────────────────────────────
+  window.loadJournal = function() {
+    if (_jnlInited) { _jnlRefreshPendingBadge(); return; }
+    _jnlInited = true;
+    _jnlLoadCollections();
+    _jnlLoadArticles();
+    _jnlLoadEditors();
+    _jnlRefreshPendingBadge();
+  };
+
+  // ── Collections ────────────────────────────────────────────────────────────
+  function _jnlLoadCollections() {
+    var db = _jnlDb(); if (!db) return;
+    db.collection('journal').doc('collections').collection('items')
+      .orderBy('order').get()
+      .then(function(snap) {
+        _jnlCollections = {};
+        snap.forEach(function(doc) { _jnlCollections[doc.id] = doc.data(); });
+        _jnlRenderCollections();
+      })
+      .catch(function() {
+        // Try flat collection path as fallback
+        db.collection('journal/collections/items').orderBy('order').get()
+          .then(function(snap) {
+            snap.forEach(function(doc) { _jnlCollections[doc.id] = doc.data(); });
+            _jnlRenderCollections();
+          }).catch(function() {
+            var g = document.getElementById('jnlCollectionsGrid');
+            if (g) g.innerHTML = '<div class="jnl-loading">No collections yet.</div>';
+          });
+      });
+  }
+
+  function _jnlRenderCollections() {
+    var grid = document.getElementById('jnlCollectionsGrid');
+    if (!grid) return;
+    var ids = Object.keys(_jnlCollections);
+    if (!ids.length) { grid.innerHTML = '<div class="jnl-loading">No collections yet.</div>'; return; }
+    grid.innerHTML = ids.map(function(id) {
+      var c = _jnlCollections[id];
+      var cover = c.coverUrl
+        ? '<img class="jnl-coll-cover" src="' + _jnlEsc(c.coverUrl) + '" loading="lazy" alt="">'
+        : '<div class="jnl-coll-cover-placeholder">📁</div>';
+      return '<div class="jnl-coll-card" onclick="_jnlFilterByCollection(\'' + id + '\')">' +
+        cover +
+        '<div class="jnl-coll-body">' +
+          '<div class="jnl-coll-title">' + _jnlEsc(c.title||'Untitled') + '</div>' +
+          (c.description ? '<div class="jnl-coll-desc">' + _jnlEsc(c.description) + '</div>' : '') +
+          '<div class="jnl-coll-meta">' + (c.articleCount||0) + ' article' + ((c.articleCount||0)!==1?'s':'') + (c.dateLabel?' · '+_jnlEsc(c.dateLabel):'') + '</div>' +
+        '</div></div>';
+    }).join('');
+  }
+
+  // ── Articles ───────────────────────────────────────────────────────────────
+  function _jnlLoadArticles(collectionId, editorUid) {
+    var db = _jnlDb(); if (!db) return;
+    var grid = document.getElementById('jnlArticlesGrid');
+    var empty = document.getElementById('jnlArticlesEmpty');
+    if (grid) grid.innerHTML = '<div class="jnl-loading">Loading…</div>';
+    if (empty) empty.style.display = 'none';
+
+    var q = db.collection('journal/articles/items').where('status','==','published').orderBy('publishedAt','desc').limit(30);
+    if (collectionId) q = q.where('collectionId','==',collectionId);
+    if (editorUid)    q = q.where('authorUid','==',editorUid);
+
+    q.get().then(function(snap) {
+      if (!grid) return;
+      if (snap.empty) {
+        grid.innerHTML = '';
+        if (empty) empty.style.display = 'block';
+        return;
+      }
+      grid.innerHTML = snap.docs.map(function(doc) {
+        var a = doc.data(); a._id = doc.id;
+        var collName = _jnlCollections[a.collectionId] ? _jnlCollections[a.collectionId].title : (a.collectionId||'');
+        return '<div class="jnl-article-card" onclick="_jnlOpenArticle(\'' + doc.id + '\')">' +
+          (a.backdropUrl ? '<img class="jnl-article-cover" src="' + _jnlEsc(a.backdropUrl) + '" loading="lazy" alt="">' : '<div class="jnl-article-cover" style="background:#1a1a1a"></div>') +
+          '<div class="jnl-article-body">' +
+            (collName ? '<span class="jnl-article-tag">' + _jnlEsc(collName) + '</span>' : '') +
+            '<div class="jnl-article-title">' + _jnlEsc(a.title||'') + '</div>' +
+            '<div class="jnl-article-by">By ' + _jnlEsc(a.authorName||'') + '</div>' +
+            '<div class="jnl-article-date">' + _jnlFmtDate(a.publishedAt) + '</div>' +
+          '</div></div>';
+      }).join('');
+    }).catch(function(err) {
+      // Fallback: may need composite index not yet created
+      if (grid) grid.innerHTML = '<div class="jnl-loading" style="color:#e05555">Could not load articles. Firestore index may be building.</div>';
+    });
+  }
+
+  // ── Editors ────────────────────────────────────────────────────────────────
+  function _jnlLoadEditors() {
+    var db = _jnlDb(); if (!db) return;
+    db.collection('journal/editors/items').orderBy('lastPublishedAt','desc').get()
+      .then(function(snap) {
+        var row = document.getElementById('jnlEditorsRow');
+        if (!row) return;
+        if (snap.empty) { row.innerHTML = '<div class="jnl-loading">No contributors yet.</div>'; return; }
+        row.innerHTML = snap.docs.map(function(doc) {
+          var e = doc.data();
+          var av = e.avatarUrl
+            ? '<img class="jnl-editor-avatar" src="' + _jnlEsc(e.avatarUrl) + '" alt="">'
+            : '<div class="jnl-editor-initials">' + _jnlEsc((e.name||'?').slice(0,2).toUpperCase()) + '</div>';
+          return '<div class="jnl-editor-chip" onclick="_jnlFilterByEditor(\'' + doc.id + '\',\'' + _jnlEsc(e.name||'') + '\')">' +
+            av +
+            '<div class="jnl-editor-name">' + _jnlEsc(e.name||'') + '</div>' +
+            '<div class="jnl-editor-count">' + (e.articleCount||0) + ' article' + ((e.articleCount||0)!==1?'s':'') + '</div>' +
+          '</div>';
+        }).join('');
+      }).catch(function() {
+        var row = document.getElementById('jnlEditorsRow');
+        if (row) row.innerHTML = '';
+      });
+  }
+
+  // ── Filter helpers ─────────────────────────────────────────────────────────
+  window._jnlFilterByCollection = function(id) {
+    _jnlActiveCollection = id; _jnlActiveEditor = null;
+    var c = _jnlCollections[id] || {};
+    var fh = document.getElementById('jnlFilterHeader');
+    var fl = document.getElementById('jnlFilterLabel');
+    var sl = document.getElementById('jnlArticlesSectionLabel');
+    if (fh) fh.style.display = 'flex';
+    if (fl) fl.textContent = c.title || id;
+    if (sl) sl.textContent = 'Articles in ' + (c.title || id);
+    _jnlLoadArticles(id, null);
+  };
+
+  window._jnlFilterByEditor = function(uid, name) {
+    _jnlActiveEditor = uid; _jnlActiveCollection = null;
+    var fh = document.getElementById('jnlFilterHeader');
+    var fl = document.getElementById('jnlFilterLabel');
+    var sl = document.getElementById('jnlArticlesSectionLabel');
+    if (fh) fh.style.display = 'flex';
+    if (fl) fl.textContent = 'Articles by ' + name;
+    if (sl) sl.textContent = 'Articles by ' + name;
+    _jnlLoadArticles(null, uid);
+  };
+
+  window._jnlClearFilter = function() {
+    _jnlActiveCollection = null; _jnlActiveEditor = null;
+    var fh = document.getElementById('jnlFilterHeader');
+    var sl = document.getElementById('jnlArticlesSectionLabel');
+    if (fh) fh.style.display = 'none';
+    if (sl) sl.textContent = 'Recent Articles';
+    _jnlLoadArticles();
+  };
+
+  // ── Article overlay ────────────────────────────────────────────────────────
+  var _jnlArticleOverlay = null;
+
+  window._jnlOpenArticle = function(articleId) {
+    var db = _jnlDb(); if (!db) return;
+    if (!_jnlArticleOverlay) {
+      _jnlArticleOverlay = document.createElement('div');
+      _jnlArticleOverlay.className = 'jnl-article-overlay';
+      document.body.appendChild(_jnlArticleOverlay);
+      document.addEventListener('keydown', function(e) { if (e.key === 'Escape') _jnlCloseArticle(); });
+    }
+    _jnlArticleOverlay.innerHTML =
+      '<button onclick="_jnlCloseArticle()" class="er-back">←</button>' +
+      '<div style="display:flex;align-items:center;justify-content:center;height:80vh;color:#555;font-size:.85rem;letter-spacing:2px;font-family:Montserrat,sans-serif">LOADING…</div>';
+    _jnlArticleOverlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    try { history.pushState({ jnlArticle: articleId }, '', '/article/' + articleId); } catch(e) {}
+
+    var coll = db.collection('journal/articles/items');
+    coll.doc(articleId).get().then(function(doc) {
+      if (!doc.exists) { _jnlArticleOverlay.innerHTML += '<div style="color:#555;text-align:center;padding:60px">Article not found.</div>'; return; }
+      var a = doc.data(); a._id = doc.id;
+      _jnlRenderArticleOverlay(a);
+    }).catch(function() {
+      if (_jnlArticleOverlay) _jnlArticleOverlay.innerHTML = '<button onclick="_jnlCloseArticle()" class="er-back">←</button><div style="color:#555;text-align:center;padding:80px;font-size:.85rem">Could not load article.</div>';
+    });
+  };
+
+  function _jnlRenderArticleOverlay(a) {
+    if (!_jnlArticleOverlay) return;
+    var collName = _jnlCollections[a.collectionId] ? _jnlCollections[a.collectionId].title : (a.collectionId||'');
+    var adminBar = _jnlIsAdmin()
+      ? '<div style="position:fixed;top:calc(env(safe-area-inset-top,0px)+16px);right:16px;z-index:10001;display:flex;gap:8px">' +
+          '<button onclick="_jnlShareArticle(\'' + _jnlEsc(a._id) + '\')" style="background:rgba(0,0,0,.65);border:none;color:#ddd;font-size:.62rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;padding:11px 15px;border-radius:20px;backdrop-filter:blur(8px)">🔗 Share</button>' +
+        '</div>'
+      : '';
+    _jnlArticleOverlay.innerHTML =
+      '<button onclick="_jnlCloseArticle()" class="er-back">←</button>' +
+      adminBar +
+      (a.backdropUrl ? '<img class="jnl-art-backdrop" src="' + _jnlEsc(a.backdropUrl) + '" alt="">' : '<div class="jnl-art-backdrop" style="background:#111"></div>') +
+      '<div class="jnl-art-inner">' +
+        (collName ? '<div class="jnl-art-coll-tag" onclick="_jnlCloseArticle();_jnlFilterByCollection(\'' + _jnlEsc(a.collectionId) + '\')">' + _jnlEsc(collName) + '</div>' : '') +
+        '<h1 class="jnl-art-title">' + _jnlEsc(a.title||'') + '</h1>' +
+        '<div class="jnl-art-byline">By <strong onclick="_jnlCloseArticle();_jnlFilterByEditor(\'' + _jnlEsc(a.authorUid||'') + '\',\'' + _jnlEsc(a.authorName||'') + '\')">' + _jnlEsc(a.authorName||'') + '</strong>' +
+          (a.authorTagline ? ' · <span style="font-style:italic">' + _jnlEsc(a.authorTagline) + '</span>' : '') +
+          ' · ' + _jnlFmtDate(a.publishedAt) + '</div>' +
+        '<div class="jnl-art-body" dir="auto">' + (a.body||'') + '</div>' +
+        '<div style="margin-top:44px;text-align:center">' +
+          '<button onclick="_jnlShareArticle(\'' + _jnlEsc(a._id) + '\')" style="background:rgba(245,166,35,.12);border:1px solid rgba(245,166,35,.3);color:#f5a623;border-radius:20px;padding:11px 28px;font-size:.72rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer">🔗 Share Article</button>' +
+        '</div>' +
+      '</div>';
+    _jnlArticleOverlay.scrollTop = 0;
+  }
+
+  window._jnlCloseArticle = function() {
+    if (_jnlArticleOverlay) _jnlArticleOverlay.classList.remove('open');
+    document.body.style.overflow = '';
+    try { if (location.pathname.startsWith('/article/')) history.pushState(null, '', '/'); } catch(e) {}
+  };
+
+  window._jnlShareArticle = function(articleId) {
+    var url = 'https://p-movies.com/article/' + articleId;
+    if (navigator.share) { navigator.share({ url: url }).catch(function(){}); return; }
+    navigator.clipboard && navigator.clipboard.writeText(url).then(function() { alert('Link copied!'); }).catch(function() { alert(url); });
+  };
+
+  // ── Pending badge ──────────────────────────────────────────────────────────
+  function _jnlRefreshPendingBadge() {
+    if (!_jnlIsAdmin()) return;
+    var banner = document.getElementById('jnlAdminBanner');
+    if (banner) banner.style.display = 'flex';
+    var db = _jnlDb(); if (!db) return;
+    db.collection('journal/articles/items').where('status','==','pending').get()
+      .then(function(snap) {
+        var el = document.getElementById('jnlPendingCount');
+        if (el) el.textContent = snap.size;
+      }).catch(function(){});
+  }
+
+  // ── Admin queue overlay ────────────────────────────────────────────────────
+  var _jnlAdminOverlay = null;
+
+  window._jnlOpenAdmin = function() {
+    if (!_jnlIsAdmin()) return;
+    var db = _jnlDb(); if (!db) return;
+    if (!_jnlAdminOverlay) {
+      _jnlAdminOverlay = document.createElement('div');
+      _jnlAdminOverlay.className = 'jnl-admin-overlay';
+      document.body.appendChild(_jnlAdminOverlay);
+    }
+    _jnlAdminOverlay.innerHTML =
+      '<button onclick="_jnlCloseAdmin()" class="er-back">←</button>' +
+      '<div class="jnl-admin-inner"><div class="jnl-submit-title">Pending Submissions</div>' +
+      '<div id="jnlAdminList"><div class="jnl-loading">Loading…</div></div></div>';
+    _jnlAdminOverlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+
+    db.collection('journal/articles/items').where('status','==','pending').orderBy('submittedAt','asc').get()
+      .then(function(snap) {
+        var list = document.getElementById('jnlAdminList');
+        if (!list) return;
+        if (snap.empty) { list.innerHTML = '<div class="jnl-loading" style="color:#f5a623">No pending submissions.</div>'; return; }
+        list.innerHTML = snap.docs.map(function(doc) {
+          var a = doc.data();
+          return '<div class="jnl-pending-row" onclick="_jnlAdminReview(\'' + doc.id + '\')">' +
+            '<div class="jnl-pending-title">' + _jnlEsc(a.title||'Untitled') + '</div>' +
+            '<div class="jnl-pending-meta">By ' + _jnlEsc(a.authorName||'') + ' · ' + _jnlFmtDate(a.submittedAt) + '</div>' +
+          '</div>';
+        }).join('');
+      }).catch(function() {
+        var list = document.getElementById('jnlAdminList');
+        if (list) list.innerHTML = '<div class="jnl-loading" style="color:#e05555">Could not load submissions.</div>';
+      });
+  };
+
+  window._jnlCloseAdmin = function() {
+    if (_jnlAdminOverlay) _jnlAdminOverlay.classList.remove('open');
+    document.body.style.overflow = '';
+  };
+
+  window._jnlAdminReview = function(articleId) {
+    var db = _jnlDb(); if (!db) return;
+    if (!_jnlAdminOverlay) return;
+    _jnlAdminOverlay.querySelector('.jnl-admin-inner').innerHTML = '<div class="jnl-loading">Loading…</div>';
+    db.collection('journal/articles/items').doc(articleId).get().then(function(doc) {
+      if (!doc.exists) return;
+      var a = doc.data(); a._id = doc.id;
+      var collOptions = Object.keys(_jnlCollections).map(function(id) {
+        return '<option value="' + id + '"' + (a.collectionId===id?' selected':'') + '>' + _jnlEsc(_jnlCollections[id].title||id) + '</option>';
+      }).join('');
+      var inner = _jnlAdminOverlay.querySelector('.jnl-admin-inner');
+      inner.innerHTML =
+        '<button class="jnl-btn-back" onclick="_jnlOpenAdmin()" style="margin-bottom:24px">← Back to queue</button>' +
+        (a.backdropUrl ? '<img src="' + _jnlEsc(a.backdropUrl) + '" style="width:100%;max-height:280px;object-fit:cover;border-radius:10px;margin-bottom:20px">' : '') +
+        '<div class="jnl-submit-title" id="jnlReviewTitle" contenteditable>' + _jnlEsc(a.title||'') + '</div>' +
+        '<div class="jnl-submit-sub">By ' + _jnlEsc(a.authorName||'') + (a.authorTagline?' · '+_jnlEsc(a.authorTagline):'') + '</div>' +
+        '<div class="jnl-field"><label class="jnl-label">Collection</label>' +
+          '<select class="jnl-input jnl-select" id="jnlReviewColl">' + collOptions + '</select></div>' +
+        '<div class="jnl-field"><label class="jnl-label">Article Body</label>' +
+          '<div class="jnl-input jnl-textarea" id="jnlReviewBody" contenteditable dir="auto" style="min-height:200px;overflow-y:auto">' + (a.body||'') + '</div></div>' +
+        '<div class="jnl-admin-actions">' +
+          '<button class="jnl-btn-pub" onclick="_jnlAdminPublish(\'' + articleId + '\',' + JSON.stringify(a.authorUid||'') + ')">✓ Publish</button>' +
+          '<button class="jnl-btn-rej" onclick="_jnlAdminReject(\'' + articleId + '\')">✕ Reject</button>' +
+          '<button class="jnl-btn-back" onclick="_jnlCloseAdmin()">Cancel</button>' +
+        '</div>' +
+        '<div id="jnlAdminMsg" class="jnl-msg"></div>';
+    });
+  };
+
+  window._jnlAdminPublish = function(articleId, authorUid) {
+    var db = _jnlDb(); if (!db || !_jnlIsAdmin()) return;
+    var titleEl = document.getElementById('jnlReviewTitle');
+    var bodyEl  = document.getElementById('jnlReviewBody');
+    var collEl  = document.getElementById('jnlReviewColl');
+    var msgEl   = document.getElementById('jnlAdminMsg');
+    var title   = titleEl ? titleEl.textContent.trim() : '';
+    var body    = bodyEl  ? bodyEl.innerHTML : '';
+    var collId  = collEl  ? collEl.value : '';
+    if (!title) { if (msgEl) { msgEl.textContent = 'Title required.'; msgEl.style.display='block'; } return; }
+    var ref = db.collection('journal/articles/items').doc(articleId);
+    var update = { status:'published', publishedAt: firebase.firestore.FieldValue.serverTimestamp(), title: title, body: body, collectionId: collId, editedByAdmin: true };
+    ref.update(update).then(function() {
+      // Upsert journal/editors/items/{authorUid}
+      if (authorUid) {
+        var authUser = window.pmGetUser && window.pmGetUser();
+        var editorRef = db.collection('journal/editors/items').doc(authorUid);
+        editorRef.set({ articleCount: firebase.firestore.FieldValue.increment(1), lastPublishedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+      }
+      // Decrement pending counter in journal settings
+      db.collection('journal').doc('settings').set({ pendingCount: firebase.firestore.FieldValue.increment(-1) }, { merge: true }).catch(function(){});
+      if (msgEl) { msgEl.textContent = '✓ Published!'; msgEl.style.display='block'; msgEl.style.color='#4caf84'; }
+      setTimeout(function() { _jnlOpenAdmin(); _jnlLoadArticles(); _jnlRefreshPendingBadge(); }, 1200);
+    }).catch(function(e) {
+      if (msgEl) { msgEl.textContent = 'Error: ' + e.message; msgEl.style.display='block'; msgEl.style.color='#e05555'; }
+    });
+  };
+
+  window._jnlAdminReject = function(articleId) {
+    var note = prompt('Optional rejection note (shown to author):') || '';
+    var db = _jnlDb(); if (!db || !_jnlIsAdmin()) return;
+    db.collection('journal/articles/items').doc(articleId).update({ status:'rejected', rejectionNote: note })
+      .then(function() {
+        db.collection('journal').doc('settings').set({ pendingCount: firebase.firestore.FieldValue.increment(-1) }, { merge: true }).catch(function(){});
+        _jnlOpenAdmin(); _jnlRefreshPendingBadge();
+      }).catch(function(e) { alert('Error: ' + e.message); });
+  };
+
+  // ── Submission page ────────────────────────────────────────────────────────
+  var _jnlSubmitOverlay = null;
+  var _jnlUploadedBackdropUrl = null;
+
+  window._jnlOpenSubmit = function() {
+    if (!_jnlSubmitOverlay) {
+      _jnlSubmitOverlay = document.createElement('div');
+      _jnlSubmitOverlay.className = 'jnl-submit-overlay';
+      document.body.appendChild(_jnlSubmitOverlay);
+    }
+    var user = window.pmGetUser && window.pmGetUser();
+    if (!user) {
+      _jnlSubmitOverlay.innerHTML =
+        '<button onclick="_jnlCloseSubmit()" class="er-back">←</button>' +
+        '<div class="jnl-submit-inner"><div class="jnl-submit-title">The Journal</div>' +
+        '<div class="jnl-submit-sub">Please sign in to access the submission form.</div></div>';
+      _jnlSubmitOverlay.classList.add('open'); document.body.style.overflow = 'hidden';
+      try { if (location.pathname !== '/journal-submit') history.pushState(null, '', '/journal-submit'); } catch(e) {}
+      return;
+    }
+    var alreadyGranted = sessionStorage.getItem('journalAccess') === 'true';
+    _jnlSubmitOverlay.classList.add('open'); document.body.style.overflow = 'hidden';
+    try { if (location.pathname !== '/journal-submit') history.pushState(null, '', '/journal-submit'); } catch(e) {}
+    if (alreadyGranted) { _jnlShowSubmitForm(user); return; }
+    _jnlSubmitOverlay.innerHTML =
+      '<button onclick="_jnlCloseSubmit()" class="er-back">←</button>' +
+      '<div class="jnl-submit-inner">' +
+        '<div class="jnl-submit-title">The Journal</div>' +
+        '<div class="jnl-submit-sub">Enter your access code to continue.</div>' +
+        '<div class="jnl-field"><label class="jnl-label">Access Code</label>' +
+          '<input class="jnl-input" id="jnlAccessCode" type="password" placeholder="Enter code…" autocomplete="off">' +
+        '</div>' +
+        '<button class="jnl-submit-btn" onclick="_jnlCheckCode()">Continue</button>' +
+        '<div id="jnlCodeMsg" class="jnl-msg" style="color:#e05555"></div>' +
+      '</div>';
+  };
+
+  window._jnlCheckCode = function() {
+    var input = document.getElementById('jnlAccessCode');
+    var msg   = document.getElementById('jnlCodeMsg');
+    var entered = input ? input.value.trim() : '';
+    if (!entered) return;
+    var db = _jnlDb(); if (!db) return;
+    db.collection('journal').doc('settings').get().then(function(doc) {
+      var code = doc.exists ? (doc.data().access||{}).code || doc.data().accessCode : null;
+      if (code && entered === code) {
+        sessionStorage.setItem('journalAccess','true');
+        var user = window.pmGetUser && window.pmGetUser();
+        _jnlShowSubmitForm(user);
+      } else {
+        if (msg) { msg.textContent = 'Invalid access code.'; msg.style.display = 'block'; }
+      }
+    }).catch(function() {
+      if (msg) { msg.textContent = 'Could not verify code. Try again.'; msg.style.display = 'block'; }
+    });
+  };
+
+  function _jnlShowSubmitForm(user) {
+    if (!_jnlSubmitOverlay) return;
+    _jnlUploadedBackdropUrl = null;
+    var collOptions = Object.keys(_jnlCollections).map(function(id) {
+      return '<option value="' + id + '">' + _jnlEsc(_jnlCollections[id].title||id) + '</option>';
+    }).join('') + '<option value="__suggest">Suggest new collection…</option>';
+
+    _jnlSubmitOverlay.innerHTML =
+      '<button onclick="_jnlCloseSubmit()" class="er-back">←</button>' +
+      '<div class="jnl-submit-inner">' +
+        '<div class="jnl-submit-title">Submit Article</div>' +
+        '<div class="jnl-submit-sub">Writing for The Journal · PMovies</div>' +
+
+        '<div class="jnl-field"><label class="jnl-label">Title *</label>' +
+          '<input class="jnl-input" id="jnlSTitle" maxlength="120" placeholder="Article title…"></div>' +
+
+        '<div class="jnl-field"><label class="jnl-label">Cover Image * (JPG/PNG, max 5 MB)</label>' +
+          '<div class="jnl-upload-wrap" id="jnlUploadWrap" onclick="document.getElementById(\'jnlFileInput\').click()">' +
+            '<div class="jnl-upload-label">Click to choose image</div>' +
+            '<img class="jnl-upload-preview" id="jnlUploadPreview">' +
+            '<input type="file" id="jnlFileInput" accept="image/jpeg,image/png" style="display:none" onchange="_jnlHandleFile(this)">' +
+          '</div>' +
+          '<div class="jnl-progress" id="jnlProgress"><div class="jnl-progress-bar" id="jnlProgressBar"></div></div>' +
+        '</div>' +
+
+        '<div class="jnl-field"><label class="jnl-label">Collection *</label>' +
+          '<select class="jnl-input jnl-select" id="jnlSColl" onchange="_jnlCollChange(this)">' + collOptions + '</select>' +
+          '<input class="jnl-input" id="jnlSCollSuggest" style="display:none;margin-top:8px" maxlength="80" placeholder="Suggest a collection name…"></div>' +
+
+        '<div class="jnl-field"><label class="jnl-label">Article *</label>' +
+          '<div class="jnl-input jnl-textarea" id="jnlSBody" contenteditable dir="auto" style="min-height:300px;overflow-y:auto" data-placeholder="Write your article here…"></div></div>' +
+
+        '<div class="jnl-field"><label class="jnl-label">Your tagline <span style="opacity:.5">(optional)</span></label>' +
+          '<input class="jnl-input" id="jnlSTagline" maxlength="80" placeholder="e.g. Film critic based in Cairo"></div>' +
+
+        '<button class="jnl-submit-btn" id="jnlSubmitBtn" onclick="_jnlSubmitArticle()">Submit for Review</button>' +
+        '<div id="jnlSubmitMsg" class="jnl-msg"></div>' +
+      '</div>';
+  }
+
+  window._jnlCollChange = function(sel) {
+    var sug = document.getElementById('jnlSCollSuggest');
+    if (sug) sug.style.display = sel.value === '__suggest' ? 'block' : 'none';
+  };
+
+  window._jnlHandleFile = function(input) {
+    var file = input.files[0]; if (!file) return;
+    if (!['image/jpeg','image/png'].includes(file.type)) { alert('JPG or PNG only.'); return; }
+    if (file.size > 5 * 1024 * 1024) { alert('File must be under 5 MB.'); return; }
+    var preview = document.getElementById('jnlUploadPreview');
+    var prog    = document.getElementById('jnlProgress');
+    var bar     = document.getElementById('jnlProgressBar');
+    var btn     = document.getElementById('jnlSubmitBtn');
+    if (preview) { preview.src = URL.createObjectURL(file); preview.style.display = 'block'; }
+    if (prog) prog.style.display = 'block';
+    if (btn)  btn.disabled = true;
+    var ext   = file.type === 'image/png' ? 'png' : 'jpg';
+    var path  = 'journal/backdrops/tmp_' + Date.now() + '.' + ext;
+    var ref   = firebase.storage().ref(path);
+    var task  = ref.put(file);
+    task.on('state_changed',
+      function(snap) { var pct = (snap.bytesTransferred / snap.totalBytes) * 100; if (bar) bar.style.width = pct + '%'; },
+      function(err)  { alert('Upload failed: ' + err.message); if (btn) btn.disabled = false; },
+      function() {
+        task.snapshot.ref.getDownloadURL().then(function(url) {
+          _jnlUploadedBackdropUrl = url;
+          if (btn) btn.disabled = false;
+        });
+      }
+    );
+  };
+
+  window._jnlSubmitArticle = function() {
+    var db   = _jnlDb(); if (!db) return;
+    var user = window.pmGetUser && window.pmGetUser();
+    if (!user) { alert('Please sign in.'); return; }
+    var title   = (document.getElementById('jnlSTitle')&&document.getElementById('jnlSTitle').value||'').trim();
+    var body    = document.getElementById('jnlSBody') ? document.getElementById('jnlSBody').innerHTML : '';
+    var collSel = document.getElementById('jnlSColl');
+    var collId  = collSel ? collSel.value : '';
+    var collSug = collId === '__suggest' ? (document.getElementById('jnlSCollSuggest')&&document.getElementById('jnlSCollSuggest').value||'').trim() : '';
+    var tagline = (document.getElementById('jnlSTagline')&&document.getElementById('jnlSTagline').value||'').trim();
+    var msg     = document.getElementById('jnlSubmitMsg');
+    var btn     = document.getElementById('jnlSubmitBtn');
+    if (!title)               { _jnlShowMsg(msg, 'Title is required.', '#e05555'); return; }
+    if (!_jnlUploadedBackdropUrl) { _jnlShowMsg(msg, 'Please upload a cover image.', '#e05555'); return; }
+    if (!collId || collId === '__suggest') { collId = ''; }
+    if (!body || body.replace(/<[^>]*>/g,'').trim().length < 50) { _jnlShowMsg(msg, 'Article body is too short.', '#e05555'); return; }
+    if (btn) btn.disabled = true;
+    db.collection('journal/articles/items').add({
+      title:        title,
+      body:         body,
+      backdropUrl:  _jnlUploadedBackdropUrl,
+      collectionId: collId,
+      collectionSuggestion: collSug || null,
+      authorUid:    user.uid,
+      authorName:   user.displayName || user.email || 'Anonymous',
+      authorTagline: tagline || null,
+      status:       'pending',
+      submittedAt:  firebase.firestore.FieldValue.serverTimestamp(),
+      publishedAt:  null,
+      rejectionNote: null,
+      editedByAdmin: false
+    }).then(function() {
+      db.collection('journal').doc('settings').set({ pendingCount: firebase.firestore.FieldValue.increment(1) }, { merge: true }).catch(function(){});
+      _jnlShowMsg(msg, '✓ Submitted! You\'ll be notified when it\'s published.', '#4caf84');
+      if (btn) btn.disabled = false;
+      // Reset form
+      ['jnlSTitle','jnlSTagline'].forEach(function(id) { var el = document.getElementById(id); if(el) el.value=''; });
+      var body_ = document.getElementById('jnlSBody'); if (body_) body_.innerHTML='';
+      var prev  = document.getElementById('jnlUploadPreview'); if (prev) { prev.src=''; prev.style.display='none'; }
+      var prog  = document.getElementById('jnlProgress'); if (prog) prog.style.display='none';
+      _jnlUploadedBackdropUrl = null;
+    }).catch(function(e) {
+      _jnlShowMsg(msg, 'Error: ' + e.message, '#e05555');
+      if (btn) btn.disabled = false;
+    });
+  };
+
+  function _jnlShowMsg(el, text, color) {
+    if (!el) return;
+    el.textContent = text;
+    el.style.color = color || '#f5a623';
+    el.style.display = 'block';
+  }
+
+  window._jnlCloseSubmit = function() {
+    if (_jnlSubmitOverlay) _jnlSubmitOverlay.classList.remove('open');
+    document.body.style.overflow = '';
+    try { if (location.pathname === '/journal-submit') history.pushState(null, '', '/'); } catch(e) {}
+  };
+
+  // ── Handle #journal-submit hash (legacy — clean path handled via DOMContentLoaded) ──
+  window.addEventListener('hashchange', function() {
+    if (location.hash === '#journal-submit') {
+      location.hash = '';
+      history.replaceState(null, '', '/journal-submit');
+      setTimeout(_jnlOpenSubmit, 200);
+    }
+  });
+
+})();
+</script>
 
 <script>
 /* ── Image memory eviction ─────────────────────────────────────────────────
