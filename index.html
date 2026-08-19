@@ -28807,7 +28807,7 @@ async function deleteEditorReview(key, e) {
           '<label class="jnl-label">Cover Image * <span style="font-weight:400;opacity:.45;text-transform:none;letter-spacing:0;font-size:.6rem">· JPG/PNG/WebP, max 5 MB</span></label>' +
           '<div class="jnl-upload-wrap" id="jnlUploadWrap" onclick="document.getElementById(\'jnlFileInput\').click()">' +
             '<div class="jnl-upload-label" id="jnlUploadLabel"><span style="font-size:2rem;display:block;margin-bottom:10px;opacity:.4">▣</span>Click to choose cover image</div>' +
-            '<img class="jnl-upload-preview" id="jnlUploadPreview">' +
+            '<img class="jnl-upload-preview" id="jnlUploadPreview" style="width:100%;height:200px;object-fit:cover;object-position:center;border-radius:8px;margin-top:14px;display:none">' +
             '<input type="file" id="jnlFileInput" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="_jnlHandleFile(this)">' +
           '</div>' +
           '<div class="jnl-progress" id="jnlProgress"><div class="jnl-progress-bar" id="jnlProgressBar"></div></div>' +
@@ -28847,6 +28847,21 @@ async function deleteEditorReview(key, e) {
       '</div>' +
 
       '<div id="jnlPreviewWrap" style="display:none"></div>';
+
+    // Retry loading collections until Firebase is ready (handles deep-link timing)
+    if (Object.keys(_jnlCollections).length === 0) {
+      var _collRetry = 0;
+      var _collTimer = setInterval(function() {
+        _collRetry++;
+        if (_collRetry > 15) { clearInterval(_collTimer); return; }
+        var db = _jnlDb(); if (!db) return;
+        clearInterval(_collTimer);
+        db.collection('journal/collections/items').get().then(function(snap) {
+          snap.forEach(function(doc) { _jnlCollections[doc.id] = doc.data(); });
+          _jnlRefreshCollSelect();
+        }).catch(function() {});
+      }, 400);
+    }
   }
 
   window._jnlUpdateWordCount = function() {
@@ -28868,16 +28883,22 @@ async function deleteEditorReview(key, e) {
     var prevWrap   = document.getElementById('jnlPreviewWrap');
     if (!formWrap || !prevWrap) return;
     // Use uploaded URL if ready, else fall back to local blob URL for preview
-    var localPrev  = document.getElementById('jnlUploadPreview');
-    var backdropSrc = _jnlUploadedBackdropUrl || (localPrev && localPrev.src && localPrev.src.startsWith('blob:') ? localPrev.src : null);
-    // Hide er-back (close-overlay button) so it doesn't overlap the Edit button
+    var localPrev   = document.getElementById('jnlUploadPreview');
+    var backdropSrc = _jnlUploadedBackdropUrl
+      || (localPrev && localPrev.src && localPrev.src.indexOf('blob:') === 0 ? localPrev.src : null);
+
+    // Hide the form header and er-back while previewing
     var erBack = _jnlSubmitOverlay ? _jnlSubmitOverlay.querySelector('.er-back') : null;
-    if (erBack) erBack.style.display = 'none';
+    if (erBack) { erBack.style.visibility = 'hidden'; erBack.style.pointerEvents = 'none'; }
     var header = _jnlSubmitOverlay ? _jnlSubmitOverlay.querySelector('.jnl-sub-header') : null;
     if (header) header.style.display = 'none';
 
+    // Sticky "← Back to Edit" bar — no position:fixed, avoids all overlay conflicts
     prevWrap.innerHTML =
-      '<button onclick="_jnlEditSubmit()" style="position:fixed;top:calc(env(safe-area-inset-top,0px)+14px);left:14px;z-index:10002;background:rgba(0,0,0,.8);border:1px solid rgba(255,255,255,.15);color:#fff;font-size:.72rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;padding:9px 18px;border-radius:20px;backdrop-filter:blur(10px)">← Edit</button>' +
+      '<div style="position:sticky;top:0;z-index:200;background:rgba(10,10,10,.97);padding:12px 18px;display:flex;align-items:center;gap:14px;border-bottom:1px solid rgba(255,255,255,.07)">' +
+        '<button onclick="_jnlEditSubmit()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#fff;font-size:.7rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;padding:8px 18px;border-radius:20px;white-space:nowrap">← Back to Edit</button>' +
+        '<span style="font-size:.6rem;color:#555;letter-spacing:2px;text-transform:uppercase">Preview</span>' +
+      '</div>' +
       (backdropSrc
         ? '<img class="jnl-art-backdrop" src="' + _jnlEsc(backdropSrc) + '" alt="">'
         : '<div class="jnl-art-backdrop" style="background:linear-gradient(160deg,#181818,#0a0a0a);position:relative"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.7rem;letter-spacing:2px;color:#333;text-transform:uppercase">No cover image yet</div></div>') +
@@ -28900,7 +28921,7 @@ async function deleteEditorReview(key, e) {
     if (formWrap) formWrap.style.display = 'block';
     if (prevWrap) { prevWrap.style.display = 'none'; prevWrap.innerHTML = ''; }
     var erBack = _jnlSubmitOverlay ? _jnlSubmitOverlay.querySelector('.er-back') : null;
-    if (erBack) erBack.style.display = '';
+    if (erBack) { erBack.style.visibility = ''; erBack.style.pointerEvents = ''; }
     var header = _jnlSubmitOverlay ? _jnlSubmitOverlay.querySelector('.jnl-sub-header') : null;
     if (header) header.style.display = '';
     if (_jnlSubmitOverlay) _jnlSubmitOverlay.scrollTop = 0;
