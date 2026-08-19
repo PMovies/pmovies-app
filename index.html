@@ -50,7 +50,7 @@
 
     // ── Show full-screen loader for any deep-link so landing page never flashes ──
     // Checks both the pathname (direct visit) and the hash (Worker redirect via /#fan/…)
-    var _isDeepLink = /^\/(fan|lobby|review|article)\//.test(p) || p === '/journal-submit'
+    var _isDeepLink = /^\/(fan|lobby|review|article)\//.test(p)
       || h.startsWith('#fan/')
       || h.startsWith('#fan-review/')
       || h.startsWith('#review/')
