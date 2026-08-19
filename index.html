@@ -28379,6 +28379,15 @@ async function deleteEditorReview(key, e) {
   };
 
   // ── Collections ────────────────────────────────────────────────────────────
+  function _jnlRefreshCollSelect() {
+    var sel = document.getElementById('jnlSColl'); if (!sel) return;
+    var cur = sel.value;
+    sel.innerHTML = Object.keys(_jnlCollections).map(function(id) {
+      return '<option value="' + id + '">' + _jnlEsc(_jnlCollections[id].title||id) + '</option>';
+    }).join('') + '<option value="__suggest">Suggest new collection…</option>';
+    if (cur && sel.querySelector('option[value="' + cur + '"]')) sel.value = cur;
+  }
+
   function _jnlLoadCollections() {
     var db = _jnlDb(); if (!db) return;
     db.collection('journal').doc('collections').collection('items')
@@ -28387,6 +28396,7 @@ async function deleteEditorReview(key, e) {
         _jnlCollections = {};
         snap.forEach(function(doc) { _jnlCollections[doc.id] = doc.data(); });
         _jnlRenderCollections();
+        _jnlRefreshCollSelect();
       })
       .catch(function() {
         // Try flat collection path as fallback
@@ -28394,6 +28404,7 @@ async function deleteEditorReview(key, e) {
           .then(function(snap) {
             snap.forEach(function(doc) { _jnlCollections[doc.id] = doc.data(); });
             _jnlRenderCollections();
+            _jnlRefreshCollSelect();
           }).catch(function() {
             var g = document.getElementById('jnlCollectionsGrid');
             if (g) g.innerHTML = '<div class="jnl-loading">No collections yet.</div>';
