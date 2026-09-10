@@ -99,6 +99,7 @@
   <link rel="preload" as="script" href="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"/>
   <link rel="preload" as="script" href="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"/>
   <link rel="preload" as="script" href="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"/>
+  <link rel="preload" as="script" href="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"/>
   <!-- Wordmark preload for faster LCP -->
   <link rel="preload" as="image" href="/icons/wordmark.png" fetchpriority="high"/>
   <!-- Google Fonts — non-blocking load -->
@@ -1928,7 +1929,7 @@
 
   #pmLandingScreen {
     position: fixed; inset: 0; z-index: 99999;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    display: none; flex-direction: column; align-items: center; justify-content: center;
     background: linear-gradient(170deg, #080808 0%, #100b00 60%, #080808 100%);
     padding: 32px 24px; padding-bottom: max(32px, env(safe-area-inset-bottom, 32px));
     text-align: center; overflow-y: auto;
@@ -11199,6 +11200,7 @@ window._removeDlLoader = function() {
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 
   <!-- INSTALL BANNER (Android/Chrome) -->
   <!-- SW UPDATE TOAST -->
