@@ -10796,7 +10796,9 @@ window._removeDlLoader = function() {
       createdAt: Date.now()
     };
     try {
-      await fetch(`${RTDB}/lists.json`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(listData) });
+      const _lstUser = window.pmGetUser && window.pmGetUser();
+      const _lstTok  = _lstUser?.getIdToken ? await _lstUser.getIdToken() : null;
+      await fetch(`${RTDB}/lists.json${_lstTok ? '?auth=' + _lstTok : ''}`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(listData) });
       document.getElementById('adminListTitle').value = '';
       document.getElementById('adminListDesc').value = '';
       adminMovies = [];
@@ -10814,7 +10816,9 @@ window._removeDlLoader = function() {
   async function adminDeleteList(listId) {
     if (!confirm('Delete this list? This cannot be undone.')) return;
     try {
-      await fetch(`${RTDB}/lists/${listId}.json`, { method:'DELETE' });
+      const _dlUser = window.pmGetUser && window.pmGetUser();
+      const _dlTok  = _dlUser?.getIdToken ? await _dlUser.getIdToken() : null;
+      await fetch(`${RTDB}/lists/${listId}.json${_dlTok ? '?auth=' + _dlTok : ''}`, { method:'DELETE' });
       delete allListsData[listId];
       await loadLists();
       renderAdminExistingLists();
