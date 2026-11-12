@@ -7267,10 +7267,7 @@ window._removeDlLoader = function() {
         if (typeof allReviews !== 'undefined' && allReviews.length) {
           _pmReviewsCache = allReviews;
         } else {
-          const _cacheUser = window.pmGetUser ? window.pmGetUser() : null;
-          const _cacheTok  = _cacheUser?.getIdToken ? await _cacheUser.getIdToken() : null;
-          const r = await fetch(`${RTDB}/fanReviews.json${_cacheTok ? '?auth=' + _cacheTok : ''}`);
-          const d = r.ok ? await r.json() : null;
+          const d = await window._pmFetchReviewsRaw('fanReviews');
           _pmReviewsCache = d ? Object.values(d) : [];
         }
       }
@@ -7389,6 +7386,7 @@ window._removeDlLoader = function() {
   async function loadYtReviews() {
     const ytKey = getYtKey(), tmdbKey = getKey();
     const content = document.getElementById('ytContent');
+    if (!content) return;
     if (!ytKey) { content.innerHTML = ytSetupCard(); return; }
     content.innerHTML = '<div class="yt-loading">⏳ Loading PMovies reviews…</div>';
     try {
@@ -7599,6 +7597,7 @@ window._removeDlLoader = function() {
 
   async function loadLetterboxd() {
     const content = document.getElementById('lbContent');
+    if (!content) return;
     content.innerHTML = '<div class="yt-loading">Loading Letterboxd reviews…</div>';
     try {
       const allItems = await fetchLbItems();
@@ -7920,19 +7919,11 @@ window._removeDlLoader = function() {
   async function loadCommentCounts(type) {
     const path = type === 'tv' ? 'seriesReviewComments' : 'fanReviewComments';
     try {
-      const res  = await fetch(`${RTDB}/${path}.json?shallow=true`);
+      const res  = await fetch(`${RTDB}/${path}.json`);
       const data = (res.ok ? await res.json() : null) || {};
-      // shallow=true gives {fp: true} — we need actual counts, fetch each that exists
-      const fps = Object.keys(data);
-      if (!fps.length) return;
-      // Fetch all in parallel (each is small)
-      await Promise.all(fps.map(async fp => {
-        try {
-          const r = await fetch(`${RTDB}/${path}/${encodeURIComponent(fp)}.json`);
-          const d = r.ok ? await r.json() : null;
-          if (d) _cmtCountCache[fp] = Object.keys(d).length;
-        } catch(_) {}
-      }));
+      Object.keys(data).forEach(fp => {
+        if (data[fp] && typeof data[fp] === 'object') _cmtCountCache[fp] = Object.keys(data[fp]).length;
+      });
     } catch(_) {}
   }
   // Apply cached comment counts to rendered toggle buttons
@@ -8995,6 +8986,20 @@ window._removeDlLoader = function() {
   window._pmLsKey  = lsKey;
   window._pmDbPath = dbPath;
 
+  // One shared download of each review collection (they are several hundred KB),
+  // reused for 2 minutes by the film page, feed and community sections.
+  const _pmRawCache = {};
+  window._pmFetchReviewsRaw = function(path, fresh) {
+    const hit = _pmRawCache[path];
+    if (!fresh && hit && Date.now() - hit.t < 120000) return hit.p;
+    const p = fetch(`${RTDB}/${path}.json`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d === null && _pmRawCache[path] && _pmRawCache[path].p === p) delete _pmRawCache[path]; return d; })
+      .catch(() => { if (_pmRawCache[path] && _pmRawCache[path].p === p) delete _pmRawCache[path]; return null; });
+    _pmRawCache[path] = { t: Date.now(), p };
+    return p;
+  };
+
   async function loadFanReviews() {
     fanReviewsShown = FAN_PAGE_SIZE;
     _communityShown = FAN_PAGE_SIZE;
@@ -9010,30 +9015,8 @@ window._removeDlLoader = function() {
 
     // 1. Load movies from RTDB (preserve key so edits can PATCH the right record)
     try {
-      const _readUser = window.pmGetUser ? window.pmGetUser() : null;
-      const _readToken = _readUser?.getIdToken ? await _readUser.getIdToken() : null;
-      const rtdbRes  = await fetch(`${RTDB}/fanReviews.json${_readToken ? '?auth=' + _readToken : ''}`);
-      const rtdbData = rtdbRes.ok ? await rtdbRes.json() : null;
+      const rtdbData = await window._pmFetchReviewsRaw('fanReviews', true);
       if (rtdbData) rtdbReviews = Object.entries(rtdbData).map(([k, r]) => ({ ...r, _rtdbKey: k }));
-    } catch(_) {}
-
-    // 2. Load movies from Firestore REST API
-    try {
-      const url = `https://firestore.googleapis.com/v1/projects/${DEFAULT_FB_PROJECT_ID}/databases/(default)/documents/fanReviews?pageSize=50&key=${DEFAULT_FB_API_KEY}`;
-      const res = await fetch(url);
-      if (res.ok) {
-        const data = await res.json();
-        fsReviews = (data.documents || []).map(doc => {
-          const f = doc.fields || {};
-          return {
-            name:      f.name?.stringValue  || 'Anonymous',
-            movie:     f.movie?.stringValue || '',
-            rating:    +(f.rating?.integerValue ?? f.rating?.doubleValue ?? 0),
-            text:      f.text?.stringValue  || '',
-            timestamp: f.timestamp?.timestampValue ? new Date(f.timestamp.timestampValue).getTime() : 0
-          };
-        });
-      }
     } catch(_) {}
 
     // 3. Merge movies — deduplicate by name+movie+text fingerprint
@@ -9089,31 +9072,8 @@ window._removeDlLoader = function() {
       list.innerHTML = `<p style="color:#888;padding:20px;text-align:center">Could not load reviews: ${esc(e.message)}</p><button onclick="loadFanReviews()" style="display:block;margin:10px auto;background:#f5a623;border:none;color:#000;padding:10px 20px;border-radius:8px;font-weight:700;cursor:pointer">↺ Retry</button>`;
     }
 
-    // ── Silent backdrop backfill ──
-    // Write fanReviewMeta for every review so Twitter always sees the movie card.
-    // Throttled to 1 write per 400 ms to avoid hammering TMDB / Firebase.
-    // Runs once per page load — only reviews missing a backdrop in the local
-    // backdropCache get a fresh TMDB fetch; cached ones resolve instantly.
-    (function _backfillMeta() {
-      const reviews = allMerged.slice(); // snapshot
-      let i = 0;
-      function _next() {
-        if (i >= reviews.length) return;
-        const r   = reviews[i++];
-        const fp  = fanReviewFp(r);
-        const isTV = r._mediaType === 'tv';
-        fetchBackdrop(r.movie, isTV ? 'tv' : 'movie', r.tmdbId || null)
-          .then(function(backdropUrl) {
-            if (!backdropUrl) return; // never overwrite an existing good backdrop with null
-            const backdropPath = backdropUrl.replace('https://image.tmdb.org/t/p/w1280', '');
-            _writeReviewMeta(fp, r, backdropPath);
-          })
-          .catch(function() {})
-          .finally(function() { setTimeout(_next, 400); });
-      }
-      // Start after a 3-second grace period so page load isn't affected
-      setTimeout(_next, 3000);
-    })();
+    // Share-card metadata (fanReviewMeta) is written when a review is submitted, opened
+    // or shared — not re-written for every review on every page load.
   }
 
   async function submitFanReview() {
@@ -9173,7 +9133,7 @@ window._removeDlLoader = function() {
               method:'PUT', headers:{'Content-Type':'application/json'},
               body: JSON.stringify({ rating: rating, snippet: text.slice(0,120), timestamp: Date.now(), reviewId: rtdbKey })
             }).catch(()=>{});
-            fetch(`${RTDB}/filmMeta/${tmdbId}.json`, {
+            fetch(`${RTDB}/filmMeta/${tmdbId}.json?auth=${_tok}`, {
               method:'PUT', headers:{'Content-Type':'application/json'},
               body: JSON.stringify({ title: movie, year: reviewData.year || '', poster: reviewData.poster || null, backdrop: backdropPath || null })
             }).catch(()=>{});
@@ -16720,19 +16680,23 @@ async function postersApprove(key) {
   const card = document.getElementById(`ppend-${key}`);
   card.style.opacity = '0.5';
   try {
+    const _pu = window.pmGetUser && window.pmGetUser();
+    const _pa = _pu ? '?auth=' + await _pu.getIdToken() : '';
+
     // 1. Read the pending record
     const r = await fetch(`${RTDB}/posterUploads/pending/${key}.json`);
     const record = r.ok ? await r.json() : null;
     if (!record) throw new Error('Record not found');
 
     // 2. Write to approved with the same key
-    await fetch(`${RTDB}/posterUploads/approved/${key}.json`, {
+    const w = await fetch(`${RTDB}/posterUploads/approved/${key}.json${_pa}`, {
       method:'PUT', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ ...record, approvedDate: Date.now() })
     });
+    if (!w.ok) throw new Error('Approve write ' + w.status);
 
     // 3. Delete from pending
-    await fetch(`${RTDB}/posterUploads/pending/${key}.json`, { method:'DELETE' });
+    await fetch(`${RTDB}/posterUploads/pending/${key}.json${_pa}`, { method:'DELETE' });
 
     card.remove();
     // Reload gallery
@@ -16753,7 +16717,10 @@ async function postersReject(key) {
   const card = document.getElementById(`ppend-${key}`);
   card.style.opacity = '0.5';
   try {
-    await fetch(`${RTDB}/posterUploads/pending/${key}.json`, { method:'DELETE' });
+    const _pu = window.pmGetUser && window.pmGetUser();
+    const _pa = _pu ? '?auth=' + await _pu.getIdToken() : '';
+    const d = await fetch(`${RTDB}/posterUploads/pending/${key}.json${_pa}`, { method:'DELETE' });
+    if (!d.ok) throw new Error('Reject ' + d.status);
     card.remove();
     const remaining = document.querySelectorAll('[id^="ppend-"]').length;
     document.getElementById('postersAdminCount').textContent = `${remaining} pending`;
@@ -23835,17 +23802,16 @@ async function deleteEditorReview(key, e) {
       }
 
       // 2. Fetch movie + series reviews in parallel, filter to followed users
-      var [movR, serR] = await Promise.all([
-        fetch(RTDB + '/fanReviews.json'),
-        fetch(RTDB + '/seriesFanReviews.json'),
+      var [movRevs, serRevs] = await Promise.all([
+        window._pmFetchReviewsRaw('fanReviews'),
+        window._pmFetchReviewsRaw('seriesFanReviews'),
       ]);
-      var movRevs = movR.ok ? (await movR.json() || {}) : {};
-      var serRevs = serR.ok ? (await serR.json() || {}) : {};
+      movRevs = movRevs || {}; serRevs = serRevs || {};
 
       var toEntries = function(obj, mediaType) {
         return Object.entries(obj)
-          .filter(function(e) { return followedUids.indexOf(e[1].uid) !== -1; })
-          .map(function(e) { e[1]._fp = e[0]; e[1]._mediaType = mediaType; return e[1]; });
+          .filter(function(e) { return e[1] && followedUids.indexOf(e[1].uid) !== -1; })
+          .map(function(e) { return Object.assign({}, e[1], { _fp: e[0], _mediaType: mediaType }); });
       };
 
       // Deduplicate by _fp (RTDB key) — guarantees no duplicate cards
@@ -24265,9 +24231,15 @@ async function deleteEditorReview(key, e) {
         return;
       } catch(e) {}
     }
-    // REST fallback: poll every 15s
+    // REST fallback: poll once a minute, and only while the tab is visible
     _trPollBoard();
-    setInterval(_trPollBoard, 15000);
+    setInterval(function() { if (!document.hidden) _trPollBoard(); }, 60000);
+  }
+
+  // Small, lazily-loaded avatar (Cloudinary originals can be several MB)
+  function _trAvatarImg(url) {
+    var src = (typeof cdnImg === 'function') ? cdnImg(url, 96) : url;
+    return '<img src="' + _esc(src) + '" alt="" loading="lazy" decoding="async" width="36" height="36" style="width:36px;height:36px;border-radius:50%;object-fit:cover">';
   }
 
   function _trPollBoard() {
@@ -24364,6 +24336,8 @@ async function deleteEditorReview(key, e) {
   function _trRenderBoard() {
     var list = document.getElementById('pmTrBoardList');
     if (!list) return;
+    var boardOv = document.getElementById('pmTrBoardOverlay');
+    if (boardOv && !boardOv.classList.contains('open')) return;
     var sorted = _trSorted();
     var me = _trGetUser();
     var myIdx = me ? sorted.findIndex(function(e) { return e.uid === me.uid; }) : -1;
@@ -24379,7 +24353,7 @@ async function deleteEditorReview(key, e) {
       var cnt = _trMode === 'ar' ? (e.arabicCount||0) : (e.count||0);
       var isMe = me && e.uid === me.uid;
       var avHtml = e.avatar
-        ? '<img src="' + _esc(e.avatar) + '" alt="" style="width:36px;height:36px;border-radius:50%;object-fit:cover">'
+        ? _trAvatarImg(e.avatar)
         : '<div style="width:36px;height:36px;border-radius:50%;background:#222;display:flex;align-items:center;justify-content:center;font-size:.9rem;color:#888">' + (e.displayName||'?').charAt(0).toUpperCase() + '</div>';
       var nameClick = 'pmTrCloseBoard();setTimeout(function(){pmOpenProfile(\'' + e.uid + '\')},80)';
       return '<div class="pm-tr-board-row' + (borderClass[i] ? ' ' + borderClass[i] : '') + (isMe ? '" style="background:rgba(255,184,0,.04)' : '') + '">'
@@ -24406,7 +24380,7 @@ async function deleteEditorReview(key, e) {
           posSlot.innerHTML = '<div class="pm-tr-your-label">── YOUR POSITION ──</div>'
             + '<div class="pm-tr-board-row" style="padding:0">'
             + '<div class="pm-tr-rank-num">' + (myIdx+1) + '</div>'
-            + '<div class="pm-tr-av">' + (myEntry.avatar ? '<img src="'+_esc(myEntry.avatar)+'" alt="" style="width:36px;height:36px;border-radius:50%;object-fit:cover">' : '<div style="width:36px;height:36px;border-radius:50%;background:#222;font-size:.9rem;color:#888;display:flex;align-items:center;justify-content:center">' + (myEntry.displayName||'?').charAt(0).toUpperCase() + '</div>') + '</div>'
+            + '<div class="pm-tr-av">' + (myEntry.avatar ? _trAvatarImg(myEntry.avatar) : '<div style="width:36px;height:36px;border-radius:50%;background:#222;font-size:.9rem;color:#888;display:flex;align-items:center;justify-content:center">' + (myEntry.displayName||'?').charAt(0).toUpperCase() + '</div>') + '</div>'
             + '<div class="pm-tr-board-name">' + _esc(myEntry.displayName || (myEntry.username ? '@'+myEntry.username : 'you')) + ' <span style="color:#ffb800;font-size:.6rem">(you)</span></div>'
             + '<div class="pm-tr-board-count">' + myC + ' film' + (myC!==1?'s':'') + '</div>'
             + '</div>';
@@ -24490,31 +24464,13 @@ async function deleteEditorReview(key, e) {
       var authQ = tok ? '?auth=' + tok : '';
 
       // 1. Delete the log entry from Firebase
-      await fetch(TR_RTDB + '/theaterLogs/' + me.uid + '/' + TR_YEAR + '/' + encodeURIComponent(logKey) + '.json' + authQ, { method: 'DELETE' });
+      var delRes = await fetch(TR_RTDB + '/theaterLogs/' + me.uid + '/' + TR_YEAR + '/' + encodeURIComponent(logKey) + '.json' + authQ, { method: 'DELETE' });
+      if (!delRes.ok) throw new Error('log delete ' + delRes.status);
 
-      // 2. Remove from local cache
-      _trMyLogs = _trMyLogs.filter(function(l) { return l._key !== logKey; });
-      _trMyCount   = _trMyLogs.length;
-      _trMyArCount = _trMyLogs.filter(function(l) { return l.isArabic; }).length;
-
-      // 3. Update leaderboard entry (or remove if zero)
-      var lbUrl = TR_RTDB + '/theaterLeaderboard/' + TR_YEAR + '/' + me.uid + '.json' + authQ;
-      if (_trMyCount === 0) {
-        await fetch(lbUrl, { method: 'DELETE' });
-        delete _trBoard[me.uid];
-      } else {
-        var nickname = (window.pmGetNickname && window.pmGetNickname()) || me.displayName || 'Film Lover';
-        var username = (window._pmMyProfile && window._pmMyProfile.username) || '';
-        var avatar   = (window._pmMyProfile && window._pmMyProfile.photoURL) || me.photoURL || '';
-        var updated  = { count: _trMyCount, arabicCount: _trMyArCount,
-          displayName: nickname, username: username, avatar: avatar };
-        await fetch(lbUrl, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updated)
-        });
-        _trBoard[me.uid] = updated;
-      }
+      // 2. Re-read the remaining logs and rebuild the leaderboard entry from them
+      try { _trMyLogs = await _trFetchMyLogs(authQ); }
+      catch(e) { _trMyLogs = _trMyLogs.filter(function(l) { return l._key !== logKey; }); }
+      await _trSyncMyBoardEntry(authQ);
 
       // 4. Re-render everything
       _trRenderStrip();
@@ -24530,7 +24486,7 @@ async function deleteEditorReview(key, e) {
   /* ── Open / close board overlay ─────────────────────────────── */
   window.pmTrOpenBoard = function() {
     var ov = document.getElementById('pmTrBoardOverlay');
-    if (ov) { ov.classList.add('open'); _trRenderBoard(); }
+    if (ov) { ov.classList.add('open'); _trRenderBoard(); _trPollBoard(); }
   };
   window.pmTrCloseBoard = function() {
     var ov = document.getElementById('pmTrBoardOverlay');
@@ -24737,38 +24693,19 @@ async function deleteEditorReview(key, e) {
         timestamp:     Date.now()
       };
       var logUrl = TR_RTDB + '/theaterLogs/' + me.uid + '/' + TR_YEAR + '/' + pushId + '.json' + authQ;
-      await fetch(logUrl, {
+      var logRes = await fetch(logUrl, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(logEntry)
       });
+      if (!logRes.ok) throw new Error('log write ' + logRes.status);
 
-      // Update leaderboard counts
-      // Read current, increment, write back
-      var lbUrl = TR_RTDB + '/theaterLeaderboard/' + TR_YEAR + '/' + me.uid + '.json' + authQ;
-      var curRes = await fetch(lbUrl.replace(authQ, '') + authQ);
-      var cur = curRes.ok ? await curRes.json() : null;
-      var newCount   = ((cur && cur.count)       || 0) + 1;
-      var newArCount = ((cur && cur.arabicCount)  || 0) + (isArabic ? 1 : 0);
-      var nickname   = (window.pmGetNickname && window.pmGetNickname()) || me.displayName || 'Film Lover';
-      var username   = (window._pmMyProfile && window._pmMyProfile.username) || '';
-      var avatar     = (window._pmMyProfile && window._pmMyProfile.photoURL) || me.photoURL || '';
-
-      await fetch(lbUrl, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ count: newCount, arabicCount: newArCount,
-          displayName: nickname, username: username, avatar: avatar })
-      });
-
-      // Update local state
-      _trMyCount    = newCount;
-      _trMyArCount  = newArCount;
-      _trMyLogs.unshift(logEntry);
-
-      // Update board cache
-      _trBoard[me.uid] = { count: newCount, arabicCount: newArCount,
-        displayName: nickname, username: username, avatar: avatar };
+      // The board count is always recomputed from the saved logs, never incremented,
+      // so it cannot drift from what the profile shows.
+      try { _trMyLogs = await _trFetchMyLogs(authQ); }
+      catch(e) { _trMyLogs.unshift(logEntry); }
+      await _trSyncMyBoardEntry(authQ);
+      var newCount = _trMyCount;
 
       _trLastLogEntry = logEntry;
       pmTrCloseLog();
@@ -25163,6 +25100,79 @@ async function deleteEditorReview(key, e) {
     } catch(e) {}
   };
 
+  /* ── Own logs are the source of truth for the leaderboard entry ── */
+  async function _trFetchMyLogs(authQ) {
+    var me = _trGetUser();
+    var r = await fetch(TR_RTDB + '/theaterLogs/' + me.uid + '/' + TR_YEAR + '.json' + authQ);
+    if (!r.ok) throw new Error('logs ' + r.status);
+    var data = await r.json();
+    return Object.entries(data || {}).filter(function(e){ return e[1]; })
+      .map(function(e){ return Object.assign({}, e[1], { _key: e[0] }); })
+      .sort(function(a,b){ return (b.timestamp||0)-(a.timestamp||0); });
+  }
+
+  async function _trSyncMyBoardEntry(authQ) {
+    var me = _trGetUser();
+    if (!me) return;
+    _trMyCount   = _trMyLogs.length;
+    _trMyArCount = _trMyLogs.filter(function(l){ return l.isArabic; }).length;
+    var lbUrl = TR_RTDB + '/theaterLeaderboard/' + TR_YEAR + '/' + me.uid + '.json' + authQ;
+    if (_trMyCount === 0) {
+      var d = await fetch(lbUrl, { method: 'DELETE' });
+      if (!d.ok) throw new Error('board delete ' + d.status);
+      delete _trBoard[me.uid];
+      return;
+    }
+    var prev  = _trBoard[me.uid] || {};
+    var prof  = window._pmMyProfile || {};
+    var entry = {
+      count: _trMyCount, arabicCount: _trMyArCount,
+      displayName: (window.pmGetNickname && window.pmGetNickname()) || prev.displayName || me.displayName || 'Film Lover',
+      username:    prof.username || prev.username || '',
+      avatar:      prof.photoURL || prev.avatar || me.photoURL || ''
+    };
+    var w = await fetch(lbUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(entry)
+    });
+    if (!w.ok) throw new Error('board write ' + w.status);
+    _trBoard[me.uid] = entry;
+  }
+
+  /* ── Admin: rebuild every leaderboard entry from the logs (run pmTrAdminRecount() in the console) ── */
+  window.pmTrAdminRecount = async function() {
+    var tok = await _trToken();
+    if (!tok) { console.warn('Sign in as an admin first'); return; }
+    var authQ = '?auth=' + tok;
+    var res = await Promise.all([
+      fetch(TR_RTDB + '/theaterLogs.json' + authQ),
+      fetch(TR_RTDB + '/theaterLeaderboard/' + TR_YEAR + '.json')
+    ]);
+    if (!res[0].ok) { console.warn('Cannot read theaterLogs (' + res[0].status + ') — check database rules'); return; }
+    var logs = (await res[0].json()) || {}, board = (await res[1].json()) || {};
+    var report = [];
+    var uids = Object.keys(Object.assign({}, logs, board));
+    for (var i = 0; i < uids.length; i++) {
+      var uid = uids[i];
+      var mine = Object.values((logs[uid] && logs[uid][TR_YEAR]) || {}).filter(Boolean);
+      var count = mine.length, ar = mine.filter(function(l){ return l.isArabic; }).length;
+      var cur = board[uid] || null;
+      var curCount = (cur && cur.count) || 0, curAr = (cur && cur.arabicCount) || 0;
+      if (curCount === count && curAr === ar) continue;
+      var url = TR_RTDB + '/theaterLeaderboard/' + TR_YEAR + '/' + uid + '.json' + authQ;
+      var w = count === 0
+        ? await fetch(url, { method: 'DELETE' })
+        : await fetch(url, { method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ count: count, arabicCount: ar }) });
+      report.push({ uid: uid, name: (cur && cur.displayName) || '', board: curCount + '/' + curAr, actual: count + '/' + ar, fixed: w.ok ? 'yes' : 'NO (' + w.status + ')' });
+    }
+    console.table(report);
+    console.log(report.length ? report.length + ' entries differed' : 'All leaderboard entries already match the logs');
+    _trPollBoard();
+    return report;
+  };
+
   /* ── Load own logs on auth ──────────────────────────────────── */
   async function _trLoadMyLogs() {
     var me = _trGetUser();
@@ -25170,17 +25180,21 @@ async function deleteEditorReview(key, e) {
     try {
       var tok = await _trToken();
       var authQ = tok ? '?auth='+tok : '';
-      var r = await fetch(TR_RTDB + '/theaterLogs/' + me.uid + '/' + TR_YEAR + '.json' + authQ);
-      if (!r.ok) return;
-      var data = await r.json();
-      if (!data) { _trMyCount = 0; _trMyArCount = 0; _trMyLogs = []; }
-      else {
-        _trMyLogs    = Object.entries(data).filter(function(e){ return e[1]; })
-                         .map(function(e){ return Object.assign({}, e[1], { _key: e[0] }); })
-                         .sort(function(a,b){ return (b.timestamp||0)-(a.timestamp||0); });
-        _trMyCount   = _trMyLogs.length;
-        _trMyArCount = _trMyLogs.filter(function(l){ return l.isArabic; }).length;
-      }
+      _trMyLogs    = await _trFetchMyLogs(authQ);
+      _trMyCount   = _trMyLogs.length;
+      _trMyArCount = _trMyLogs.filter(function(l){ return l.isArabic; }).length;
+
+      // Self-heal: if the stored leaderboard entry disagrees with the real logs, rewrite it.
+      try {
+        var lbRes = await fetch(TR_RTDB + '/theaterLeaderboard/' + TR_YEAR + '/' + me.uid + '.json');
+        if (lbRes.ok) {
+          var lb = await lbRes.json();
+          if (lb) _trBoard[me.uid] = lb;
+          var lbCount = (lb && lb.count) || 0, lbAr = (lb && lb.arabicCount) || 0;
+          if (lbCount !== _trMyCount || lbAr !== _trMyArCount) await _trSyncMyBoardEntry(authQ);
+        }
+      } catch(e) {}
+
       _trRenderStrip();
       _trRenderBoard();
 
@@ -25728,15 +25742,12 @@ async function deleteEditorReview(key, e) {
 
     // 2. Fetch all fanReviews and filter by tmdbId (no index required)
     try {
-      var r = await fetch(_RTDB+'/fanReviews.json');
-      if (r.ok) {
-        var raw = await r.json();
-        if (raw) {
-          Object.entries(raw).forEach(function(e) {
-            var rev = e[1], rKey = e[0];
-            if (rev && String(rev.tmdbId) === tid) _addRev(Object.assign({},rev,{_key:rKey}), rKey);
-          });
-        }
+      var raw = await window._pmFetchReviewsRaw('fanReviews');
+      if (raw) {
+        Object.entries(raw).forEach(function(e) {
+          var rev = e[1], rKey = e[0];
+          if (rev && String(rev.tmdbId) === tid) _addRev(Object.assign({},rev,{_key:rKey}), rKey);
+        });
       }
     } catch(_e) {}
     return Object.keys(idx).length ? idx : null;
@@ -26002,14 +26013,20 @@ async function deleteEditorReview(key, e) {
     } catch(_e) {}
 
     // Fetch logs + leaderboard in parallel (leaderboard has displayName per uid)
+    // All users' logs are one download — share it across film pages for 2 minutes.
     var logsRes, lbRes;
     try {
-      var pair = await Promise.all([
-        fetch(_RTDB+'/theaterLogs.json'+authSuffix).then(function(r){return r.ok?r.json():null;}),
-        fetch(_RTDB+'/theaterLeaderboard/'+year+'.json').then(function(r){return r.ok?r.json():null;})
-      ]);
+      var tc = window._pmTheaterAllCache;
+      if (!tc || Date.now() - tc.t > 120000 || tc.authed !== !!authSuffix) {
+        tc = window._pmTheaterAllCache = { t: Date.now(), authed: !!authSuffix, p: Promise.all([
+          fetch(_RTDB+'/theaterLogs.json'+authSuffix).then(function(r){return r.ok?r.json():null;}),
+          fetch(_RTDB+'/theaterLeaderboard/'+year+'.json').then(function(r){return r.ok?r.json():null;})
+        ]) };
+      }
+      var pair = await tc.p;
       logsRes = pair[0]; lbRes = pair[1];
-    } catch(_e) { logsRes = null; lbRes = null; }
+      if (!logsRes) window._pmTheaterAllCache = null;
+    } catch(_e) { logsRes = null; lbRes = null; window._pmTheaterAllCache = null; }
 
     if (_fpCurrentId !== String(tmdbId)) return;
 
@@ -27744,9 +27761,12 @@ async function deleteEditorReview(key, e) {
     setTimeout(initScratchCanvas, 60);
 
     if (quote.id && quote.id !== '__event__') {
-      fetch(RTDB + '/quotes/' + quote.id + '/useCount.json', {
-        method: 'PUT',
-        body: JSON.stringify({ '.sv': { increment: 1 } })
+      var _qUser = window.pmGetUser && window.pmGetUser();
+      if (_qUser) _qUser.getIdToken().then(function(tok) {
+        return fetch(RTDB + '/quotes/' + quote.id + '/useCount.json?auth=' + tok, {
+          method: 'PUT',
+          body: JSON.stringify({ '.sv': { increment: 1 } })
+        });
       }).catch(function(){});
     }
   }
@@ -29229,6 +29249,7 @@ async function deleteEditorReview(key, e) {
     document.getElementById('pmIsModal').style.display = 'block';
     document.body.style.overflow = 'hidden';
     pmIsReset();
+    if (window._pmIsEnsure) window._pmIsEnsure();
   };
 
   window.pmIsClose = function() {
@@ -29297,8 +29318,12 @@ async function deleteEditorReview(key, e) {
       document.getElementById('pmIsErrorMsg').textContent = 'File too large — please use an image under 20 MB.';
       _pmIsShowState('Error'); return;
     }
+    _pmIsShowState('Searching');
+    _pmIsStartSteps();
+    if (window._pmIsEnsure) { try { await window._pmIsEnsure(); } catch(e) {} }
     if (!window._pmIs || !window._pmIs.meta) {
-      document.getElementById('pmIsErrorMsg').textContent = 'Index not loaded yet — please try again in a moment.';
+      clearInterval(_pmIsStepTimer);
+      document.getElementById('pmIsErrorMsg').textContent = 'Could not load the film index — please check your connection and try again.';
       _pmIsShowState('Error'); return;
     }
     _pmIsShowState('Searching');
@@ -29405,12 +29430,8 @@ async function deleteEditorReview(key, e) {
 
 <!-- ══ Image Search — CLIP module engine ═══════════════════════════════════ -->
 <script type="module">
-import {
-  AutoProcessor,
-  CLIPVisionModelWithProjection,
-  RawImage,
-  env,
-} from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
+// Loaded on demand by _pmIsEnsure() — never at page load.
+let AutoProcessor, CLIPVisionModelWithProjection, RawImage, env;
 
 window._pmIs = {
   modelState: 'idle',
@@ -29588,8 +29609,26 @@ window._pmIsSearch = async function(blob) {
   return { results, usedCLIP: window._pmIs.modelState === 'ready' };
 };
 
-await loadData();
-loadModel();
+let _pmIsReady = null;
+window._pmIsEnsure = function() {
+  if (!_pmIsReady) {
+    _pmIsReady = (async () => {
+      const [lib] = await Promise.all([
+        import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2').catch(() => null),
+        loadData(),
+      ]);
+      if (lib) {
+        ({ AutoProcessor, CLIPVisionModelWithProjection, RawImage, env } = lib);
+        loadModel();
+      } else {
+        window._pmIs.modelState = 'failed';
+        _updateBadge();
+      }
+      if (!window._pmIs.meta) _pmIsReady = null; // index failed to load — allow a retry
+    })();
+  }
+  return _pmIsReady;
+};
 </script>
 
 </body>
