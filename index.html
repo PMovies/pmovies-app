@@ -7464,7 +7464,7 @@ window._removeDlLoader = function() {
   }
 
   /* ══ HELPERS ══ */
-  function esc(s) { const d=document.createElement('div'); d.appendChild(document.createTextNode(s)); return d.innerHTML; }
+  function esc(s) { const d=document.createElement('div'); d.appendChild(document.createTextNode(s)); return d.innerHTML.replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
   function escJs(s) { return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
   function showLoader(v)  { document.getElementById('loader').classList.toggle('visible', v); }
   function showError(msg) { const el=document.getElementById('errorBox'); el.textContent=msg; el.classList.add('visible'); }
@@ -20058,7 +20058,7 @@ async function deleteEditorReview(key, e) {
   }
 
   function _esc(s) {
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
 
   // ── Editor Role ───────────────────────────────────────────────────
@@ -21193,11 +21193,11 @@ async function deleteEditorReview(key, e) {
     if (!hits.length) { drop.style.display = 'none'; return; }
     drop.innerHTML = hits.map(function(u) {
       var av = u.photoURL
-        ? '<img class="pm-claim-user-avatar" src="' + u.photoURL + '" onerror="this.style.background=\'#222\';this.style.display=\'flex\'">'
+        ? '<img class="pm-claim-user-avatar" src="' + _esc(u.photoURL) + '" onerror="this.style.background=\'#222\';this.style.display=\'flex\'">'
         : '<div class="pm-claim-user-avatar">' + (u.nickname.charAt(0) || '?').toUpperCase() + '</div>';
-      var safeName = u.nickname.replace(/'/g, "\\'");
+      var safeName = _esc(JSON.stringify(u.nickname));
       return '<div class="pm-claim-user-row"'
-        + ' onmousedown="window._pmClaimSelect(\'' + safeKey + '\',\'' + fp + '\',\'' + u.uid + '\',\'' + safeName + '\')">'
+        + ' onmousedown="window._pmClaimSelect(\'' + safeKey + '\',\'' + fp + '\',\'' + _esc(u.uid) + '\',' + safeName + ')">'
         + av
         + '<div><div class="pm-claim-user-name">' + _esc(u.nickname) + '</div>'
         + (u.username ? '<div class="pm-claim-user-handle">@' + _esc(u.username) + '</div>' : '')
@@ -21295,11 +21295,11 @@ async function deleteEditorReview(key, e) {
     if (!hits.length) { drop.style.display = 'none'; return; }
     drop.style.display = 'block';
     drop.innerHTML = hits.map(function(u) {
-      return '<div onclick="window._pmResetCooldown(\'' + u.uid + '\',\'' + (u.nickname || u.username) + '\')" '
+      return '<div onclick="window._pmResetCooldown(' + _esc(JSON.stringify(u.uid)) + ',' + _esc(JSON.stringify(u.nickname || u.username)) + ')" '
         + 'style="padding:10px 14px;cursor:pointer;font-size:.78rem;color:#f4f1ea;border-bottom:1px solid rgba(255,255,255,.05);display:flex;align-items:center;gap:10px" '
         + 'onmouseover="this.style.background=\'#222\'" onmouseout="this.style.background=\'\'">'
-        + (u.photoURL ? '<img src="' + u.photoURL + '" style="width:28px;height:28px;border-radius:50%;object-fit:cover">' : '<div style="width:28px;height:28px;border-radius:50%;background:#333;display:flex;align-items:center;justify-content:center;font-size:.7rem">' + (u.nickname[0] || '?').toUpperCase() + '</div>')
-        + '<span>' + (u.nickname || '—') + ' <span style="color:#666">@' + (u.username || '—') + '</span></span>'
+        + (u.photoURL ? '<img src="' + _esc(u.photoURL) + '" style="width:28px;height:28px;border-radius:50%;object-fit:cover">' : '<div style="width:28px;height:28px;border-radius:50%;background:#333;display:flex;align-items:center;justify-content:center;font-size:.7rem">' + (u.nickname[0] || '?').toUpperCase() + '</div>')
+        + '<span>' + _esc(u.nickname || '—') + ' <span style="color:#666">@' + _esc(u.username || '—') + '</span></span>'
         + '</div>';
     }).join('');
   };
@@ -24207,7 +24207,7 @@ async function deleteEditorReview(key, e) {
     var u = _trGetUser();
     return u ? u.getIdToken() : Promise.resolve(null);
   }
-  function _esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function _esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
   function _trFmt(date) {
     // Format YYYY-MM-DD to "May 20, 2026"
     try {
@@ -28381,7 +28381,33 @@ async function deleteEditorReview(key, e) {
   }
 
   function _jnlEsc(s) {
-    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  // Article bodies are rich text from contributors: keep basic formatting, strip everything else
+  // (scripts, event handlers, images, iframes, styles) before it is put on the page.
+  function _jnlSanitize(html) {
+    var ALLOWED = {B:1,STRONG:1,I:1,EM:1,U:1,P:1,BR:1,H2:1,H3:1,BLOCKQUOTE:1,UL:1,OL:1,LI:1,A:1,DIV:1,SPAN:1};
+    var DROP = {SCRIPT:1,STYLE:1,IFRAME:1,OBJECT:1,EMBED:1,SVG:1,MATH:1,LINK:1,META:1,BASE:1,FORM:1,INPUT:1,BUTTON:1,TEXTAREA:1,SELECT:1,TEMPLATE:1,NOSCRIPT:1,TITLE:1};
+    var doc = new DOMParser().parseFromString('<body>' + String(html || '') + '</body>', 'text/html');
+    (function walk(node) {
+      Array.prototype.slice.call(node.childNodes).forEach(function(n) {
+        if (n.nodeType === 3) return;
+        if (n.nodeType !== 1) { n.remove(); return; }
+        var tag = n.tagName.toUpperCase();
+        if (DROP[tag]) { n.remove(); return; }
+        walk(n);
+        if (!ALLOWED[tag]) { while (n.firstChild) node.insertBefore(n.firstChild, n); n.remove(); return; }
+        var href = tag === 'A' ? (n.getAttribute('href') || '').trim() : '';
+        var dir  = (n.getAttribute('dir') || '').toLowerCase();
+        Array.prototype.slice.call(n.attributes).forEach(function(a) { n.removeAttribute(a.name); });
+        if (dir === 'rtl' || dir === 'ltr' || dir === 'auto') n.setAttribute('dir', dir);
+        if (tag === 'A' && /^(https?:|mailto:)/i.test(href)) {
+          n.setAttribute('href', href); n.setAttribute('target', '_blank'); n.setAttribute('rel', 'noopener noreferrer');
+        }
+      });
+    })(doc.body);
+    return doc.body.innerHTML;
   }
 
   function _jnlFmtDate(ts) {
@@ -28606,7 +28632,7 @@ async function deleteEditorReview(key, e) {
         '<div class="jnl-art-byline">By <strong onclick="_jnlCloseArticle();_jnlFilterByEditor(\'' + _jnlEsc(a.authorUid||'') + '\',\'' + _jnlEsc(a.authorName||'') + '\')">' + _jnlEsc(a.authorName||'') + '</strong>' +
           (a.authorTagline ? ' · <span style="font-style:italic">' + _jnlEsc(a.authorTagline) + '</span>' : '') +
           ' · ' + _jnlFmtDate(a.publishedAt) + '</div>' +
-        '<div class="jnl-art-body" dir="auto">' + (a.body||'') + '</div>' +
+        '<div class="jnl-art-body" dir="auto">' + _jnlSanitize(a.body) + '</div>' +
         '<div style="margin-top:44px;text-align:center">' +
           '<button onclick="_jnlShareArticle(\'' + _jnlEsc(a._id) + '\')" style="background:rgba(245,166,35,.12);border:1px solid rgba(245,166,35,.3);color:#f5a623;border-radius:20px;padding:11px 28px;font-size:.72rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer">🔗 Share Article</button>' +
         '</div>' +
@@ -28699,7 +28725,7 @@ async function deleteEditorReview(key, e) {
         '<div class="jnl-field"><label class="jnl-label">Collection</label>' +
           '<select class="jnl-input jnl-select" id="jnlReviewColl">' + collOptions + '</select></div>' +
         '<div class="jnl-field"><label class="jnl-label">Article Body</label>' +
-          '<div class="jnl-input jnl-textarea" id="jnlReviewBody" contenteditable dir="auto" style="min-height:200px;overflow-y:auto">' + (a.body||'') + '</div></div>' +
+          '<div class="jnl-input jnl-textarea" id="jnlReviewBody" contenteditable dir="auto" style="min-height:200px;overflow-y:auto">' + _jnlSanitize(a.body) + '</div></div>' +
         '<div class="jnl-admin-actions">' +
           '<button class="jnl-btn-pub" onclick="_jnlAdminPublish(\'' + articleId + '\',' + JSON.stringify(a.authorUid||'') + ')">✓ Publish</button>' +
           '<button class="jnl-btn-rej" onclick="_jnlAdminReject(\'' + articleId + '\')">✕ Reject</button>' +
@@ -28933,7 +28959,7 @@ async function deleteEditorReview(key, e) {
         '<div class="jnl-art-byline">By <strong>' + _jnlEsc(authorName) + '</strong>' +
           (tagline ? ' · <span style="font-style:italic">' + _jnlEsc(tagline) + '</span>' : '') +
         '</div>' +
-        '<div class="jnl-art-body" dir="auto">' + body + '</div>' +
+        '<div class="jnl-art-body" dir="auto">' + _jnlSanitize(body) + '</div>' +
       '</div>';
 
     formWrap.style.display = 'none';
