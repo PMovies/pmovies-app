@@ -1755,21 +1755,43 @@
   .tab-panel.active { display:block; }
   .tab-panel.tab-entering { animation:tabFadeIn .25s ease; }
   @keyframes tabFadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
-  @media(max-width:600px){
-    .pmovies-tabs {
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 5px;
-      padding: 10px 0 6px;
-      position: sticky;
-      top: 0;
+  @media(max-width:768px){
+    /* Stick below the floating Home / profile / search / bell buttons instead of underneath them */
+    .pmovies-tabs { top: calc(env(safe-area-inset-top, 0px) + 60px); }
+    /* While pinned: solid background, plus shadow copies that fill the strip above the bar
+       (a pseudo-element would be clipped by the bar's own horizontal scrolling) */
+    .pmovies-tabs.is-stuck {
+      background: #0a0a0a;
+      box-shadow:
+        0 calc(-1 * (env(safe-area-inset-top, 0px) + 60px)) 0 24px #0a0a0a,
+        0 calc(-0.5 * (env(safe-area-inset-top, 0px) + 60px)) 0 24px #0a0a0a,
+        -24px 0 0 0 #0a0a0a,
+        24px 0 0 0 #0a0a0a,
+        0 12px 12px -8px rgba(0,0,0,.85);
     }
+  }
+  @media(max-width:600px){
+    /* One swipeable row instead of two wrapped rows */
+    .pmovies-tabs {
+      flex-wrap: nowrap;
+      justify-content: flex-start;
+      gap: 6px;
+      padding: 8px 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+      overscroll-behavior-x: contain;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .pmovies-tabs::-webkit-scrollbar { display: none; }
     .pmovies-tab {
-      flex: 0 0 calc(19% - 2px);
+      flex: 0 0 auto;
+      min-width: 66px;
       font-size: .58rem;
-      padding: 9px 2px 7px;
+      padding: 8px 10px 6px;
       letter-spacing: .02em;
       border-radius: 12px;
+      white-space: nowrap;
     }
     .pmovies-tab .tab-icon { font-size: .95rem; }
   }
@@ -4964,6 +4986,21 @@ window._removeDlLoader = function() {
     <span class="tab-icon">📰</span>The Journal
   </button>
 </nav>
+<script>
+/* Marks the tab bar while it is pinned, so it can paint a solid strip behind the floating buttons */
+(function(){
+  var bar = document.querySelector('.pmovies-tabs');
+  if (!bar) return;
+  var ticking = false;
+  function check() {
+    ticking = false;
+    var top = parseFloat(getComputedStyle(bar).top) || 0;
+    bar.classList.toggle('is-stuck', window.scrollY > 0 && bar.getBoundingClientRect().top <= top + 1);
+  }
+  window.addEventListener('scroll', function(){ if (!ticking) { ticking = true; requestAnimationFrame(check); } }, { passive: true });
+  window.addEventListener('resize', check);
+})();
+</script>
 <!-- ╔══════════════════════════════════════════════════════════╗ -->
 <!-- ║  THEATER RACE STRIP  (always visible below tab nav)     ║ -->
 <!-- ╚══════════════════════════════════════════════════════════╝ -->
@@ -9545,6 +9582,12 @@ window._removeDlLoader = function() {
       const btn = document.getElementById('tab-btn-' + t);
       if (btn) btn.classList.toggle('active', t === name);
     });
+    // Mobile: the tab bar is one swipeable row — keep the active tab in view
+    const _actBtn = document.getElementById('tab-btn-' + name);
+    const _tabBar = _actBtn && _actBtn.parentElement;
+    if (_tabBar && _tabBar.scrollWidth > _tabBar.clientWidth + 1) {
+      _tabBar.scrollTo({ left: _actBtn.offsetLeft - (_tabBar.clientWidth - _actBtn.offsetWidth) / 2, behavior: 'smooth' });
+    }
     // Only init journey when navigating TO For You — not when already there.
     // Re-clicking the active tab restarts the animation but keeps the current journey state.
     // Users can explicitly reset via "Take the journey again".
@@ -25689,14 +25732,19 @@ async function deleteEditorReview(key, e) {
         var obj = {}; matched.forEach(function(p){ obj[p._id] = p; }); return obj;
       }
     }
+    // The Lobby is readable by signed-in users only — nothing to fetch for guests
+    var _flMe = window.pmGetUser && window.pmGetUser();
+    if (!_flMe) return null;
+    var _flAuth = '';
+    try { _flAuth = '&auth=' + await _flMe.getIdToken(); } catch(_e) { return null; }
     // 2. Try indexed Firebase query (requires .indexOn: ["filmId"] in RTDB rules)
     try {
-      var r1 = await fetch(_RTDB+'/community/posts.json?orderBy="filmId"&equalTo="'+tid+'"&limitToFirst=5');
+      var r1 = await fetch(_RTDB+'/community/posts.json?orderBy="filmId"&equalTo="'+tid+'"&limitToFirst=5'+_flAuth);
       if (r1.ok) { var d1 = await r1.json(); if (d1 && typeof d1 === 'object' && Object.keys(d1).length) return d1; }
     } catch(_e) {}
-    // 3. Fall back to fetching all posts and filtering client-side
+    // 3. Fall back to fetching recent posts and filtering client-side
     try {
-      var r2 = await fetch(_RTDB+'/community/posts.json?limitToLast=200');
+      var r2 = await fetch(_RTDB+'/community/posts.json?orderBy="$key"&limitToLast=200'+_flAuth);
       if (r2.ok) {
         var all = await r2.json();
         if (all && typeof all === 'object') {
@@ -26019,7 +26067,7 @@ async function deleteEditorReview(key, e) {
       var tc = window._pmTheaterAllCache;
       if (!tc || Date.now() - tc.t > 120000 || tc.authed !== !!authSuffix) {
         tc = window._pmTheaterAllCache = { t: Date.now(), authed: !!authSuffix, p: Promise.all([
-          fetch(_RTDB+'/theaterLogs.json'+authSuffix).then(function(r){return r.ok?r.json():null;}),
+          (authSuffix ? fetch(_RTDB+'/theaterLogs.json'+authSuffix).then(function(r){return r.ok?r.json():null;}) : Promise.resolve(null)),
           fetch(_RTDB+'/theaterLeaderboard/'+year+'.json').then(function(r){return r.ok?r.json():null;})
         ]) };
       }
@@ -26581,8 +26629,20 @@ async function deleteEditorReview(key, e) {
     feed.innerHTML = '<div class="lobby-empty">Loading…</div>';
     try {
       var me = window.pmGetUser && window.pmGetUser();
+      // A returning member whose sign-in is still resolving: wait for it instead of showing the guest message
+      if (!me && localStorage.getItem('pmovies_was_signed_in') === '1') {
+        for (var _w = 0; _w < 20 && !me; _w++) {
+          await new Promise(function(res){ setTimeout(res, 300); });
+          me = window.pmGetUser && window.pmGetUser();
+        }
+      }
+      if (!me) {
+        feed.innerHTML = '<div class="lobby-empty">Sign in to read and join The Lobby.'
+          + '<div style="margin-top:14px"><button onclick="pmSignInWithGoogle()" style="background:#f5a623;border:none;color:#000;font-weight:700;font-size:.78rem;padding:10px 20px;border-radius:20px;cursor:pointer">Sign in with Google</button></div></div>';
+        return;
+      }
       var tok = null;
-      try { if (me) tok = await me.getIdToken(); } catch(_e) {}
+      try { tok = await me.getIdToken(); } catch(_e) {}
       var authSuffix = tok ? '?auth=' + tok : '';
       var raw = null;
 
@@ -28499,7 +28559,8 @@ async function deleteEditorReview(key, e) {
     if (grid) grid.innerHTML = '<div class="jnl-loading">Loading…</div>';
     if (empty) empty.style.display = 'none';
 
-    var q = db.collection('journal/articles/items').where('status','==','published').orderBy('publishedAt','desc').limit(30);
+    // Equality filters only: sorting is done below, so no composite Firestore index is needed
+    var q = db.collection('journal/articles/items').where('status','==','published');
     if (collectionId) q = q.where('collectionId','==',collectionId);
     if (editorUid)    q = q.where('authorUid','==',editorUid);
 
@@ -28510,7 +28571,9 @@ async function deleteEditorReview(key, e) {
         if (empty) empty.style.display = 'block';
         return;
       }
-      grid.innerHTML = snap.docs.map(function(doc) {
+      var _ms = function(d) { var t = d.data().publishedAt; return t && t.toMillis ? t.toMillis() : (t && t.seconds ? t.seconds * 1000 : 0); };
+      var docs = snap.docs.slice().sort(function(a, b) { return _ms(b) - _ms(a); }).slice(0, 30);
+      grid.innerHTML = docs.map(function(doc) {
         var a = doc.data(); a._id = doc.id;
         var collName = _jnlCollections[a.collectionId] ? _jnlCollections[a.collectionId].title : (a.collectionId||'');
         return '<div class="jnl-article-card" onclick="_jnlOpenArticle(\'' + doc.id + '\')">' +
@@ -28524,7 +28587,7 @@ async function deleteEditorReview(key, e) {
       }).join('');
     }).catch(function(err) {
       // Fallback: may need composite index not yet created
-      if (grid) grid.innerHTML = '<div class="jnl-loading" style="color:#e05555">Could not load articles. Firestore index may be building.</div>';
+      if (grid) grid.innerHTML = '<div class="jnl-loading" style="color:#e05555">Could not load articles. Please try again.</div>';
     });
   }
 
@@ -28683,12 +28746,14 @@ async function deleteEditorReview(key, e) {
     _jnlAdminOverlay.classList.add('open');
     document.body.style.overflow = 'hidden';
 
-    db.collection('journal/articles/items').where('status','==','pending').orderBy('submittedAt','asc').get()
+    // Sorted here (oldest first) so the query needs no composite Firestore index
+    db.collection('journal/articles/items').where('status','==','pending').get()
       .then(function(snap) {
         var list = document.getElementById('jnlAdminList');
         if (!list) return;
         if (snap.empty) { list.innerHTML = '<div class="jnl-loading" style="color:#f5a623">No pending submissions.</div>'; return; }
-        list.innerHTML = snap.docs.map(function(doc) {
+        var _sub = function(d) { var t = d.data().submittedAt; return t && t.toMillis ? t.toMillis() : (t && t.seconds ? t.seconds * 1000 : 0); };
+        list.innerHTML = snap.docs.slice().sort(function(a, b) { return _sub(a) - _sub(b); }).map(function(doc) {
           var a = doc.data();
           return '<div class="jnl-pending-row" onclick="_jnlAdminReview(\'' + doc.id + '\')">' +
             '<div class="jnl-pending-title">' + _jnlEsc(a.title||'Untitled') + '</div>' +
