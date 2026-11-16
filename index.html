@@ -103,8 +103,8 @@
   <!-- Wordmark preload for faster LCP -->
   <link rel="preload" as="image" href="/icons/wordmark.png" fetchpriority="high"/>
   <!-- Google Fonts — non-blocking load -->
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;500;600;700;900&family=Open+Sans:wght@400;600&display=swap" media="print" onload="this.media='all'"/>
-  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;500;600;700;900&family=Open+Sans:wght@400;600&display=swap"/></noscript>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;500;600;700;900&family=Open+Sans:wght@400;600&family=Playfair+Display:ital,wght@0,700;1,500&family=Amiri:wght@400;700&display=swap" media="print" onload="this.media='all'"/>
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;500;600;700;900&family=Open+Sans:wght@400;600&family=Playfair+Display:ital,wght@0,700;1,500&family=Amiri:wght@400;700&display=swap"/></noscript>
   <title>PMovies – Top 100 Films, Movie Recommendations &amp; Mood Discovery</title>
 
   <!-- Open Graph (Facebook, WhatsApp, iMessage) -->
@@ -4326,306 +4326,149 @@
     50%      { opacity:0.85; }
   }
 
-  /* ── Screen ─────────────────────────────────────────────────── */
+  /* ── Intro screen: the gold ticket ───────────────────────────── */
   #lobby-screen {
-    position: fixed; inset: 0; z-index: 100001;
-    background: #080808;
-    display: flex; flex-direction: column; overflow: hidden;
+    --gold: #d9b25f; --card: #121110; --ink: #efe9dc;
+    --ink-soft: rgba(239,233,220,.56); --ink-faint: rgba(239,233,220,.28);
+    position: fixed; inset: 0; z-index: 100001; isolation: isolate;
+    background: #070707; color: var(--ink); overflow: hidden;
+    display: flex; flex-direction: column; align-items: center;
+    font-family: 'Montserrat', system-ui, sans-serif; -webkit-font-smoothing: antialiased;
     transition: opacity 0.5s ease;
   }
   #lobby-screen.lobby-exit { opacity: 0; pointer-events: none; }
+  #lobby-screen *, #lobby-screen *::before, #lobby-screen *::after { box-sizing: border-box; }
 
-  /* ── Film-grain overlay ──────────────────────────────────────── */
-  #lobby-screen::before {
-    content: '';
-    position: absolute; inset: 0; z-index: 3; pointer-events: none;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
-    opacity: 1;
-  }
+  /* Backdrop: the film still with a vignette and fine grain */
+  #lobby-screen .tk-bg { position: absolute; inset: -4%; z-index: -3; background: #0b0b0b center/cover no-repeat;
+    filter: blur(2px) saturate(.9) brightness(.66); transform: scale(1.04);
+    animation: tkDrift 38s ease-in-out infinite alternate; transition: opacity 1.2s; opacity: 0; }
+  #lobby-screen .tk-bg.on { opacity: 1; }
+  @keyframes tkDrift { to { transform: scale(1.12) translate3d(-1.5%, -1%, 0); } }
+  @keyframes tkDriftWide { to { transform: scale(1.06); } }
+  #lobby-screen .tk-vignette { position: absolute; inset: 0; z-index: -2; pointer-events: none;
+    background: radial-gradient(130% 90% at 50% 40%, rgba(7,7,7,.05) 0%, rgba(7,7,7,.55) 60%, rgba(7,7,7,.92) 100%),
+                linear-gradient(180deg, rgba(7,7,7,.62) 0%, transparent 24%, transparent 60%, rgba(7,7,7,.95) 100%); }
+  #lobby-screen .tk-grain { position: absolute; inset: 0; z-index: -1; opacity: .09; pointer-events: none; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  #lobby-screen .tk-credit { display: none; }
 
-  /* ── Backdrop ───────────────────────────────────────────────── */
-  .lobby-backdrop {
-    position: absolute; inset: -40px;
-    background-size: cover; background-position: center;
-    filter: blur(20px) brightness(0.48) saturate(0.85);
-    transform: scale(1.05); z-index: 0;
-    transition: background-image 1.2s ease;
-  }
+  /* Header */
+  #lobby-screen .tk-top { width: 100%; padding: calc(env(safe-area-inset-top, 0px) + 26px) 24px 0; text-align: center; flex: 0 0 auto; }
+  #lobby-screen .tk-wordmark { font-weight: 700; font-size: 13px; letter-spacing: .52em; padding-left: .52em; color: var(--ink); }
+  #lobby-screen .tk-wordmark b { color: var(--gold); font-weight: 700; }
+  #lobby-screen .tk-tagline { margin-top: 8px; font-size: 9.5px; font-weight: 500; letter-spacing: .22em; text-transform: uppercase; color: rgba(239,233,220,.5); }
 
-  /* Edge vignette — darkens corners, keeps center readable */
-  .lobby-overlay {
-    position: absolute; inset: 0; z-index: 1; pointer-events: none;
-    background:
-      radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0,0,0,0.6) 100%),
-      linear-gradient(to bottom,
-        rgba(0,0,0,0.7) 0%,
-        rgba(0,0,0,0.05) 25%,
-        rgba(0,0,0,0.05) 70%,
-        rgba(0,0,0,0.85) 100%);
+  /* Stage + ticket */
+  #lobby-screen .tk-stage { flex: 1 1 auto; min-height: 0; width: 100%; display: flex; align-items: center; justify-content: center; padding: 14px 22px; }
+  #lobby-screen .tk-shadow { position: relative; width: min(100%, 372px); max-height: 100%; display: flex; justify-content: center;
+    filter: drop-shadow(0 30px 44px rgba(0,0,0,.62)); }
+  #lobby-screen .tk-ticket {
+    --notch: 13px; --perf-y: 78%;
+    position: relative; width: 100%; max-height: 100%; display: flex; flex-direction: column;
+    background: var(--card); color: var(--ink); border-radius: 16px;
+    box-shadow: inset 0 0 0 1px rgba(217,178,95,.38), inset 0 0 0 5px var(--card), inset 0 0 0 6px rgba(217,178,95,.16);
+    -webkit-mask: radial-gradient(circle var(--notch) at 0 var(--perf-y), transparent 98%, #000) left / 51% 100% no-repeat,
+                  radial-gradient(circle var(--notch) at 100% var(--perf-y), transparent 98%, #000) right / 51% 100% no-repeat;
+            mask: radial-gradient(circle var(--notch) at 0 var(--perf-y), transparent 98%, #000) left / 51% 100% no-repeat,
+                  radial-gradient(circle var(--notch) at 100% var(--perf-y), transparent 98%, #000) right / 51% 100% no-repeat;
+    animation: tkRise .9s cubic-bezier(.2,.8,.2,1) both;
   }
+  @keyframes tkRise { from { opacity: 0; transform: translateY(26px) rotate(-1.4deg) scale(.97); } }
+  #lobby-screen .tk-head { display: flex; align-items: baseline; justify-content: space-between; padding: 20px 22px 0; font-size: 9px; font-weight: 700; letter-spacing: .26em; text-transform: uppercase; color: var(--ink-soft); }
+  #lobby-screen .tk-head .tk-admit { color: var(--gold); }
+  #lobby-screen .tk-title { margin: 0; padding: 10px 22px 12px; font-family: 'Bebas Neue', 'Montserrat', sans-serif; font-weight: 400; font-size: 36px; line-height: .98; letter-spacing: .045em; color: var(--ink); text-transform: uppercase; }
+  #lobby-screen .tk-title em { font-style: normal; color: var(--gold); }
 
-  /* ── Thin accent rule under header ──────────────────────────── */
-  .lobby-header-rule {
-    position: relative; z-index: 2;
-    display: flex; align-items: center; justify-content: center;
-    gap: 14px; padding: 6px 0 0;
-    pointer-events: none;
-  }
-  .lobby-header-rule::before,
-  .lobby-header-rule::after {
-    content: '';
-    flex: 1; max-width: 120px; height: 1px;
-    background: linear-gradient(to right,
-      transparent, rgba(245,166,35,0.45), transparent);
-  }
-  .lobby-header-dot {
-    width: 4px; height: 4px; border-radius: 50%;
-    background: var(--orange, #f5a623);
-    opacity: 0.6;
-  }
+  /* Scratch panel */
+  #lobby-screen .tk-panel { position: relative; margin: 0 16px; flex: 0 1 auto; min-height: 150px; height: clamp(190px, 33vh, 310px); border-radius: 10px; overflow: hidden; background: #0b0a09;
+    box-shadow: inset 0 0 0 1px var(--ink-faint), inset 0 8px 22px rgba(0,0,0,.28); }
+  #lobby-screen .tk-quote { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 18px 20px; text-align: center; }
+  #lobby-screen .tk-quote::before { content: '\201C'; font-family: 'Playfair Display', Georgia, serif; font-size: 46px; line-height: .6; color: var(--gold); opacity: .85; margin-bottom: 8px; }
+  #lobby-screen .tk-panel.revealed .tk-quote { padding-bottom: 46px; }
+  #lobby-screen .tk-qtext { margin: 0; font-family: 'Playfair Display', Georgia, serif; font-style: italic; font-weight: 500; color: #f4efe4; font-size: clamp(15px, 4.6vw, 19px); line-height: 1.42;
+    display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
+  #lobby-screen .tk-qattr { margin: 12px 0 0; font-size: 9px; font-weight: 700; letter-spacing: .22em; text-transform: uppercase; color: var(--gold); }
+  /* Arabic: a real Arabic face, upright, no letter-spacing (spacing breaks joined letters) */
+  #lobby-screen .tk-qtext.ar { font-family: 'Amiri', 'Geeza Pro', 'Noto Naskh Arabic', serif; font-style: normal; font-weight: 400; font-size: clamp(18px, 5.4vw, 23px); line-height: 1.7; direction: rtl; }
+  #lobby-screen .tk-qattr.ar { font-family: 'Amiri', 'Geeza Pro', serif; letter-spacing: 0; font-size: 15px; text-transform: none; direction: rtl; }
+  #lobby-screen .tk-foil { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: grab; transition: opacity .7s ease, transform .7s ease; }
+  #lobby-screen .tk-foil.revealed { opacity: 0; transform: scale(1.03); pointer-events: none; }
+  #lobby-screen .tk-sheen { position: absolute; inset: 0; pointer-events: none; overflow: hidden; transition: opacity .4s; }
+  #lobby-screen .tk-sheen::after { content: ''; position: absolute; top: -30%; bottom: -30%; width: 34%; left: -50%; transform: skewX(-18deg);
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.34), transparent); animation: tkSheen 3.6s ease-in-out 1.1s infinite; }
+  @keyframes tkSheen { 0% { left: -50%; } 55%, 100% { left: 130%; } }
+  #lobby-screen .tk-panel.touched .tk-sheen { opacity: 0; }
 
-  /* ── Header ─────────────────────────────────────────────────── */
-  .lobby-header {
-    position: relative; z-index: 2;
-    display: flex; flex-direction: column; align-items: center;
-    padding: max(env(safe-area-inset-top, 0px) + 36px, 48px) 0 0; pointer-events: none; gap: 0;
-  }
-  .lobby-wordmark {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(22px, 3vw, 36px);
-    font-weight: 400;
-    letter-spacing: 0.55em;
-    color: var(--orange, #f5a623);
-    text-transform: uppercase;
-    text-shadow: 0 0 40px rgba(245,166,35,0.35);
-    line-height: 1;
-  }
-  .lobby-tagline {
-    font-family: 'Montserrat', sans-serif;
-    font-size: clamp(8px, 0.9vw, 10px);
-    font-weight: 600;
-    letter-spacing: 0.38em;
-    color: rgba(255,255,255,0.3);
-    text-transform: uppercase;
-    margin-top: 5px;
-  }
+  /* Post-reveal actions */
+  #lobby-screen .tk-actions { position: absolute; left: 0; right: 0; bottom: 10px; display: none; justify-content: center; gap: 8px; animation: lobbyFadeUp .45s ease both; }
+  #lobby-screen .tk-chip { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 13px; border-radius: 15px; border: 1px solid var(--ink-faint); background: transparent; color: var(--ink-soft);
+    font: 700 9px/1 'Montserrat', sans-serif; letter-spacing: .16em; text-transform: uppercase; cursor: pointer; }
+  #lobby-screen .tk-chip:hover { color: var(--ink); border-color: var(--ink-soft); }
+  #lobby-screen .tk-chip svg { width: 12px; height: 12px; }
 
-  /* ── Stage ───────────────────────────────────────────────────── */
-  .lobby-stage {
-    flex: 1; position: relative; z-index: 2;
-    display: flex; align-items: center; justify-content: center;
-    padding: 16px 24px;
-  }
-  .lobby-ticket-wrap {
-    display: flex; flex-direction: column;
-    align-items: center; gap: 18px;
-  }
+  /* Perforation + stub */
+  #lobby-screen .tk-perf { margin: 16px 20px 0; height: 0; border-top: 2px dotted var(--ink-faint); }
+  #lobby-screen .tk-stub { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding: 14px 22px 18px; }
+  #lobby-screen .tk-stub > div { min-width: 0; }
+  #lobby-screen .tk-stub > div:last-child { text-align: right; }
+  #lobby-screen .tk-lbl { display: block; font-size: 7.5px; font-weight: 700; letter-spacing: .22em; text-transform: uppercase; color: var(--ink-soft); }
+  #lobby-screen .tk-val { display: block; margin-top: 4px; font-size: 13px; font-weight: 700; letter-spacing: .06em; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--ink); }
+  #lobby-screen .tk-val.tk-serial { color: var(--gold); }
 
-  /* Glow halo behind the ticket */
-  .lobby-ticket-wrap::before {
-    content: '';
-    position: absolute;
-    width: min(700px, 94vw);
-    height: clamp(200px, 30vw, 280px);
-    background: radial-gradient(ellipse at center,
-      rgba(245,166,35,0.08) 0%, transparent 70%);
-    pointer-events: none;
-    border-radius: 12px;
-  }
+  /* Footer */
+  #lobby-screen .tk-foot { flex: 0 0 auto; width: 100%; padding: 0 22px calc(env(safe-area-inset-bottom, 0px) + 22px); display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  #lobby-screen .tk-greeting { min-height: 16px; font-size: 12px; color: rgba(239,233,220,.62); letter-spacing: .02em; }
+  #lobby-screen .tk-greeting strong { color: var(--ink); font-weight: 600; }
+  #lobby-screen .tk-enter { width: min(100%, 372px); height: 54px; border: 0; border-radius: 27px; cursor: pointer;
+    background: linear-gradient(180deg, #f0d792, #cfa650 55%, #b98d3a); color: #1a1304;
+    font: 700 12px/1 'Montserrat', sans-serif; letter-spacing: .3em; text-transform: uppercase; padding: 0 0 0 .3em;
+    box-shadow: 0 10px 28px rgba(217,178,95,.22), inset 0 1px 0 rgba(255,255,255,.5);
+    display: flex; align-items: center; justify-content: center; gap: 12px; transition: transform .2s, box-shadow .2s; }
+  #lobby-screen .tk-enter:hover { transform: translateY(-1px); box-shadow: 0 14px 34px rgba(217,178,95,.32), inset 0 1px 0 rgba(255,255,255,.5); }
+  #lobby-screen .tk-enter:active { transform: translateY(1px); }
+  #lobby-screen .tk-enter svg { width: 16px; height: 16px; }
 
-  /* ── Ticket ──────────────────────────────────────────────────── */
-  .lobby-ticket {
-    display: flex; flex-direction: row;
-    width: min(700px, 94vw);
-    height: clamp(190px, 30vw, 256px);
-    background: linear-gradient(135deg, #1E1A12 0%, #141108 100%);
-    border: 1px solid rgba(245,166,35,0.3);
-    position: relative; border-radius: 6px;
-    box-shadow:
-      0 8px 40px rgba(0,0,0,0.7),
-      0 0 0 1px rgba(245,166,35,0.08) inset;
+  /* Share sheet */
+  #lobby-screen .tk-sheet { position: absolute; inset: 0; z-index: 20; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 20px;
+    background: rgba(5,5,5,.9); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+  #lobby-screen .tk-sheet.open { display: flex; animation: lobbyFadeUp .25s ease; }
+  #lobby-screen .tk-sheet img { max-width: min(100%, 360px); max-height: calc(100% - 130px); border-radius: 14px; box-shadow: 0 24px 60px rgba(0,0,0,.7); }
+  #lobby-screen .tk-sheet-row { display: flex; gap: 10px; width: min(100%, 360px); }
+  #lobby-screen .tk-sheet-row button { flex: 1; height: 46px; border-radius: 23px; font: 700 11px/1 'Montserrat', sans-serif; letter-spacing: .2em; text-transform: uppercase; cursor: pointer; }
+  #lobby-screen .tk-sheet-row .tk-primary { border: 0; background: linear-gradient(180deg, #f0d792, #cfa650 55%, #b98d3a); color: #1a1304; }
+  #lobby-screen .tk-sheet-row .tk-ghost { background: transparent; border: 1px solid rgba(239,233,220,.28); color: var(--ink); }
+  #lobby-screen .tk-sheet-close { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 14px); right: 14px; width: 36px; height: 36px; border-radius: 50%;
+    border: 1px solid rgba(239,233,220,.24); background: transparent; color: var(--ink); font-size: 18px; line-height: 1; cursor: pointer; }
 
-    --hole: 9px;
-    -webkit-mask-image:
-      radial-gradient(circle at 50% 0,    transparent var(--hole), black calc(var(--hole) + 1px)),
-      radial-gradient(circle at 50% 100%, transparent var(--hole), black calc(var(--hole) + 1px));
-    -webkit-mask-size: 20px 100%, 20px 100%;
-    -webkit-mask-repeat: repeat-x, repeat-x;
-    -webkit-mask-position: 0 0, 0 100%;
-    -webkit-mask-composite: destination-in, destination-in;
-    mask-image:
-      radial-gradient(circle at 50% 0,    transparent var(--hole), black calc(var(--hole) + 1px)),
-      radial-gradient(circle at 50% 100%, transparent var(--hole), black calc(var(--hole) + 1px));
-    mask-size: 20px 100%, 20px 100%;
-    mask-repeat: repeat-x, repeat-x;
-    mask-position: 0 0, 0 100%;
-    mask-composite: intersect;
+  @media (max-height: 700px) {
+    #lobby-screen .tk-title { font-size: 30px; padding-bottom: 8px; }
+    #lobby-screen .tk-panel { height: 170px; }
+    #lobby-screen .tk-tagline { display: none; }
+    #lobby-screen .tk-enter { height: 48px; }
   }
-
-  /* ── Stub ────────────────────────────────────────────────────── */
-  .lobby-stub {
-    width: 20%; flex-shrink: 0;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 8px; padding: 16px 8px;
-    border-right: 1px dashed rgba(245,166,35,0.25);
-    background: rgba(0,0,0,0.15);
+  @media (min-width: 760px) {
+    #lobby-screen .tk-shadow, #lobby-screen .tk-enter { width: 400px; }
+    #lobby-screen .tk-wordmark { font-size: 14px; }
   }
-  .lobby-stub-star {
-    font-size: clamp(13px, 2vw, 18px);
-    color: var(--orange, #f5a623);
-    opacity: 0.65; line-height: 1;
-    animation: lobbyPulse 3s ease-in-out infinite;
+  /* Wide screens: ticket on the left, the still sharp on the right */
+  @media (min-width: 900px) and (min-aspect-ratio: 5/4) {
+    #lobby-screen { align-items: flex-start; padding-left: clamp(56px, 11vw, 220px); }
+    #lobby-screen .tk-top, #lobby-screen .tk-stage, #lobby-screen .tk-foot { width: 400px; padding-left: 0; padding-right: 0; }
+    #lobby-screen .tk-stage { padding-top: 18px; padding-bottom: 18px; }
+    #lobby-screen .tk-bg { inset: 0 0 0 auto; width: 70%; background-position: center 22%;
+      filter: saturate(.95) brightness(.82); transform: none; animation: tkDriftWide 40s ease-in-out infinite alternate;
+      -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.55) 22%, #000 46%);
+              mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.55) 22%, #000 46%); }
+    #lobby-screen .tk-vignette { background: linear-gradient(90deg, #070707 0%, #070707 24%, rgba(7,7,7,.35) 52%, transparent 70%),
+                                 linear-gradient(180deg, rgba(7,7,7,.55) 0%, transparent 20%, transparent 68%, rgba(7,7,7,.85) 100%); }
+    #lobby-screen .tk-credit { display: block; position: absolute; right: 36px; bottom: 30px; text-align: right; font-size: 9px; font-weight: 700; letter-spacing: .24em; text-transform: uppercase; color: rgba(239,233,220,.5); }
+    #lobby-screen .tk-credit b { display: block; margin-top: 4px; font-family: 'Bebas Neue', 'Montserrat', sans-serif; font-size: 30px; font-weight: 400; letter-spacing: .06em; line-height: 1; color: var(--ink); }
+    #lobby-screen .tk-credit b span { color: var(--gold); }
+    #lobby-screen .tk-credit:empty { display: none; }
   }
-  .lobby-stub-star:nth-child(2) { animation-delay: .4s; }
-  .lobby-stub-star:nth-child(3) { animation-delay: .8s; }
-  .lobby-stub-text {
-    font-family: 'Montserrat', sans-serif;
-    font-size: clamp(7px, 1vw, 10px); font-weight: 700;
-    letter-spacing: 0.2em;
-    color: var(--orange, #f5a623); opacity: 0.35;
-    text-align: center; margin-top: 4px;
-    text-transform: uppercase;
-  }
-
-  /* ── Tear line ───────────────────────────────────────────────── */
-  .lobby-tear {
-    width: 1px; flex-shrink: 0;
-    background: repeating-linear-gradient(
-      to bottom,
-      rgba(245,166,35,0.3) 0px, rgba(245,166,35,0.3) 5px,
-      transparent 5px, transparent 10px
-    );
-  }
-
-  /* ── Ticket body ─────────────────────────────────────────────── */
-  .lobby-ticket-body {
-    flex: 1; position: relative; overflow: hidden;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .lobby-quote-inner {
-    padding: 24px 32px; text-align: center;
-    pointer-events: none; user-select: none;
-  }
-  .lobby-quote-text {
-    font-family: 'Montserrat', sans-serif;
-    font-size: clamp(13px, 2vw, 19px); font-weight: 500;
-    line-height: 1.6; color: #EDE3CC;
-    margin: 0 0 14px; font-style: italic;
-    text-shadow: 0 1px 12px rgba(0,0,0,0.6);
-  }
-  .lobby-quote-attr {
-    font-family: 'Montserrat', sans-serif;
-    font-size: clamp(9px, 1.1vw, 12px); font-weight: 700;
-    letter-spacing: 0.18em;
-    color: var(--orange, #f5a623);
-    text-transform: uppercase; margin: 0; opacity: 0.9;
-  }
-
-  /* ── Scratch canvas ──────────────────────────────────────────── */
-  .lobby-scratch-canvas {
-    position: absolute; inset: 0;
-    width: 100%; height: 100%;
-    cursor: crosshair; touch-action: none;
-    transition: opacity 0.45s ease;
-  }
-  .lobby-scratch-canvas.revealed { opacity: 0; pointer-events: none; }
-
-  /* ── Post-reveal buttons ─────────────────────────────────────── */
-  .lobby-post-reveal {
-    display: flex; gap: 12px; align-items: center;
-  }
-  .lobby-share-btn,
-  .lobby-another-btn {
-    background: transparent;
-    border: 1px solid rgba(245,166,35,0.4);
-    color: var(--orange, #f5a623);
-    font-family: 'Montserrat', sans-serif;
-    font-size: clamp(9px, 1vw, 11px); font-weight: 700;
-    letter-spacing: 0.2em; text-transform: uppercase;
-    padding: 9px 22px; cursor: pointer;
-    display: inline-flex; align-items: center; gap: 8px;
-    transition: background 0.25s ease, color 0.25s ease;
-    animation: lobbyFadeUp 0.4s ease forwards;
-  }
-  .lobby-share-btn:hover {
-    background: var(--orange, #f5a623); color: #000;
-  }
-  .lobby-another-btn {
-    border-color: rgba(255,255,255,0.15);
-    color: rgba(255,255,255,0.45);
-    font-size: clamp(9px, 0.95vw, 11px);
-  }
-  .lobby-another-btn:hover {
-    color: rgba(255,255,255,0.8);
-    border-color: rgba(255,255,255,0.3);
-  }
-
-  /* ── Footer ──────────────────────────────────────────────────── */
-  .lobby-footer {
-    position: relative; z-index: 4;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 18px 36px max(28px, env(safe-area-inset-bottom, 28px));
-  }
-  .lobby-greeting {
-    font-family: 'Montserrat', sans-serif;
-    font-size: clamp(11px, 1.2vw, 14px); font-weight: 500;
-    color: rgba(255,255,255,0.5); letter-spacing: 0.04em;
-  }
-  .lobby-greeting strong {
-    color: var(--orange, #f5a623);
-    font-weight: 700;
-  }
-  .lobby-enter-btn {
-    background: transparent;
-    border: 1px solid var(--orange, #f5a623);
-    color: var(--orange, #f5a623);
-    font-family: 'Montserrat', sans-serif;
-    font-size: clamp(10px, 1.1vw, 12px); font-weight: 700;
-    letter-spacing: 0.3em; padding: 11px 32px;
-    cursor: pointer; text-transform: uppercase;
-    transition: background 0.25s ease, color 0.25s ease,
-                box-shadow 0.25s ease;
-    position: relative; overflow: hidden;
-  }
-  .lobby-enter-btn::before {
-    content: ''; position: absolute; inset: 0;
-    background: var(--orange, #f5a623);
-    transform: translateX(-101%);
-    transition: transform 0.3s ease; z-index: 0;
-  }
-  .lobby-enter-btn:hover::before { transform: translateX(0); }
-  .lobby-enter-btn:hover {
-    color: #000;
-    box-shadow: 0 0 24px rgba(245,166,35,0.4);
-  }
-  .lobby-enter-btn span { position: relative; z-index: 1; }
-
-  /* ── Mobile ──────────────────────────────────────────────────── */
-  @media (max-width: 600px) {
-    /* Backdrop: lighter blur so the movie is more recognisable on mobile */
-    .lobby-backdrop    { filter: blur(10px) brightness(0.52) saturate(0.9); }
-
-    /* Header: lower to eye level + bigger wordmark */
-    .lobby-header      { padding-top: max(calc(env(safe-area-inset-top) + 110px), 152px); }
-    .lobby-wordmark    { font-size: clamp(26px, 7vw, 32px); letter-spacing: 0.5em; }
-    .lobby-tagline     { font-size: 7px; letter-spacing: 0.28em; margin-top: 4px; }
-    .lobby-header-rule { gap: 10px; padding: 5px 0 0; }
-
-    /* Stage / ticket */
-    .lobby-stage       { padding: 10px 16px; }
-    .lobby-ticket      { height: clamp(160px, 46vw, 200px); --hole: 6px; }
-    .lobby-stub        { width: 19%; }
-    .lobby-stub-text   { display: none; }
-    .lobby-quote-inner { padding: 12px 14px; }
-    .lobby-quote-text  { font-size: clamp(11px, 3.5vw, 15px); }
-    .lobby-scratch-canvas { cursor: default; }
-
-    /* Footer */
-    .lobby-footer      {
-      padding: 10px 20px max(calc(env(safe-area-inset-bottom) + 14px), 22px);
-    }
-    .lobby-enter-btn   { padding: 10px 24px; font-size: 10px; letter-spacing: 0.22em; }
+  @media (prefers-reduced-motion: reduce) {
+    #lobby-screen .tk-bg, #lobby-screen .tk-ticket, #lobby-screen .tk-sheen::after { animation: none; }
   }
 </style>
 </head>
@@ -4646,64 +4489,57 @@
 <!-- ╚══════════════════════════════════════════════════════════════╝ -->
 <div id="lobby-screen" style="display:none">
 
-  <div class="lobby-backdrop" id="lobby-backdrop"></div>
-  <div class="lobby-overlay"></div>
+  <div class="tk-bg" id="lobby-backdrop"></div>
+  <div class="tk-vignette"></div>
+  <div class="tk-grain"></div>
+  <div class="tk-credit" id="lobby-credit"></div>
 
-  <div class="lobby-header">
-    <span class="lobby-wordmark">PMOVIES</span>
-    <span class="lobby-tagline">Your Cinema · Your Mood · Your Film</span>
-  </div>
-  <div class="lobby-header-rule" aria-hidden="true">
-    <span class="lobby-header-dot"></span>
-    <span class="lobby-header-dot"></span>
-    <span class="lobby-header-dot"></span>
+  <div class="tk-top">
+    <div class="tk-wordmark">P<b>MOVIES</b></div>
+    <div class="tk-tagline">Your cinema · Your mood · Your film</div>
   </div>
 
-  <main class="lobby-stage">
-    <div class="lobby-ticket-wrap">
+  <div class="tk-stage">
+    <div class="tk-shadow">
+      <div class="tk-ticket" id="lobby-ticket">
+        <div class="tk-head"><span>Tonight's line</span><span class="tk-admit">Admit one</span></div>
+        <div class="tk-title">Lights down.<br><em>Your line awaits.</em></div>
 
-      <div class="lobby-ticket">
-        <div class="lobby-stub">
-          <span class="lobby-stub-star">★</span>
-          <span class="lobby-stub-star">★</span>
-          <span class="lobby-stub-star">★</span>
-          <span class="lobby-stub-text">ADMIT<br>ONE</span>
-        </div>
-        <div class="lobby-tear"></div>
-        <div class="lobby-ticket-body">
-          <div class="lobby-quote-inner">
-            <p class="lobby-quote-text" id="lobby-quote-text"></p>
-            <p class="lobby-quote-attr" id="lobby-quote-attr"></p>
+        <div class="tk-panel" id="lobby-panel">
+          <div class="tk-quote">
+            <p class="tk-qtext" id="lobby-quote-text" dir="auto"></p>
+            <p class="tk-qattr" id="lobby-quote-attr"></p>
           </div>
-          <canvas
-            class="lobby-scratch-canvas"
-            id="lobby-scratch-canvas"
-            aria-label="Scratch to reveal quote"
-          ></canvas>
+          <canvas class="tk-foil" id="lobby-scratch-canvas" tabindex="0" aria-label="Scratch to reveal the quote"></canvas>
+          <div class="tk-sheen"></div>
+          <div class="tk-actions" id="lobby-post-reveal">
+            <button class="tk-chip" id="lobby-another-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>Another</button>
+            <button class="tk-chip" id="lobby-share-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>Share</button>
+          </div>
+        </div>
+
+        <div class="tk-perf" id="lobby-perf"></div>
+        <div class="tk-stub">
+          <div><span class="tk-lbl">Date</span><span class="tk-val" id="lobby-ticket-date"></span></div>
+          <div><span class="tk-lbl">Screen</span><span class="tk-val">Lobby</span></div>
+          <div><span class="tk-lbl">No.</span><span class="tk-val tk-serial">28617</span></div>
         </div>
       </div>
-
-      <div class="lobby-post-reveal" id="lobby-post-reveal" style="display:none">
-        <button class="lobby-share-btn" id="lobby-share-btn">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-            <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/>
-            <polyline points="16 6 12 2 8 6"/>
-            <line x1="12" y1="2" x2="12" y2="15"/>
-          </svg>
-          Share Quote
-        </button>
-        <button class="lobby-another-btn" id="lobby-another-btn">↻ Another</button>
-      </div>
-
     </div>
-  </main>
+  </div>
 
-  <div class="lobby-footer">
-    <div class="lobby-greeting" id="lobby-greeting"></div>
-    <button class="lobby-enter-btn" id="lobby-enter-btn">
-      <span>ENTER &nbsp;→</span>
-    </button>
+  <div class="tk-foot">
+    <div class="tk-greeting" id="lobby-greeting"></div>
+    <button class="tk-enter" id="lobby-enter-btn">Enter<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></button>
+  </div>
+
+  <div class="tk-sheet" id="lobby-share-sheet" role="dialog" aria-label="Share card">
+    <button class="tk-sheet-close" id="lobby-sheet-close" aria-label="Close">×</button>
+    <img id="lobby-sheet-img" alt="Quote card">
+    <div class="tk-sheet-row">
+      <button class="tk-ghost" id="lobby-sheet-save">Save image</button>
+      <button class="tk-primary" id="lobby-sheet-share">Share</button>
+    </div>
   </div>
 
 </div>
@@ -27649,49 +27485,33 @@ async function deleteEditorReview(key, e) {
   var SCRATCH_SAMPLE_EVERY  = 32;
 
   /* ── Backdrop pool ────────────────────────────────────────── */
+  // Fallback only — the intro normally shows this week's trending films (see _getTrendingFilms).
+  // id = TMDB film id (the still is looked up live, so it can't go stale); p = last known still, used if the lookup fails
   var LOBBY_BACKDROPS = [
-    // The Godfather
-    'https://image.tmdb.org/t/p/w1280/tmU7GeKVybMWFButWEGl2M4GeiP.jpg',
-    // Blade Runner 2049
-    'https://image.tmdb.org/t/p/w1280/ilRyazdMJwN05exqhwK4tMKBYZs.jpg',
-    // 2001: A Space Odyssey
-    'https://image.tmdb.org/t/p/w1280/oU7Oq2kFAAlGqbU4VoAE36g4hoI.jpg',
-    // Spirited Away
-    'https://image.tmdb.org/t/p/w1280/bSXfU4dwZyBA1vMmXvejdRXBvuF.jpg',
-    // Mad Max: Fury Road
-    'https://image.tmdb.org/t/p/w1280/phszHPFnhmAMgJpFBFMtlxmFMkk.jpg',
-    // Her
-    'https://image.tmdb.org/t/p/w1280/lEIaL12hSkqqe83zVvF98SxieZl.jpg',
-    // La La Land
-    'https://image.tmdb.org/t/p/w1280/nadTlnTE6DdgmYsN4iWc2a2wiaI.jpg',
-    // Parasite
-    'https://image.tmdb.org/t/p/w1280/TU9NIjwzjoKPwQHoHshkFcQUCG.jpg',
-    // Inception
-    'https://image.tmdb.org/t/p/w1280/s2bT29y0ngXxxu2IA8AOzzXTRhd.jpg',
-    // Interstellar
-    'https://image.tmdb.org/t/p/w1280/rAiYTfKGqDCRIIqo664sY9XaALa.jpg',
-    // The Dark Knight
-    'https://image.tmdb.org/t/p/w1280/hqkIcbrOHL86UncnHIsHVcVmzue.jpg',
-    // No Country for Old Men
-    'https://image.tmdb.org/t/p/w1280/6LEPNNZRVe7iFCuNGiNiXUCn7R9.jpg',
-    // Dune (2021)
-    'https://image.tmdb.org/t/p/w1280/iopYFB1b6Bh7FWZh3onQhph1CZS.jpg',
-    // The Revenant
-    'https://image.tmdb.org/t/p/w1280/3oIS5TKhEGLXWXEHgp7QBtLDmyN.jpg',
-    // Roma
-    'https://image.tmdb.org/t/p/w1280/d0p3vuFRPRYMb5ixXFEDJFUkFW5.jpg',
-    // Arrival
-    'https://image.tmdb.org/t/p/w1280/r9PkFnRUIthgBp2JZZzD380MWZy.jpg',
-    // Once Upon a Time in Hollywood
-    'https://image.tmdb.org/t/p/w1280/8j58iEBw9pOXFD2L0nt0ZXeHviB.jpg',
-    // Portrait of a Lady on Fire
-    'https://image.tmdb.org/t/p/w1280/sQenHSbQPiNQfolHHoMBMFtfFWg.jpg',
-    // The Grand Budapest Hotel
-    'https://image.tmdb.org/t/p/w1280/iMhsOiXpqW4iKwAHJqwZGJqkT2B.jpg',
-    // Whiplash
-    'https://image.tmdb.org/t/p/w1280/fRGxZuo7jJUWQsVg9PREb98Aclp.jpg',
+    { id: 238, t: 'The Godfather', y: 1972, p: '/tSPT36ZKlP2WVHJLM4cQPLSzv3b.jpg' },
+    { id: 335984, t: 'Blade Runner 2049', y: 2017, p: '/gNdLJU9TxrpGx4dkZidjys3fyy0.jpg' },
+    { id: 62, t: '2001: A Space Odyssey', y: 1968, p: '/w5IDXtifKntw0ajv2co7jFlTQDM.jpg' },
+    { id: 129, t: 'Spirited Away', y: 2001, p: '/m4TUa2ciEWSlk37rOsjiSIvZDXE.jpg' },
+    { id: 76341, t: 'Mad Max: Fury Road', y: 2015, p: '/gqrnQA6Xppdl8vIb2eJc58VC1tW.jpg' },
+    { id: 152601, t: 'Her', y: 2013, p: '/1YnZchmaGc8dchgRPDpR1KGrixA.jpg' },
+    { id: 313369, t: 'La La Land', y: 2016, p: '/nlPCdZlHtRNcF6C9hzUH4ebmV1w.jpg' },
+    { id: 496243, t: 'Parasite', y: 2019, p: '/TU9NIjwzjoKPwQHoHshkFcQUCG.jpg' },
+    { id: 27205, t: 'Inception', y: 2010, p: '/8ZTVqvKDQ8emSGUEMjsS4yHAwrp.jpg' },
+    { id: 157336, t: 'Interstellar', y: 2014, p: '/8sNiAPPYU14PUepFNeSNGUTiHW.jpg' },
+    { id: 155, t: 'The Dark Knight', y: 2008, p: '/cfT29Im5VDvjE0RpyKOSdCKZal7.jpg' },
+    { id: 6977, t: 'No Country for Old Men', y: 2007, p: '/fCCvn3xsG29TGKJPvZgTRppsDgk.jpg' },
+    { id: 438631, t: 'Dune', y: 2021, p: '/qVgZu5BTx6pu4owCvVOm4zjTfOi.jpg' },
+    { id: 281957, t: 'The Revenant', y: 2015, p: '/hEQYZq2CDB2LSJVxxlazdBOKeyW.jpg' },
+    { id: 426426, t: 'Roma', y: 2018, p: '/zl9uqCl5iUSb50sTk2BPzw6bJnU.jpg' },
+    { id: 329865, t: 'Arrival', y: 2016, p: '/8MUZz7oPXQftFTslZpRP3CVMOoq.jpg' },
+    { id: 466272, t: 'Once Upon a Time in Hollywood', y: 2019, p: '/kKTPv9LKKs5L3oO1y5FNObxAPWI.jpg' },
+    { id: 531428, t: 'Portrait of a Lady on Fire', y: 2019, p: '/ivJ5UzT6IzucLVfbZwCCwiJJoBz.jpg' },
+    { id: 120467, t: 'The Grand Budapest Hotel', y: 2014, p: '/jK65srQczOKTpW62wPxwwKztGgE.jpg' },
+    { id: 244786, t: 'Whiplash', y: 2014, p: '/fRGxZuo7jJUWQsVg9PREb98Aclp.jpg' },
   ];
   var _usedBackdrops = [];
+  var _cardBackdrop  = null;   // cross-origin-enabled copy of the current still, for the share card
+  var _backdropSeq   = 0;      // guards against an older image load finishing after a newer pick
 
   /* ── State ────────────────────────────────────────────────── */
   var lobbyQuotes    = [];
@@ -27734,34 +27554,93 @@ async function deleteEditorReview(key, e) {
   /* ══════════════════════════════════════════════════════════
      BACKDROP
   ══════════════════════════════════════════════════════════ */
+  // This week's trending films (fetched once per visit). Empty list = TMDB unreachable.
+  var _trendingPromise = null;
+  function _getTrendingFilms() {
+    if (_trendingPromise) return _trendingPromise;
+    var key = (typeof getKey === 'function' && getKey()) || '';
+    if (!key) return Promise.resolve([]);
+    var req = fetch('https://api.themoviedb.org/3/trending/movie/week?api_key=' + key)
+      .then(function(r) { return r.ok ? r.json() : null; })
+      .then(function(d) {
+        return ((d && d.results) || [])
+          .filter(function(m) { return m && m.backdrop_path && m.title && !m.adult; })
+          .slice(0, 14)
+          .map(function(m) { return { id: m.id, t: m.title, y: (m.release_date || '').slice(0, 4), p: m.backdrop_path }; });
+      })
+      .catch(function() { return []; });
+    var timeout = new Promise(function(resolve) { setTimeout(function() { resolve([]); }, 2500); });
+    _trendingPromise = Promise.race([req, timeout]);
+    _trendingPromise.then(function(list) { if (!list.length) _trendingPromise = null; });   // retry next time
+    return _trendingPromise;
+  }
+
   function setLobbyBackdrop() {
     var el = document.getElementById('lobby-backdrop');
     if (!el) return;
+    var _pickSeq = ++_backdropSeq;
 
-    // Immediate warm gradient so it's never a pitch-black void while image loads
-    el.style.backgroundImage =
-      'linear-gradient(135deg, #1a1408 0%, #0d0b08 55%, #14100d 100%)';
+    // Wide screens show the still sharp, so they get the full-resolution file
+    var size = window.innerWidth >= 900 ? 'original' : 'w1280';
 
-    // Pick a URL not recently used
-    var pool = LOBBY_BACKDROPS.filter(function(u) { return _usedBackdrops.indexOf(u) === -1; });
-    if (!pool.length) { _usedBackdrops = []; pool = LOBBY_BACKDROPS.slice(); }
-    var url = pool[Math.floor(Math.random() * pool.length)];
-    _usedBackdrops.push(url);
-    if (_usedBackdrops.length > 6) _usedBackdrops.shift();
+    function apply(film, src) {
+      el.style.backgroundImage = 'url(' + src + ')';
+      el.classList.add('on');
+      var cr = document.getElementById('lobby-credit');
+      if (cr) {
+        cr.textContent = 'Now featuring';
+        var b = document.createElement('b');
+        b.textContent = film.t;
+        if (film.y) { var yr = document.createElement('span'); yr.textContent = ' ' + film.y; b.appendChild(yr); }
+        cr.appendChild(b);
+      }
+      // The share card is drawn on a canvas, which needs a cross-origin-enabled copy
+      // (a separate URL, so the browser cache can't hand back the non-CORS response)
+      _cardBackdrop = null;
+      var ci = new Image(); ci.crossOrigin = 'anonymous';
+      ci.onload = function() { if (_pickSeq === _backdropSeq) _cardBackdrop = ci; };
+      ci.src = 'https://image.tmdb.org/t/p/w780' + film.p + '?card=1';
+    }
 
-    // Preload primary — only apply after it fully loads
-    var img = new Image();
-    img.onload = function() { el.style.backgroundImage = 'url(' + url + ')'; };
-    img.onerror = function() {
-      // Primary failed — preload a fallback before applying it too
-      var fallbacks = LOBBY_BACKDROPS.filter(function(u) { return u !== url; });
-      var fb = fallbacks[Math.floor(Math.random() * fallbacks.length)];
-      if (!fb) return;
-      var img2 = new Image();
-      img2.onload = function() { el.style.backgroundImage = 'url(' + fb + ')'; };
-      img2.src = fb;
-    };
-    img.src = url;
+    // Preload — only swap once the image has fully loaded (and only if no newer pick has started)
+    function load(film, onFail) {
+      var url = 'https://image.tmdb.org/t/p/' + size + film.p;
+      var img = new Image();
+      img.onload  = function() { if (_pickSeq === _backdropSeq) apply(film, url); };
+      img.onerror = function() { if (onFail) onFail(); };
+      img.src = url;
+    }
+
+    // Pick one not shown recently
+    function choose(list) {
+      var pool = list.filter(function(b) { return _usedBackdrops.indexOf(b.id) === -1; });
+      if (!pool.length) { _usedBackdrops = []; pool = list.slice(); }
+      var pick = pool[Math.floor(Math.random() * pool.length)];
+      _usedBackdrops.push(pick.id);
+      if (_usedBackdrops.length > 6) _usedBackdrops.shift();
+      return pick;
+    }
+
+    // Safety net: the hand-picked classics, with the still looked up by film id
+    function useClassic() {
+      var pick = choose(LOBBY_BACKDROPS);
+      var stored = function() { load(pick); };
+      var key = (typeof getKey === 'function' && getKey()) || '';
+      if (!key) { stored(); return; }
+      var settled = false, timer = setTimeout(function() { if (!settled) { settled = true; stored(); } }, 2500);
+      fetch('https://api.themoviedb.org/3/movie/' + pick.id + '?api_key=' + key)
+        .then(function(r) { return r.ok ? r.json() : null; })
+        .then(function(d) {
+          if (settled) return; settled = true; clearTimeout(timer);
+          if (d && d.backdrop_path) load({ id: pick.id, t: pick.t, y: pick.y, p: d.backdrop_path }, stored); else stored();
+        })
+        .catch(function() { if (!settled) { settled = true; clearTimeout(timer); stored(); } });
+    }
+
+    _getTrendingFilms().then(function(list) {
+      if (_pickSeq !== _backdropSeq) return;
+      if (list.length) load(choose(list), useClassic); else useClassic();
+    });
   }
 
   /* ══════════════════════════════════════════════════════════
@@ -27775,11 +27654,8 @@ async function deleteEditorReview(key, e) {
       if (user && user.getIdToken) tok = await user.getIdToken();
     } catch(e) {}
 
-    // No token means guest or auth unavailable — use fallback quotes
-    if (!tok) return _LOBBY_FALLBACK_QUOTES.slice();
-
     try {
-      var res  = await fetch(RTDB + '/quotes.json?auth=' + tok);
+      var res  = await fetch(RTDB + '/quotes.json' + (tok ? '?auth=' + tok : ''));
       var data = await res.json();
       if (!data || typeof data !== 'object' || data.error) return _LOBBY_FALLBACK_QUOTES.slice();
       var all = Object.entries(data)
@@ -27813,8 +27689,11 @@ async function deleteEditorReview(key, e) {
     currentQuote = quote;
     var qEl = document.getElementById('lobby-quote-text');
     var aEl = document.getElementById('lobby-quote-attr');
-    if (qEl) qEl.textContent = '❝ ' + quote.text + ' ❞';
-    if (aEl) aEl.textContent = '— ' + quote.attribution;
+    var _ar = /[\u0600-\u06FF]/;
+    if (qEl) { qEl.textContent = quote.text; qEl.classList.toggle('ar', _ar.test(quote.text || '')); }
+    if (aEl) { aEl.textContent = quote.attribution || ''; aEl.classList.toggle('ar', _ar.test(quote.attribution || '')); }
+    var dEl = document.getElementById('lobby-ticket-date');
+    if (dEl) dEl.textContent = _ticketDate();
 
     var wrap = document.getElementById('lobby-post-reveal');
     if (wrap) wrap.style.display = 'none';
@@ -27835,129 +27714,132 @@ async function deleteEditorReview(key, e) {
   /* ══════════════════════════════════════════════════════════
      SCRATCH ENGINE
   ══════════════════════════════════════════════════════════ */
+  var _scratchWired = false, _scratchLast = null, _scratchW = 0, _scratchH = 0;
+
   function initScratchCanvas() {
     scratchCanvas = document.getElementById('lobby-scratch-canvas');
     if (!scratchCanvas) return;
-    scratchCtx     = scratchCanvas.getContext('2d');
+    var rect = scratchCanvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;            // intro not visible yet
+    scratchCtx      = scratchCanvas.getContext('2d');
     hasAutoRevealed = false;
     strokeCount     = 0;
     isScratching    = false;
+    _scratchLast    = null;
 
     scratchCanvas.classList.remove('revealed');
+    var panel = document.getElementById('lobby-panel');
+    if (panel) panel.classList.remove('revealed', 'touched');
 
-    var dpr  = window.devicePixelRatio || 1;
-    var rect = scratchCanvas.getBoundingClientRect();
+    // Line the ticket's side notches up with the perforation
+    var ticket = document.getElementById('lobby-ticket'), perf = document.getElementById('lobby-perf');
+    if (ticket && perf) ticket.style.setProperty('--perf-y', (perf.offsetTop + 1) + 'px');
+
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    _scratchW = rect.width; _scratchH = rect.height;
     scratchCanvas.width  = rect.width  * dpr;
     scratchCanvas.height = rect.height * dpr;
-    scratchCtx.scale(dpr, dpr);
+    scratchCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
     drawScratchSurface(rect.width, rect.height);
 
-    scratchCanvas.addEventListener('mousedown',  onScratchStart);
-    scratchCanvas.addEventListener('mousemove',  onScratchMove);
-    scratchCanvas.addEventListener('mouseup',    onScratchEnd);
-    scratchCanvas.addEventListener('mouseleave', onScratchEnd);
-    scratchCanvas.addEventListener('touchstart', onScratchStart, { passive: false });
-    scratchCanvas.addEventListener('touchmove',  onScratchMove,  { passive: false });
-    scratchCanvas.addEventListener('touchend',   onScratchEnd);
+    if (!_scratchWired) {
+      _scratchWired = true;
+      scratchCanvas.addEventListener('pointerdown', onScratchStart);
+      scratchCanvas.addEventListener('pointermove', onScratchMove);
+      scratchCanvas.addEventListener('pointerup', onScratchEnd);
+      scratchCanvas.addEventListener('pointercancel', onScratchEnd);
+      scratchCanvas.addEventListener('keydown', function(e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); autoReveal(); } });
+      window.addEventListener('resize', function() {
+        var lobby = document.getElementById('lobby-screen');
+        if (!hasAutoRevealed && lobby && lobby.style.display !== 'none') initScratchCanvas();
+      });
+    }
   }
 
+  // Letter-spaced text, centred on x
+  function _spacedText(ctx, t, x, y, sp) {
+    var w = 0, i; for (i = 0; i < t.length; i++) w += ctx.measureText(t[i]).width + sp; w -= sp;
+    var cx = x - w / 2; ctx.textAlign = 'left';
+    for (i = 0; i < t.length; i++) { ctx.fillText(t[i], cx, y); cx += ctx.measureText(t[i]).width + sp; }
+  }
+
+  // Brushed gold foil
   function drawScratchSurface(w, h) {
     var ctx = scratchCtx;
+    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+    var g = ctx.createLinearGradient(0, 0, w, h);
+    [[0, '#8a6a27'], [.28, '#e8cd84'], [.5, '#b48c3d'], [.72, '#f4e2a6'], [1, '#86661f']].forEach(function(s) { g.addColorStop(s[0], s[1]); });
+    ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
 
-    // Base gradient — warm dark
-    var grad = ctx.createLinearGradient(0, 0, w, h);
-    grad.addColorStop(0, '#1E1A12');
-    grad.addColorStop(1, '#141108');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, w, h);
-
-    // Film-grain noise
-    for (var y = 0; y < h; y += 2) {
-      for (var x = 0; x < w; x += 2) {
-        var v = Math.random() * 18 + 8;
-        ctx.fillStyle = 'rgba(' + (v+10) + ',' + (v+8) + ',' + v + ',0.15)';
-        ctx.fillRect(x, y, 1, 1);
-      }
+    for (var i = 0; i < h * 1.6; i++) {                  // brushed-metal streaks
+      ctx.fillStyle = 'rgba(' + (Math.random() < .5 ? '255,255,255,' : '0,0,0,') + (Math.random() * .07).toFixed(3) + ')';
+      ctx.fillRect(Math.random() * w * .4 - 10, Math.random() * h, w * (.3 + Math.random() * .8), 1);
     }
-
-    // Subtle horizontal scan lines
-    ctx.save();
-    ctx.globalAlpha = 0.04;
-    ctx.fillStyle   = '#000';
-    for (var sy = 0; sy < h; sy += 4) {
-      ctx.fillRect(0, sy, w, 1);
-    }
+    ctx.save();                                          // faint diagonal pattern
+    ctx.globalAlpha = .1; ctx.strokeStyle = '#000'; ctx.lineWidth = 1;
+    for (var x = -h; x < w; x += 14) { ctx.beginPath(); ctx.moveTo(x, h); ctx.lineTo(x + h, 0); ctx.stroke(); }
     ctx.restore();
 
-    // "Scratch to reveal" hint
-    var fontSize = Math.min(w * 0.032, 13);
-    ctx.save();
-    ctx.globalAlpha  = 0.38;
-    ctx.fillStyle    = '#f5a623';
-    ctx.font         = '700 ' + fontSize + 'px Montserrat, sans-serif';
-    ctx.textAlign    = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.letterSpacing = '0.25em';
-    ctx.fillText('✦  SCRATCH TO REVEAL  ✦', w / 2, h / 2);
-    ctx.restore();
+    var ink = 'rgba(58,40,6,.8)';
+    ctx.textBaseline = 'middle'; ctx.font = '700 11px Montserrat, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,.28)'; _spacedText(ctx, 'SCRATCH TO REVEAL', w / 2, h / 2 + 1, 4);
+    ctx.fillStyle = ink;                     _spacedText(ctx, 'SCRATCH TO REVEAL', w / 2, h / 2, 4);
+    ctx.strokeStyle = ink; ctx.lineWidth = 1; ctx.globalAlpha = .55;
+    ctx.strokeRect(10.5, 10.5, w - 21, h - 21); ctx.globalAlpha = 1;
   }
 
   function getScratchPos(e) {
     var rect = scratchCanvas.getBoundingClientRect();
-    if (e.touches) {
-      return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
-    }
     return { x: e.clientX - rect.left, y: e.clientY - rect.top };
   }
 
   function onScratchStart(e) {
+    if (hasAutoRevealed) return;
     e.preventDefault();
-    isScratching = true;
+    isScratching = true; _scratchLast = null;
+    var panel = document.getElementById('lobby-panel');
+    if (panel) panel.classList.add('touched');
+    try { scratchCanvas.setPointerCapture(e.pointerId); } catch(_) {}
     doScratch(getScratchPos(e));
   }
   function onScratchMove(e) {
+    if (!isScratching || hasAutoRevealed) return;
     e.preventDefault();
-    if (!isScratching) return;
     doScratch(getScratchPos(e));
   }
-  function onScratchEnd() { isScratching = false; }
+  function onScratchEnd() {
+    if (isScratching && !hasAutoRevealed) checkCoverage();
+    isScratching = false; _scratchLast = null;
+  }
 
+  // Continuous strokes (a line from the last point), so fast swipes don't leave gaps
   function doScratch(pos) {
-    scratchCtx.globalCompositeOperation = 'destination-out';
-    scratchCtx.beginPath();
-    scratchCtx.arc(pos.x, pos.y, SCRATCH_BRUSH_RADIUS, 0, Math.PI * 2);
-    scratchCtx.fill();
-    scratchCtx.globalCompositeOperation = 'source-over';
+    var ctx = scratchCtx, from = _scratchLast || pos;
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.strokeStyle = '#000'; ctx.globalAlpha = 1;
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = SCRATCH_BRUSH_RADIUS * 1.65;
+    ctx.beginPath(); ctx.moveTo(from.x, from.y); ctx.lineTo(pos.x + .01, pos.y + .01); ctx.stroke();
+    ctx.globalCompositeOperation = 'source-over';
+    _scratchLast = pos;
 
     strokeCount++;
-    if (strokeCount % SCRATCH_SAMPLE_EVERY === 0 && !hasAutoRevealed) {
-      checkCoverage();
-    }
+    if (strokeCount % 8 === 0 && !hasAutoRevealed) checkCoverage();
   }
 
   function checkCoverage() {
-    var w    = scratchCanvas.width;
-    var h    = scratchCanvas.height;
-    var data = scratchCtx.getImageData(0, 0, w, h).data;
-    var transparent = 0;
-    var total = (w * h) / 4;
-    for (var i = 3; i < data.length; i += 16) {
-      if (data[i] < 128) transparent++;
-    }
-    if (transparent / total >= SCRATCH_REVEAL_AT) autoReveal();
+    var data = scratchCtx.getImageData(0, 0, scratchCanvas.width, scratchCanvas.height).data;
+    var clear = 0, n = 0;
+    for (var i = 3; i < data.length; i += 4 * 97) { n++; if (data[i] < 40) clear++; }
+    if (n && clear / n >= SCRATCH_REVEAL_AT) autoReveal();
   }
 
   function autoReveal() {
     if (hasAutoRevealed) return;
     hasAutoRevealed = true;
+    isScratching = false;
     scratchCanvas.classList.add('revealed');
-    scratchCanvas.removeEventListener('mousedown',  onScratchStart);
-    scratchCanvas.removeEventListener('mousemove',  onScratchMove);
-    scratchCanvas.removeEventListener('mouseup',    onScratchEnd);
-    scratchCanvas.removeEventListener('mouseleave', onScratchEnd);
-    scratchCanvas.removeEventListener('touchstart', onScratchStart);
-    scratchCanvas.removeEventListener('touchmove',  onScratchMove);
-    scratchCanvas.removeEventListener('touchend',   onScratchEnd);
+    var panel = document.getElementById('lobby-panel');
+    if (panel) panel.classList.add('revealed', 'touched');
     setTimeout(showPostRevealButtons, 450);
   }
 
@@ -28046,149 +27928,142 @@ async function deleteEditorReview(key, e) {
   /* ══════════════════════════════════════════════════════════
      SHARE CARD
   ══════════════════════════════════════════════════════════ */
+  // 1080×1350 portrait card: the ticket with the quote revealed, over the blurred still
+  function _cardRoundRect(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+  function _cardTrack(c, t, x, y, sp, align) {
+    var w = 0, i; for (i = 0; i < t.length; i++) w += c.measureText(t[i]).width + sp; w -= sp;
+    var cx = align === 'right' ? x - w : align === 'center' ? x - w / 2 : x;
+    c.textAlign = 'left'; for (i = 0; i < t.length; i++) { c.fillText(t[i], cx, y); cx += c.measureText(t[i]).width + sp; }
+  }
+  function _cardWrap(c, text, maxW) {
+    var words = String(text).split(/\s+/), lines = [], line = '';
+    words.forEach(function(w) { var t = line ? line + ' ' + w : w; if (c.measureText(t).width > maxW && line) { lines.push(line); line = w; } else line = t; });
+    if (line) lines.push(line); return lines;
+  }
+  var _AR = /[؀-ۿ]/;
+
   function generateShareCard(quote) {
-    var W = 1200, H = 630;
-    var c = document.createElement('canvas');
-    c.width = W; c.height = H;
-    var ctx = c.getContext('2d');
+    var W = 1080, H = 1350, c = document.createElement('canvas'); c.width = W; c.height = H;
+    var x = c.getContext('2d'), GOLD = '#d9b25f', INK = '#efe9dc', SOFT = 'rgba(239,233,220,.56)';
 
-    ctx.fillStyle = '#0D0B08';
-    ctx.fillRect(0, 0, W, H);
-
-    var grain = ctx.createImageData(W, H);
-    for (var i = 0; i < grain.data.length; i += 4) {
-      var v = (Math.random() * 16) | 0;
-      grain.data[i] = grain.data[i+1] = grain.data[i+2] = v;
-      grain.data[i+3] = 22;
+    // Backdrop — blurred by scaling down and back up (canvas filters are not supported everywhere)
+    x.fillStyle = '#070707'; x.fillRect(0, 0, W, H);
+    if (_cardBackdrop) {
+      try {
+        var s = Math.max(W / _cardBackdrop.width, H / _cardBackdrop.height) * 1.08, bw = _cardBackdrop.width * s, bh = _cardBackdrop.height * s;
+        var t1 = document.createElement('canvas'), t2 = document.createElement('canvas');
+        t1.width = Math.round(bw / 8);  t1.height = Math.round(bh / 8);  t1.getContext('2d').drawImage(_cardBackdrop, 0, 0, t1.width, t1.height);
+        t2.width = Math.round(bw / 36); t2.height = Math.round(bh / 36); t2.getContext('2d').drawImage(t1, 0, 0, t2.width, t2.height);
+        x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
+        x.drawImage(t2, (W - bw) / 2, (H - bh) / 2, bw, bh);
+        x.fillStyle = 'rgba(7,7,7,.26)'; x.fillRect(0, 0, W, H);
+      } catch(e) {}
     }
-    ctx.putImageData(grain, 0, 0);
-    // putImageData replaces pixel alpha directly — restore the opaque dark base
-    // underneath the grain so the PNG exports as solid (not transparent / white)
-    ctx.globalCompositeOperation = 'destination-over';
-    ctx.fillStyle = '#0D0B08';
-    ctx.fillRect(0, 0, W, H);
-    ctx.globalCompositeOperation = 'source-over';
+    var v = x.createRadialGradient(W / 2, H * .45, 120, W / 2, H * .45, H * .8);
+    v.addColorStop(0, 'rgba(7,7,7,.08)'); v.addColorStop(.6, 'rgba(7,7,7,.5)'); v.addColorStop(1, 'rgba(7,7,7,.9)');
+    x.fillStyle = v; x.fillRect(0, 0, W, H);
 
-    var TW = 840, TH = 320;
-    var TX = (W - TW) / 2, TY = (H - TH) / 2 - 20;
-    var STUB_W = TW * 0.18, HOLE_R = 10;
+    // Ticket
+    var TX = 110, TY = 150, TW = 860, TH = 960, PERF = TY + 760, R = 34;
+    x.save(); x.shadowColor = 'rgba(0,0,0,.7)'; x.shadowBlur = 80; x.shadowOffsetY = 40;
+    x.fillStyle = '#121110'; _cardRoundRect(x, TX, TY, TW, TH, R); x.fill(); x.restore();
+    x.strokeStyle = 'rgba(217,178,95,.5)'; x.lineWidth = 2; _cardRoundRect(x, TX + 1, TY + 1, TW - 2, TH - 2, R); x.stroke();
+    x.strokeStyle = 'rgba(217,178,95,.2)'; x.lineWidth = 2; _cardRoundRect(x, TX + 14, TY + 14, TW - 28, TH - 28, R - 12); x.stroke();
+    x.save(); x.globalCompositeOperation = 'destination-out';      // side notches
+    x.beginPath(); x.arc(TX, PERF, 30, 0, 7); x.arc(TX + TW, PERF, 30, 0, 7); x.fill(); x.restore();
+    x.save(); x.globalCompositeOperation = 'destination-over'; x.fillStyle = '#0a0a0a'; x.fillRect(0, 0, W, H); x.restore();
 
-    ctx.fillStyle = '#1A1812';
-    ctx.beginPath();
-    roundRectPath(ctx, TX, TY, TW, TH, 8);
-    ctx.fill();
+    // Header
+    x.textBaseline = 'alphabetic'; x.font = '700 21px Montserrat, sans-serif';
+    x.fillStyle = SOFT; _cardTrack(x, "TONIGHT'S LINE", TX + 58, TY + 84, 6);
+    x.fillStyle = GOLD; _cardTrack(x, 'ADMIT ONE', TX + TW - 58, TY + 84, 6, 'right');
+    x.fillStyle = 'rgba(217,178,95,.22)'; x.fillRect(TX + 58, TY + 112, TW - 116, 2);
 
-    ctx.strokeStyle = 'rgba(245,166,35,0.45)';
-    ctx.lineWidth   = 1.5;
-    ctx.beginPath();
-    roundRectPath(ctx, TX, TY, TW, TH, 8);
-    ctx.stroke();
+    // Quote, sized to fit
+    var rtl = _AR.test(quote.text), boxTop = TY + 150, boxH = PERF - 60 - boxTop, maxW = TW - 150, size = rtl ? 76 : 66, lines, lh;
+    var qFont = function(px) { return rtl ? '400 ' + px + 'px Amiri, "Geeza Pro", serif' : 'italic 500 ' + px + 'px "Playfair Display", Georgia, serif'; };
+    var qo = rtl ? 182 : 150;
+    x.direction = rtl ? 'rtl' : 'ltr';
+    do { size -= 2; x.font = qFont(size); lines = _cardWrap(x, quote.text, maxW); lh = size * (rtl ? 1.62 : 1.42); }
+    while (lines.length * lh + 40 + qo > boxH && size > 26);
+    x.direction = 'ltr';
+    var blockH = lines.length * lh + 40 + qo, y = boxTop + (boxH - blockH) / 2;
+    x.fillStyle = GOLD; x.textAlign = 'center'; x.font = '700 130px "Playfair Display", Georgia, serif';
+    x.fillText('“', W / 2, y + 108);
+    x.fillStyle = '#f4efe4'; x.font = qFont(size); x.direction = rtl ? 'rtl' : 'ltr';
+    lines.forEach(function(l, i) { x.fillText(l, W / 2, y + qo + i * lh); });
+    x.direction = 'ltr';
+    var by = y + qo + lines.length * lh + 16, who = quote.attribution || '';
+    x.fillStyle = GOLD;
+    if (_AR.test(who)) { x.font = '700 34px Amiri, "Geeza Pro", serif'; x.textAlign = 'center'; x.direction = 'rtl'; x.fillText(who, W / 2, by + 6); x.direction = 'ltr'; }
+    else { x.font = '700 21px Montserrat, sans-serif'; _cardTrack(x, who.toUpperCase(), W / 2, by, 6, 'center'); }
 
-    ctx.fillStyle = '#0D0B08';
-    ctx.beginPath();
-    ctx.arc(TX + STUB_W + 1, TY + TH / 2, HOLE_R + 4, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(TX + TW - STUB_W - 1, TY + TH / 2, HOLE_R + 4, 0, Math.PI * 2);
-    ctx.fill();
+    // Perforation + stub
+    x.fillStyle = 'rgba(239,233,220,.28)';
+    for (var px = TX + 56; px < TX + TW - 50; px += 14) { x.beginPath(); x.arc(px, PERF, 2.6, 0, 7); x.fill(); }
+    var sy = PERF + 62;
+    x.font = '700 17px Montserrat, sans-serif'; x.fillStyle = SOFT;
+    _cardTrack(x, 'DATE', TX + 58, sy, 5); _cardTrack(x, 'SCREEN', TX + TW / 2 - 60, sy, 5); _cardTrack(x, 'NO.', TX + TW - 58, sy, 5, 'right');
+    x.font = '700 31px Montserrat, sans-serif'; x.fillStyle = INK; x.textAlign = 'left';
+    x.fillText(_ticketDate(), TX + 58, sy + 46); x.fillText('Lobby', TX + TW / 2 - 60, sy + 46);
+    x.fillStyle = GOLD; x.textAlign = 'right'; x.fillText('28617', TX + TW - 58, sy + 46);
 
-    for (var x = TX + 20; x < TX + TW - 20; x += 22) {
-      ctx.beginPath(); ctx.arc(x, TY, HOLE_R, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(x, TY + TH, HOLE_R, 0, Math.PI * 2); ctx.fill();
-    }
-
-    ctx.setLineDash([5, 6]);
-    ctx.strokeStyle = 'rgba(245,166,35,0.3)';
-    ctx.lineWidth   = 1;
-    ctx.beginPath();
-    ctx.moveTo(TX + STUB_W, TY + 16);
-    ctx.lineTo(TX + STUB_W, TY + TH - 16);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    ctx.fillStyle = 'rgba(245,166,35,0.5)';
-    ctx.font      = '14px sans-serif';
-    ctx.textAlign = 'center';
-    [TY + TH*0.3, TY + TH*0.5, TY + TH*0.7].forEach(function(sy) {
-      ctx.fillText('★', TX + STUB_W / 2, sy + 5);
-    });
-
-    var QX = TX + STUB_W + 40;
-    var QW = TW - STUB_W - 80;
-    ctx.font         = 'italic 600 ' + Math.min(QW * 0.047, 24) + 'px serif';
-    ctx.fillStyle    = '#F0E6CC';
-    ctx.textAlign    = 'left';
-    ctx.textBaseline = 'top';
-
-    var words = ('❝ ' + quote.text + ' ❞').split(' ');
-    var lines  = [], line = '';
-    for (var wi = 0; wi < words.length; wi++) {
-      var test = line ? line + ' ' + words[wi] : words[wi];
-      if (ctx.measureText(test).width > QW) { lines.push(line); line = words[wi]; }
-      else line = test;
-    }
-    if (line) lines.push(line);
-
-    var lh     = Math.min(QW * 0.065, 34);
-    var totalH = lines.length * lh + 36;
-    var textY  = TY + (TH - totalH) / 2;
-    lines.forEach(function(l, i) { ctx.fillText(l, QX, textY + i * lh); });
-
-    ctx.font         = '700 ' + Math.min(QW * 0.032, 13) + 'px sans-serif';
-    ctx.fillStyle    = '#f5a623';
-    ctx.fillText(('— ' + quote.attribution).toUpperCase(), QX, textY + lines.length * lh + 14);
-
-    ctx.font         = '700 15px sans-serif';
-    ctx.fillStyle    = 'rgba(245,166,35,0.65)';
-    ctx.textAlign    = 'right';
-    ctx.fillText('PMOVIES', W - 44, H - 42);
-
-    ctx.beginPath();
-    ctx.arc(W - 32, H - 36, 2, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(245,166,35,0.4)';
-    ctx.fill();
-
+    // Signature
+    x.font = '700 30px Montserrat, sans-serif';
+    var wm = 'PMOVIES', sp = 16, w = 0, i; for (i = 0; i < wm.length; i++) w += x.measureText(wm[i]).width + sp; w -= sp;
+    var cx = W / 2 - w / 2; x.textAlign = 'left';
+    for (i = 0; i < wm.length; i++) { x.fillStyle = i === 0 ? INK : GOLD; x.fillText(wm[i], cx, TY + TH + 96); cx += x.measureText(wm[i]).width + sp; }
+    x.font = '500 20px Montserrat, sans-serif'; x.fillStyle = 'rgba(239,233,220,.5)'; _cardTrack(x, 'p-movies.com', W / 2, TY + TH + 138, 3, 'center');
     return c;
   }
 
-  function roundRectPath(ctx, x, y, w, h, r) {
-    ctx.moveTo(x + r, y);
-    ctx.lineTo(x + w - r, y);
-    ctx.arcTo(x + w, y, x + w, y + r, r);
-    ctx.lineTo(x + w, y + h - r);
-    ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
-    ctx.lineTo(x + r, y + h);
-    ctx.arcTo(x, y + h, x, y + h - r, r);
-    ctx.lineTo(x, y + r);
-    ctx.arcTo(x, y, x + r, y, r);
-    ctx.closePath();
+  function _ticketDate() {
+    return new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).toUpperCase();
   }
 
+  var _cardBlob = null;
+
+  // Share: draw the card, show it, then hand it to the device's share sheet (or save it)
   async function generateAndShare() {
     if (!currentQuote) return;
-    var btn = document.getElementById('lobby-share-btn');
-    if (btn) btn.textContent = '...';
+    var q = currentQuote;
     try {
-      var canvas = generateShareCard(currentQuote);
-      if (navigator.canShare) {
-        canvas.toBlob(async function(blob) {
-          try {
-            await navigator.share({
-              title: 'PMovies',
-              text:  '“' + currentQuote.text + '” — ' + currentQuote.attribution,
-              files: [new File([blob], 'pmovies-quote.png', { type: 'image/png' })],
-              url:   'https://p-movies.com'
-            });
-          } catch(e) {}
-        }, 'image/png');
-      } else {
-        var a    = document.createElement('a');
-        a.href   = canvas.toDataURL('image/png');
-        a.download = 'pmovies-quote.png';
-        a.click();
+      if (document.fonts && document.fonts.load) {
+        await Promise.all([
+          document.fonts.load('italic 500 40px "Playfair Display"'), document.fonts.load('700 20px Montserrat'),
+          document.fonts.load('400 40px Amiri', q.text), document.fonts.load('700 30px Amiri', q.attribution || '')
+        ]);
       }
-    } finally {
-      if (btn) btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Share Quote';
+    } catch(e) {}
+    var canvas = generateShareCard(q);
+    canvas.toBlob(function(blob) {
+      if (!blob) return;
+      _cardBlob = blob;
+      var img = document.getElementById('lobby-sheet-img'), sheet = document.getElementById('lobby-share-sheet');
+      if (img) { if (img.src) { try { URL.revokeObjectURL(img.src); } catch(e) {} } img.src = URL.createObjectURL(blob); }
+      if (sheet) sheet.classList.add('open');
+    }, 'image/png');
+  }
+
+  function _saveCard() {
+    if (!_cardBlob) return;
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(_cardBlob); a.download = 'pmovies-quote.png';
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+
+  function _shareCard() {
+    if (!_cardBlob || !currentQuote) return;
+    var file = new File([_cardBlob], 'pmovies-quote.png', { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({
+        title: 'PMovies',
+        text:  '“' + currentQuote.text + '” — ' + currentQuote.attribution,
+        files: [file],
+        url:   'https://p-movies.com'
+      }).catch(function() {});
+    } else {
+      _saveCard();
     }
   }
 
@@ -28229,6 +28104,11 @@ async function deleteEditorReview(key, e) {
     var shareBtn   = document.getElementById('lobby-share-btn');
 
     if (enterBtn)   enterBtn.onclick   = function() { enterApp(); };
+    var sheet = document.getElementById('lobby-share-sheet');
+    var sClose = document.getElementById('lobby-sheet-close'), sSave = document.getElementById('lobby-sheet-save'), sShare = document.getElementById('lobby-sheet-share');
+    if (sClose) sClose.onclick = function() { if (sheet) sheet.classList.remove('open'); };
+    if (sSave)  sSave.onclick  = _saveCard;
+    if (sShare) sShare.onclick = _shareCard;
     if (shareBtn)   shareBtn.onclick   = function() { generateAndShare(); };
     if (anotherBtn) anotherBtn.onclick = function() {
       var _evQ2 = typeof window.pmGetEventQuoteOverride === 'function' && window.pmGetEventQuoteOverride();
