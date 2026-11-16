@@ -4372,8 +4372,10 @@
                   radial-gradient(circle var(--notch) at 100% var(--perf-y), transparent 98%, #000) right / 51% 100% no-repeat;
             mask: radial-gradient(circle var(--notch) at 0 var(--perf-y), transparent 98%, #000) left / 51% 100% no-repeat,
                   radial-gradient(circle var(--notch) at 100% var(--perf-y), transparent 98%, #000) right / 51% 100% no-repeat;
-    animation: tkRise .9s cubic-bezier(.2,.8,.2,1) both;
+    opacity: 0;
   }
+  /* Shown only once fonts are loaded and the foil is painted, so it never appears half-built */
+  #lobby-screen.tk-ready .tk-ticket { opacity: 1; animation: tkRise .9s cubic-bezier(.2,.8,.2,1) both; }
   @keyframes tkRise { from { opacity: 0; transform: translateY(26px) rotate(-1.4deg) scale(.97); } }
   #lobby-screen .tk-head { display: flex; align-items: baseline; justify-content: space-between; padding: 20px 22px 0; font-size: 9px; font-weight: 700; letter-spacing: .26em; text-transform: uppercase; color: var(--ink-soft); }
   #lobby-screen .tk-head .tk-admit { color: var(--gold); }
@@ -27715,12 +27717,14 @@ async function deleteEditorReview(key, e) {
      SCRATCH ENGINE
   ══════════════════════════════════════════════════════════ */
   var _scratchWired = false, _scratchLast = null, _scratchW = 0, _scratchH = 0;
+  var _foilFresh = false;   // true while the painted foil has not been scratched
 
   function initScratchCanvas() {
     scratchCanvas = document.getElementById('lobby-scratch-canvas');
     if (!scratchCanvas) return;
     var rect = scratchCanvas.getBoundingClientRect();
     if (!rect.width || !rect.height) return;            // intro not visible yet
+    if (_foilFresh && Math.abs(rect.width - _scratchW) < 1 && Math.abs(rect.height - _scratchH) < 1) return;
     scratchCtx      = scratchCanvas.getContext('2d');
     hasAutoRevealed = false;
     strokeCount     = 0;
@@ -27741,6 +27745,7 @@ async function deleteEditorReview(key, e) {
     scratchCanvas.height = rect.height * dpr;
     scratchCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
     drawScratchSurface(rect.width, rect.height);
+    _foilFresh = true;
 
     if (!_scratchWired) {
       _scratchWired = true;
@@ -27794,8 +27799,9 @@ async function deleteEditorReview(key, e) {
   }
 
   function onScratchStart(e) {
-    if (hasAutoRevealed) return;
+    if (hasAutoRevealed || !currentQuote) return;       // nothing to reveal until the quote has loaded
     e.preventDefault();
+    _foilFresh = false;
     isScratching = true; _scratchLast = null;
     var panel = document.getElementById('lobby-panel');
     if (panel) panel.classList.add('touched');
@@ -27834,8 +27840,9 @@ async function deleteEditorReview(key, e) {
   }
 
   function autoReveal() {
-    if (hasAutoRevealed) return;
+    if (hasAutoRevealed || !currentQuote) return;
     hasAutoRevealed = true;
+    _foilFresh = false;
     isScratching = false;
     scratchCanvas.classList.add('revealed');
     var panel = document.getElementById('lobby-panel');
@@ -27908,6 +27915,8 @@ async function deleteEditorReview(key, e) {
 
     setLobbyBackdrop();
     renderLobbyGreeting();
+    _foilFresh = false;                    // the intro was hidden: repaint for the new quote
+    setTimeout(_showTicket, 0);
 
     if (lobbyQuotes.length) {
       renderQuote(pickNextQuote(lobbyQuotes));
@@ -28077,9 +28086,35 @@ async function deleteEditorReview(key, e) {
     return true;
   }
 
+  // Resolves when the ticket's fonts are usable (or after 1.5s, so a slow font never blocks the intro)
+  function _lobbyFontsReady() {
+    return new Promise(function(resolve) {
+      if (!document.fonts || !document.fonts.load) { resolve(); return; }
+      var t0 = Date.now();
+      (function poll() {
+        Promise.all([document.fonts.load('400 36px "Bebas Neue"'), document.fonts.load('700 11px Montserrat')])
+          .then(function(r) {
+            // An empty result means the font stylesheet itself has not arrived yet — keep waiting
+            if ((r[0].length && r[1].length) || Date.now() - t0 > 1500) resolve(); else setTimeout(poll, 80);
+          }, resolve);
+      })();
+    });
+  }
+  function _showTicket() {
+    var lobby = document.getElementById('lobby-screen');
+    if (!lobby || lobby.classList.contains('tk-ready')) return;
+    _lobbyFontsReady().then(function() {
+      var dEl = document.getElementById('lobby-ticket-date');
+      if (dEl) dEl.textContent = _ticketDate();
+      initScratchCanvas();                 // paints the foil and lines up the notches
+      lobby.classList.add('tk-ready');
+    });
+  }
+
   async function initLobby() {
     var lobby = document.getElementById('lobby-screen');
     if (!lobby || lobby.style.display === 'none') return;
+    _showTicket();
 
     // Show backdrop and greeting immediately — no auth needed for these
     setLobbyBackdrop();
